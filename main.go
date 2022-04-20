@@ -3,72 +3,51 @@ package main
 import (
 	"flag"
 	"fmt"
+	"legocerthub-backend/application"
+	"legocerthub-backend/database"
 	"log"
 	"net/http"
 	"os"
 	"time"
 )
 
-const version = "0.0.1"
-
-type config struct {
-	host string
-	port int
-	env  string
-	db   struct {
-		dsn string
-	}
-}
-
-type AppStatus struct {
-	Status      string `json:"status"`
-	Environment string `json:"environment"`
-	Version     string `json:"version"`
-}
-
-type application struct {
-	config   config
-	logger   *log.Logger
-	database *DBWrap
-}
-
 func main() {
-	var cfg config
+	var cfg application.Config
 
-	flag.StringVar(&cfg.host, "host", "localhost", "hostname to listen on")
-	flag.IntVar(&cfg.port, "port", 4050, "port number to listen on")
-	flag.StringVar(&cfg.env, "env", "dev", "application environment (dev | prod)")
-	flag.StringVar(&cfg.db.dsn, "dsn", "./lego-certhub.db", "database path and filename")
+	flag.StringVar(&cfg.Host, "host", "localhost", "hostname to listen on")
+	flag.IntVar(&cfg.Port, "port", 4050, "port number to listen on")
+	flag.StringVar(&cfg.Env, "env", "dev", "application environment (dev | prod)")
+	flag.StringVar(&cfg.Db.Dsn, "dsn", "./lego-certhub.db", "database path and filename")
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
-	db, err := openDB(cfg)
+	db, err := application.OpenDB(cfg)
 	if err != nil {
 		logger.Fatal(err)
 	}
 	defer db.Close()
 
-	app := &application{
-		config: cfg,
-		logger: logger,
-		database: &DBWrap{
+	app := &application.Application{
+		Config: cfg,
+		Logger: logger,
+		Database: &database.DBWrap{
 			DB: db,
 		},
 	}
 
 	// create tables in the database if they don't exist
-	app.database.createDBTables()
+	app.Database.CreateDBTables()
 
 	srv := &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", cfg.host, cfg.port),
-		Handler:      app.routes(),
+		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+		Handler:      app.Routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
 
-	logger.Println("Starting server on host", cfg.host, "port", cfg.port)
+	logger.Println("Starting server on host", cfg.Host, "port", cfg.Port)
 
 	err = srv.ListenAndServe()
 	if err != nil {

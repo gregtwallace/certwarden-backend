@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"context"
@@ -13,27 +13,8 @@ type DBWrap struct {
 	DB *sql.DB
 }
 
-// function opens connection to the sqlite database
-//   this will also cause the file to be created, if it does not exist
-func openDB(cfg config) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", cfg.db.dsn)
-	if err != nil {
-		return nil, err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	err = db.PingContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
-}
-
 // function creates tables in the event our database is new
-func (db *DBWrap) createDBTables() error {
+func (db *DBWrap) CreateDBTables() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
