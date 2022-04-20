@@ -1,4 +1,4 @@
-module lego-certhub-backend
+module legocerthub-backend
 
 go 1.18
 
