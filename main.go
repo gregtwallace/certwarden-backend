@@ -3,8 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"legocerthub-backend/application"
+	"legocerthub-backend/app"
 	"legocerthub-backend/database"
+
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +13,7 @@ import (
 )
 
 func main() {
-	var cfg application.Config
+	var cfg app.Config
 
 	flag.StringVar(&cfg.Host, "host", "localhost", "hostname to listen on")
 	flag.IntVar(&cfg.Port, "port", 4050, "port number to listen on")
@@ -22,13 +23,13 @@ func main() {
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
-	db, err := application.OpenDB(cfg)
+	db, err := app.OpenDB(cfg)
 	if err != nil {
 		logger.Fatal(err)
 	}
 	defer db.Close()
 
-	app := &application.Application{
+	app := &app.Application{
 		Config: cfg,
 		Logger: logger,
 		Database: &database.DBWrap{

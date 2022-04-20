@@ -1,7 +1,9 @@
-package application
+package app
 
 import (
 	"errors"
+	"legocerthub-backend/utils"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -21,7 +23,7 @@ type AcmeAccount struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-func (app *Application) GetAllAcmeAccounts(w http.ResponseWriter, r *http.Request) {
+func (app *Application) getAllAcmeAccounts(w http.ResponseWriter, r *http.Request) {
 	acmeAccounts := []AcmeAccount{
 		AcmeAccount{
 			ID:           0,
@@ -57,17 +59,17 @@ func (app *Application) GetAllAcmeAccounts(w http.ResponseWriter, r *http.Reques
 		},
 	}
 
-	app.WriteJSON(w, http.StatusOK, acmeAccounts, "acme_accounts")
+	utils.WriteJSON(w, http.StatusOK, acmeAccounts, "acme_accounts")
 
 }
 
-func (app *Application) GetOneAcmeAccount(w http.ResponseWriter, r *http.Request) {
+func (app *Application) getOneAcmeAccount(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 
 	id, err := strconv.Atoi(params.ByName("id"))
 	if err != nil {
-		app.Logger.Print(errors.New("invalid id parameter"))
-		//app.errorJSON(w, err)
+		log.Print(errors.New("invalid id parameter"))
+		//utils.errorJSON(w, err)
 		return
 	}
 
@@ -80,5 +82,5 @@ func (app *Application) GetOneAcmeAccount(w http.ResponseWriter, r *http.Request
 		IsStaging:    true,
 	}
 
-	app.WriteJSON(w, http.StatusOK, acmeAccount, "acme_account")
+	utils.WriteJSON(w, http.StatusOK, acmeAccount, "acme_account")
 }

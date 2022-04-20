@@ -1,11 +1,11 @@
-package application
+package utils
 
 import (
 	"encoding/json"
 	"net/http"
 )
 
-func (app *Application) WriteJSON(w http.ResponseWriter, status int, data interface{}, wrap string) error {
+func WriteJSON(w http.ResponseWriter, status int, data interface{}, wrap string) error {
 	wrapper := make(map[string]interface{})
 
 	wrapper[wrap] = data
