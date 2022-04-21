@@ -22,7 +22,7 @@ type Application struct {
 	DB     *sql.DB
 }
 
-type AppStatus struct {
+type appStatus struct {
 	Status      string `json:"status"`
 	Environment string `json:"environment"`
 	Version     string `json:"version"`

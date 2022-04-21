@@ -12,7 +12,7 @@ import (
 
 func (acmeAccounts *AcmeAccounts) GetAllAcmeAccounts(w http.ResponseWriter, r *http.Request) {
 
-	accounts, err := acmeAccounts.DBGetAllAcmeAccounts()
+	accounts, err := acmeAccounts.dbGetAllAcmeAccounts()
 	if err != nil {
 		log.Printf("Failed to get all ACME accounts %s", err)
 	}
@@ -31,7 +31,7 @@ func (acmeAccounts *AcmeAccounts) GetOneAcmeAccount(w http.ResponseWriter, r *ht
 		return
 	}
 
-	acmeAccount := AcmeAccount{
+	acmeAccount := acmeAccount{
 		ID:           id,
 		PrivateKeyID: 10,
 		Name:         "Another Acct",

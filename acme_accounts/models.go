@@ -12,8 +12,8 @@ type AcmeAccounts struct {
 	Logger *log.Logger
 }
 
-// a single AcmeAccount
-type AcmeAccount struct {
+// a single acmeAccount
+type acmeAccount struct {
 	ID             int       `json:"id"`
 	PrivateKeyID   int       `json:"private_key_id"`
 	PrivateKeyName string    `json:"private_key_name"`

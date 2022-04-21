@@ -10,11 +10,10 @@ import (
 func (app *Application) Routes() http.Handler {
 	router := httprouter.New()
 
-	// app handlers
+	// app handlers (app already defined)
 	router.HandlerFunc(http.MethodGet, "/status", app.statusHandler)
 
-	// acme accounts handlers
-	// acme accounts database definition
+	// acme accounts definition and handlers
 	acmeAccounts := acme_accounts.AcmeAccounts{
 		DB:     app.DB,
 		Logger: app.Logger,

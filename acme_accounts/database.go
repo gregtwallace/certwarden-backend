@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func (acmeAccounts *AcmeAccounts) DBGetAllAcmeAccounts() ([]*AcmeAccount, error) {
+func (acmeAccounts *AcmeAccounts) dbGetAllAcmeAccounts() ([]*acmeAccount, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -23,9 +23,9 @@ func (acmeAccounts *AcmeAccounts) DBGetAllAcmeAccounts() ([]*AcmeAccount, error)
 	}
 	defer rows.Close()
 
-	var allAccounts []*AcmeAccount
+	var allAccounts []*acmeAccount
 	for rows.Next() {
-		var oneAccount AcmeAccount
+		var oneAccount acmeAccount
 		err := rows.Scan(
 			&oneAccount.ID,
 			&oneAccount.PrivateKeyID,
