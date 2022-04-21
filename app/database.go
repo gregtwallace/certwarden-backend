@@ -1,4 +1,4 @@
-package database
+package app
 
 import (
 	"context"
@@ -9,12 +9,27 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type DBWrap struct {
-	DB *sql.DB
+// function opens connection to the sqlite database
+//   this will also cause the file to be created, if it does not exist
+func OpenDB(cfg Config) (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", cfg.Db.Dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err = db.PingContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
 
 // function creates tables in the event our database is new
-func (db *DBWrap) CreateDBTables() error {
+func (app *Application) CreateDBTables() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -30,7 +45,7 @@ func (db *DBWrap) CreateDBTables() error {
 		updated_at text NOT NULL
 	)`
 
-	_, err := db.DB.ExecContext(ctx, query)
+	_, err := app.DB.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -53,7 +68,7 @@ func (db *DBWrap) CreateDBTables() error {
 				ON UPDATE NO ACTION
 	)`
 
-	_, err = db.DB.ExecContext(ctx, query)
+	_, err = app.DB.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -90,7 +105,7 @@ func (db *DBWrap) CreateDBTables() error {
 				ON UPDATE NO ACTION
 	)`
 
-	_, err = db.DB.ExecContext(ctx, query)
+	_, err = app.DB.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 		return err

@@ -1,8 +1,7 @@
-package app
+package acme_accounts
 
 import (
 	"errors"
-	"legocerthub-backend/database"
 	"legocerthub-backend/utils"
 	"log"
 	"net/http"
@@ -11,9 +10,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func (app *Application) getAllAcmeAccounts(w http.ResponseWriter, r *http.Request) {
+func (acmeAccounts *AcmeAccounts) GetAllAcmeAccounts(w http.ResponseWriter, r *http.Request) {
 
-	accounts, err := app.Database.DBGetAllAcmeAccounts()
+	accounts, err := acmeAccounts.DBGetAllAcmeAccounts()
 	if err != nil {
 		log.Printf("Failed to get all ACME accounts %s", err)
 	}
@@ -22,7 +21,7 @@ func (app *Application) getAllAcmeAccounts(w http.ResponseWriter, r *http.Reques
 
 }
 
-func (app *Application) getOneAcmeAccount(w http.ResponseWriter, r *http.Request) {
+func (acmeAccounts *AcmeAccounts) GetOneAcmeAccount(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 
 	id, err := strconv.Atoi(params.ByName("id"))
@@ -32,7 +31,7 @@ func (app *Application) getOneAcmeAccount(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	acmeAccount := database.AcmeAccount{
+	acmeAccount := AcmeAccount{
 		ID:           id,
 		PrivateKeyID: 10,
 		Name:         "Another Acct",

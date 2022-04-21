@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"legocerthub-backend/app"
-	"legocerthub-backend/database"
 
 	"log"
 	"net/http"
@@ -32,13 +31,11 @@ func main() {
 	app := &app.Application{
 		Config: cfg,
 		Logger: logger,
-		Database: &database.DBWrap{
-			DB: db,
-		},
+		DB:     db,
 	}
 
 	// create tables in the database if they don't exist
-	app.Database.CreateDBTables()
+	app.CreateDBTables()
 
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),

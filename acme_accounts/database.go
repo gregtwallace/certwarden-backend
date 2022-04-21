@@ -1,4 +1,4 @@
-package database
+package acme_accounts
 
 import (
 	"context"
@@ -6,20 +6,7 @@ import (
 	"time"
 )
 
-type AcmeAccount struct {
-	ID             int       `json:"id"`
-	PrivateKeyID   int       `json:"private_key_id"`
-	PrivateKeyName string    `json:"private_key_name"`
-	Name           string    `json:"name"`
-	Email          string    `json:"email"`
-	Description    string    `json:"description"`
-	AcceptedTos    bool      `json:"accepted_tos"`
-	IsStaging      bool      `json:"is_staging"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
-}
-
-func (db *DBWrap) DBGetAllAcmeAccounts() ([]*AcmeAccount, error) {
+func (acmeAccounts *AcmeAccounts) DBGetAllAcmeAccounts() ([]*AcmeAccount, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -29,7 +16,7 @@ func (db *DBWrap) DBGetAllAcmeAccounts() ([]*AcmeAccount, error) {
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
 	ORDER BY aa.id`
 
-	rows, err := db.DB.QueryContext(ctx, query)
+	rows, err := acmeAccounts.DB.QueryContext(ctx, query)
 	if err != nil {
 		log.Print(err)
 		return nil, err
