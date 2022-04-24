@@ -3,11 +3,10 @@ package acme_accounts
 import (
 	"context"
 	"log"
-	"time"
 )
 
 func (acmeAccounts *AcmeAccounts) dbGetAllAcmeAccounts() ([]*acmeAccount, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), acmeAccounts.DBTimeout)
 	defer cancel()
 
 	query := `SELECT aa.id, pk.id, pk.name, aa.name, aa.description, aa.email, aa.accepted_tos, aa.is_staging 

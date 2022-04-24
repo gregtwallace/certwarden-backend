@@ -15,8 +15,9 @@ func (app *Application) Routes() http.Handler {
 
 	// acme accounts definition and handlers
 	acmeAccounts := acme_accounts.AcmeAccounts{
-		DB:     app.DB,
-		Logger: app.Logger,
+		DB:        app.DB.DB,
+		DBTimeout: app.DB.Timeout,
+		Logger:    app.Logger,
 	}
 	router.HandlerFunc(http.MethodGet, "/v1/acmeaccounts", acmeAccounts.GetAllAcmeAccounts)
 	router.HandlerFunc(http.MethodGet, "/v1/acmeaccounts/:id", acmeAccounts.GetOneAcmeAccount)

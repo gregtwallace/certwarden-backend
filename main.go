@@ -35,7 +35,10 @@ func main() {
 	app := &app.Application{
 		Config: cfg,
 		Logger: logger,
-		DB:     db,
+		DB: app.AppDb{
+			DB:      db,
+			Timeout: 3 * time.Second,
+		},
 	}
 
 	// create tables in the database if they don't exist

@@ -3,6 +3,7 @@ package app
 import (
 	"database/sql"
 	"log"
+	"time"
 )
 
 const version = "0.0.1"
@@ -11,15 +12,20 @@ type Config struct {
 	Host string
 	Port int
 	Env  string
-	Db   struct {
+	DB   struct {
 		Dsn string
 	}
+}
+
+type AppDb struct {
+	DB      *sql.DB
+	Timeout time.Duration
 }
 
 type Application struct {
 	Config Config
 	Logger *log.Logger
-	DB     *sql.DB
+	DB     AppDb
 }
 
 type appStatus struct {
