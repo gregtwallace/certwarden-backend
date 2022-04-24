@@ -39,13 +39,13 @@ func (app *Application) CreateDBTables() error {
 		name text NOT NULL UNIQUE,
 		description text,
 		algorithm text NOT NULL,
-		pem_content text NOT NULL,
+		pem text NOT NULL,
 		api_key text NOT NULL,
-		created_at text NOT NULL,
-		updated_at text NOT NULL
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL
 	)`
 
-	_, err := app.DB.ExecContext(ctx, query)
+	_, err := app.DB.DB.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -58,17 +58,17 @@ func (app *Application) CreateDBTables() error {
 		name text NOT NULL UNIQUE,
 		description text,
 		email text NOT NULL,
-		accepted_tos integer DEFAULT 0,
-		is_staging integer DEFAULT 0,
-		created_at text NOT NULL,
-		updated_at text NOT NULL,
+		accepted_tos boolean DEFAULT 0,
+		is_staging boolean DEFAULT 0,
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
 		FOREIGN KEY (private_key_id)
 			REFERENCES private_keys (id)
 				ON DELETE CASCADE
 				ON UPDATE NO ACTION
 	)`
 
-	_, err = app.DB.ExecContext(ctx, query)
+	_, err = app.DB.DB.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -89,12 +89,13 @@ func (app *Application) CreateDBTables() error {
 		csr_country text,
 		csr_state text,
 		csr_city text,
-		created_at text NOT NULL,
-		updated_at text NOT NULL,
+		created_at datetime NOT NULL,
+		updated_at datetime NOT NULL,
 		api_key text NOT NULL,
-		valid_from text,
-		valid_to text,
-		is_valid integer DEFAULT 0,
+		pem text NOT NULL,
+		valid_from datetime,
+		valid_to datetime,
+		is_valid boolean DEFAULT 0,
 		FOREIGN KEY (private_key_id)
 			REFERENCES private_keys (id)
 				ON DELETE CASCADE
@@ -105,7 +106,7 @@ func (app *Application) CreateDBTables() error {
 				ON UPDATE NO ACTION
 	)`
 
-	_, err = app.DB.ExecContext(ctx, query)
+	_, err = app.DB.DB.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 		return err
