@@ -2,6 +2,7 @@ package app
 
 import (
 	"legocerthub-backend/acme_accounts"
+	"legocerthub-backend/private_keys"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -12,6 +13,14 @@ func (app *Application) Routes() http.Handler {
 
 	// app handlers (app already defined)
 	router.HandlerFunc(http.MethodGet, "/status", app.statusHandler)
+
+	// private keys definition and handlers
+	privateKeys := private_keys.PrivateKeys{
+		DB:        app.DB.DB,
+		DBTimeout: app.DB.Timeout,
+		Logger:    app.Logger,
+	}
+	router.HandlerFunc(http.MethodGet, "/v1/privatekeys", privateKeys.GetAllPrivateKeys)
 
 	// acme accounts definition and handlers
 	acmeAccounts := acme_accounts.AcmeAccounts{

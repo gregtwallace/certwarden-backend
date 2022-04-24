@@ -7,4 +7,5 @@ require github.com/mattn/go-sqlite3 v1.14.12
 
 replace legocerthub-backend/acme_accounts => /acme_accounts
 replace legocerthub-backend/app => /app
+replace legocerthub-backend/private_keys => /private_keys
 replace legocerthub-backend/utils => /utils
