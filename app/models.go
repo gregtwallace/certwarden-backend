@@ -12,7 +12,7 @@ type Config struct {
 	Host string
 	Port int
 	Env  string
-	DB   struct {
+	Db   struct {
 		Dsn string
 	}
 }

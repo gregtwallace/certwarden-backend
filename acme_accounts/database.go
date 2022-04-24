@@ -25,7 +25,7 @@ func (acmeAccounts *AcmeAccounts) dbGetAllAcmeAccounts() ([]*acmeAccount, error)
 	var allAccounts []*acmeAccount
 	for rows.Next() {
 		var oneAccount acmeAccount
-		err := rows.Scan(
+		err = rows.Scan(
 			&oneAccount.ID,
 			&oneAccount.PrivateKeyID,
 			&oneAccount.PrivateKeyName,
