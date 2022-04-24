@@ -6,9 +6,9 @@ import (
 	"net/http"
 )
 
-func (privateKeys *PrivateKeys) GetAllPrivateKeys(w http.ResponseWriter, r *http.Request) {
+func (privateKeysDB *PrivateKeysDB) GetAllPrivateKeys(w http.ResponseWriter, r *http.Request) {
 
-	accounts, err := privateKeys.dbGetAllPrivateKeys()
+	accounts, err := privateKeysDB.dbGetAllPrivateKeys()
 	if err != nil {
 		log.Printf("Failed to get all private keys %s", err)
 	}

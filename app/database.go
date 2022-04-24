@@ -45,7 +45,7 @@ func (app *Application) CreateDBTables() error {
 		updated_at datetime NOT NULL
 	)`
 
-	_, err := app.DB.DB.ExecContext(ctx, query)
+	_, err := app.DB.Database.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -68,7 +68,7 @@ func (app *Application) CreateDBTables() error {
 				ON UPDATE NO ACTION
 	)`
 
-	_, err = app.DB.DB.ExecContext(ctx, query)
+	_, err = app.DB.Database.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -106,7 +106,7 @@ func (app *Application) CreateDBTables() error {
 				ON UPDATE NO ACTION
 	)`
 
-	_, err = app.DB.DB.ExecContext(ctx, query)
+	_, err = app.DB.Database.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 		return err

@@ -10,9 +10,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func (acmeAccounts *AcmeAccounts) GetAllAcmeAccounts(w http.ResponseWriter, r *http.Request) {
+func (acmeAccountsDB *AcmeAccountsDB) GetAllAcmeAccounts(w http.ResponseWriter, r *http.Request) {
 
-	accounts, err := acmeAccounts.dbGetAllAcmeAccounts()
+	accounts, err := acmeAccountsDB.dbGetAllAcmeAccounts()
 	if err != nil {
 		log.Printf("Failed to get all ACME accounts %s", err)
 	}
@@ -21,7 +21,7 @@ func (acmeAccounts *AcmeAccounts) GetAllAcmeAccounts(w http.ResponseWriter, r *h
 
 }
 
-func (acmeAccounts *AcmeAccounts) GetOneAcmeAccount(w http.ResponseWriter, r *http.Request) {
+func (acmeAccountsDB *AcmeAccountsDB) GetOneAcmeAccount(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 
 	id, err := strconv.Atoi(params.ByName("id"))

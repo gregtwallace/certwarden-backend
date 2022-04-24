@@ -36,8 +36,8 @@ func main() {
 		Config: cfg,
 		Logger: logger,
 		DB: app.AppDb{
-			DB:      db,
-			Timeout: 3 * time.Second,
+			Database: db,
+			Timeout:  3 * time.Second,
 		},
 	}
 

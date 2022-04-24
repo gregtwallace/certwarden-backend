@@ -4,14 +4,14 @@ import (
 	"context"
 )
 
-func (privateKeys *PrivateKeys) dbGetAllPrivateKeys() ([]*privateKey, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), privateKeys.DBTimeout)
+func (privateKeysDB *PrivateKeysDB) dbGetAllPrivateKeys() ([]*privateKey, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), privateKeysDB.Timeout)
 	defer cancel()
 
 	query := `SELECT id, name, description, algorithm, pem, api_key, created_at, updated_at
 	FROM private_keys ORDER BY id`
 
-	rows, err := privateKeys.DB.QueryContext(ctx, query)
+	rows, err := privateKeysDB.Database.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}

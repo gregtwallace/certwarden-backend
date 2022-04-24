@@ -5,8 +5,8 @@ import (
 	"log"
 )
 
-func (acmeAccounts *AcmeAccounts) dbGetAllAcmeAccounts() ([]*acmeAccount, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), acmeAccounts.DBTimeout)
+func (acmeAccountsDB *AcmeAccountsDB) dbGetAllAcmeAccounts() ([]*acmeAccount, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), acmeAccountsDB.Timeout)
 	defer cancel()
 
 	query := `SELECT aa.id, pk.id, pk.name, aa.name, aa.description, aa.email, aa.accepted_tos, aa.is_staging 
@@ -15,7 +15,7 @@ func (acmeAccounts *AcmeAccounts) dbGetAllAcmeAccounts() ([]*acmeAccount, error)
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
 	ORDER BY aa.id`
 
-	rows, err := acmeAccounts.DB.QueryContext(ctx, query)
+	rows, err := acmeAccountsDB.Database.QueryContext(ctx, query)
 	if err != nil {
 		log.Print(err)
 		return nil, err

@@ -15,18 +15,18 @@ func (app *Application) Routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/status", app.statusHandler)
 
 	// private keys definition and handlers
-	privateKeys := private_keys.PrivateKeys{
-		DB:        app.DB.DB,
-		DBTimeout: app.DB.Timeout,
-		Logger:    app.Logger,
+	privateKeys := private_keys.PrivateKeysDB{
+		Database: app.DB.Database,
+		Timeout:  app.DB.Timeout,
+		Logger:   app.Logger,
 	}
 	router.HandlerFunc(http.MethodGet, "/v1/privatekeys", privateKeys.GetAllPrivateKeys)
 
 	// acme accounts definition and handlers
-	acmeAccounts := acme_accounts.AcmeAccounts{
-		DB:        app.DB.DB,
-		DBTimeout: app.DB.Timeout,
-		Logger:    app.Logger,
+	acmeAccounts := acme_accounts.AcmeAccountsDB{
+		Database: app.DB.Database,
+		Timeout:  app.DB.Timeout,
+		Logger:   app.Logger,
 	}
 	router.HandlerFunc(http.MethodGet, "/v1/acmeaccounts", acmeAccounts.GetAllAcmeAccounts)
 	router.HandlerFunc(http.MethodGet, "/v1/acmeaccounts/:id", acmeAccounts.GetOneAcmeAccount)

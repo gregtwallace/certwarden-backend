@@ -18,8 +18,8 @@ type Config struct {
 }
 
 type AppDb struct {
-	DB      *sql.DB
-	Timeout time.Duration
+	Database *sql.DB
+	Timeout  time.Duration
 }
 
 type Application struct {
