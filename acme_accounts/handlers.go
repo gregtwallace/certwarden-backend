@@ -1,9 +1,7 @@
 package acme_accounts
 
 import (
-	"errors"
 	"legocerthub-backend/utils"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -14,11 +12,17 @@ func (acmeAccountsDB *AcmeAccountsDB) GetAllAcmeAccounts(w http.ResponseWriter, 
 
 	accounts, err := acmeAccountsDB.dbGetAllAcmeAccounts()
 	if err != nil {
-		log.Printf("Failed to get all ACME accounts %s", err)
+		acmeAccountsDB.Logger.Printf("acmeaccounts: GetAll: db failed -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, accounts, "acme_accounts")
-
+	err = utils.WriteJSON(w, http.StatusOK, accounts, "acme_accounts")
+	if err != nil {
+		acmeAccountsDB.Logger.Printf("acmeaccounts: GetAll: write json failed -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
 }
 
 func (acmeAccountsDB *AcmeAccountsDB) GetOneAcmeAccount(w http.ResponseWriter, r *http.Request) {
@@ -26,8 +30,8 @@ func (acmeAccountsDB *AcmeAccountsDB) GetOneAcmeAccount(w http.ResponseWriter, r
 
 	id, err := strconv.Atoi(params.ByName("id"))
 	if err != nil {
-		log.Print(errors.New("invalid id parameter"))
-		//utils.errorJSON(w, err)
+		acmeAccountsDB.Logger.Printf("acmeaccounts: GetOne: id param issue -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
 		return
 	}
 
@@ -40,5 +44,10 @@ func (acmeAccountsDB *AcmeAccountsDB) GetOneAcmeAccount(w http.ResponseWriter, r
 		IsStaging:    true,
 	}
 
-	utils.WriteJSON(w, http.StatusOK, acmeAccount, "acme_account")
+	err = utils.WriteJSON(w, http.StatusOK, acmeAccount, "acme_account")
+	if err != nil {
+		acmeAccountsDB.Logger.Printf("acmeaccounts: GetOne: write json failed -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
 }
