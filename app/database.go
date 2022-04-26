@@ -41,8 +41,8 @@ func (app *Application) CreateDBTables() error {
 		algorithm text NOT NULL,
 		pem text NOT NULL,
 		api_key text NOT NULL,
-		created_at datetime NOT NULL,
-		updated_at datetime NOT NULL
+		created_at integer NOT NULL,
+		updated_at integer NOT NULL
 	)`
 
 	_, err := app.DB.Database.ExecContext(ctx, query)

@@ -8,7 +8,7 @@ func (privateKeysDB *PrivateKeysDB) dbGetAllPrivateKeys() ([]*privateKey, error)
 	ctx, cancel := context.WithTimeout(context.Background(), privateKeysDB.Timeout)
 	defer cancel()
 
-	query := `SELECT id, name, description, algorithm, pem, api_key, created_at, updated_at
+	query := `SELECT id, name, description, algorithm
 	FROM private_keys ORDER BY id`
 
 	rows, err := privateKeysDB.Database.QueryContext(ctx, query)
@@ -19,21 +19,17 @@ func (privateKeysDB *PrivateKeysDB) dbGetAllPrivateKeys() ([]*privateKey, error)
 
 	var allKeys []*privateKey
 	for rows.Next() {
-		var oneKey privateKey
+		var oneKey sqlPrivateKey
 		err = rows.Scan(
 			&oneKey.ID,
 			&oneKey.Name,
 			&oneKey.Description,
 			&oneKey.Algorithm,
-			&oneKey.Pem,
-			&oneKey.ApiKey,
-			&oneKey.CreatedAt,
-			&oneKey.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
-		allKeys = append(allKeys, &oneKey)
+		allKeys = append(allKeys, oneKey.sqlToPrivateKey())
 	}
 
 	return allKeys, nil
