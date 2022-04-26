@@ -21,6 +21,7 @@ func (app *Application) Routes() http.Handler {
 		Logger:   app.Logger,
 	}
 	router.HandlerFunc(http.MethodGet, "/v1/privatekeys", privateKeys.GetAllPrivateKeys)
+	router.HandlerFunc(http.MethodGet, "/v1/privatekeys/:id", privateKeys.GetOnePrivateKey)
 
 	// acme accounts definition and handlers
 	acmeAccounts := acme_accounts.AcmeAccountsDB{
