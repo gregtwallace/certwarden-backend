@@ -7,7 +7,7 @@ import (
 )
 
 // AcmeAccounts struct for database access
-type AcmeAccountsDB struct {
+type AcmeAccountsApp struct {
 	Database *sql.DB
 	Timeout  time.Duration
 	Logger   *log.Logger

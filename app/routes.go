@@ -24,7 +24,7 @@ func (app *Application) Routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys/:id", privateKeys.GetOnePrivateKey)
 
 	// acme accounts definition and handlers
-	acmeAccounts := acme_accounts.AcmeAccountsDB{
+	acmeAccounts := acme_accounts.AcmeAccountsApp{
 		Database: app.DB.Database,
 		Timeout:  app.DB.Timeout,
 		Logger:   app.Logger,
