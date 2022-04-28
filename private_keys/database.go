@@ -4,14 +4,14 @@ import (
 	"context"
 )
 
-func (privateKeysDB *PrivateKeysDB) dbGetAllPrivateKeys() ([]*privateKey, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), privateKeysDB.Timeout)
+func (privateKeysApp *PrivateKeysApp) dbGetAllPrivateKeys() ([]*privateKey, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
 	defer cancel()
 
 	query := `SELECT id, name, description, algorithm
 	FROM private_keys ORDER BY id`
 
-	rows, err := privateKeysDB.Database.QueryContext(ctx, query)
+	rows, err := privateKeysApp.Database.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -35,8 +35,8 @@ func (privateKeysDB *PrivateKeysDB) dbGetAllPrivateKeys() ([]*privateKey, error)
 	return allKeys, nil
 }
 
-func (privateKeysDB *PrivateKeysDB) dbGetOnePrivateKey(id int) (*privateKey, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), privateKeysDB.Timeout)
+func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*privateKey, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
 	defer cancel()
 
 	query := `SELECT id, name, description, algorithm, pem, api_key, created_at, updated_at
@@ -44,7 +44,7 @@ func (privateKeysDB *PrivateKeysDB) dbGetOnePrivateKey(id int) (*privateKey, err
 	WHERE id = $1
 	ORDER BY id`
 
-	row := privateKeysDB.Database.QueryRowContext(ctx, query, id)
+	row := privateKeysApp.Database.QueryRowContext(ctx, query, id)
 
 	var sqlKey sqlPrivateKey
 	err := row.Scan(

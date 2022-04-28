@@ -15,7 +15,7 @@ func (app *Application) Routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/status", app.statusHandler)
 
 	// private keys definition and handlers
-	privateKeys := private_keys.PrivateKeysDB{
+	privateKeys := private_keys.PrivateKeysApp{
 		Database: app.DB.Database,
 		Timeout:  app.DB.Timeout,
 		Logger:   app.Logger,

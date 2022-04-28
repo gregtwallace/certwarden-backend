@@ -7,7 +7,7 @@ import (
 )
 
 // PrivateKeys struct for database access
-type PrivateKeysDB struct {
+type PrivateKeysApp struct {
 	Database *sql.DB
 	Timeout  time.Duration
 	Logger   *log.Logger
