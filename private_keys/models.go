@@ -29,12 +29,12 @@ type sqlPrivateKey struct {
 type privateKey struct {
 	ID          int    `json:"id"`
 	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	Algorithm   string `json:"algorithm,omitempty"`
-	Pem         string `json:"pem,omitempty"`
-	ApiKey      string `json:"api_key,omitempty"`
-	CreatedAt   int    `json:"created_at,omitempty"`
-	UpdatedAt   int    `json:"updated_at,omitempty"`
+	Description string `json:"description"`
+	Algorithm   string `json:"algorithm"`
+	Pem         string `json:"pem"`
+	ApiKey      string `json:"api_key"`
+	CreatedAt   int    `json:"created_at"`
+	UpdatedAt   int    `json:"updated_at"`
 }
 
 // translate the db fetch into the api object
