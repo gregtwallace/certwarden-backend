@@ -38,7 +38,7 @@ func (app *Application) CreateDBTables() error {
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		name text NOT NULL UNIQUE,
 		description text,
-		algorithm_id integer NOT NULL,
+		algorithm text NOT NULL,
 		pem text NOT NULL,
 		api_key text NOT NULL,
 		created_at integer NOT NULL,

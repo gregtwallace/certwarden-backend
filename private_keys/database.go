@@ -8,7 +8,7 @@ func (privateKeysApp *PrivateKeysApp) dbGetAllPrivateKeys() ([]*privateKey, erro
 	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
 	defer cancel()
 
-	query := `SELECT id, name, description, algorithm_id
+	query := `SELECT id, name, description, algorithm
 	FROM private_keys ORDER BY id`
 
 	rows, err := privateKeysApp.Database.QueryContext(ctx, query)
@@ -24,7 +24,7 @@ func (privateKeysApp *PrivateKeysApp) dbGetAllPrivateKeys() ([]*privateKey, erro
 			&oneKey.id,
 			&oneKey.name,
 			&oneKey.description,
-			&oneKey.algorithmId,
+			&oneKey.algorithmValue,
 		)
 		if err != nil {
 			return nil, err
@@ -43,7 +43,7 @@ func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*privateKey, e
 	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
 	defer cancel()
 
-	query := `SELECT id, name, description, algorithm_id, pem, api_key, created_at, updated_at
+	query := `SELECT id, name, description, algorithm, pem, api_key, created_at, updated_at
 	FROM private_keys
 	WHERE id = $1
 	ORDER BY id`
@@ -55,7 +55,7 @@ func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*privateKey, e
 		&sqlKey.id,
 		&sqlKey.name,
 		&sqlKey.description,
-		&sqlKey.algorithmId,
+		&sqlKey.algorithmValue,
 		&sqlKey.pem,
 		&sqlKey.apiKey,
 		&sqlKey.createdAt,

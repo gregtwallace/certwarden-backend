@@ -16,50 +16,51 @@ type PrivateKeysApp struct {
 
 // a single private key (as returned from the db query)
 type sqlPrivateKey struct {
-	id          int
-	name        string
-	description sql.NullString
-	algorithmId int
-	pem         string
-	apiKey      string
-	createdAt   int
-	updatedAt   int
+	id             int
+	name           string
+	description    sql.NullString
+	algorithmValue string
+	pem            string
+	apiKey         string
+	createdAt      int
+	updatedAt      int
 }
 
 // type to hold key algorithms
 type algorithm struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	Value string `json:"value"`
+	Name  string `json:"name"`
 }
 
 // define the supported algorithms
-// the id MUST be unique
+// the Value must be unique
+// This MUST be kept in sync with the front end list
 // TODO: write a go test to confirm uniqueness
 func supportedKeyAlgorithms() []algorithm {
 	return []algorithm{
 		{
-			ID:   0,
-			Name: "RSA 2048",
+			Value: "rsa2048",
+			Name:  "RSA 2048",
 		},
 		{
-			ID:   1,
-			Name: "ECDSA P-256",
+			Value: "ecdsa256",
+			Name:  "ECDSA P-256",
 		},
 	}
 }
 
-// return an algorithm based on its ID
+// return an algorithm based on its value
 // if not found, return an error
-func keyAlgorithmById(id int) (algorithm, error) {
+func keyAlgorithmByValue(dbValue string) (algorithm, error) {
 	supportedAlgorithms := supportedKeyAlgorithms()
 
 	for i := 0; i < len(supportedAlgorithms); i++ {
-		if id == supportedAlgorithms[i].ID {
+		if dbValue == supportedAlgorithms[i].Value {
 			return supportedAlgorithms[i], nil
 		}
 	}
 
-	return algorithm{}, errors.New("privatekeys: algorithmById: invalid algorithm id")
+	return algorithm{}, errors.New("privatekeys: algorithmByValue: invalid algorithm value")
 }
 
 // a single private key (suitable for the API)
@@ -76,7 +77,7 @@ type privateKey struct {
 
 // translate the db fetch into the api object
 func (sqlPrivateKey *sqlPrivateKey) sqlToPrivateKey() (*privateKey, error) {
-	keyAlgorithm, err := keyAlgorithmById(sqlPrivateKey.algorithmId)
+	keyAlgorithm, err := keyAlgorithmByValue(sqlPrivateKey.algorithmValue)
 	if err != nil {
 		return nil, err
 	}
