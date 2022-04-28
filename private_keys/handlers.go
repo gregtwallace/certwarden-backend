@@ -51,3 +51,12 @@ func (privateKeysApp *PrivateKeysApp) GetOnePrivateKey(w http.ResponseWriter, r 
 		return
 	}
 }
+
+func (privateKeysApp *PrivateKeysApp) GetAllKeyAlgorithms(w http.ResponseWriter, r *http.Request) {
+	err := utils.WriteJSON(w, http.StatusOK, supportedKeyAlgorithms(), "key_algorithms")
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: GetAllKeyAlgorithms: write json failed -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+}

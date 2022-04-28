@@ -8,7 +8,7 @@ func (privateKeysApp *PrivateKeysApp) dbGetAllPrivateKeys() ([]*privateKey, erro
 	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
 	defer cancel()
 
-	query := `SELECT id, name, description, algorithm
+	query := `SELECT id, name, description, algorithm_id
 	FROM private_keys ORDER BY id`
 
 	rows, err := privateKeysApp.Database.QueryContext(ctx, query)
@@ -21,15 +21,19 @@ func (privateKeysApp *PrivateKeysApp) dbGetAllPrivateKeys() ([]*privateKey, erro
 	for rows.Next() {
 		var oneKey sqlPrivateKey
 		err = rows.Scan(
-			&oneKey.ID,
-			&oneKey.Name,
-			&oneKey.Description,
-			&oneKey.Algorithm,
+			&oneKey.id,
+			&oneKey.name,
+			&oneKey.description,
+			&oneKey.algorithmId,
 		)
 		if err != nil {
 			return nil, err
 		}
-		allKeys = append(allKeys, oneKey.sqlToPrivateKey())
+		convertedKey, err := oneKey.sqlToPrivateKey()
+		if err != nil {
+			return nil, err
+		}
+		allKeys = append(allKeys, convertedKey)
 	}
 
 	return allKeys, nil
@@ -39,7 +43,7 @@ func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*privateKey, e
 	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
 	defer cancel()
 
-	query := `SELECT id, name, description, algorithm, pem, api_key, created_at, updated_at
+	query := `SELECT id, name, description, algorithm_id, pem, api_key, created_at, updated_at
 	FROM private_keys
 	WHERE id = $1
 	ORDER BY id`
@@ -48,19 +52,24 @@ func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*privateKey, e
 
 	var sqlKey sqlPrivateKey
 	err := row.Scan(
-		&sqlKey.ID,
-		&sqlKey.Name,
-		&sqlKey.Description,
-		&sqlKey.Algorithm,
-		&sqlKey.Pem,
-		&sqlKey.ApiKey,
-		&sqlKey.CreatedAt,
-		&sqlKey.UpdatedAt,
+		&sqlKey.id,
+		&sqlKey.name,
+		&sqlKey.description,
+		&sqlKey.algorithmId,
+		&sqlKey.pem,
+		&sqlKey.apiKey,
+		&sqlKey.createdAt,
+		&sqlKey.updatedAt,
 	)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return sqlKey.sqlToPrivateKey(), nil
+	convertedKey, err := sqlKey.sqlToPrivateKey()
+	if err != nil {
+		return nil, err
+	}
+
+	return convertedKey, nil
 }
