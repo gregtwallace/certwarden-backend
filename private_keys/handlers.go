@@ -51,3 +51,29 @@ func (privateKeysApp *PrivateKeysApp) GetOnePrivateKey(w http.ResponseWriter, r 
 		return
 	}
 }
+
+// Put (update) a single private key in DB
+func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+
+	err := utils.WriteJSON(w, http.StatusOK, params, "status")
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PutOne: temp error -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+}
+
+// Post (create) a new single private key in DB
+func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+
+	err := utils.WriteJSON(w, http.StatusOK, params, "status")
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PostOne: temp error -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+}
