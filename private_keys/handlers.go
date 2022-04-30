@@ -1,8 +1,11 @@
 package private_keys
 
 import (
+	"encoding/json"
+	"errors"
 	"legocerthub-backend/utils"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/julienschmidt/httprouter"
@@ -32,7 +35,7 @@ func (privateKeysApp *PrivateKeysApp) GetOnePrivateKey(w http.ResponseWriter, r 
 
 	id, err := strconv.Atoi(params.ByName("id"))
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: GetOne: id param issue -- err: %s", err)
+		privateKeysApp.Logger.Printf("privatekeys: GetOne: id param error -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -55,21 +58,91 @@ func (privateKeysApp *PrivateKeysApp) GetOnePrivateKey(w http.ResponseWriter, r 
 // Put (update) a single private key in DB
 func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
-
-	err := utils.WriteJSON(w, http.StatusOK, params, "status")
+	id, err := strconv.Atoi(params.ByName("id"))
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PutOne: temp error -- err: %s", err)
+		privateKeysApp.Logger.Printf("privatekeys: PutOne: id param error -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
+	var payload privateKeyPayload
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PutOne: failed to decode json -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// validation
+	// id param
+	payloadIdInt, err := strconv.Atoi(payload.ID)
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid payload id -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+	if id != payloadIdInt {
+		privateKeysApp.Logger.Println("privatekeys: PutOne: payload id mismatch")
+		utils.WriteErrorJSON(w, errors.New("payload id mismatch"))
+		return
+	}
+	// check id is in the db TODO: Check if this is needed
+	_, err = privateKeysApp.dbGetOnePrivateKey(id)
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid payload id -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+	// name param
+	err = utils.IsNameValid(payload.Name)
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid name -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+	////
+
+	// TODO Update the database and return a proper response to the client
+	utils.WriteJSON(w, http.StatusOK, payload, "payload")
+
 }
 
+// TODO
 // Post (create) a new single private key in DB
 func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r *http.Request) {
-	params := httprouter.ParamsFromContext(r.Context())
+	var payload privateKeyPayload
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to decode json -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
 
-	err := utils.WriteJSON(w, http.StatusOK, params, "status")
+	// do validation
+	// id
+	id, err := strconv.Atoi(payload.ID)
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PostNew: invalid id param -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	} else if id != -1 {
+		// the only valid 'new' id is -1
+		privateKeysApp.Logger.Println("privatekeys: PostNew: invalid id")
+		utils.WriteErrorJSON(w, errors.New("invalid id"))
+		return
+	}
+	// name
+
+	// TODO: Stopped around here
+
+	regex := "/[^-_.~A-z0-9]|[\\^]/g"
+	valid, err := regexp.Match(regex, []byte(payload.Name))
+	if err != nil {
+		privateKeysApp.Logger.Println("privatekeys: PostNew: invalid name")
+		utils.WriteErrorJSON(w, errors.New("invalid name"))
+	}
+
+	err = utils.WriteJSON(w, http.StatusOK, valid, "temp")
 	if err != nil {
 		privateKeysApp.Logger.Printf("privatekeys: PostOne: temp error -- err: %s", err)
 		utils.WriteErrorJSON(w, err)

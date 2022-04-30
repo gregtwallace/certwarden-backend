@@ -73,3 +73,7 @@ func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*privateKey, e
 
 	return convertedKey, nil
 }
+
+func (privateKeysApp *PrivateKeysApp) dbPutOnePriveKey(id int) error {
+	return nil
+}
