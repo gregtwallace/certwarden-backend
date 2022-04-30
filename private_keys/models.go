@@ -15,7 +15,7 @@ type PrivateKeysApp struct {
 }
 
 // a single private key (as returned from the db query)
-type sqlPrivateKey struct {
+type privateKeyDb struct {
 	id             int
 	name           string
 	description    sql.NullString
@@ -76,7 +76,7 @@ type privateKey struct {
 }
 
 // translate the db fetch into the api object
-func (sqlPrivateKey *sqlPrivateKey) sqlToPrivateKey() (*privateKey, error) {
+func (sqlPrivateKey *privateKeyDb) privateKeyDbToPk() (*privateKey, error) {
 	keyAlgorithm, err := keyAlgorithmByValue(sqlPrivateKey.algorithmValue)
 	if err != nil {
 		return nil, err
@@ -92,4 +92,11 @@ func (sqlPrivateKey *sqlPrivateKey) sqlToPrivateKey() (*privateKey, error) {
 		CreatedAt:   sqlPrivateKey.createdAt,
 		UpdatedAt:   sqlPrivateKey.updatedAt,
 	}, nil
+}
+
+// private key payload from PUT/POST
+type privateKeyPayload struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }

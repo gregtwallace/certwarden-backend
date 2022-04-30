@@ -19,7 +19,7 @@ func (privateKeysApp *PrivateKeysApp) dbGetAllPrivateKeys() ([]*privateKey, erro
 
 	var allKeys []*privateKey
 	for rows.Next() {
-		var oneKey sqlPrivateKey
+		var oneKey privateKeyDb
 		err = rows.Scan(
 			&oneKey.id,
 			&oneKey.name,
@@ -29,7 +29,7 @@ func (privateKeysApp *PrivateKeysApp) dbGetAllPrivateKeys() ([]*privateKey, erro
 		if err != nil {
 			return nil, err
 		}
-		convertedKey, err := oneKey.sqlToPrivateKey()
+		convertedKey, err := oneKey.privateKeyDbToPk()
 		if err != nil {
 			return nil, err
 		}
@@ -50,7 +50,7 @@ func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*privateKey, e
 
 	row := privateKeysApp.Database.QueryRowContext(ctx, query, id)
 
-	var sqlKey sqlPrivateKey
+	var sqlKey privateKeyDb
 	err := row.Scan(
 		&sqlKey.id,
 		&sqlKey.name,
@@ -66,7 +66,7 @@ func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*privateKey, e
 		return nil, err
 	}
 
-	convertedKey, err := sqlKey.sqlToPrivateKey()
+	convertedKey, err := sqlKey.privateKeyDbToPk()
 	if err != nil {
 		return nil, err
 	}
