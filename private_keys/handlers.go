@@ -57,50 +57,32 @@ func (privateKeysApp *PrivateKeysApp) GetOnePrivateKey(w http.ResponseWriter, r 
 
 // Put (update) a single private key in DB
 func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r *http.Request) {
-	params := httprouter.ParamsFromContext(r.Context())
-	id, err := strconv.Atoi(params.ByName("id"))
-	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PutOne: id param error -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
-	}
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	var payload privateKeyPayload
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		privateKeysApp.Logger.Printf("privatekeys: PutOne: failed to decode json -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
-	// validation
-	// id param
-	payloadIdInt, err := strconv.Atoi(payload.ID)
+	/// validation
+	// id
+	err = utils.IsIdValidExisting(idParam, payload.ID)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid payload id -- err: %s", err)
+		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
-	if id != payloadIdInt {
-		privateKeysApp.Logger.Println("privatekeys: PutOne: payload id mismatch")
-		utils.WriteErrorJSON(w, errors.New("payload id mismatch"))
-		return
-	}
-	// check id is in the db TODO: Check if this is needed
-	_, err = privateKeysApp.dbGetOnePrivateKey(id)
-	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid payload id -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
-	}
-	// name param
+	// name
 	err = utils.IsNameValid(payload.Name)
 	if err != nil {
 		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
-	////
+	///
 
 	// TODO Update the database and return a proper response to the client
 	utils.WriteJSON(w, http.StatusOK, payload, "payload")
