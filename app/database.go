@@ -39,7 +39,7 @@ func (app *Application) CreateDBTables() error {
 		name text NOT NULL UNIQUE,
 		description text,
 		algorithm text NOT NULL,
-		pem text NOT NULL,
+		pem text NOT NULL UNIQUE,
 		api_key text NOT NULL,
 		created_at integer NOT NULL,
 		updated_at integer NOT NULL
