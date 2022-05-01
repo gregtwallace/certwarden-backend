@@ -74,6 +74,25 @@ func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*privateKey, e
 	return convertedKey, nil
 }
 
-func (privateKeysApp *PrivateKeysApp) dbPutOnePriveKey(id int) error {
+func (privateKeysApp *PrivateKeysApp) dbPutExistingPrivateKey(privateKey privateKey) error {
+	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		private_keys
+	SET
+		name = $1,
+		description = $2,
+		updated_at = $3
+	WHERE
+		id = $4`
+
+	_, err := privateKeysApp.Database.ExecContext(ctx, query,
+		privateKey.Name, privateKey.Description, privateKey.UpdatedAt, privateKey.ID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

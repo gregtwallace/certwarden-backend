@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -84,8 +85,30 @@ func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r 
 	}
 	///
 
+	// load fields that are permitted to be updated
+	var privateKey privateKey
+	privateKey.ID, err = strconv.Atoi(payload.ID)
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid id -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+	privateKey.Name = payload.Name
+	privateKey.Description = payload.Description
+	privateKey.UpdatedAt = int(time.Now().Unix())
+
+	err = privateKeysApp.dbPutExistingPrivateKey(privateKey)
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PutOne: database error -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
 	// TODO Update the database and return a proper response to the client
-	utils.WriteJSON(w, http.StatusOK, payload, "payload")
+	response := jsonResp{
+		OK: true,
+	}
+	utils.WriteJSON(w, http.StatusOK, response, "response")
 
 }
 

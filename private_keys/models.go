@@ -100,3 +100,9 @@ type privateKeyPayload struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
+
+// Response backend sends in response to PUT/POST
+type jsonResp struct {
+	OK      bool   `json:"ok"`
+	Message string `json:"message"`
+}
