@@ -84,16 +84,16 @@ func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r 
 	///
 
 	// load fields that are permitted to be updated
-	var privateKey privateKey
-	privateKey.ID, err = strconv.Atoi(payload.ID)
+	var privateKey privateKeyDb
+	privateKey.id, err = strconv.Atoi(payload.ID)
 	if err != nil {
 		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
-	privateKey.Name = payload.Name
-	privateKey.Description = payload.Description
-	privateKey.UpdatedAt = int(time.Now().Unix())
+	privateKey.name = payload.Name
+	privateKey.description.String = payload.Description
+	privateKey.updatedAt = int(time.Now().Unix())
 
 	err = privateKeysApp.dbPutExistingPrivateKey(privateKey)
 	if err != nil {

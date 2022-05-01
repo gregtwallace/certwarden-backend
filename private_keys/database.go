@@ -75,7 +75,7 @@ func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*privateKey, e
 	return convertedKey, nil
 }
 
-func (privateKeysApp *PrivateKeysApp) dbPutExistingPrivateKey(privateKey privateKey) error {
+func (privateKeysApp *PrivateKeysApp) dbPutExistingPrivateKey(privateKey privateKeyDb) error {
 	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
 	defer cancel()
 
@@ -90,7 +90,10 @@ func (privateKeysApp *PrivateKeysApp) dbPutExistingPrivateKey(privateKey private
 		id = $4`
 
 	_, err := privateKeysApp.Database.ExecContext(ctx, query,
-		privateKey.Name, privateKey.Description, privateKey.UpdatedAt, privateKey.ID)
+		privateKey.name,
+		privateKey.description.String,
+		privateKey.updatedAt,
+		privateKey.id)
 	if err != nil {
 		return err
 	}
