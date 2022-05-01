@@ -17,13 +17,7 @@ func isIdMatch(idParam string, idPayload string) error {
 
 // IsIdNewValid returns an error if not valid, nil if valid
 // -1 is the only valid new ID
-func IsIdValidNew(idParam string, idPayload string) error {
-	// check the payload and the URI match
-	err := isIdMatch(idParam, idPayload)
-	if err != nil {
-		return err
-	}
-
+func IsIdValidNew(idPayload string) error {
 	idPayloadInt, err := strconv.Atoi(idPayload)
 	if err != nil {
 		return err

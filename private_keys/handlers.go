@@ -2,10 +2,8 @@ package private_keys
 
 import (
 	"encoding/json"
-	"errors"
 	"legocerthub-backend/utils"
 	"net/http"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -99,20 +97,22 @@ func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r 
 
 	err = privateKeysApp.dbPutExistingPrivateKey(privateKey)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PutOne: database error -- err: %s", err)
+		privateKeysApp.Logger.Printf("privatekeys: PutOne: failed to write to db -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
-	// TODO Update the database and return a proper response to the client
 	response := jsonResp{
 		OK: true,
 	}
-	utils.WriteJSON(w, http.StatusOK, response, "response")
-
+	err = utils.WriteJSON(w, http.StatusOK, response, "response")
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PutOne: write json failed -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
 }
 
-// TODO
 // Post (create) a new single private key in DB
 func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r *http.Request) {
 	var payload privateKeyPayload
@@ -123,35 +123,61 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 		return
 	}
 
-	// do validation
+	/// do validation
 	// id
-	id, err := strconv.Atoi(payload.ID)
+	err = utils.IsIdValidNew(payload.ID)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PostNew: invalid id param -- err: %s", err)
+		privateKeysApp.Logger.Printf("privatekeys: PostNew: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
-		return
-	} else if id != -1 {
-		// the only valid 'new' id is -1
-		privateKeysApp.Logger.Println("privatekeys: PostNew: invalid id")
-		utils.WriteErrorJSON(w, errors.New("invalid id"))
 		return
 	}
 	// name
-
-	// TODO: Stopped around here
-
-	regex := "/[^-_.~A-z0-9]|[\\^]/g"
-	valid, err := regexp.Match(regex, []byte(payload.Name))
+	err = utils.IsNameValid(payload.Name)
 	if err != nil {
-		privateKeysApp.Logger.Println("privatekeys: PostNew: invalid name")
-		utils.WriteErrorJSON(w, errors.New("invalid name"))
+		privateKeysApp.Logger.Printf("privatekeys: PostNew: invalid name -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
 	}
-
-	err = utils.WriteJSON(w, http.StatusOK, valid, "temp")
+	// check db for duplicate name? probably unneeded as sql will error on insert
+	// algorithm
+	_, err = keyAlgorithmByValue(payload.AlgorithmValue)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PostOne: temp error -- err: %s", err)
+		privateKeysApp.Logger.Printf("privatekeys: PostNew: invalid algorithm value -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+	// TODO PEM Content and PEM File and Logic to ensure only 1 of the 3.
+	///
+
+	// load fields
+	var privateKey privateKeyDb
+	privateKey.name = payload.Name
+	privateKey.description.String = payload.Description
+	privateKey.algorithmValue = payload.AlgorithmValue
+	apiKey, err := utils.GenerateApiKey()
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to generate api key -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+	privateKey.apiKey = apiKey
+	privateKey.createdAt = int(time.Now().Unix())
+	privateKey.updatedAt = privateKey.createdAt
+
+	err = privateKeysApp.dbPostNewPrivateKey(privateKey)
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to write to db -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
+	response := jsonResp{
+		OK: true,
+	}
+	err = utils.WriteJSON(w, http.StatusOK, response, "response")
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: PostNew: write json failed -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
 }

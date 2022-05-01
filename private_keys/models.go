@@ -96,9 +96,10 @@ func (sqlPrivateKey *privateKeyDb) privateKeyDbToPk() (*privateKey, error) {
 
 // private key payload from PUT/POST
 type privateKeyPayload struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	Description    string `json:"description"`
+	AlgorithmValue string `json:"algorithm.value"`
 }
 
 // Response backend sends in response to PUT/POST
