@@ -2,7 +2,6 @@ package private_keys
 
 import (
 	"context"
-	"legocerthub-backend/utils"
 )
 
 func (privateKeysApp *PrivateKeysApp) dbGetAllPrivateKeys() ([]*privateKey, error) {
@@ -110,14 +109,11 @@ func (privateKeysApp *PrivateKeysApp) dbPostNewPrivateKey(privateKey privateKeyD
 	VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 
-	// TODO Proper Key Gen / Handling
-	pem, _ := utils.GenerateApiKey()
-
 	_, err := privateKeysApp.Database.ExecContext(ctx, query,
 		privateKey.name,
-		privateKey.description,
+		privateKey.description.String,
 		privateKey.algorithmValue,
-		pem,
+		privateKey.pem,
 		privateKey.apiKey,
 		privateKey.createdAt,
 		privateKey.updatedAt,

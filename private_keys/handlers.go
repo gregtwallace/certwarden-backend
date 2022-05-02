@@ -137,12 +137,11 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 		privateKeysApp.Logger.Printf("privatekeys: PostNew: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
-	}
-	// check db for duplicate name? probably unneeded as sql will error on insert
-	// algorithm
-	_, err = keyAlgorithmByValue(payload.AlgorithmValue)
+	} // check db for duplicate name? probably unneeded as sql will error on insert
+	// algorithm - returns error if value is invalid, generates key if valid
+	pem, err := generatePrivateKeyPem(payload.AlgorithmValue)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PostNew: invalid algorithm value -- err: %s", err)
+		privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to generate key pem -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -154,6 +153,7 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 	privateKey.name = payload.Name
 	privateKey.description.String = payload.Description
 	privateKey.algorithmValue = payload.AlgorithmValue
+	privateKey.pem = pem
 	apiKey, err := utils.GenerateApiKey()
 	if err != nil {
 		privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to generate api key -- err: %s", err)
