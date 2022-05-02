@@ -124,3 +124,25 @@ func (privateKeysApp *PrivateKeysApp) dbPostNewPrivateKey(privateKey privateKeyD
 
 	return nil
 }
+
+// delete a private key from the database
+func (privateKeysApp *PrivateKeysApp) dbDeletePrivateKey(id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
+	defer cancel()
+
+	query := `
+	DELETE FROM
+		private_keys
+	WHERE
+		id = $1
+	`
+
+	// TODO: Ensure can't delete a key that is in use on an account or certificate
+
+	_, err := privateKeysApp.Database.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

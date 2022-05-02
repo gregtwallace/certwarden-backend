@@ -24,6 +24,7 @@ func (app *Application) Routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys/", privateKeys.PostNewPrivateKey)
 	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys/:id", privateKeys.GetOnePrivateKey)
 	router.HandlerFunc(http.MethodPut, "/api/v1/privatekeys/:id", privateKeys.PutOnePrivateKey)
+	router.HandlerFunc(http.MethodDelete, "/api/v1/privatekeys/:id", privateKeys.DeletePrivateKey)
 
 	// acme accounts definition and handlers
 	acmeAccounts := acme_accounts.AcmeAccountsApp{

@@ -176,7 +176,36 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 	}
 	err = utils.WriteJSON(w, http.StatusOK, response, "response")
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PostNew: write json failed -- err: %s", err)
+		privateKeysApp.Logger.Printf("privatekeys: PostNew: write response json failed -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+}
+
+// delete a private key
+func (privateKeysApp *PrivateKeysApp) DeletePrivateKey(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+
+	id, err := strconv.Atoi(params.ByName("id"))
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: Delete: id param error -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	err = privateKeysApp.dbDeletePrivateKey(id)
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: Delete: failed to db delete -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	response := jsonResp{
+		OK: true,
+	}
+	err = utils.WriteJSON(w, http.StatusOK, response, "response")
+	if err != nil {
+		privateKeysApp.Logger.Printf("privatekeys: Delete: write response json failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
