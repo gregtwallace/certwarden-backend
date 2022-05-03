@@ -36,7 +36,7 @@ func (app *Application) CreateDBTables() error {
 	// private_keys
 	query := `CREATE TABLE IF NOT EXISTS private_keys (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-		name text NOT NULL UNIQUE,
+		name text NOT NULL UNIQUE COLLATE NOCASE,
 		description text,
 		algorithm text NOT NULL,
 		pem text NOT NULL UNIQUE,
@@ -55,7 +55,7 @@ func (app *Application) CreateDBTables() error {
 	query = `CREATE TABLE IF NOT EXISTS acme_accounts (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		private_key_id integer NOT NULL,
-		name text NOT NULL UNIQUE,
+		name text NOT NULL UNIQUE COLLATE NOCASE,
 		description text,
 		email text NOT NULL,
 		accepted_tos boolean DEFAULT 0,
@@ -79,7 +79,7 @@ func (app *Application) CreateDBTables() error {
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		private_key_id integer NOT NULL,
 		acme_account_id integer NOT NULL,
-		name text NOT NULL UNIQUE,
+		name text NOT NULL UNIQUE COLLATE NOCASE,
 		description text,
 		challenge_type integer NOT NULL,
 		subject text NOT NULL,
