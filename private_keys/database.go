@@ -2,6 +2,7 @@ package private_keys
 
 import (
 	"context"
+	"errors"
 )
 
 func (privateKeysApp *PrivateKeysApp) dbGetAllPrivateKeys() ([]*privateKey, error) {
@@ -97,6 +98,8 @@ func (privateKeysApp *PrivateKeysApp) dbPutExistingPrivateKey(privateKey private
 		return err
 	}
 
+	// TODO: Handle 0 rows updated.
+
 	return nil
 }
 
@@ -139,9 +142,16 @@ func (privateKeysApp *PrivateKeysApp) dbDeletePrivateKey(id int) error {
 
 	// TODO: Ensure can't delete a key that is in use on an account or certificate
 
-	_, err := privateKeysApp.Database.ExecContext(ctx, query, id)
+	result, err := privateKeysApp.Database.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
+	}
+	resultRows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if resultRows == 0 {
+		return errors.New("privatekeys: Delete: failed to db delete -- 0 rows changed")
 	}
 
 	return nil
