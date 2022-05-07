@@ -2,6 +2,7 @@ package private_keys
 
 import (
 	"encoding/json"
+	"errors"
 	"legocerthub-backend/utils"
 	"net/http"
 	"strconv"
@@ -138,28 +139,58 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 		utils.WriteErrorJSON(w, err)
 		return
 	} // check db for duplicate name? probably unneeded as sql will error on insert
-	// algorithm - returns error if value is invalid, generates key if valid
-	pem, err := generatePrivateKeyPem(payload.AlgorithmValue)
-	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to generate key pem -- err: %s", err)
+
+	/// key add method
+	// error if no method specified
+	if (payload.AlgorithmValue == "") && (payload.PemContent == "") {
+		err = errors.New("privatekeys: PostNew: no add method specified")
+		privateKeysApp.Logger.Println(err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
-	// TODO PEM Content and PEM File and Logic to ensure only 1 of the 3.
+	// error if more than one method specified
+	if (payload.AlgorithmValue != "") && (payload.PemContent != "") {
+		err = errors.New("privatekeys: PostNew: multiple add methods specified")
+		privateKeysApp.Logger.Println(err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+	// generate or verify the key
+	var pem, algorithmValue string
+	// generate with algorithm, error if fails
+	if payload.AlgorithmValue != "" {
+		pem, err = generatePrivateKeyPem(payload.AlgorithmValue)
+		if err != nil {
+			privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to generate key pem -- err: %s", err)
+			utils.WriteErrorJSON(w, err)
+			return
+		}
+		algorithmValue = payload.AlgorithmValue
+	} else if payload.PemContent != "" {
+		// pem inputted - verify pem and determine algorithm
+		pem, algorithmValue, err = validatePrivateKeyPem(payload.PemContent)
+		if err != nil {
+			privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to verify pem -- err: %s", err)
+			utils.WriteErrorJSON(w, err)
+			return
+		}
+	}
 	///
 
-	// load fields
-	var privateKey privateKeyDb
-	privateKey.name = payload.Name
-	privateKey.description.String = payload.Description
-	privateKey.algorithmValue = payload.AlgorithmValue
-	privateKey.pem = pem
+	// generate api key
 	apiKey, err := utils.GenerateApiKey()
 	if err != nil {
 		privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to generate api key -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
+
+	// load fields
+	var privateKey privateKeyDb
+	privateKey.name = payload.Name
+	privateKey.description.String = payload.Description
+	privateKey.algorithmValue = algorithmValue
+	privateKey.pem = pem
 	privateKey.apiKey = apiKey
 	privateKey.createdAt = int(time.Now().Unix())
 	privateKey.updatedAt = privateKey.createdAt

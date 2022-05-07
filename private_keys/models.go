@@ -63,4 +63,5 @@ type privateKeyPayload struct {
 	Name           string `json:"name"`
 	Description    string `json:"description"`
 	AlgorithmValue string `json:"algorithm.value"`
+	PemContent     string `json:"pem"`
 }

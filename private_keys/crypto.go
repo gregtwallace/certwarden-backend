@@ -8,15 +8,19 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"legocerthub-backend/utils"
 )
 
 // type to hold key algorithms
 type algorithm struct {
-	Value string `json:"value"`
-	Name  string `json:"name"`
+	Value             string `json:"value"`
+	Name              string `json:"name"`
+	keyType           string `json:"-"`
+	bits              int    `json:"-"`
+	ellipticCurveName string `json:"-"`
 }
 
-// define the known algorithm structs
+// define all known algorithms within their struct
 // these are used to populate the 'Name' field in API data
 // this does not necessarily need to be limited to supported generation algos
 // the Value must be unique
@@ -24,24 +28,34 @@ type algorithm struct {
 func listOfAlgorithms() []algorithm {
 	return []algorithm{
 		{
-			Value: "rsa2048",
-			Name:  "RSA 2048-bit",
+			Value:   "rsa2048",
+			Name:    "RSA 2048-bit",
+			keyType: "RSA",
+			bits:    2048,
 		},
 		{
-			Value: "rsa3072",
-			Name:  "RSA 3072-bit",
+			Value:   "rsa3072",
+			Name:    "RSA 3072-bit",
+			keyType: "RSA",
+			bits:    3072,
 		},
 		{
-			Value: "rsa4096",
-			Name:  "RSA 4096-bit",
+			Value:   "rsa4096",
+			Name:    "RSA 4096-bit",
+			keyType: "RSA",
+			bits:    4096,
 		},
 		{
-			Value: "ecdsap256",
-			Name:  "ECDSA P-256",
+			Value:             "ecdsap256",
+			Name:              "ECDSA P-256",
+			keyType:           "ECDSA",
+			ellipticCurveName: "P-256",
 		},
 		{
-			Value: "ecdsap384",
-			Name:  "ECDSA P-384",
+			Value:             "ecdsap384",
+			Name:              "ECDSA P-384",
+			keyType:           "ECDSA",
+			ellipticCurveName: "P-384",
 		},
 	}
 }
@@ -61,6 +75,28 @@ func algorithmByValue(dbValue string) algorithm {
 		Value: "",
 		Name:  "Unknown",
 	}
+}
+
+// function to return algorithm value for an RSA algorithm of specified bits
+// returns string containing the value
+func rsaAlgorithmByBits(bits int) (string, error) {
+	for _, item := range listOfAlgorithms() {
+		if (item.keyType == "RSA") && (item.bits == bits) {
+			return item.Value, nil
+		}
+	}
+	return "", errors.New("Unsupported RSA algorithm")
+}
+
+// function to return algorithm value for an ECDSA algorithm with specified curve name
+// returns string containing the value
+func ecdsaAlgorithmByCurve(curveName string) (string, error) {
+	for _, item := range listOfAlgorithms() {
+		if (item.keyType == "ECDSA") && (item.ellipticCurveName == curveName) {
+			return item.Value, nil
+		}
+	}
+	return "", errors.New("Unsupported ECDSA algorithm")
 }
 
 // Generate a key in PEM format based on the algorith value
@@ -137,4 +173,76 @@ func generateECDSAPrivateKeyPem(curve elliptic.Curve) (string, error) {
 	privateKeyPem := pem.EncodeToMemory(privateKeyBlock)
 
 	return string(privateKeyPem), nil
+}
+
+// Parses a pemBlock to peform basic sanity check and determine key type and bit length, and
+// returns a string with the algorithmValue, and
+//		an error, if there is one
+func privateKeyAlgorithm(pemBlock *pem.Block) (string, error) {
+	switch pemBlock.Type {
+	case "RSA PRIVATE KEY": // PKCS1
+		privateKey, err := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
+		if err != nil {
+			return "", err
+		}
+
+		// basic sanity check
+		err = privateKey.Validate()
+		if err != nil {
+			return "", err
+		}
+
+		// find algorithm in list of supported algorithms
+		algorithmValue, err := rsaAlgorithmByBits(privateKey.N.BitLen())
+		if err != nil {
+			return "", err
+		}
+		return algorithmValue, nil
+
+	case "EC PRIVATE KEY": // SEC1, ASN.1
+		privateKey, err := x509.ParseECPrivateKey(pemBlock.Bytes)
+		if err != nil {
+			return "", err
+		}
+
+		// TODO: basic sanity check?
+
+		// find algorithm in list of supported algorithms
+		algorithmValue, err := ecdsaAlgorithmByCurve(privateKey.Curve.Params().Name)
+		if err != nil {
+			return "", err
+		}
+		return algorithmValue, nil
+
+	case "PRIVATE KEY": // PKCS8
+		// TODO
+		return "", errors.New("Unsupported PEM header")
+
+	default:
+		return "", errors.New("Unsupported PEM header")
+	}
+}
+
+// Decodes a PEM key string and then examines the decoded key, and
+// returns a string with the same PEM key that has been sanitized, and
+//		a string with the algorithmValue that identifies the key type and bit length, and
+//		an error, if there is one
+func validatePrivateKeyPem(keyPem string) (string, string, error) {
+	// normalize line breaks and decode
+	pemBlock, rest := pem.Decode(utils.NormalizeNewLines([]byte(keyPem)))
+	if pemBlock == nil {
+		return "", "", errors.New("Failed to decode Pem")
+	}
+	if len(rest) > 0 {
+		return "", "", errors.New("Extraneous data present")
+	}
+
+	algorithmValue, err := privateKeyAlgorithm(pemBlock)
+	if err != nil {
+		return "", "", err
+	}
+
+	recreatedPem := pem.EncodeToMemory(pemBlock)
+
+	return string(recreatedPem), algorithmValue, nil
 }
