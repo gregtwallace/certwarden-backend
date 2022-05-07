@@ -25,10 +25,10 @@ type privateKey struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	Algorithm   algorithm `json:"algorithm"`
-	Pem         string    `json:"pem"`
-	ApiKey      string    `json:"api_key"`
-	CreatedAt   int       `json:"created_at"`
-	UpdatedAt   int       `json:"updated_at"`
+	Pem         string    `json:"pem,omitempty"`
+	ApiKey      string    `json:"api_key,omitempty"`
+	CreatedAt   int       `json:"created_at,omitempty"`
+	UpdatedAt   int       `json:"updated_at,omitempty"`
 }
 
 // a single private key, as database table fields

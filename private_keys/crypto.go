@@ -13,12 +13,12 @@ import (
 
 // type to hold key algorithms
 type algorithm struct {
-	Value             string `json:"value"`
-	Name              string `json:"name"`
-	keyType           string `json:"-"`
-	bitLen            int    `json:"-"`
-	ellipticCurveName string `json:"-"`
-	ellipticCurveFunc func() elliptic.Curve
+	Value             string                `json:"value"`
+	Name              string                `json:"name"`
+	keyType           string                `json:"-"`
+	bitLen            int                   `json:"-"`
+	ellipticCurveName string                `json:"-"`
+	ellipticCurveFunc func() elliptic.Curve `json:"-"`
 }
 
 // define all known algorithms within their struct
