@@ -16,8 +16,9 @@ type algorithm struct {
 	Value             string `json:"value"`
 	Name              string `json:"name"`
 	keyType           string `json:"-"`
-	bits              int    `json:"-"`
+	bitLen            int    `json:"-"`
 	ellipticCurveName string `json:"-"`
+	ellipticCurveFunc func() elliptic.Curve
 }
 
 // define all known algorithms within their struct
@@ -31,31 +32,33 @@ func listOfAlgorithms() []algorithm {
 			Value:   "rsa2048",
 			Name:    "RSA 2048-bit",
 			keyType: "RSA",
-			bits:    2048,
+			bitLen:  2048,
 		},
 		{
 			Value:   "rsa3072",
 			Name:    "RSA 3072-bit",
 			keyType: "RSA",
-			bits:    3072,
+			bitLen:  3072,
 		},
 		{
 			Value:   "rsa4096",
 			Name:    "RSA 4096-bit",
 			keyType: "RSA",
-			bits:    4096,
+			bitLen:  4096,
 		},
 		{
 			Value:             "ecdsap256",
 			Name:              "ECDSA P-256",
 			keyType:           "ECDSA",
 			ellipticCurveName: "P-256",
+			ellipticCurveFunc: elliptic.P256,
 		},
 		{
 			Value:             "ecdsap384",
 			Name:              "ECDSA P-384",
 			keyType:           "ECDSA",
 			ellipticCurveName: "P-384",
+			ellipticCurveFunc: elliptic.P384,
 		},
 	}
 }
@@ -81,7 +84,7 @@ func algorithmByValue(dbValue string) algorithm {
 // returns string containing the value
 func rsaAlgorithmByBits(bits int) (string, error) {
 	for _, item := range listOfAlgorithms() {
-		if (item.keyType == "RSA") && (item.bits == bits) {
+		if (item.keyType == "RSA") && (item.bitLen == bits) {
 			return item.Value, nil
 		}
 	}
@@ -103,33 +106,14 @@ func ecdsaAlgorithmByCurve(curveName string) (string, error) {
 // The cases do not necessarily need to match listOfAlgorithms()
 // This MUST be kept in sync with the front end list of generatable algos
 func generatePrivateKeyPem(algorithmValue string) (string, error) {
-	var privateKeyPem string
-	var err error
+	algorithm := algorithmByValue(algorithmValue)
 
-	switch algorithmValue {
-	case "rsa2048":
-		privateKeyPem, err = generateRSAPrivateKeyPem(2048)
-		break
-	case "rsa3072":
-		privateKeyPem, err = generateRSAPrivateKeyPem(3072)
-		break
-	case "rsa4096":
-		privateKeyPem, err = generateRSAPrivateKeyPem(4096)
-		break
-	case "ecdsap256":
-		privateKeyPem, err = generateECDSAPrivateKeyPem(elliptic.P256())
-		break
-	case "ecdsap384":
-		privateKeyPem, err = generateECDSAPrivateKeyPem(elliptic.P384())
-		break
-	default:
-		return "", errors.New("key generation: invalid algorithm value")
+	if algorithm.keyType == "RSA" {
+		return generateRSAPrivateKeyPem(algorithm.bitLen)
+	} else if algorithm.keyType == "ECDSA" {
+		return generateECDSAPrivateKeyPem(algorithm.ellipticCurveFunc())
 	}
-
-	if err != nil {
-		return "", err
-	}
-	return privateKeyPem, nil
+	return "", errors.New("key generation: invalid algorithm value")
 }
 
 // Generate an RSA key of specified number of bits
