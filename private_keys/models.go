@@ -44,16 +44,16 @@ type privateKeyDb struct {
 }
 
 // translate the db object into the api object
-func (sqlPrivateKey *privateKeyDb) privateKeyDbToPk() (*privateKey, error) {
+func (privateKeyDb *privateKeyDb) privateKeyDbToPk() (*privateKey, error) {
 	return &privateKey{
-		ID:          sqlPrivateKey.id,
-		Name:        sqlPrivateKey.name,
-		Description: sqlPrivateKey.description.String,
-		Algorithm:   algorithmByValue(sqlPrivateKey.algorithmValue),
-		Pem:         sqlPrivateKey.pem,
-		ApiKey:      sqlPrivateKey.apiKey,
-		CreatedAt:   sqlPrivateKey.createdAt,
-		UpdatedAt:   sqlPrivateKey.updatedAt,
+		ID:          privateKeyDb.id,
+		Name:        privateKeyDb.name,
+		Description: privateKeyDb.description.String,
+		Algorithm:   algorithmByValue(privateKeyDb.algorithmValue),
+		Pem:         privateKeyDb.pem,
+		ApiKey:      privateKeyDb.apiKey,
+		CreatedAt:   privateKeyDb.createdAt,
+		UpdatedAt:   privateKeyDb.updatedAt,
 	}, nil
 }
 
