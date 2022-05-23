@@ -12,7 +12,7 @@ func (app *Application) Routes() http.Handler {
 	router := httprouter.New()
 
 	// app handlers (app already defined)
-	router.HandlerFunc(http.MethodGet, "/status", app.statusHandler)
+	router.HandlerFunc(http.MethodGet, "/api/status", app.statusHandler)
 
 	// private keys definition and handlers
 	privateKeys := private_keys.PrivateKeysApp{

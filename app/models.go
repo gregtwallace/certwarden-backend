@@ -29,8 +29,14 @@ type Application struct {
 	Acme   AppAcme
 }
 
+type appStatusDirectories struct {
+	Production string `json:"prod"`
+	Staging    string `json:"staging"`
+}
+
 type appStatus struct {
-	Status      string `json:"status"`
-	Environment string `json:"environment"`
-	Version     string `json:"version"`
+	Status          string               `json:"status"`
+	Environment     string               `json:"environment"`
+	Version         string               `json:"version"`
+	AcmeDirectories appStatusDirectories `json:"acme_directories"`
 }

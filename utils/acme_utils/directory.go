@@ -8,8 +8,8 @@ import (
 )
 
 // Directory URLs for Let's Encrypt
-const leProdDirectory string = "https://acme-v02.api.letsencrypt.org/directory"
-const leStagingDirectory string = "https://acme-staging-v02.api.letsencrypt.org/directory"
+const LeProdDirectory string = "https://acme-v02.api.letsencrypt.org/directory"
+const LeStagingDirectory string = "https://acme-staging-v02.api.letsencrypt.org/directory"
 
 // Directory struct that holds the returned data from querying directory URL
 type AcmeDirectory struct {
@@ -34,9 +34,9 @@ func GetAcmeDirectory(env string) (AcmeDirectory, error) {
 
 	switch env {
 	case "prod":
-		response, err = http.Get(leProdDirectory)
+		response, err = http.Get(LeProdDirectory)
 	case "staging":
-		response, err = http.Get(leStagingDirectory)
+		response, err = http.Get(LeStagingDirectory)
 	default:
 		return AcmeDirectory{}, errors.New("invalid environment")
 	}
