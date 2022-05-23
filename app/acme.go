@@ -14,7 +14,7 @@ type AppAcme struct {
 
 // UpdateDirectory updates the directory for the specified environment. It
 // returns an error if it can't update the specified directory.
-func (app *Application) updateDirectory(env string) error {
+func (app *Application) updateDirectory(env string, err chan<- error) {
 	var destinationDirAddr *acme_utils.AcmeDirectory
 
 	switch env {
@@ -23,15 +23,17 @@ func (app *Application) updateDirectory(env string) error {
 	case "staging":
 		destinationDirAddr = &app.Acme.StagingDir
 	default:
-		return errors.New("invalid environment")
+		err <- errors.New("invalid environment")
+		return
 	}
 
 	app.Logger.Printf("Fetching latest directory from ACME for %s environment.", env)
 
-	dir, err := acme_utils.GetAcmeDirectory(env)
-	if err != nil {
+	dir, anErr := acme_utils.GetAcmeDirectory(env)
+	err <- anErr
+	if anErr != nil {
 		app.Logger.Printf("Error updating %s's directory.", env)
-		return err
+		return
 	} else if reflect.DeepEqual(dir, *destinationDirAddr) {
 		app.Logger.Printf("%s environment directory already up to date.", env)
 	} else {
@@ -39,23 +41,25 @@ func (app *Application) updateDirectory(env string) error {
 		app.Logger.Printf("%s environment directory updated succesfully.", env)
 	}
 
-	return nil
+	return
 }
 
 // UpdateAllDirectories will attempt to update both the prod and staging
 // directories.  It returns an error if one or both updates are not
 // successful.
 func (app *Application) UpdateAllDirectories() error {
+	errs := make(chan error)
+
 	app.Logger.Println("Updating all directories from ACME upstream.")
 
 	// production
-	prodErr := app.updateDirectory("prod")
+	go app.updateDirectory("prod", errs)
 
 	// staging
-	stagingErr := app.updateDirectory("staging")
+	go app.updateDirectory("staging", errs)
 
 	// return an error if any directory failed to update
-	if prodErr != nil || stagingErr != nil {
+	if <-errs != nil || <-errs != nil {
 		return errors.New("Error(s) updating one or more ACME directories.")
 	}
 
@@ -74,14 +78,14 @@ func (app *Application) BackgroundDirManagement() {
 
 	for {
 		time.Sleep(waitTime)
+
 		err := app.UpdateAllDirectories()
 		if err != nil {
-			app.Logger.Printf("error: %v, will retry shortly.", err)
+			app.Logger.Printf("error: %v, will retry directory update shortly.", err)
 			// if something failed, decrease the wait to try again
 			waitTime = failWaitTime
 		} else {
 			waitTime = defaultWaitTime
 		}
-		app.Logger.Println("Checking directories again.")
 	}
 }

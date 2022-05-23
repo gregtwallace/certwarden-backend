@@ -15,14 +15,47 @@ type AcmeAccountsApp struct {
 
 // a single acmeAccount
 type acmeAccount struct {
-	ID             int       `json:"id"`
-	PrivateKeyID   int       `json:"private_key_id"`
-	PrivateKeyName string    `json:"private_key_name"`
-	Name           string    `json:"name"`
-	Email          string    `json:"email"`
-	Description    string    `json:"description"`
-	AcceptedTos    bool      `json:"accepted_tos"`
-	IsStaging      bool      `json:"is_staging"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID             int    `json:"id"`
+	Name           string `json:"name"`
+	PrivateKeyID   int    `json:"private_key_id"`
+	PrivateKeyName string `json:"private_key_name"`
+	Description    string `json:"description"`
+	Status         string `json:"status"`
+	Email          string `json:"email"`
+	AcceptedTos    bool   `json:"accepted_tos,omitempty"`
+	IsStaging      bool   `json:"is_staging"`
+	CreatedAt      int    `json:"created_at,omitempty"`
+	UpdatedAt      int    `json:"updated_at,omitempty"`
+}
+
+// a single private key, as database table fields
+type acmeAccountDb struct {
+	id             int
+	name           string
+	privateKeyId   int
+	privateKeyName sql.NullString
+	description    sql.NullString
+	status         sql.NullString
+	email          sql.NullString
+	acceptedTos    sql.NullBool
+	isStaging      sql.NullBool
+	createdAt      int
+	updatedAt      int
+}
+
+// translate the db object into the api object
+func (acmeAccountDb *acmeAccountDb) acmeAccountDbToAcc() (*acmeAccount, error) {
+	return &acmeAccount{
+		ID:             acmeAccountDb.id,
+		Name:           acmeAccountDb.name,
+		PrivateKeyID:   acmeAccountDb.privateKeyId,
+		PrivateKeyName: acmeAccountDb.privateKeyName.String,
+		Description:    acmeAccountDb.description.String,
+		Status:         acmeAccountDb.status.String,
+		Email:          acmeAccountDb.email.String,
+		AcceptedTos:    acmeAccountDb.acceptedTos.Bool,
+		IsStaging:      acmeAccountDb.isStaging.Bool,
+		CreatedAt:      acmeAccountDb.createdAt,
+		UpdatedAt:      acmeAccountDb.updatedAt,
+	}, nil
 }

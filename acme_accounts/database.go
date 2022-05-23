@@ -9,7 +9,7 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetAllAcmeAccounts() ([]*acmeAccount, 
 	ctx, cancel := context.WithTimeout(context.Background(), acmeAccountsApp.Timeout)
 	defer cancel()
 
-	query := `SELECT aa.id, pk.id, pk.name, aa.name, aa.description, aa.email, aa.accepted_tos, aa.is_staging 
+	query := `SELECT aa.id, aa.name, pk.id, pk.name, aa.description, aa.status, aa.email, aa.is_staging 
 	FROM
 		acme_accounts aa
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
@@ -24,23 +24,29 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetAllAcmeAccounts() ([]*acmeAccount, 
 
 	var allAccounts []*acmeAccount
 	for rows.Next() {
-		var oneAccount acmeAccount
+		var oneAccount acmeAccountDb
 		err = rows.Scan(
-			&oneAccount.ID,
-			&oneAccount.PrivateKeyID,
-			&oneAccount.PrivateKeyName,
-			&oneAccount.Name,
-			&oneAccount.Description,
-			&oneAccount.Email,
-			&oneAccount.AcceptedTos,
-			&oneAccount.IsStaging,
+			&oneAccount.id,
+			&oneAccount.name,
+			&oneAccount.privateKeyId,
+			&oneAccount.privateKeyName.String,
+			&oneAccount.description.String,
+			&oneAccount.status.String,
+			&oneAccount.email.String,
+			&oneAccount.isStaging,
 		)
 		if err != nil {
 			log.Print(err)
 			return nil, err
 		}
-		// TO DO join the key info
-		allAccounts = append(allAccounts, &oneAccount)
+
+		convertedAccount, err := oneAccount.acmeAccountDbToAcc()
+		if err != nil {
+			log.Print(err)
+			return nil, err
+		}
+
+		allAccounts = append(allAccounts, convertedAccount)
 	}
 
 	return allAccounts, nil
