@@ -26,6 +26,7 @@ type Application struct {
 	Config Config
 	Logger *log.Logger
 	DB     AppDb
+	Acme   AppAcme
 }
 
 type appStatus struct {

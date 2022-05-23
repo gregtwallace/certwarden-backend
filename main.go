@@ -31,6 +31,8 @@ func main() {
 	}
 	defer db.Close()
 
+	// TODO: setup nonce management
+
 	// configure the Application
 	app := &app.Application{
 		Config: cfg,
@@ -41,8 +43,19 @@ func main() {
 		},
 	}
 
+	// populate directory structs on the app
+	err = app.UpdateAllDirectories()
+	if err != nil {
+		logger.Fatalln(err)
+	}
+	// & start background process to check for updates periodically
+	go app.BackgroundDirManagement()
+
 	// create tables in the database if they don't exist
-	app.CreateDBTables()
+	err = app.CreateDBTables()
+	if err != nil {
+		logger.Fatalln(err)
+	}
 
 	// configure the webserver
 	srv := &http.Server{
