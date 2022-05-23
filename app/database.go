@@ -54,14 +54,16 @@ func (app *Application) CreateDBTables() error {
 	// acme_accounts
 	query = `CREATE TABLE IF NOT EXISTS acme_accounts (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-		private_key_id integer NOT NULL,
 		name text NOT NULL UNIQUE COLLATE NOCASE,
+		private_key_id integer NOT NULL,
 		description text,
+		status text NOT NULL DEFAULT 'Unknown',
 		email text NOT NULL,
 		accepted_tos boolean DEFAULT 0,
 		is_staging boolean DEFAULT 0,
 		created_at datetime NOT NULL,
 		updated_at datetime NOT NULL,
+		kid text UNIQUE,
 		FOREIGN KEY (private_key_id)
 			REFERENCES private_keys (id)
 				ON DELETE CASCADE

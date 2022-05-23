@@ -18,7 +18,7 @@ type acmeAccount struct {
 	ID             int    `json:"id"`
 	Name           string `json:"name"`
 	PrivateKeyID   int    `json:"private_key_id"`
-	PrivateKeyName string `json:"private_key_name"`
+	PrivateKeyName string `json:"private_key_name"` // comes from a join with key table
 	Description    string `json:"description"`
 	Status         string `json:"status"`
 	Email          string `json:"email"`
@@ -26,6 +26,7 @@ type acmeAccount struct {
 	IsStaging      bool   `json:"is_staging"`
 	CreatedAt      int    `json:"created_at,omitempty"`
 	UpdatedAt      int    `json:"updated_at,omitempty"`
+	Kid            string `json:"kid,omitempty"`
 }
 
 // a single private key, as database table fields
@@ -33,7 +34,7 @@ type acmeAccountDb struct {
 	id             int
 	name           string
 	privateKeyId   int
-	privateKeyName sql.NullString
+	privateKeyName sql.NullString // comes from a join with key table
 	description    sql.NullString
 	status         sql.NullString
 	email          sql.NullString
@@ -41,6 +42,7 @@ type acmeAccountDb struct {
 	isStaging      sql.NullBool
 	createdAt      int
 	updatedAt      int
+	kid            sql.NullString
 }
 
 // translate the db object into the api object
@@ -57,5 +59,6 @@ func (acmeAccountDb *acmeAccountDb) acmeAccountDbToAcc() (*acmeAccount, error) {
 		IsStaging:      acmeAccountDb.isStaging.Bool,
 		CreatedAt:      acmeAccountDb.createdAt,
 		UpdatedAt:      acmeAccountDb.updatedAt,
+		Kid:            acmeAccountDb.kid.String,
 	}, nil
 }
