@@ -9,7 +9,7 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetAllAcmeAccounts() ([]*acmeAccount, 
 	ctx, cancel := context.WithTimeout(context.Background(), acmeAccountsApp.Timeout)
 	defer cancel()
 
-	query := `SELECT aa.id, aa.name, pk.id, pk.name, aa.description, aa.status, aa.email, aa.is_staging 
+	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, aa.status, aa.email, aa.is_staging 
 	FROM
 		acme_accounts aa
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
@@ -28,11 +28,11 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetAllAcmeAccounts() ([]*acmeAccount, 
 		err = rows.Scan(
 			&oneAccount.id,
 			&oneAccount.name,
+			&oneAccount.description,
 			&oneAccount.privateKeyId,
-			&oneAccount.privateKeyName.String,
-			&oneAccount.description.String,
-			&oneAccount.status.String,
-			&oneAccount.email.String,
+			&oneAccount.privateKeyName,
+			&oneAccount.status,
+			&oneAccount.email,
 			&oneAccount.isStaging,
 		)
 		if err != nil {
@@ -51,3 +51,60 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetAllAcmeAccounts() ([]*acmeAccount, 
 
 	return allAccounts, nil
 }
+
+func (acmeAccountsApp *AcmeAccountsApp) dbGetOneAcmeAccount(id int) (*acmeAccount, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), acmeAccountsApp.Timeout)
+	defer cancel()
+
+	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, aa.status, aa.email, aa.is_staging,
+	aa.accepted_tos, aa.kid, aa.created_at, aa.updated_at
+	FROM
+		acme_accounts aa
+		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
+	WHERE aa.id = $1
+	ORDER BY aa.id`
+
+	row := acmeAccountsApp.Database.QueryRowContext(ctx, query, id)
+
+	var oneAccount acmeAccountDb
+	err := row.Scan(
+		&oneAccount.id,
+		&oneAccount.name,
+		&oneAccount.description,
+		&oneAccount.privateKeyId,
+		&oneAccount.privateKeyName,
+		&oneAccount.status,
+		&oneAccount.email,
+		&oneAccount.isStaging,
+		&oneAccount.acceptedTos,
+		&oneAccount.kid,
+		&oneAccount.createdAt,
+		&oneAccount.updatedAt,
+	)
+	if err != nil {
+		log.Print(err)
+		return nil, err
+	}
+
+	convertedAccount, err := oneAccount.acmeAccountDbToAcc()
+	if err != nil {
+		return nil, err
+	}
+
+	return convertedAccount, nil
+}
+
+// type acmeAccount struct {
+// 	ID             int    `json:"id"`
+// 	Name           string `json:"name"`
+// 	PrivateKeyID   int    `json:"private_key_id"`
+// 	PrivateKeyName string `json:"private_key_name"` // comes from a join with key table
+// 	Description    string `json:"description"`
+// 	Status         string `json:"status"`
+// 	Email          string `json:"email"`
+// 	AcceptedTos    bool   `json:"accepted_tos,omitempty"`
+// 	IsStaging      bool   `json:"is_staging"`
+// 	CreatedAt      int    `json:"created_at,omitempty"`
+// 	UpdatedAt      int    `json:"updated_at,omitempty"`
+// 	Kid            string `json:"kid,omitempty"`
+// }

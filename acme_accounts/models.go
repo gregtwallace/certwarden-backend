@@ -17,9 +17,9 @@ type AcmeAccountsApp struct {
 type acmeAccount struct {
 	ID             int    `json:"id"`
 	Name           string `json:"name"`
+	Description    string `json:"description"`
 	PrivateKeyID   int    `json:"private_key_id"`
 	PrivateKeyName string `json:"private_key_name"` // comes from a join with key table
-	Description    string `json:"description"`
 	Status         string `json:"status"`
 	Email          string `json:"email"`
 	AcceptedTos    bool   `json:"accepted_tos,omitempty"`
@@ -33,9 +33,9 @@ type acmeAccount struct {
 type acmeAccountDb struct {
 	id             int
 	name           string
+	description    sql.NullString
 	privateKeyId   int
 	privateKeyName sql.NullString // comes from a join with key table
-	description    sql.NullString
 	status         sql.NullString
 	email          sql.NullString
 	acceptedTos    sql.NullBool
@@ -50,9 +50,9 @@ func (acmeAccountDb *acmeAccountDb) acmeAccountDbToAcc() (*acmeAccount, error) {
 	return &acmeAccount{
 		ID:             acmeAccountDb.id,
 		Name:           acmeAccountDb.name,
+		Description:    acmeAccountDb.description.String,
 		PrivateKeyID:   acmeAccountDb.privateKeyId,
 		PrivateKeyName: acmeAccountDb.privateKeyName.String,
-		Description:    acmeAccountDb.description.String,
 		Status:         acmeAccountDb.status.String,
 		Email:          acmeAccountDb.email.String,
 		AcceptedTos:    acmeAccountDb.acceptedTos.Bool,

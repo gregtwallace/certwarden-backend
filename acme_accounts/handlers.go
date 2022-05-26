@@ -1,6 +1,7 @@
 package acme_accounts
 
 import (
+	"errors"
 	"legocerthub-backend/utils"
 	"net/http"
 	"strconv"
@@ -35,13 +36,23 @@ func (acmeAccountsApp *AcmeAccountsApp) GetOneAcmeAccount(w http.ResponseWriter,
 		return
 	}
 
-	acmeAccount := acmeAccount{
-		ID:           id,
-		PrivateKeyID: 1,
-		Name:         "Another Acct",
-		Email:        "something@test.com",
-		Description:  "Staging 1",
-		IsStaging:    true,
+	// if id is -1 (new) provide new account options
+	if id == -1 {
+		// TODO
+		return
+	} else if id < 0 {
+		// if id < 0, it is definitely not valid
+		err = errors.New("acmeaccounts: GetOne: id param is invalid (less than 0 and not -1)")
+		acmeAccountsApp.Logger.Println(err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	acmeAccount, err := acmeAccountsApp.dbGetOneAcmeAccount(id)
+	if err != nil {
+		acmeAccountsApp.Logger.Printf("acmeaccounts: GetOne: db failed -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
 	}
 
 	err = utils.WriteJSON(w, http.StatusOK, acmeAccount, "acme_account")
