@@ -40,6 +40,19 @@ func (privateKeysApp *PrivateKeysApp) GetOnePrivateKey(w http.ResponseWriter, r 
 		return
 	}
 
+	// if id is -1 (new) provide algo options list
+	if id == -1 {
+		algorithms := utils.WrapJSON(listOfAlgorithms(), "key_algorithms")
+		utils.WriteJSON(w, http.StatusOK, algorithms, "private_key_options")
+		return
+	} else if id < 0 {
+		// if id < 0, it is definitely not valid
+		err = errors.New("privatekeys: GetOne: id param is invalid (less than 0 and not -1)")
+		privateKeysApp.Logger.Println(err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
 	key, err := privateKeysApp.dbGetOnePrivateKey(id)
 	if err != nil {
 		privateKeysApp.Logger.Printf("privatekeys: GetOne: db failed -- err: %s", err)

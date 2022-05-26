@@ -5,13 +5,18 @@ import (
 	"net/http"
 )
 
-func WriteJSON(w http.ResponseWriter, status int, data interface{}, wrap string) error {
+func WrapJSON(data interface{}, wrap string) map[string]interface{} {
 	wrapper := make(map[string]interface{})
-
 	wrapper[wrap] = data
 
+	return wrapper
+}
+
+func WriteJSON(w http.ResponseWriter, status int, data interface{}, wrap string) error {
+	wrappedData := WrapJSON(data, wrap)
+
 	// TO-DO: Replace with regular Marshal (and/or add logic for dev vs. prod)
-	json, err := json.MarshalIndent(wrapper, "", "\t")
+	json, err := json.MarshalIndent(wrappedData, "", "\t")
 	if err != nil {
 		return err
 	}
