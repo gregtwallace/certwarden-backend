@@ -34,7 +34,7 @@ type acmeAccountDb struct {
 	id             int
 	name           string
 	description    sql.NullString
-	privateKeyId   int
+	privateKeyId   sql.NullInt32
 	privateKeyName sql.NullString // comes from a join with key table
 	status         sql.NullString
 	email          sql.NullString
@@ -51,7 +51,7 @@ func (acmeAccountDb *acmeAccountDb) acmeAccountDbToAcc() (*acmeAccount, error) {
 		ID:             acmeAccountDb.id,
 		Name:           acmeAccountDb.name,
 		Description:    acmeAccountDb.description.String,
-		PrivateKeyID:   acmeAccountDb.privateKeyId,
+		PrivateKeyID:   int(acmeAccountDb.privateKeyId.Int32),
 		PrivateKeyName: acmeAccountDb.privateKeyName.String,
 		Status:         acmeAccountDb.status.String,
 		Email:          acmeAccountDb.email.String,
