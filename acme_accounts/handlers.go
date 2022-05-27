@@ -109,6 +109,9 @@ func (acmeAccountsApp *AcmeAccountsApp) PutOneAcmeAccount(w http.ResponseWriter,
 	acmeAccount.description.Valid = true
 	acmeAccount.description.String = payload.Description
 
+	acmeAccount.email.Valid = true
+	acmeAccount.email.String = payload.Email
+
 	acmeAccount.updatedAt = int(time.Now().Unix())
 
 	// once tos is accepted, it cannot be un-accepted

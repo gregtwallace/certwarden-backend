@@ -104,14 +104,16 @@ func (acmeAccountsApp *AcmeAccountsApp) dbPutExistingAcmeAccount(acmeAccount acm
 	SET
 		name = $1,
 		description = $2,
-		accepted_tos = case when $3 is null then accepted_tos else $3 end,
-		updated_at = $4
+		email = $3,
+		accepted_tos = case when $4 is null then accepted_tos else $4 end,
+		updated_at = $5
 	WHERE
-		id = $5`
+		id = $6`
 
 	_, err := acmeAccountsApp.Database.ExecContext(ctx, query,
 		acmeAccount.name,
 		acmeAccount.description,
+		acmeAccount.email,
 		acmeAccount.acceptedTos,
 		acmeAccount.updatedAt,
 		acmeAccount.id)

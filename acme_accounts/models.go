@@ -68,5 +68,6 @@ type acmeAccountPayload struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	Email       string `json:"email"`
 	AcceptedTos string `json:"accepted_tos"`
 }
