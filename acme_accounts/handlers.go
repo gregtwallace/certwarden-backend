@@ -34,7 +34,8 @@ func (acmeAccountsApp *AcmeAccountsApp) GetOneAcmeAccount(w http.ResponseWriter,
 	// if id is new, provide some info
 	err := utils.IsIdValidNew(idParam)
 	if err == nil {
-		// to do
+		// TO DO: Build options -- algorithms := utils.WrapJSON(listOfAlgorithms(), "key_algorithms")
+		utils.WriteJSON(w, http.StatusOK, "", "acme_account_options")
 		return
 	}
 
