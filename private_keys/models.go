@@ -59,3 +59,7 @@ type privateKeyPayload struct {
 	AlgorithmValue string `json:"algorithm.value"`
 	PemContent     string `json:"pem"`
 }
+
+type NewPrivateKeyOptions struct {
+	KeyAlgorithms []algorithm `json:"key_algorithms"`
+}

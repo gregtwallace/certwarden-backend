@@ -36,8 +36,9 @@ func (privateKeysApp *PrivateKeysApp) GetOnePrivateKey(w http.ResponseWriter, r 
 	// if id is new provide algo options list
 	err := utils.IsIdValidNew(idParam)
 	if err == nil {
-		algorithms := utils.WrapJSON(listOfAlgorithms(), "key_algorithms")
-		utils.WriteJSON(w, http.StatusOK, algorithms, "private_key_options")
+		newKeyOptions := NewPrivateKeyOptions{}
+		newKeyOptions.KeyAlgorithms = listOfAlgorithms()
+		utils.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
 		return
 	}
 
