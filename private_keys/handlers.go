@@ -36,9 +36,8 @@ func (privateKeysApp *PrivateKeysApp) GetOnePrivateKey(w http.ResponseWriter, r 
 	// if id is new provide algo options list
 	err := utils.IsIdValidNew(idParam)
 	if err == nil {
-		newKeyOptions := NewPrivateKeyOptions{}
-		newKeyOptions.KeyAlgorithms = listOfAlgorithms()
-		utils.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
+		// run the new key options handler if the id is new
+		privateKeysApp.GetNewKeyOptions(w, r)
 		return
 	}
 
@@ -70,6 +69,14 @@ func (privateKeysApp *PrivateKeysApp) GetOnePrivateKey(w http.ResponseWriter, r 
 		utils.WriteErrorJSON(w, err)
 		return
 	}
+}
+
+// Get options for a new private key in our DB and write it as JSON to the API
+func (privateKeysApp *PrivateKeysApp) GetNewKeyOptions(w http.ResponseWriter, r *http.Request) {
+	newKeyOptions := NewPrivateKeyOptions{}
+	newKeyOptions.KeyAlgorithms = listOfAlgorithms()
+
+	utils.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
 }
 
 // Put (update) a single private key in DB
