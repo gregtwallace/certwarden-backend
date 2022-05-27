@@ -109,7 +109,10 @@ func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r 
 		return
 	}
 	privateKey.name = payload.Name
+
+	privateKey.description.Valid = true
 	privateKey.description.String = payload.Description
+
 	privateKey.updatedAt = int(time.Now().Unix())
 
 	err = privateKeysApp.dbPutExistingPrivateKey(privateKey)
@@ -204,7 +207,10 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 	// load fields
 	var privateKey privateKeyDb
 	privateKey.name = payload.Name
+
+	privateKey.description.Valid = true
 	privateKey.description.String = payload.Description
+
 	privateKey.algorithmValue = algorithmValue
 	privateKey.pem = pem
 	privateKey.apiKey = apiKey

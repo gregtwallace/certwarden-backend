@@ -91,7 +91,7 @@ func (privateKeysApp *PrivateKeysApp) dbPutExistingPrivateKey(privateKey private
 
 	_, err := privateKeysApp.Database.ExecContext(ctx, query,
 		privateKey.name,
-		privateKey.description.String,
+		privateKey.description,
 		privateKey.updatedAt,
 		privateKey.id)
 	if err != nil {
@@ -114,7 +114,7 @@ func (privateKeysApp *PrivateKeysApp) dbPostNewPrivateKey(privateKey privateKeyD
 
 	_, err := privateKeysApp.Database.ExecContext(ctx, query,
 		privateKey.name,
-		privateKey.description.String,
+		privateKey.description,
 		privateKey.algorithmValue,
 		privateKey.pem,
 		privateKey.apiKey,
