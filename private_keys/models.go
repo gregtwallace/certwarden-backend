@@ -60,6 +60,8 @@ type privateKeyPayload struct {
 	PemContent     string `json:"pem"`
 }
 
+// new private key options
+// used to return info about valid options when making a new key
 type NewPrivateKeyOptions struct {
 	KeyAlgorithms []algorithm `json:"key_algorithms"`
 }

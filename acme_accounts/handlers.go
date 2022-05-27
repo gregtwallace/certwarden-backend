@@ -35,7 +35,11 @@ func (acmeAccountsApp *AcmeAccountsApp) GetOneAcmeAccount(w http.ResponseWriter,
 	err := utils.IsIdValidNew(idParam)
 	if err == nil {
 		// TO DO: Build options -- algorithms := utils.WrapJSON(listOfAlgorithms(), "key_algorithms")
-		utils.WriteJSON(w, http.StatusOK, "", "acme_account_options")
+		newAccountOptions := NewAcmeAccountOptions{}
+		newAccountOptions.TosUrl = acmeAccountsApp.Acme.ProdDir.Meta.TermsOfService
+		newAccountOptions.StagingTosUrl = acmeAccountsApp.Acme.StagingDir.Meta.TermsOfService
+
+		utils.WriteJSON(w, http.StatusOK, newAccountOptions, "acme_account_options")
 		return
 	}
 

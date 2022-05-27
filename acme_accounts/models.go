@@ -73,3 +73,10 @@ type acmeAccountPayload struct {
 	Email       string `json:"email"`
 	AcceptedTos string `json:"accepted_tos"`
 }
+
+// new account info
+// used to return info about valid options when making a new account
+type NewAcmeAccountOptions struct {
+	TosUrl        string `json:"tos_url"`
+	StagingTosUrl string `json:"staging_tos_url"`
+}
