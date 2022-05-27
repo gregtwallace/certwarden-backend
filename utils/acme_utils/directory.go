@@ -11,21 +11,6 @@ import (
 const LeProdDirectory string = "https://acme-v02.api.letsencrypt.org/directory"
 const LeStagingDirectory string = "https://acme-staging-v02.api.letsencrypt.org/directory"
 
-// Directory struct that holds the returned data from querying directory URL
-type AcmeDirectory struct {
-	NewNonce   string `json:"newNonce"`
-	NewAccount string `json:"newAccount"`
-	NewOrder   string `json:"newOrder"`
-	NewAuthz   string `json:"newAuthz"`
-	RevokeCert string `json:"revokeCert"`
-	KeyChange  string `json:"keyChange"`
-	Meta       struct {
-		CaaIdentities  []string `json:"caaIdentities"`
-		TermsOfService string   `json:"termsOfService"`
-		Website        string   `json:"website"`
-	} `json:"meta"`
-}
-
 // GetAcmeDirectory returns an AcmeDirectory object based on data fetched
 // from an ACME directory URL.
 func GetAcmeDirectory(env string) (AcmeDirectory, error) {

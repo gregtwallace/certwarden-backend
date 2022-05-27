@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"legocerthub-backend/app"
+	"legocerthub-backend/utils/acme_utils"
 
 	"log"
 	"net/http"
@@ -47,6 +48,7 @@ func main() {
 			Database: db,
 			Timeout:  3 * time.Second,
 		},
+		Acme: &acme_utils.Acme{},
 	}
 
 	// populate directory structs on the app

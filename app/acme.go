@@ -7,11 +7,6 @@ import (
 	"time"
 )
 
-type AppAcme struct {
-	ProdDir    acme_utils.AcmeDirectory
-	StagingDir acme_utils.AcmeDirectory
-}
-
 // UpdateDirectory updates the directory for the specified environment. It
 // returns an error if it can't update the specified directory.
 func (app *Application) updateDirectory(env string, err chan<- error) {

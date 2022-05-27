@@ -31,6 +31,7 @@ func (app *Application) Routes() http.Handler {
 		Database: app.DB.Database,
 		Timeout:  app.DB.Timeout,
 		Logger:   app.Logger,
+		Acme:     app.Acme,
 	}
 	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts", acmeAccounts.GetAllAcmeAccounts)
 	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts/:id", acmeAccounts.GetOneAcmeAccount)

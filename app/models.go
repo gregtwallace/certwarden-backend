@@ -2,6 +2,7 @@ package app
 
 import (
 	"database/sql"
+	"legocerthub-backend/utils/acme_utils"
 	"log"
 	"net/url"
 	"time"
@@ -28,7 +29,7 @@ type Application struct {
 	Config Config
 	Logger *log.Logger
 	DB     AppDb
-	Acme   AppAcme
+	Acme   *acme_utils.Acme
 }
 
 type appStatusDirectories struct {

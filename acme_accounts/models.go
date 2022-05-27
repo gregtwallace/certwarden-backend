@@ -2,6 +2,7 @@ package acme_accounts
 
 import (
 	"database/sql"
+	"legocerthub-backend/utils/acme_utils"
 	"log"
 	"time"
 )
@@ -11,6 +12,7 @@ type AcmeAccountsApp struct {
 	Database *sql.DB
 	Timeout  time.Duration
 	Logger   *log.Logger
+	Acme     *acme_utils.Acme
 }
 
 // a single acmeAccount
