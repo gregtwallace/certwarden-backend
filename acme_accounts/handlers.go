@@ -11,6 +11,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// GetAllAcmeAccounts is an http handler that returns all acme accounts in the form of JSON written to w
 func (acmeAccountsApp *AcmeAccountsApp) GetAllAcmeAccounts(w http.ResponseWriter, r *http.Request) {
 
 	accounts, err := acmeAccountsApp.dbGetAllAcmeAccounts()
@@ -28,18 +29,15 @@ func (acmeAccountsApp *AcmeAccountsApp) GetAllAcmeAccounts(w http.ResponseWriter
 	}
 }
 
+// GetOneAcmeAccount is an http handler that returns one acme account based on its unique id in the
+//  form of JSON written to w
 func (acmeAccountsApp *AcmeAccountsApp) GetOneAcmeAccount(w http.ResponseWriter, r *http.Request) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	// if id is new, provide some info
 	err := utils.IsIdValidNew(idParam)
 	if err == nil {
-		// TO DO: Build options -- algorithms := utils.WrapJSON(listOfAlgorithms(), "key_algorithms")
-		newAccountOptions := NewAcmeAccountOptions{}
-		newAccountOptions.TosUrl = acmeAccountsApp.Acme.ProdDir.Meta.TermsOfService
-		newAccountOptions.StagingTosUrl = acmeAccountsApp.Acme.StagingDir.Meta.TermsOfService
-
-		utils.WriteJSON(w, http.StatusOK, newAccountOptions, "acme_account_options")
+		acmeAccountsApp.GetNewAccountOptions(w, r)
 		return
 	}
 
@@ -73,6 +71,27 @@ func (acmeAccountsApp *AcmeAccountsApp) GetOneAcmeAccount(w http.ResponseWriter,
 	}
 }
 
+// GetNewAccountOptions is an http handler that returns information the client GUI needs to properly
+//  present options when the user is creating an account
+func (acmeAccountsApp *AcmeAccountsApp) GetNewAccountOptions(w http.ResponseWriter, r *http.Request) {
+	// TODO: Finish constructing all needed options
+	newAccountOptions := NewAcmeAccountOptions{}
+	newAccountOptions.TosUrl = acmeAccountsApp.Acme.ProdDir.Meta.TermsOfService
+	newAccountOptions.StagingTosUrl = acmeAccountsApp.Acme.StagingDir.Meta.TermsOfService
+
+	availableKeys, err := acmeAccountsApp.dbGetAvailableKeys()
+	if err != nil {
+		acmeAccountsApp.Logger.Printf("acmeaccounts: GetNewOptions: failed to get available keys -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+	newAccountOptions.AvailableKeys = availableKeys
+
+	utils.WriteJSON(w, http.StatusOK, newAccountOptions, "acme_account_options")
+}
+
+// PutOneAcmeAccount is an http handler that overwrites the specified (by id) acme account with the
+//  data PUT by the client
 func (acmeAccountsApp *AcmeAccountsApp) PutOneAcmeAccount(w http.ResponseWriter, r *http.Request) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 

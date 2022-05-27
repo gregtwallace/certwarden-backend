@@ -14,7 +14,7 @@ type PrivateKeysApp struct {
 }
 
 // a single private key
-type privateKey struct {
+type PrivateKey struct {
 	ID          int       `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
@@ -26,29 +26,29 @@ type privateKey struct {
 }
 
 // a single private key, as database table fields
-type privateKeyDb struct {
-	id             int
-	name           string
-	description    sql.NullString
-	algorithmValue string
-	pem            string
-	apiKey         string
-	createdAt      int
-	updatedAt      int
+type PrivateKeyDb struct {
+	ID             int
+	Name           string
+	Description    sql.NullString
+	AlgorithmValue string
+	Pem            string
+	ApiKey         string
+	CreatedAt      int
+	UpdatedAt      int
 }
 
 // translate the db object into the api object
-func (privateKeyDb *privateKeyDb) privateKeyDbToPk() (*privateKey, error) {
-	return &privateKey{
-		ID:          privateKeyDb.id,
-		Name:        privateKeyDb.name,
-		Description: privateKeyDb.description.String,
-		Algorithm:   algorithmByValue(privateKeyDb.algorithmValue),
-		Pem:         privateKeyDb.pem,
-		ApiKey:      privateKeyDb.apiKey,
-		CreatedAt:   privateKeyDb.createdAt,
-		UpdatedAt:   privateKeyDb.updatedAt,
-	}, nil
+func (privateKeyDb *PrivateKeyDb) PrivateKeyDbToPk() *PrivateKey {
+	return &PrivateKey{
+		ID:          privateKeyDb.ID,
+		Name:        privateKeyDb.Name,
+		Description: privateKeyDb.Description.String,
+		Algorithm:   algorithmByValue(privateKeyDb.AlgorithmValue),
+		Pem:         privateKeyDb.Pem,
+		ApiKey:      privateKeyDb.ApiKey,
+		CreatedAt:   privateKeyDb.CreatedAt,
+		UpdatedAt:   privateKeyDb.UpdatedAt,
+	}
 }
 
 // private key payload from PUT/POST
@@ -62,6 +62,6 @@ type privateKeyPayload struct {
 
 // new private key options
 // used to return info about valid options when making a new key
-type NewPrivateKeyOptions struct {
+type newPrivateKeyOptions struct {
 	KeyAlgorithms []algorithm `json:"key_algorithms"`
 }

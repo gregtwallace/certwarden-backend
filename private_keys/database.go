@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-func (privateKeysApp *PrivateKeysApp) dbGetAllPrivateKeys() ([]*privateKey, error) {
+func (privateKeysApp *PrivateKeysApp) dbGetAllPrivateKeys() ([]*PrivateKey, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
 	defer cancel()
 
@@ -18,29 +18,28 @@ func (privateKeysApp *PrivateKeysApp) dbGetAllPrivateKeys() ([]*privateKey, erro
 	}
 	defer rows.Close()
 
-	var allKeys []*privateKey
+	var allKeys []*PrivateKey
 	for rows.Next() {
-		var oneKey privateKeyDb
+		var oneKey PrivateKeyDb
 		err = rows.Scan(
-			&oneKey.id,
-			&oneKey.name,
-			&oneKey.description,
-			&oneKey.algorithmValue,
+			&oneKey.ID,
+			&oneKey.Name,
+			&oneKey.Description,
+			&oneKey.AlgorithmValue,
 		)
 		if err != nil {
 			return nil, err
 		}
-		convertedKey, err := oneKey.privateKeyDbToPk()
-		if err != nil {
-			return nil, err
-		}
+
+		convertedKey := oneKey.PrivateKeyDbToPk()
+
 		allKeys = append(allKeys, convertedKey)
 	}
 
 	return allKeys, nil
 }
 
-func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*privateKey, error) {
+func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*PrivateKey, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
 	defer cancel()
 
@@ -51,31 +50,28 @@ func (privateKeysApp *PrivateKeysApp) dbGetOnePrivateKey(id int) (*privateKey, e
 
 	row := privateKeysApp.Database.QueryRowContext(ctx, query, id)
 
-	var sqlKey privateKeyDb
+	var sqlKey PrivateKeyDb
 	err := row.Scan(
-		&sqlKey.id,
-		&sqlKey.name,
-		&sqlKey.description,
-		&sqlKey.algorithmValue,
-		&sqlKey.pem,
-		&sqlKey.apiKey,
-		&sqlKey.createdAt,
-		&sqlKey.updatedAt,
+		&sqlKey.ID,
+		&sqlKey.Name,
+		&sqlKey.Description,
+		&sqlKey.AlgorithmValue,
+		&sqlKey.Pem,
+		&sqlKey.ApiKey,
+		&sqlKey.CreatedAt,
+		&sqlKey.UpdatedAt,
 	)
 
 	if err != nil {
 		return nil, err
 	}
 
-	convertedKey, err := sqlKey.privateKeyDbToPk()
-	if err != nil {
-		return nil, err
-	}
+	convertedKey := sqlKey.PrivateKeyDbToPk()
 
 	return convertedKey, nil
 }
 
-func (privateKeysApp *PrivateKeysApp) dbPutExistingPrivateKey(privateKey privateKeyDb) error {
+func (privateKeysApp *PrivateKeysApp) dbPutExistingPrivateKey(privateKey PrivateKeyDb) error {
 	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
 	defer cancel()
 
@@ -90,10 +86,10 @@ func (privateKeysApp *PrivateKeysApp) dbPutExistingPrivateKey(privateKey private
 		id = $4`
 
 	_, err := privateKeysApp.Database.ExecContext(ctx, query,
-		privateKey.name,
-		privateKey.description,
-		privateKey.updatedAt,
-		privateKey.id)
+		privateKey.Name,
+		privateKey.Description,
+		privateKey.UpdatedAt,
+		privateKey.ID)
 	if err != nil {
 		return err
 	}
@@ -103,7 +99,7 @@ func (privateKeysApp *PrivateKeysApp) dbPutExistingPrivateKey(privateKey private
 	return nil
 }
 
-func (privateKeysApp *PrivateKeysApp) dbPostNewPrivateKey(privateKey privateKeyDb) error {
+func (privateKeysApp *PrivateKeysApp) dbPostNewPrivateKey(privateKey PrivateKeyDb) error {
 	ctx, cancel := context.WithTimeout(context.Background(), privateKeysApp.Timeout)
 	defer cancel()
 
@@ -113,13 +109,13 @@ func (privateKeysApp *PrivateKeysApp) dbPostNewPrivateKey(privateKey privateKeyD
 	`
 
 	_, err := privateKeysApp.Database.ExecContext(ctx, query,
-		privateKey.name,
-		privateKey.description,
-		privateKey.algorithmValue,
-		privateKey.pem,
-		privateKey.apiKey,
-		privateKey.createdAt,
-		privateKey.updatedAt,
+		privateKey.Name,
+		privateKey.Description,
+		privateKey.AlgorithmValue,
+		privateKey.Pem,
+		privateKey.ApiKey,
+		privateKey.CreatedAt,
+		privateKey.UpdatedAt,
 	)
 	if err != nil {
 		return err

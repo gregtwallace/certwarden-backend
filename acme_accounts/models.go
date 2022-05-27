@@ -2,6 +2,7 @@ package acme_accounts
 
 import (
 	"database/sql"
+	"legocerthub-backend/private_keys"
 	"legocerthub-backend/utils/acme_utils"
 	"log"
 	"time"
@@ -77,6 +78,7 @@ type acmeAccountPayload struct {
 // new account info
 // used to return info about valid options when making a new account
 type NewAcmeAccountOptions struct {
-	TosUrl        string `json:"tos_url"`
-	StagingTosUrl string `json:"staging_tos_url"`
+	TosUrl        string                    `json:"tos_url"`
+	StagingTosUrl string                    `json:"staging_tos_url"`
+	AvailableKeys []private_keys.PrivateKey `json:"available_keys"`
 }

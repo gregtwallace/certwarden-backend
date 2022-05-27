@@ -73,7 +73,7 @@ func (privateKeysApp *PrivateKeysApp) GetOnePrivateKey(w http.ResponseWriter, r 
 
 // Get options for a new private key in our DB and write it as JSON to the API
 func (privateKeysApp *PrivateKeysApp) GetNewKeyOptions(w http.ResponseWriter, r *http.Request) {
-	newKeyOptions := NewPrivateKeyOptions{}
+	newKeyOptions := newPrivateKeyOptions{}
 	newKeyOptions.KeyAlgorithms = listOfAlgorithms()
 
 	utils.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
@@ -109,19 +109,19 @@ func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r 
 	///
 
 	// load fields that are permitted to be updated
-	var privateKey privateKeyDb
-	privateKey.id, err = strconv.Atoi(payload.ID)
+	var privateKey PrivateKeyDb
+	privateKey.ID, err = strconv.Atoi(payload.ID)
 	if err != nil {
 		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
-	privateKey.name = payload.Name
+	privateKey.Name = payload.Name
 
-	privateKey.description.Valid = true
-	privateKey.description.String = payload.Description
+	privateKey.Description.Valid = true
+	privateKey.Description.String = payload.Description
 
-	privateKey.updatedAt = int(time.Now().Unix())
+	privateKey.UpdatedAt = int(time.Now().Unix())
 
 	err = privateKeysApp.dbPutExistingPrivateKey(privateKey)
 	if err != nil {
@@ -213,17 +213,17 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 	}
 
 	// load fields
-	var privateKey privateKeyDb
-	privateKey.name = payload.Name
+	var privateKey PrivateKeyDb
+	privateKey.Name = payload.Name
 
-	privateKey.description.Valid = true
-	privateKey.description.String = payload.Description
+	privateKey.Description.Valid = true
+	privateKey.Description.String = payload.Description
 
-	privateKey.algorithmValue = algorithmValue
-	privateKey.pem = pem
-	privateKey.apiKey = apiKey
-	privateKey.createdAt = int(time.Now().Unix())
-	privateKey.updatedAt = privateKey.createdAt
+	privateKey.AlgorithmValue = algorithmValue
+	privateKey.Pem = pem
+	privateKey.ApiKey = apiKey
+	privateKey.CreatedAt = int(time.Now().Unix())
+	privateKey.UpdatedAt = privateKey.CreatedAt
 
 	err = privateKeysApp.dbPostNewPrivateKey(privateKey)
 	if err != nil {
