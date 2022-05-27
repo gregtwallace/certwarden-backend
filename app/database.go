@@ -12,7 +12,10 @@ import (
 // function opens connection to the sqlite database
 //   this will also cause the file to be created, if it does not exist
 func OpenDB(cfg Config) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", cfg.Db.Dsn)
+	// append options to the Dsn
+	connString := cfg.Db.Dsn + "?" + cfg.Db.Options.Encode()
+
+	db, err := sql.Open("sqlite3", connString)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +69,7 @@ func (app *Application) CreateDBTables() error {
 		kid text UNIQUE,
 		FOREIGN KEY (private_key_id)
 			REFERENCES private_keys (id)
-				ON DELETE CASCADE
+				ON DELETE NO ACTION
 				ON UPDATE NO ACTION
 	)`
 
@@ -100,11 +103,11 @@ func (app *Application) CreateDBTables() error {
 		is_valid boolean DEFAULT 0,
 		FOREIGN KEY (private_key_id)
 			REFERENCES private_keys (id)
-				ON DELETE CASCADE
+				ON DELETE NO ACTION
 				ON UPDATE NO ACTION,
 		FOREIGN KEY (acme_account_id)
 			REFERENCES acme_accounts (id)
-				ON DELETE CASCADE
+				ON DELETE NO ACTION
 				ON UPDATE NO ACTION
 	)`
 

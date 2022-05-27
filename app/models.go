@@ -3,6 +3,7 @@ package app
 import (
 	"database/sql"
 	"log"
+	"net/url"
 	"time"
 )
 
@@ -13,7 +14,8 @@ type Config struct {
 	Port int
 	Env  string
 	Db   struct {
-		Dsn string
+		Dsn     string
+		Options url.Values
 	}
 }
 

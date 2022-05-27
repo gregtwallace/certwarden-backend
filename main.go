@@ -7,6 +7,7 @@ import (
 
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 )
@@ -23,6 +24,11 @@ func main() {
 	flag.StringVar(&cfg.Env, "env", "dev", "application environment (dev | prod)")
 	flag.StringVar(&cfg.Db.Dsn, "dsn", "./lego-certhub.db", "database path and filename")
 	flag.Parse()
+
+	// sqlite options - see: https://github.com/mattn/go-sqlite3#connection-string
+	// should enforce foreign key constraints
+	cfg.Db.Options = url.Values{}
+	cfg.Db.Options.Add("_fk", "true")
 
 	// open database connection
 	db, err := app.OpenDB(cfg)
