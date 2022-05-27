@@ -94,17 +94,32 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetOneAcmeAccount(id int) (*acmeAccoun
 	return convertedAccount, nil
 }
 
-// type acmeAccount struct {
-// 	ID             int    `json:"id"`
-// 	Name           string `json:"name"`
-// 	PrivateKeyID   int    `json:"private_key_id"`
-// 	PrivateKeyName string `json:"private_key_name"` // comes from a join with key table
-// 	Description    string `json:"description"`
-// 	Status         string `json:"status"`
-// 	Email          string `json:"email"`
-// 	AcceptedTos    bool   `json:"accepted_tos,omitempty"`
-// 	IsStaging      bool   `json:"is_staging"`
-// 	CreatedAt      int    `json:"created_at,omitempty"`
-// 	UpdatedAt      int    `json:"updated_at,omitempty"`
-// 	Kid            string `json:"kid,omitempty"`
-// }
+func (acmeAccountsApp *AcmeAccountsApp) dbPutExistingAcmeAccount(acmeAccount acmeAccountDb) error {
+	ctx, cancel := context.WithTimeout(context.Background(), acmeAccountsApp.Timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		acme_accounts
+	SET
+		name = $1,
+		description = $2,
+		accepted_tos = case when $3 is null then accepted_tos else $3 end,
+		updated_at = $4
+	WHERE
+		id = $5`
+
+	_, err := acmeAccountsApp.Database.ExecContext(ctx, query,
+		acmeAccount.name,
+		acmeAccount.description,
+		acmeAccount.acceptedTos,
+		acmeAccount.updatedAt,
+		acmeAccount.id)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Handle 0 rows updated.
+	return nil
+
+}

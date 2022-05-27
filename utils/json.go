@@ -5,6 +5,12 @@ import (
 	"net/http"
 )
 
+// Response backend sends in response to PUT/POST
+type JsonResp struct {
+	OK      bool   `json:"ok"`
+	Message string `json:"message"`
+}
+
 func WrapJSON(data interface{}, wrap string) map[string]interface{} {
 	wrapper := make(map[string]interface{})
 	wrapper[wrap] = data

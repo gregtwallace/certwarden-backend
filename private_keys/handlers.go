@@ -119,7 +119,7 @@ func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r 
 		return
 	}
 
-	response := jsonResp{
+	response := utils.JsonResp{
 		OK: true,
 	}
 	err = utils.WriteJSON(w, http.StatusOK, response, "response")
@@ -218,7 +218,7 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 		return
 	}
 
-	response := jsonResp{
+	response := utils.JsonResp{
 		OK: true,
 	}
 	err = utils.WriteJSON(w, http.StatusOK, response, "response")
@@ -247,7 +247,7 @@ func (privateKeysApp *PrivateKeysApp) DeletePrivateKey(w http.ResponseWriter, r 
 		return
 	}
 
-	response := jsonResp{
+	response := utils.JsonResp{
 		OK: true,
 	}
 	err = utils.WriteJSON(w, http.StatusOK, response, "response")

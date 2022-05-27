@@ -62,3 +62,11 @@ func (acmeAccountDb *acmeAccountDb) acmeAccountDbToAcc() (*acmeAccount, error) {
 		Kid:            acmeAccountDb.kid.String,
 	}, nil
 }
+
+// acme account payload from PUT/POST
+type acmeAccountPayload struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	AcceptedTos string `json:"accepted_tos"`
+}

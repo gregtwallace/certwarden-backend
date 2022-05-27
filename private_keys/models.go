@@ -13,12 +13,6 @@ type PrivateKeysApp struct {
 	Logger   *log.Logger
 }
 
-// Response backend sends in response to PUT/POST
-type jsonResp struct {
-	OK      bool   `json:"ok"`
-	Message string `json:"message"`
-}
-
 // a single private key
 type privateKey struct {
 	ID          int       `json:"id"`
