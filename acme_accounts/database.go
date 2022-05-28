@@ -5,9 +5,9 @@ import (
 	"legocerthub-backend/private_keys"
 )
 
-// dbGetAllAcmeAccounts returns a slice of all of the acme accounts in the database
-func (acmeAccountsApp *AcmeAccountsApp) dbGetAllAcmeAccounts() ([]*acmeAccount, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), acmeAccountsApp.Timeout)
+// dbGetAllAccounts returns a slice of all of the acme accounts in the database
+func (accountsApp *AccountsApp) dbGetAllAccounts() ([]account, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), accountsApp.DB.Timeout)
 	defer cancel()
 
 	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, aa.status, aa.email, aa.is_staging 
@@ -16,16 +16,16 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetAllAcmeAccounts() ([]*acmeAccount, 
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
 	ORDER BY aa.id`
 
-	rows, err := acmeAccountsApp.Database.QueryContext(ctx, query)
+	rows, err := accountsApp.DB.Database.QueryContext(ctx, query)
 	if err != nil {
-		acmeAccountsApp.Logger.Println(err)
+		accountsApp.Logger.Println(err)
 		return nil, err
 	}
 	defer rows.Close()
 
-	var allAccounts []*acmeAccount
+	var allAccounts []account
 	for rows.Next() {
-		var oneAccount acmeAccountDb
+		var oneAccount accountDb
 		err = rows.Scan(
 			&oneAccount.id,
 			&oneAccount.name,
@@ -37,13 +37,13 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetAllAcmeAccounts() ([]*acmeAccount, 
 			&oneAccount.isStaging,
 		)
 		if err != nil {
-			acmeAccountsApp.Logger.Println(err)
+			accountsApp.Logger.Println(err)
 			return nil, err
 		}
 
-		convertedAccount, err := oneAccount.acmeAccountDbToAcc()
+		convertedAccount, err := oneAccount.accountDbToAcc()
 		if err != nil {
-			acmeAccountsApp.Logger.Println(err)
+			accountsApp.Logger.Println(err)
 			return nil, err
 		}
 
@@ -53,9 +53,9 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetAllAcmeAccounts() ([]*acmeAccount, 
 	return allAccounts, nil
 }
 
-// dbGetOneAcmeAccount returns an acmeAccount based on its unique id
-func (acmeAccountsApp *AcmeAccountsApp) dbGetOneAcmeAccount(id int) (*acmeAccount, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), acmeAccountsApp.Timeout)
+// dbGetOneAccount returns an acmeAccount based on its unique id
+func (accountsApp *AccountsApp) dbGetOneAccount(id int) (account, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), accountsApp.DB.Timeout)
 	defer cancel()
 
 	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, aa.status, aa.email, aa.is_staging,
@@ -66,9 +66,9 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetOneAcmeAccount(id int) (*acmeAccoun
 	WHERE aa.id = $1
 	ORDER BY aa.id`
 
-	row := acmeAccountsApp.Database.QueryRowContext(ctx, query, id)
+	row := accountsApp.DB.Database.QueryRowContext(ctx, query, id)
 
-	var oneAccount acmeAccountDb
+	var oneAccount accountDb
 	err := row.Scan(
 		&oneAccount.id,
 		&oneAccount.name,
@@ -84,22 +84,22 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetOneAcmeAccount(id int) (*acmeAccoun
 		&oneAccount.updatedAt,
 	)
 	if err != nil {
-		acmeAccountsApp.Logger.Println(err)
-		return nil, err
+		accountsApp.Logger.Println(err)
+		return account{}, err
 	}
 
-	convertedAccount, err := oneAccount.acmeAccountDbToAcc()
+	convertedAccount, err := oneAccount.accountDbToAcc()
 	if err != nil {
-		return nil, err
+		return account{}, err
 	}
 
 	return convertedAccount, nil
 }
 
-// dbPutExistingAcmeAccount overwrites an existing acme account using specified data
+// dbPutExistingAccount overwrites an existing acme account using specified data
 // certain fields cannot be updated, per rfc8555
-func (acmeAccountsApp *AcmeAccountsApp) dbPutExistingAcmeAccount(acmeAccount acmeAccountDb) error {
-	ctx, cancel := context.WithTimeout(context.Background(), acmeAccountsApp.Timeout)
+func (accountsApp *AccountsApp) dbPutExistingAccount(accountDb accountDb) error {
+	ctx, cancel := context.WithTimeout(context.Background(), accountsApp.DB.Timeout)
 	defer cancel()
 
 	query := `
@@ -114,13 +114,13 @@ func (acmeAccountsApp *AcmeAccountsApp) dbPutExistingAcmeAccount(acmeAccount acm
 	WHERE
 		id = $6`
 
-	_, err := acmeAccountsApp.Database.ExecContext(ctx, query,
-		acmeAccount.name,
-		acmeAccount.description,
-		acmeAccount.email,
-		acmeAccount.acceptedTos,
-		acmeAccount.updatedAt,
-		acmeAccount.id)
+	_, err := accountsApp.DB.Database.ExecContext(ctx, query,
+		accountDb.name,
+		accountDb.description,
+		accountDb.email,
+		accountDb.acceptedTos,
+		accountDb.updatedAt,
+		accountDb.id)
 	if err != nil {
 		return err
 	}
@@ -132,8 +132,8 @@ func (acmeAccountsApp *AcmeAccountsApp) dbPutExistingAcmeAccount(acmeAccount acm
 
 // dbGetAvailableKeys returns a slice of private keys that exist but are not already associated
 //  with a known ACME account or certificate
-func (acmeAccountsApp *AcmeAccountsApp) dbGetAvailableKeys() ([]private_keys.PrivateKey, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), acmeAccountsApp.Timeout)
+func (accountsApp *AccountsApp) dbGetAvailableKeys() ([]private_keys.Key, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), accountsApp.DB.Timeout)
 	defer cancel()
 
 	// TODO - Once certs are added, need to check that table as well for keys in use
@@ -152,16 +152,16 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetAvailableKeys() ([]private_keys.Pri
 			)
 	`
 
-	rows, err := acmeAccountsApp.Database.QueryContext(ctx, query)
+	rows, err := accountsApp.DB.Database.QueryContext(ctx, query)
 	if err != nil {
-		acmeAccountsApp.Logger.Println(err)
+		accountsApp.Logger.Println(err)
 		return nil, err
 	}
 	defer rows.Close()
 
-	var availableKeys []private_keys.PrivateKey
+	var availableKeys []private_keys.Key
 	for rows.Next() {
-		var oneKey private_keys.PrivateKeyDb
+		var oneKey private_keys.KeyDb
 
 		err = rows.Scan(
 			&oneKey.ID,
@@ -170,27 +170,14 @@ func (acmeAccountsApp *AcmeAccountsApp) dbGetAvailableKeys() ([]private_keys.Pri
 			&oneKey.AlgorithmValue,
 		)
 		if err != nil {
-			acmeAccountsApp.Logger.Println(err)
+			accountsApp.Logger.Println(err)
 			return nil, err
 		}
 
-		convertedKey := oneKey.PrivateKeyDbToPk()
+		convertedKey := oneKey.KeyDbToKey()
 
-		availableKeys = append(availableKeys, *convertedKey)
+		availableKeys = append(availableKeys, convertedKey)
 	}
 
 	return availableKeys, nil
 }
-
-// query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, aa.status, aa.email, aa.is_staging,
-// aa.accepted_tos, aa.kid, aa.created_at, aa.updated_at
-// FROM
-// 	acme_accounts aa
-// 	LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
-// WHERE aa.id = $1
-// ORDER BY aa.id`
-
-// ID          int       `json:"id"`
-// Name        string    `json:"name"`
-// Description string    `json:"description"`
-// Algorithm   algorithm `json:"algorithm"`

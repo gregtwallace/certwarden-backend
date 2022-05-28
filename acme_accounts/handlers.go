@@ -11,61 +11,61 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// GetAllAcmeAccounts is an http handler that returns all acme accounts in the form of JSON written to w
-func (acmeAccountsApp *AcmeAccountsApp) GetAllAcmeAccounts(w http.ResponseWriter, r *http.Request) {
+// GetAllAccounts is an http handler that returns all acme accounts in the form of JSON written to w
+func (accountsApp *AccountsApp) GetAllAccounts(w http.ResponseWriter, r *http.Request) {
 
-	accounts, err := acmeAccountsApp.dbGetAllAcmeAccounts()
+	accounts, err := accountsApp.dbGetAllAccounts()
 	if err != nil {
-		acmeAccountsApp.Logger.Printf("acmeaccounts: GetAll: db failed -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: GetAll: db failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
 	err = utils.WriteJSON(w, http.StatusOK, accounts, "acme_accounts")
 	if err != nil {
-		acmeAccountsApp.Logger.Printf("acmeaccounts: GetAll: write json failed -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: GetAll: write json failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 }
 
-// GetOneAcmeAccount is an http handler that returns one acme account based on its unique id in the
+// GetOneAccount is an http handler that returns one acme account based on its unique id in the
 //  form of JSON written to w
-func (acmeAccountsApp *AcmeAccountsApp) GetOneAcmeAccount(w http.ResponseWriter, r *http.Request) {
+func (accountsApp *AccountsApp) GetOneAccount(w http.ResponseWriter, r *http.Request) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	// if id is new, provide some info
 	err := utils.IsIdValidNew(idParam)
 	if err == nil {
-		acmeAccountsApp.GetNewAccountOptions(w, r)
+		accountsApp.GetNewAccountOptions(w, r)
 		return
 	}
 
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		acmeAccountsApp.Logger.Printf("acmeaccounts: GetOne: id param issue -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: GetOne: id param issue -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
 	if id < 0 {
 		// if id < 0, it is definitely not valid
-		err = errors.New("acmeaccounts: GetOne: id param is invalid (less than 0 and not new)")
-		acmeAccountsApp.Logger.Println(err)
+		err = errors.New("accounts: GetOne: id param is invalid (less than 0 and not new)")
+		accountsApp.Logger.Println(err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
-	acmeAccount, err := acmeAccountsApp.dbGetOneAcmeAccount(id)
+	acmeAccount, err := accountsApp.dbGetOneAccount(id)
 	if err != nil {
-		acmeAccountsApp.Logger.Printf("acmeaccounts: GetOne: db failed -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: GetOne: db failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
 	err = utils.WriteJSON(w, http.StatusOK, acmeAccount, "acme_account")
 	if err != nil {
-		acmeAccountsApp.Logger.Printf("acmeaccounts: GetOne: write json failed -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: GetOne: write json failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -73,15 +73,15 @@ func (acmeAccountsApp *AcmeAccountsApp) GetOneAcmeAccount(w http.ResponseWriter,
 
 // GetNewAccountOptions is an http handler that returns information the client GUI needs to properly
 //  present options when the user is creating an account
-func (acmeAccountsApp *AcmeAccountsApp) GetNewAccountOptions(w http.ResponseWriter, r *http.Request) {
+func (accountsApp *AccountsApp) GetNewAccountOptions(w http.ResponseWriter, r *http.Request) {
 	// TODO: Finish constructing all needed options
-	newAccountOptions := NewAcmeAccountOptions{}
-	newAccountOptions.TosUrl = acmeAccountsApp.Acme.ProdDir.Meta.TermsOfService
-	newAccountOptions.StagingTosUrl = acmeAccountsApp.Acme.StagingDir.Meta.TermsOfService
+	newAccountOptions := NewAccountOptions{}
+	newAccountOptions.TosUrl = accountsApp.Acme.ProdDir.Meta.TermsOfService
+	newAccountOptions.StagingTosUrl = accountsApp.Acme.StagingDir.Meta.TermsOfService
 
-	availableKeys, err := acmeAccountsApp.dbGetAvailableKeys()
+	availableKeys, err := accountsApp.dbGetAvailableKeys()
 	if err != nil {
-		acmeAccountsApp.Logger.Printf("acmeaccounts: GetNewOptions: failed to get available keys -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: GetNewOptions: failed to get available keys -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -90,15 +90,15 @@ func (acmeAccountsApp *AcmeAccountsApp) GetNewAccountOptions(w http.ResponseWrit
 	utils.WriteJSON(w, http.StatusOK, newAccountOptions, "acme_account_options")
 }
 
-// PutOneAcmeAccount is an http handler that overwrites the specified (by id) acme account with the
+// PutOneAccount is an http handler that overwrites the specified (by id) acme account with the
 //  data PUT by the client
-func (acmeAccountsApp *AcmeAccountsApp) PutOneAcmeAccount(w http.ResponseWriter, r *http.Request) {
+func (accountsApp *AccountsApp) PutOneAccount(w http.ResponseWriter, r *http.Request) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
-	var payload acmeAccountPayload
+	var payload accountPayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		acmeAccountsApp.Logger.Printf("acmeaccounts: PutOne: failed to decode json -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: PutOne: failed to decode json -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -107,23 +107,23 @@ func (acmeAccountsApp *AcmeAccountsApp) PutOneAcmeAccount(w http.ResponseWriter,
 	// id
 	err = utils.IsIdValidExisting(idParam, payload.ID)
 	if err != nil {
-		acmeAccountsApp.Logger.Printf("acmeaccounts: PutOne: invalid id -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: PutOne: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 	// name
 	err = utils.IsNameValid(payload.Name)
 	if err != nil {
-		acmeAccountsApp.Logger.Printf("acmeaccounts: PutOne: invalid name -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: PutOne: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 	}
 	///
 
 	// load fields
-	var acmeAccount acmeAccountDb
+	var acmeAccount accountDb
 	acmeAccount.id, err = strconv.Atoi(payload.ID)
 	if err != nil {
-		acmeAccountsApp.Logger.Printf("acmeaccounts: PutOne: invalid id -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: PutOne: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -147,9 +147,9 @@ func (acmeAccountsApp *AcmeAccountsApp) PutOneAcmeAccount(w http.ResponseWriter,
 		acmeAccount.acceptedTos.Valid = false
 	}
 
-	err = acmeAccountsApp.dbPutExistingAcmeAccount(acmeAccount)
+	err = accountsApp.dbPutExistingAccount(acmeAccount)
 	if err != nil {
-		acmeAccountsApp.Logger.Printf("acmeaccounts: PutOne: failed to write to db -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: PutOne: failed to write to db -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -159,7 +159,7 @@ func (acmeAccountsApp *AcmeAccountsApp) PutOneAcmeAccount(w http.ResponseWriter,
 	}
 	err = utils.WriteJSON(w, http.StatusOK, response, "response")
 	if err != nil {
-		acmeAccountsApp.Logger.Printf("acmeaccounts: PutOne: write json failed -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: PutOne: write json failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}

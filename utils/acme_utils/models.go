@@ -1,10 +1,5 @@
 package acme_utils
 
-type Acme struct {
-	ProdDir    AcmeDirectory
-	StagingDir AcmeDirectory
-}
-
 // Directory struct that holds the returned data from querying directory URL
 type AcmeDirectory struct {
 	NewNonce   string `json:"newNonce"`

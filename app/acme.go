@@ -7,6 +7,14 @@ import (
 	"time"
 )
 
+// InitDirectories creates empty AcmeDirectory structs for the app
+//  without initializing there would be an invalid/nil memory address
+//  when running updateDirectory the first time
+func (app *Application) InitDirectories() {
+	app.Acme.ProdDir = &acme_utils.AcmeDirectory{}
+	app.Acme.StagingDir = &acme_utils.AcmeDirectory{}
+}
+
 // UpdateDirectory updates the directory for the specified environment. It
 // returns an error if it can't update the specified directory.
 func (app *Application) updateDirectory(env string, err chan<- error) {
@@ -14,9 +22,9 @@ func (app *Application) updateDirectory(env string, err chan<- error) {
 
 	switch env {
 	case "prod":
-		destinationDirAddr = &app.Acme.ProdDir
+		destinationDirAddr = app.Acme.ProdDir
 	case "staging":
-		destinationDirAddr = &app.Acme.StagingDir
+		destinationDirAddr = app.Acme.StagingDir
 	default:
 		err <- errors.New("invalid environment")
 		return

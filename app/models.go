@@ -25,11 +25,16 @@ type AppDb struct {
 	Timeout  time.Duration
 }
 
+type AppAcme struct {
+	ProdDir    *acme_utils.AcmeDirectory
+	StagingDir *acme_utils.AcmeDirectory
+}
+
 type Application struct {
 	Config Config
 	Logger *log.Logger
 	DB     AppDb
-	Acme   *acme_utils.Acme
+	Acme   AppAcme
 }
 
 type appStatusDirectories struct {

@@ -6,15 +6,19 @@ import (
 	"time"
 )
 
-// PrivateKeys struct for database access
-type PrivateKeysApp struct {
+type KeyAppDb struct {
 	Database *sql.DB
 	Timeout  time.Duration
-	Logger   *log.Logger
+}
+
+// PrivateKeys struct for database access
+type KeysApp struct {
+	Logger *log.Logger
+	DB     KeyAppDb
 }
 
 // a single private key
-type PrivateKey struct {
+type Key struct {
 	ID          int       `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
@@ -26,7 +30,7 @@ type PrivateKey struct {
 }
 
 // a single private key, as database table fields
-type PrivateKeyDb struct {
+type KeyDb struct {
 	ID             int
 	Name           string
 	Description    sql.NullString
@@ -38,16 +42,16 @@ type PrivateKeyDb struct {
 }
 
 // translate the db object into the api object
-func (privateKeyDb *PrivateKeyDb) PrivateKeyDbToPk() *PrivateKey {
-	return &PrivateKey{
-		ID:          privateKeyDb.ID,
-		Name:        privateKeyDb.Name,
-		Description: privateKeyDb.Description.String,
-		Algorithm:   algorithmByValue(privateKeyDb.AlgorithmValue),
-		Pem:         privateKeyDb.Pem,
-		ApiKey:      privateKeyDb.ApiKey,
-		CreatedAt:   privateKeyDb.CreatedAt,
-		UpdatedAt:   privateKeyDb.UpdatedAt,
+func (keyDb *KeyDb) KeyDbToKey() Key {
+	return Key{
+		ID:          keyDb.ID,
+		Name:        keyDb.Name,
+		Description: keyDb.Description.String,
+		Algorithm:   algorithmByValue(keyDb.AlgorithmValue),
+		Pem:         keyDb.Pem,
+		ApiKey:      keyDb.ApiKey,
+		CreatedAt:   keyDb.CreatedAt,
+		UpdatedAt:   keyDb.UpdatedAt,
 	}
 }
 

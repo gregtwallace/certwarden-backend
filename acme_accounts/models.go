@@ -8,16 +8,25 @@ import (
 	"time"
 )
 
-// AcmeAccounts struct for database access
-type AcmeAccountsApp struct {
+type AccountAppDb struct {
 	Database *sql.DB
 	Timeout  time.Duration
-	Logger   *log.Logger
-	Acme     *acme_utils.Acme
 }
 
-// a single acmeAccount
-type acmeAccount struct {
+type AccountAppAcme struct {
+	ProdDir    *acme_utils.AcmeDirectory
+	StagingDir *acme_utils.AcmeDirectory
+}
+
+// AcmeAccounts struct for database access
+type AccountsApp struct {
+	Logger *log.Logger
+	DB     AccountAppDb
+	Acme   AccountAppAcme
+}
+
+// a single ACME Account
+type account struct {
 	ID             int    `json:"id"`
 	Name           string `json:"name"`
 	Description    string `json:"description"`
@@ -32,8 +41,8 @@ type acmeAccount struct {
 	Kid            string `json:"kid,omitempty"`
 }
 
-// a single private key, as database table fields
-type acmeAccountDb struct {
+// a single account, as database table fields
+type accountDb struct {
 	id             int
 	name           string
 	description    sql.NullString
@@ -49,25 +58,25 @@ type acmeAccountDb struct {
 }
 
 // translate the db object into the api object
-func (acmeAccountDb *acmeAccountDb) acmeAccountDbToAcc() (*acmeAccount, error) {
-	return &acmeAccount{
-		ID:             acmeAccountDb.id,
-		Name:           acmeAccountDb.name,
-		Description:    acmeAccountDb.description.String,
-		PrivateKeyID:   int(acmeAccountDb.privateKeyId.Int32),
-		PrivateKeyName: acmeAccountDb.privateKeyName.String,
-		Status:         acmeAccountDb.status.String,
-		Email:          acmeAccountDb.email.String,
-		AcceptedTos:    acmeAccountDb.acceptedTos.Bool,
-		IsStaging:      acmeAccountDb.isStaging.Bool,
-		CreatedAt:      acmeAccountDb.createdAt,
-		UpdatedAt:      acmeAccountDb.updatedAt,
-		Kid:            acmeAccountDb.kid.String,
+func (accountDb *accountDb) accountDbToAcc() (account, error) {
+	return account{
+		ID:             accountDb.id,
+		Name:           accountDb.name,
+		Description:    accountDb.description.String,
+		PrivateKeyID:   int(accountDb.privateKeyId.Int32),
+		PrivateKeyName: accountDb.privateKeyName.String,
+		Status:         accountDb.status.String,
+		Email:          accountDb.email.String,
+		AcceptedTos:    accountDb.acceptedTos.Bool,
+		IsStaging:      accountDb.isStaging.Bool,
+		CreatedAt:      accountDb.createdAt,
+		UpdatedAt:      accountDb.updatedAt,
+		Kid:            accountDb.kid.String,
 	}, nil
 }
 
 // acme account payload from PUT/POST
-type acmeAccountPayload struct {
+type accountPayload struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -77,8 +86,8 @@ type acmeAccountPayload struct {
 
 // new account info
 // used to return info about valid options when making a new account
-type NewAcmeAccountOptions struct {
-	TosUrl        string                    `json:"tos_url"`
-	StagingTosUrl string                    `json:"staging_tos_url"`
-	AvailableKeys []private_keys.PrivateKey `json:"available_keys"`
+type NewAccountOptions struct {
+	TosUrl        string             `json:"tos_url"`
+	StagingTosUrl string             `json:"staging_tos_url"`
+	AvailableKeys []private_keys.Key `json:"available_keys"`
 }

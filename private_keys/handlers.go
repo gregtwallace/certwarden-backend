@@ -12,67 +12,67 @@ import (
 )
 
 // Get all of the private keys in our DB and write them as JSON to the API
-func (privateKeysApp *PrivateKeysApp) GetAllPrivateKeys(w http.ResponseWriter, r *http.Request) {
+func (keysApp *KeysApp) GetAllKeys(w http.ResponseWriter, r *http.Request) {
 
-	keys, err := privateKeysApp.dbGetAllPrivateKeys()
+	keys, err := keysApp.dbGetAllKeys()
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: GetAll: db failed -- err: %s", err)
+		keysApp.Logger.Printf("keys: GetAll: db failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
 	err = utils.WriteJSON(w, http.StatusOK, keys, "private_keys")
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: GetAll: write json failed -- err: %s", err)
+		keysApp.Logger.Printf("keys: GetAll: write json failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 }
 
 // Get a single private keys in our DB and write it as JSON to the API
-func (privateKeysApp *PrivateKeysApp) GetOnePrivateKey(w http.ResponseWriter, r *http.Request) {
+func (keysApp *KeysApp) GetOneKey(w http.ResponseWriter, r *http.Request) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	// if id is new provide algo options list
 	err := utils.IsIdValidNew(idParam)
 	if err == nil {
 		// run the new key options handler if the id is new
-		privateKeysApp.GetNewKeyOptions(w, r)
+		keysApp.GetNewKeyOptions(w, r)
 		return
 	}
 
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: GetOne: id param error -- err: %s", err)
+		keysApp.Logger.Printf("keys: GetOne: id param error -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
 	if id < 0 {
 		// if id < 0, it is definitely not valid
-		err = errors.New("privatekeys: GetOne: id param is invalid (less than 0 and not new)")
-		privateKeysApp.Logger.Println(err)
+		err = errors.New("keys: GetOne: id param is invalid (less than 0 and not new)")
+		keysApp.Logger.Println(err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
-	key, err := privateKeysApp.dbGetOnePrivateKey(id)
+	key, err := keysApp.dbGetOneKey(id)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: GetOne: db failed -- err: %s", err)
+		keysApp.Logger.Printf("keys: GetOne: db failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
 	err = utils.WriteJSON(w, http.StatusOK, key, "private_key")
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: GetOne: write json failed -- err: %s", err)
+		keysApp.Logger.Printf("keys: GetOne: write json failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 }
 
 // Get options for a new private key in our DB and write it as JSON to the API
-func (privateKeysApp *PrivateKeysApp) GetNewKeyOptions(w http.ResponseWriter, r *http.Request) {
+func (keysApp *KeysApp) GetNewKeyOptions(w http.ResponseWriter, r *http.Request) {
 	newKeyOptions := newPrivateKeyOptions{}
 	newKeyOptions.KeyAlgorithms = listOfAlgorithms()
 
@@ -80,13 +80,13 @@ func (privateKeysApp *PrivateKeysApp) GetNewKeyOptions(w http.ResponseWriter, r 
 }
 
 // Put (update) a single private key in DB
-func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r *http.Request) {
+func (keysApp *KeysApp) PutOneKey(w http.ResponseWriter, r *http.Request) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	var payload privateKeyPayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PutOne: failed to decode json -- err: %s", err)
+		keysApp.Logger.Printf("keys: PutOne: failed to decode json -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -95,24 +95,24 @@ func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r 
 	// id
 	err = utils.IsIdValidExisting(idParam, payload.ID)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid id -- err: %s", err)
+		keysApp.Logger.Printf("keys: PutOne: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 	// name
 	err = utils.IsNameValid(payload.Name)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid name -- err: %s", err)
+		keysApp.Logger.Printf("keys: PutOne: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 	///
 
 	// load fields that are permitted to be updated
-	var privateKey PrivateKeyDb
+	var privateKey KeyDb
 	privateKey.ID, err = strconv.Atoi(payload.ID)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid id -- err: %s", err)
+		keysApp.Logger.Printf("keys: PutOne: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -123,9 +123,9 @@ func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r 
 
 	privateKey.UpdatedAt = int(time.Now().Unix())
 
-	err = privateKeysApp.dbPutExistingPrivateKey(privateKey)
+	err = keysApp.dbPutExistingKey(privateKey)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PutOne: failed to write to db -- err: %s", err)
+		keysApp.Logger.Printf("keys: PutOne: failed to write to db -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -135,18 +135,18 @@ func (privateKeysApp *PrivateKeysApp) PutOnePrivateKey(w http.ResponseWriter, r 
 	}
 	err = utils.WriteJSON(w, http.StatusOK, response, "response")
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PutOne: write json failed -- err: %s", err)
+		keysApp.Logger.Printf("keys: PutOne: write json failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 }
 
 // Post (create) a new single private key in DB
-func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r *http.Request) {
+func (keysApp *KeysApp) PostNewKey(w http.ResponseWriter, r *http.Request) {
 	var payload privateKeyPayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to decode json -- err: %s", err)
+		keysApp.Logger.Printf("keys: PostNew: failed to decode json -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -155,14 +155,14 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 	// id
 	err = utils.IsIdValidNew(payload.ID)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PostNew: invalid id -- err: %s", err)
+		keysApp.Logger.Printf("keys: PostNew: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 	// name
 	err = utils.IsNameValid(payload.Name)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PostNew: invalid name -- err: %s", err)
+		keysApp.Logger.Printf("keys: PostNew: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	} // check db for duplicate name? probably unneeded as sql will error on insert
@@ -170,15 +170,15 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 	/// key add method
 	// error if no method specified
 	if (payload.AlgorithmValue == "") && (payload.PemContent == "") {
-		err = errors.New("privatekeys: PostNew: no add method specified")
-		privateKeysApp.Logger.Println(err)
+		err = errors.New("keys: PostNew: no add method specified")
+		keysApp.Logger.Println(err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 	// error if more than one method specified
 	if (payload.AlgorithmValue != "") && (payload.PemContent != "") {
-		err = errors.New("privatekeys: PostNew: multiple add methods specified")
-		privateKeysApp.Logger.Println(err)
+		err = errors.New("keys: PostNew: multiple add methods specified")
+		keysApp.Logger.Println(err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -188,7 +188,7 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 	if payload.AlgorithmValue != "" {
 		pem, err = generatePrivateKeyPem(payload.AlgorithmValue)
 		if err != nil {
-			privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to generate key pem -- err: %s", err)
+			keysApp.Logger.Printf("keys: PostNew: failed to generate key pem -- err: %s", err)
 			utils.WriteErrorJSON(w, err)
 			return
 		}
@@ -197,7 +197,7 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 		// pem inputted - verify pem and determine algorithm
 		pem, algorithmValue, err = validatePrivateKeyPem(payload.PemContent)
 		if err != nil {
-			privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to verify pem -- err: %s", err)
+			keysApp.Logger.Printf("keys: PostNew: failed to verify pem -- err: %s", err)
 			utils.WriteErrorJSON(w, err)
 			return
 		}
@@ -207,13 +207,13 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 	// generate api key
 	apiKey, err := utils.GenerateApiKey()
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to generate api key -- err: %s", err)
+		keysApp.Logger.Printf("keys: PostNew: failed to generate api key -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
 	// load fields
-	var privateKey PrivateKeyDb
+	var privateKey KeyDb
 	privateKey.Name = payload.Name
 
 	privateKey.Description.Valid = true
@@ -225,9 +225,9 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 	privateKey.CreatedAt = int(time.Now().Unix())
 	privateKey.UpdatedAt = privateKey.CreatedAt
 
-	err = privateKeysApp.dbPostNewPrivateKey(privateKey)
+	err = keysApp.dbPostNewKey(privateKey)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PostNew: failed to write to db -- err: %s", err)
+		keysApp.Logger.Printf("keys: PostNew: failed to write to db -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -237,26 +237,26 @@ func (privateKeysApp *PrivateKeysApp) PostNewPrivateKey(w http.ResponseWriter, r
 	}
 	err = utils.WriteJSON(w, http.StatusOK, response, "response")
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: PostNew: write response json failed -- err: %s", err)
+		keysApp.Logger.Printf("keys: PostNew: write response json failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 }
 
 // delete a private key
-func (privateKeysApp *PrivateKeysApp) DeletePrivateKey(w http.ResponseWriter, r *http.Request) {
+func (keysApp *KeysApp) DeleteKey(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 
 	id, err := strconv.Atoi(params.ByName("id"))
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: Delete: id param error -- err: %s", err)
+		keysApp.Logger.Printf("keys: Delete: id param error -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
-	err = privateKeysApp.dbDeletePrivateKey(id)
+	err = keysApp.dbDeleteKey(id)
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: Delete: failed to db delete -- err: %s", err)
+		keysApp.Logger.Printf("keys: Delete: failed to db delete -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -266,7 +266,7 @@ func (privateKeysApp *PrivateKeysApp) DeletePrivateKey(w http.ResponseWriter, r 
 	}
 	err = utils.WriteJSON(w, http.StatusOK, response, "response")
 	if err != nil {
-		privateKeysApp.Logger.Printf("privatekeys: Delete: write response json failed -- err: %s", err)
+		keysApp.Logger.Printf("keys: Delete: write response json failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
