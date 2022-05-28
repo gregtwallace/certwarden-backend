@@ -60,7 +60,7 @@ type privateKeyPayload struct {
 	ID             string `json:"id"`
 	Name           string `json:"name"`
 	Description    string `json:"description"`
-	AlgorithmValue string `json:"algorithm.value"`
+	AlgorithmValue string `json:"algorithm_value"`
 	PemContent     string `json:"pem"`
 }
 
