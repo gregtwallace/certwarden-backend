@@ -38,9 +38,8 @@ func (app *AccountsApp) createNewAccount(payload accountPayload) error {
 func (app *AccountsApp) createNewLEAccount(payload accountPayload) error {
 	var acmeAccountResponse acme_utils.AcmeAccountResponse
 
-	// Create account with LE
 	// fetch appropriate key
-	keyPem, err := app.DB.getKeyPem(payload.PrivateKeyID)
+	keyPem, err := app.DB.getAccountKeyPem(payload.ID)
 	if err != nil {
 		return err
 	}

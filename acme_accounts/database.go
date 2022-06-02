@@ -211,19 +211,19 @@ func (accountAppDb *AccountAppDb) getAvailableKeys() ([]private_keys.Key, error)
 	return availableKeys, nil
 }
 
-func (accountAppDb *AccountAppDb) getKeyPem(keyId string) (string, error) {
+func (accountAppDb *AccountAppDb) getAccountKeyPem(accountId string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), accountAppDb.Timeout)
 	defer cancel()
 
-	query := `
-		SELECT pem
-		FROM
-		  private_keys
-		WHERE
-			id = $1
+	query := `SELECT pk.pem
+	FROM
+		acme_accounts aa
+		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
+	WHERE
+		aa.id = $1
 	`
 
-	row := accountAppDb.Database.QueryRowContext(ctx, query, keyId)
+	row := accountAppDb.Database.QueryRowContext(ctx, query, accountId)
 	var pem sql.NullString
 	err := row.Scan(&pem)
 

@@ -110,12 +110,16 @@ func (payload *accountPayload) accountPayloadToDb() (accountDb, error) {
 	accountDb.description.Valid = true
 	accountDb.description.String = payload.Description
 
-	keyId, err := strconv.Atoi(payload.PrivateKeyID)
-	if err != nil {
-		return accountDb, err
+	if payload.PrivateKeyID != "" {
+		keyId, err := strconv.Atoi(payload.PrivateKeyID)
+		if err != nil {
+			return accountDb, err
+		}
+		accountDb.privateKeyId.Valid = true
+		accountDb.privateKeyId.Int32 = int32(keyId)
+	} else {
+		accountDb.privateKeyId.Valid = false
 	}
-	accountDb.privateKeyId.Valid = true
-	accountDb.privateKeyId.Int32 = int32(keyId)
 
 	accountDb.status.Valid = true
 	accountDb.status.String = "Unknown"
