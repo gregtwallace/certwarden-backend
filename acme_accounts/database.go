@@ -223,14 +223,14 @@ func (accountAppDb *AccountAppDb) getKeyPem(keyId string) (string, error) {
 	`
 
 	row := accountAppDb.Database.QueryRowContext(ctx, query, keyId)
-	var pem string
+	var pem sql.NullString
 	err := row.Scan(&pem)
 
 	if err != nil {
 		return "", err
 	}
 
-	return pem, nil
+	return pem.String, nil
 }
 
 func (accoundAppDb *AccountAppDb) postNewAccount(account accountDb) error {
