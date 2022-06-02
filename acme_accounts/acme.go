@@ -12,8 +12,13 @@ func acmeResponseDbObj(accountId int, response acme_utils.AcmeAccountResponse) a
 
 	account.id = accountId
 
+	// avoid null if there is no contact
 	account.email.Valid = true
-	account.email.String = strings.TrimPrefix(response.Contact[0], "mailto:")
+	if len(response.Contact) == 0 {
+		account.email.String = ""
+	} else {
+		account.email.String = strings.TrimPrefix(response.Contact[0], "mailto:")
+	}
 
 	unixCreated, err := acme_utils.LeToUnixTime(response.CreatedAt)
 	if err != nil {
@@ -36,8 +41,11 @@ func acmeResponseDbObj(accountId int, response acme_utils.AcmeAccountResponse) a
 func (acme *AccountAppAcme) createLeAccount(payload accountPayload, keyPem string) (acme_utils.AcmeAccountResponse, error) {
 	// payload to sent to LE
 	var acmeAccount acme_utils.AcmeAccount
-	acmeAccount.Contact = []string{"mailto:" + payload.Email}
+
 	acmeAccount.TermsOfServiceAgreed = true
+	if payload.Email != "" {
+		acmeAccount.Contact = []string{"mailto:" + payload.Email}
+	}
 
 	// vars for return
 	var acmeAccountResponse acme_utils.AcmeAccountResponse
