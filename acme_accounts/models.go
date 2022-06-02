@@ -77,11 +77,13 @@ func (accountDb *accountDb) accountDbToAcc() (account, error) {
 
 // acme account payload from PUT/POST
 type accountPayload struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Email       string `json:"email"`
-	AcceptedTos string `json:"accepted_tos"`
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Email        string `json:"email"`
+	PrivateKeyID string `json:"private_key_id"`
+	AcceptedTos  string `json:"accepted_tos"`
+	IsStaging    string `json:"is_staging"`
 }
 
 // new account info

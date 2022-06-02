@@ -2,6 +2,7 @@ package private_keys
 
 import (
 	"database/sql"
+	"legocerthub-backend/utils"
 	"log"
 	"time"
 )
@@ -19,14 +20,14 @@ type KeysApp struct {
 
 // a single private key
 type Key struct {
-	ID          int       `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	Algorithm   algorithm `json:"algorithm"`
-	Pem         string    `json:"pem,omitempty"`
-	ApiKey      string    `json:"api_key,omitempty"`
-	CreatedAt   int       `json:"created_at,omitempty"`
-	UpdatedAt   int       `json:"updated_at,omitempty"`
+	ID          int             `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Algorithm   utils.Algorithm `json:"algorithm"`
+	Pem         string          `json:"pem,omitempty"`
+	ApiKey      string          `json:"api_key,omitempty"`
+	CreatedAt   int             `json:"created_at,omitempty"`
+	UpdatedAt   int             `json:"updated_at,omitempty"`
 }
 
 // a single private key, as database table fields
@@ -47,7 +48,7 @@ func (keyDb *KeyDb) KeyDbToKey() Key {
 		ID:          keyDb.ID,
 		Name:        keyDb.Name,
 		Description: keyDb.Description.String,
-		Algorithm:   algorithmByValue(keyDb.AlgorithmValue),
+		Algorithm:   utils.AlgorithmByValue(keyDb.AlgorithmValue),
 		Pem:         keyDb.Pem,
 		ApiKey:      keyDb.ApiKey,
 		CreatedAt:   keyDb.CreatedAt,
@@ -67,5 +68,5 @@ type privateKeyPayload struct {
 // new private key options
 // used to return info about valid options when making a new key
 type newPrivateKeyOptions struct {
-	KeyAlgorithms []algorithm `json:"key_algorithms"`
+	KeyAlgorithms []utils.Algorithm `json:"key_algorithms"`
 }

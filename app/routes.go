@@ -20,8 +20,8 @@ func (app *Application) Routes() http.Handler {
 	privateKeys.DB.Database = app.DB.Database
 	privateKeys.DB.Timeout = app.DB.Timeout
 
-	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys/", privateKeys.GetAllKeys)
-	router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys/", privateKeys.PostNewKey)
+	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys", privateKeys.GetAllKeys)
+	router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys", privateKeys.PostNewKey)
 	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys/:id", privateKeys.GetOneKey)
 	router.HandlerFunc(http.MethodPut, "/api/v1/privatekeys/:id", privateKeys.PutOneKey)
 	router.HandlerFunc(http.MethodDelete, "/api/v1/privatekeys/:id", privateKeys.DeleteKey)
@@ -35,6 +35,7 @@ func (app *Application) Routes() http.Handler {
 	acmeAccounts.Acme.StagingDir = app.Acme.StagingDir
 
 	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts", acmeAccounts.GetAllAccounts)
+	router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts", acmeAccounts.PostNewAccount)
 	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts/:id", acmeAccounts.GetOneAccount)
 	router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id", acmeAccounts.PutOneAccount)
 

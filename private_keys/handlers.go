@@ -74,7 +74,7 @@ func (keysApp *KeysApp) GetOneKey(w http.ResponseWriter, r *http.Request) {
 // Get options for a new private key in our DB and write it as JSON to the API
 func (keysApp *KeysApp) GetNewKeyOptions(w http.ResponseWriter, r *http.Request) {
 	newKeyOptions := newPrivateKeyOptions{}
-	newKeyOptions.KeyAlgorithms = listOfAlgorithms()
+	newKeyOptions.KeyAlgorithms = utils.ListOfAlgorithms()
 
 	utils.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
 }
@@ -186,7 +186,7 @@ func (keysApp *KeysApp) PostNewKey(w http.ResponseWriter, r *http.Request) {
 	var pem, algorithmValue string
 	// generate with algorithm, error if fails
 	if payload.AlgorithmValue != "" {
-		pem, err = generatePrivateKeyPem(payload.AlgorithmValue)
+		pem, err = utils.GeneratePrivateKeyPem(payload.AlgorithmValue)
 		if err != nil {
 			keysApp.Logger.Printf("keys: PostNew: failed to generate key pem -- err: %s", err)
 			utils.WriteErrorJSON(w, err)
@@ -195,7 +195,7 @@ func (keysApp *KeysApp) PostNewKey(w http.ResponseWriter, r *http.Request) {
 		algorithmValue = payload.AlgorithmValue
 	} else if payload.PemContent != "" {
 		// pem inputted - verify pem and determine algorithm
-		pem, algorithmValue, err = validatePrivateKeyPem(payload.PemContent)
+		pem, algorithmValue, err = utils.ValidatePrivateKeyPem(payload.PemContent)
 		if err != nil {
 			keysApp.Logger.Printf("keys: PostNew: failed to verify pem -- err: %s", err)
 			utils.WriteErrorJSON(w, err)

@@ -75,3 +75,20 @@ func IsNameValid(name string) error {
 	}
 	return nil
 }
+
+// IsEmailValidOrBlank returns an error if not valid, nil if valid
+// to be valid: must be either blank or an email address format
+func IsEmailValidOrBlank(email string) error {
+	// blank is permissible
+	if email == "" {
+		return nil
+	}
+
+	// valid email regex
+	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
+	isGood := emailRegex.MatchString(email)
+	if isGood {
+		return nil
+	}
+	return errors.New("bad email address")
+}

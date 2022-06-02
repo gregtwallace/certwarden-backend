@@ -2,12 +2,14 @@ package acme_accounts
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"legocerthub-backend/private_keys"
 )
 
 // dbGetAllAccounts returns a slice of all of the acme accounts in the database
-func (accountsApp *AccountsApp) dbGetAllAccounts() ([]account, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), accountsApp.DB.Timeout)
+func (accountAppDb *AccountAppDb) getAllAccounts() ([]account, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), accountAppDb.Timeout)
 	defer cancel()
 
 	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, aa.status, aa.email, aa.is_staging 
@@ -16,9 +18,8 @@ func (accountsApp *AccountsApp) dbGetAllAccounts() ([]account, error) {
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
 	ORDER BY aa.id`
 
-	rows, err := accountsApp.DB.Database.QueryContext(ctx, query)
+	rows, err := accountAppDb.Database.QueryContext(ctx, query)
 	if err != nil {
-		accountsApp.Logger.Println(err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -37,13 +38,11 @@ func (accountsApp *AccountsApp) dbGetAllAccounts() ([]account, error) {
 			&oneAccount.isStaging,
 		)
 		if err != nil {
-			accountsApp.Logger.Println(err)
 			return nil, err
 		}
 
 		convertedAccount, err := oneAccount.accountDbToAcc()
 		if err != nil {
-			accountsApp.Logger.Println(err)
 			return nil, err
 		}
 
@@ -54,8 +53,8 @@ func (accountsApp *AccountsApp) dbGetAllAccounts() ([]account, error) {
 }
 
 // dbGetOneAccount returns an acmeAccount based on its unique id
-func (accountsApp *AccountsApp) dbGetOneAccount(id int) (account, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), accountsApp.DB.Timeout)
+func (accountAppDb *AccountAppDb) getOneAccount(id int) (account, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), accountAppDb.Timeout)
 	defer cancel()
 
 	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, aa.status, aa.email, aa.is_staging,
@@ -66,7 +65,7 @@ func (accountsApp *AccountsApp) dbGetOneAccount(id int) (account, error) {
 	WHERE aa.id = $1
 	ORDER BY aa.id`
 
-	row := accountsApp.DB.Database.QueryRowContext(ctx, query, id)
+	row := accountAppDb.Database.QueryRowContext(ctx, query, id)
 
 	var oneAccount accountDb
 	err := row.Scan(
@@ -84,7 +83,6 @@ func (accountsApp *AccountsApp) dbGetOneAccount(id int) (account, error) {
 		&oneAccount.updatedAt,
 	)
 	if err != nil {
-		accountsApp.Logger.Println(err)
 		return account{}, err
 	}
 
@@ -98,8 +96,8 @@ func (accountsApp *AccountsApp) dbGetOneAccount(id int) (account, error) {
 
 // dbPutExistingAccount overwrites an existing acme account using specified data
 // certain fields cannot be updated, per rfc8555
-func (accountsApp *AccountsApp) dbPutExistingAccount(accountDb accountDb) error {
-	ctx, cancel := context.WithTimeout(context.Background(), accountsApp.DB.Timeout)
+func (accountAppDb *AccountAppDb) putExistingAccount(account accountDb) error {
+	ctx, cancel := context.WithTimeout(context.Background(), accountAppDb.Timeout)
 	defer cancel()
 
 	query := `
@@ -114,26 +112,58 @@ func (accountsApp *AccountsApp) dbPutExistingAccount(accountDb accountDb) error 
 	WHERE
 		id = $6`
 
-	_, err := accountsApp.DB.Database.ExecContext(ctx, query,
-		accountDb.name,
-		accountDb.description,
-		accountDb.email,
-		accountDb.acceptedTos,
-		accountDb.updatedAt,
-		accountDb.id)
+	_, err := accountAppDb.Database.ExecContext(ctx, query,
+		account.name,
+		account.description,
+		account.email,
+		account.acceptedTos,
+		account.updatedAt,
+		account.id)
 	if err != nil {
 		return err
 	}
 
 	// TODO: Handle 0 rows updated.
 	return nil
+}
 
+// putLEAccountInfo populates an account with data that is returned by LE when
+//  an account is POSTed to
+func (accountAppDb *AccountAppDb) putLEAccountInfo(account accountDb) error {
+	ctx, cancel := context.WithTimeout(context.Background(), accountAppDb.Timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		acme_accounts
+	SET
+		status = $1,
+		email = $2,
+		created_at = $3,
+		updated_at = $4,
+		kid = $5
+	WHERE
+		name = $6`
+
+	_, err := accountAppDb.Database.ExecContext(ctx, query,
+		account.status,
+		account.email,
+		account.createdAt,
+		account.updatedAt,
+		account.kid,
+		account.name)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Handle 0 rows updated.
+	return nil
 }
 
 // dbGetAvailableKeys returns a slice of private keys that exist but are not already associated
 //  with a known ACME account or certificate
-func (accountsApp *AccountsApp) dbGetAvailableKeys() ([]private_keys.Key, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), accountsApp.DB.Timeout)
+func (accountAppDb *AccountAppDb) getAvailableKeys() ([]private_keys.Key, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), accountAppDb.Timeout)
 	defer cancel()
 
 	// TODO - Once certs are added, need to check that table as well for keys in use
@@ -152,9 +182,8 @@ func (accountsApp *AccountsApp) dbGetAvailableKeys() ([]private_keys.Key, error)
 			)
 	`
 
-	rows, err := accountsApp.DB.Database.QueryContext(ctx, query)
+	rows, err := accountAppDb.Database.QueryContext(ctx, query)
 	if err != nil {
-		accountsApp.Logger.Println(err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -170,7 +199,6 @@ func (accountsApp *AccountsApp) dbGetAvailableKeys() ([]private_keys.Key, error)
 			&oneKey.AlgorithmValue,
 		)
 		if err != nil {
-			accountsApp.Logger.Println(err)
 			return nil, err
 		}
 
@@ -180,4 +208,87 @@ func (accountsApp *AccountsApp) dbGetAvailableKeys() ([]private_keys.Key, error)
 	}
 
 	return availableKeys, nil
+}
+
+func (accountAppDb *AccountAppDb) getKeyPem(keyId string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), accountAppDb.Timeout)
+	defer cancel()
+
+	query := `
+		SELECT pem
+		FROM
+		  private_keys
+		WHERE
+			id = $1
+	`
+
+	row := accountAppDb.Database.QueryRowContext(ctx, query, keyId)
+	var pem string
+	err := row.Scan(&pem)
+
+	if err != nil {
+		return "", err
+	}
+
+	return pem, nil
+}
+
+func (accoundAppDb *AccountAppDb) postNewAccount(account accountDb) error {
+	ctx, cancel := context.WithTimeout(context.Background(), accoundAppDb.Timeout)
+	defer cancel()
+
+	tx, err := accoundAppDb.Database.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	// insert the new account
+	query := `
+	INSERT INTO acme_accounts (name, description, private_key_id, status, email, accepted_tos, is_staging, created_at, updated_at)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	`
+
+	_, err = tx.ExecContext(ctx, query,
+		account.name,
+		account.description,
+		account.privateKeyId,
+		account.status,
+		account.email,
+		account.acceptedTos,
+		account.isStaging,
+		account.createdAt,
+		account.updatedAt,
+	)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// verify the new account does not have a cert that uses the same key
+	query = `
+		SELECT private_key_id
+		FROM
+		  certificates
+		WHERE
+			private_key_id = $1
+	`
+
+	row := tx.QueryRowContext(ctx, query, account.privateKeyId)
+
+	var exists bool
+	err = row.Scan(&exists)
+	if err != nil && err != sql.ErrNoRows {
+		tx.Rollback()
+		return err
+	} else if exists {
+		tx.Rollback()
+		return errors.New("private key in use by certificate")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
