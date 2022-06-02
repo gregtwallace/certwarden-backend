@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"legocerthub-backend/private_keys"
+	"strconv"
 )
 
 // dbGetAllAccounts returns a slice of all of the acme accounts in the database
@@ -234,13 +235,13 @@ func (accountAppDb *AccountAppDb) getKeyPem(keyId string) (string, error) {
 }
 
 // postNewAccount inserts a new account into the db and returns the id of the new account
-func (accoundAppDb *AccountAppDb) postNewAccount(account accountDb) (int, error) {
+func (accoundAppDb *AccountAppDb) postNewAccount(account accountDb) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), accoundAppDb.Timeout)
 	defer cancel()
 
 	tx, err := accoundAppDb.Database.BeginTx(ctx, nil)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
 	// insert the new account
@@ -262,15 +263,16 @@ func (accoundAppDb *AccountAppDb) postNewAccount(account accountDb) (int, error)
 	)
 	if err != nil {
 		tx.Rollback()
-		return 0, err
+		return "", err
 	}
 
 	// id of the new account
 	id, err := result.LastInsertId()
 	if err != nil {
 		tx.Rollback()
-		return 0, err
+		return "", err
 	}
+	idStr := strconv.Itoa(int(id))
 
 	// verify the new account does not have a cert that uses the same key
 	query = `
@@ -287,18 +289,18 @@ func (accoundAppDb *AccountAppDb) postNewAccount(account accountDb) (int, error)
 	err = row.Scan(&exists)
 	if err != nil && err != sql.ErrNoRows {
 		tx.Rollback()
-		return 0, err
+		return "", err
 	} else if exists {
 		tx.Rollback()
-		return 0, errors.New("private key in use by certificate")
+		return "", errors.New("private key in use by certificate")
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
-	return int(id), nil
+	return idStr, nil
 }
 
 func (accountAppDb *AccountAppDb) getAccountKid(accountId string) (string, error) {

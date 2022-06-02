@@ -6,7 +6,6 @@ import (
 	"legocerthub-backend/utils"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -139,34 +138,17 @@ func (accountsApp *AccountsApp) PutOneAccount(w http.ResponseWriter, r *http.Req
 	// }
 
 	// load fields
-	var acmeAccount accountDb
-	acmeAccount.id, err = strconv.Atoi(payload.ID)
+	account, err := payload.accountPayloadToDb()
 	if err != nil {
-		accountsApp.Logger.Printf("accounts: PutOne: invalid id -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: PutOne: failed to load payload into db obj -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
-	acmeAccount.name = payload.Name
+	//
 
-	acmeAccount.description.Valid = true
-	acmeAccount.description.String = payload.Description
-
-	acmeAccount.email.Valid = true
-	acmeAccount.email.String = payload.Email
-
-	acmeAccount.updatedAt = int(time.Now().Unix())
-
-	// once tos is accepted, it cannot be un-accepted
-	// logic to prevent un-accepting
-	if payload.AcceptedTos == "on" || payload.AcceptedTos == "true" {
-		acmeAccount.acceptedTos.Bool = true
-		acmeAccount.acceptedTos.Valid = true
-	} else {
-		acmeAccount.acceptedTos.Valid = false
-	}
-
-	err = accountsApp.DB.putExistingAccount(acmeAccount)
+	// update db
+	err = accountsApp.DB.putExistingAccount(account)
 	if err != nil {
 		accountsApp.Logger.Printf("accounts: PutOne: failed to write to db -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
@@ -225,34 +207,10 @@ func (accountsApp *AccountsApp) PostNewAccount(w http.ResponseWriter, r *http.Re
 	}
 	///
 
-	// load fields
-	account, err := payload.accountPayloadToDb()
+	// payload -> LE create -> save to db
+	err = accountsApp.createNewAccount(payload)
 	if err != nil {
-		accountsApp.Logger.Printf("accounts: PostNew: failed to load payload into db obj -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
-	}
-
-	// post initial account
-	id, err := accountsApp.DB.postNewAccount(account)
-	if err != nil {
-		accountsApp.Logger.Printf("accounts: PostNew: failed to write db -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
-	}
-
-	// Create account with LE
-	acmeAccountResponse, err := accountsApp.createLeAccount(payload)
-	if err != nil {
-		accountsApp.Logger.Printf("accounts: PostNew: failed to create LE account -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
-	}
-
-	// Write the returned account info from LE to the db
-	err = accountsApp.DB.putLEAccountInfo(acmeResponseDbObj(id, acmeAccountResponse))
-	if err != nil {
-		accountsApp.Logger.Printf("accounts: PostNew: failed to update db -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: PostNew: failed to create account -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
