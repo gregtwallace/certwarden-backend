@@ -137,10 +137,26 @@ func (accountsApp *AccountsApp) PutOneAccount(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// load fields
+	account, err := payload.accountPayloadToDb()
+	if err != nil {
+		accountsApp.Logger.Printf("accounts: PutOne: failed to load payload into db obj -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
 	// if no kid, do new LE registration
-	// this also ignores any other edits to the account
 	if kid == "" {
-		err := accountsApp.createNewLEAccount(payload)
+		// always update name and desc
+		err = accountsApp.DB.putExistingAccountNameDesc(account)
+		if err != nil {
+			accountsApp.Logger.Printf("accounts: PutOne: failed to update account -- err: %s", err)
+			utils.WriteErrorJSON(w, err)
+			return
+		}
+
+		// do new LE reg
+		err = accountsApp.createNewLEAccount(payload)
 		if err != nil {
 			accountsApp.Logger.Printf("accounts: PutOne: failed to create new LE account -- err: %s", err)
 			utils.WriteErrorJSON(w, err)
@@ -148,10 +164,10 @@ func (accountsApp *AccountsApp) PutOneAccount(w http.ResponseWriter, r *http.Req
 		}
 	} else {
 		// if there is a kid, update the existing account with new data
-		// load fields
-		account, err := payload.accountPayloadToDb()
+		// do LE update
+		err = accountsApp.updateLEAccount(payload)
 		if err != nil {
-			accountsApp.Logger.Printf("accounts: PutOne: failed to load payload into db obj -- err: %s", err)
+			accountsApp.Logger.Printf("accounts: PutOne: failed to update LE account -- err: %s", err)
 			utils.WriteErrorJSON(w, err)
 			return
 		}

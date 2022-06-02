@@ -24,16 +24,16 @@ type acmeMessage struct {
 
 // ProtectedHeader piece of the LE payload
 type protectedHeader struct {
-	Algorithm  string     `json:"alg"`
-	JsonWebKey jsonWebKey `json:"jwk,omitempty"`
-	KeyId      string     `json:"kid,omitempty"`
-	Url        string     `json:"url"`
-	Nonce      string     `json:"nonce"`
+	Algorithm  string      `json:"alg"`
+	JsonWebKey *jsonWebKey `json:"jwk,omitempty"`
+	KeyId      string      `json:"kid,omitempty"`
+	Url        string      `json:"url"`
+	Nonce      string      `json:"nonce"`
 }
 
 // JWK for the LE payload
 type jsonWebKey struct {
-	KeyType        string `json:"kty"`
+	KeyType        string `json:"kty,omitempty"`
 	PublicExponent string `json:"e,omitempty"`   // RSA
 	Modulus        string `json:"n,omitempty"`   // RSA
 	CurveName      string `json:"crv,omitempty"` // EC

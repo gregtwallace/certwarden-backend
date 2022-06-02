@@ -325,3 +325,29 @@ func (accountAppDb *AccountAppDb) getAccountKid(accountId string) (string, error
 
 	return kid.String, nil
 }
+
+// putExistingAccountNameDesc only updates the name and desc in the database
+func (db AccountAppDb) putExistingAccountNameDesc(account accountDb) error {
+	ctx, cancel := context.WithTimeout(context.Background(), db.Timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		acme_accounts
+	SET
+		name = $1,
+		description = $2
+	WHERE
+		id = $3`
+
+	_, err := db.Database.ExecContext(ctx, query,
+		account.name,
+		account.description,
+		account.id)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Handle 0 rows updated.
+	return nil
+}

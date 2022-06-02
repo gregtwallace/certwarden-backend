@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"log"
 	"strings"
 	"time"
 )
@@ -31,11 +32,13 @@ func encodeAcmeData(data any) (string, error) {
 		return "", err
 	}
 
+	log.Println(string(jsonBytes))
+
 	return base64.RawURLEncoding.EncodeToString(jsonBytes), nil
 }
 
 // JwkEcKey creates an ACME Json Web Key (JWK) from the inputted private key
-func JwkEcKey(privateKey *ecdsa.PrivateKey) jsonWebKey {
+func JwkEcKey(privateKey *ecdsa.PrivateKey) *jsonWebKey {
 	var jsonWebKey jsonWebKey
 
 	jsonWebKey.KeyType = "EC"
@@ -55,7 +58,7 @@ func JwkEcKey(privateKey *ecdsa.PrivateKey) jsonWebKey {
 	jsonWebKey.CurvePointX = base64.RawURLEncoding.EncodeToString(xBuf)
 	jsonWebKey.CurvePointY = base64.RawURLEncoding.EncodeToString(yBuf)
 
-	return jsonWebKey
+	return &jsonWebKey
 }
 
 // TODO JWK func for RSA keys

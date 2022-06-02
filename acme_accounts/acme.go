@@ -65,3 +65,32 @@ func (acme *AccountAppAcme) createLeAccount(payload accountPayload, keyPem strin
 
 	return acmeAccountResponse, nil
 }
+
+// Create account with LE
+func (acme *AccountAppAcme) updateLeAccount(payload accountPayload, keyPem string, kid string) (acme_utils.AcmeAccountResponse, error) {
+	// payload to sent to LE
+	var acmeAccount acme_utils.AcmeAccount
+
+	acmeAccount.TermsOfServiceAgreed = true
+	if payload.Email != "" {
+		acmeAccount.Contact = []string{"mailto:" + payload.Email}
+	}
+
+	// vars for return
+	var acmeAccountResponse acme_utils.AcmeAccountResponse
+	var err error
+
+	if (payload.IsStaging == "true") || (payload.IsStaging == "on") {
+		acmeAccountResponse, err = acme.StagingDir.UpdateAccount(acmeAccount, keyPem, kid)
+		if err != nil {
+			return acmeAccountResponse, err
+		}
+	} else {
+		acmeAccountResponse, err = acme.ProdDir.UpdateAccount(acmeAccount, keyPem, kid)
+		if err != nil {
+			return acmeAccountResponse, err
+		}
+	}
+
+	return acmeAccountResponse, nil
+}
