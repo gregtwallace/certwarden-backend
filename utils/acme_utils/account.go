@@ -142,7 +142,7 @@ func (dir AcmeDirectory) CreateAccount(acct AcmeAccount, keyPem string) (AcmeAcc
 		return AcmeAccountResponse{}, err
 	}
 
-	response, err = http.Post(dir.NewAccount, "application/jose+json", bytes.NewBuffer(messageJson))
+	response, err = http.Post(header.Url, "application/jose+json", bytes.NewBuffer(messageJson))
 	if err != nil {
 		return AcmeAccountResponse{}, err
 	}
@@ -185,7 +185,7 @@ func (dir AcmeDirectory) UpdateAccount(acct AcmeAccount, keyPem string, kid stri
 
 	//// header
 	header := protectedHeader{}
-	header.Url = dir.NewAccount
+	header.Url = kid
 	header.Algorithm = alg.SignatureAlg
 
 	/// kid
@@ -239,7 +239,7 @@ func (dir AcmeDirectory) UpdateAccount(acct AcmeAccount, keyPem string, kid stri
 		return AcmeAccountResponse{}, err
 	}
 
-	response, err = http.Post(dir.NewAccount, "application/jose+json", bytes.NewBuffer(messageJson))
+	response, err = http.Post(header.Url, "application/jose+json", bytes.NewBuffer(messageJson))
 	if err != nil {
 		return AcmeAccountResponse{}, err
 	}
