@@ -6,7 +6,7 @@ import (
 )
 
 // dbGetAllPrivateKeys writes information about all private keys to json
-func (keysAppDb *KeysAppDb) dbGetAllKeys() ([]Key, error) {
+func (keysAppDb *KeysAppDb) getAllKeys() ([]Key, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), keysAppDb.Timeout)
 	defer cancel()
 
@@ -41,7 +41,7 @@ func (keysAppDb *KeysAppDb) dbGetAllKeys() ([]Key, error) {
 }
 
 // dbGetOneKey returns a key from the db based on unique id
-func (keysAppDb *KeysAppDb) dbGetOneKey(id int) (Key, error) {
+func (keysAppDb *KeysAppDb) getOneKey(id int) (Key, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), keysAppDb.Timeout)
 	defer cancel()
 
@@ -75,7 +75,7 @@ func (keysAppDb *KeysAppDb) dbGetOneKey(id int) (Key, error) {
 
 // dbPutExistingKey sets an existing key equal to the PUT values (overwriting
 //  old values)
-func (keysAppDb *KeysAppDb) dbPutExistingKey(keyDb KeyDb) error {
+func (keysAppDb *KeysAppDb) putExistingKey(keyDb KeyDb) error {
 	ctx, cancel := context.WithTimeout(context.Background(), keysAppDb.Timeout)
 	defer cancel()
 
@@ -104,7 +104,7 @@ func (keysAppDb *KeysAppDb) dbPutExistingKey(keyDb KeyDb) error {
 }
 
 // dbPostNewKey creates a new key based on what was POSTed
-func (keysAppDb *KeysAppDb) dbPostNewKey(keyDb KeyDb) error {
+func (keysAppDb *KeysAppDb) postNewKey(keyDb KeyDb) error {
 	ctx, cancel := context.WithTimeout(context.Background(), keysAppDb.Timeout)
 	defer cancel()
 
@@ -130,7 +130,7 @@ func (keysAppDb *KeysAppDb) dbPostNewKey(keyDb KeyDb) error {
 }
 
 // delete a private key from the database
-func (keysAppDb *KeysAppDb) dbDeleteKey(id int) error {
+func (keysAppDb *KeysAppDb) deleteKey(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), keysAppDb.Timeout)
 	defer cancel()
 
