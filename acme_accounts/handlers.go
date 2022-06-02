@@ -241,9 +241,6 @@ func (accountsApp *AccountsApp) PostNewAccount(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// load ID of new account
-	payload.ID = strconv.Itoa(id)
-
 	// Create account with LE
 	acmeAccountResponse, err := accountsApp.createLeAccount(payload)
 	if err != nil {
@@ -253,7 +250,7 @@ func (accountsApp *AccountsApp) PostNewAccount(w http.ResponseWriter, r *http.Re
 	}
 
 	// Write the returned account info from LE to the db
-	err = accountsApp.DB.putLEAccountInfo(acmeResponseDbObj(payload.ID, acmeAccountResponse))
+	err = accountsApp.DB.putLEAccountInfo(acmeResponseDbObj(id, acmeAccountResponse))
 	if err != nil {
 		accountsApp.Logger.Printf("accounts: PostNew: failed to update db -- err: %s", err)
 		utils.WriteErrorJSON(w, err)

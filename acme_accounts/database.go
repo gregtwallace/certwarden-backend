@@ -129,7 +129,7 @@ func (accountAppDb *AccountAppDb) putExistingAccount(account accountDb) error {
 
 // putLEAccountInfo populates an account with data that is returned by LE when
 //  an account is POSTed to
-func (accountAppDb *AccountAppDb) putLEAccountInfo(account AcmeAccountDb) error {
+func (accountAppDb *AccountAppDb) putLEAccountInfo(account accountDb) error {
 	ctx, cancel := context.WithTimeout(context.Background(), accountAppDb.Timeout)
 	defer cancel()
 

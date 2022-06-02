@@ -1,25 +1,14 @@
 package acme_accounts
 
 import (
-	"database/sql"
 	"legocerthub-backend/utils/acme_utils"
 	"strings"
 	"time"
 )
 
-// LE response Db object
-type AcmeAccountDb struct {
-	id        string
-	email     sql.NullString
-	createdAt int
-	updatedAt int
-	status    sql.NullString
-	kid       sql.NullString
-}
-
 // Turn LE response into Db object
-func acmeResponseDbObj(accountId string, response acme_utils.AcmeAccountResponse) AcmeAccountDb {
-	var account AcmeAccountDb
+func acmeResponseDbObj(accountId int, response acme_utils.AcmeAccountResponse) accountDb {
+	var account accountDb
 
 	account.id = accountId
 
