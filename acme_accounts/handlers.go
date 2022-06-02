@@ -4,10 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"legocerthub-backend/utils"
-	"legocerthub-backend/utils/acme_utils"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -94,6 +92,10 @@ func (accountsApp *AccountsApp) GetNewAccountOptions(w http.ResponseWriter, r *h
 
 // PutOneAccount is an http handler that overwrites the specified (by id) acme account with the
 //  data PUT by the client
+
+// TODO: fetch data from LE and update kid
+// if kid already exists, use it to update the email field
+
 func (accountsApp *AccountsApp) PutOneAccount(w http.ResponseWriter, r *http.Request) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
@@ -119,7 +121,22 @@ func (accountsApp *AccountsApp) PutOneAccount(w http.ResponseWriter, r *http.Req
 		accountsApp.Logger.Printf("accounts: PutOne: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 	}
+	// email
+	err = utils.IsEmailValidOrBlank(payload.Email)
+	if err != nil {
+		accountsApp.Logger.Printf("accounts: PutOne: invalid email -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
 	///
+
+	// check db for account kid
+	// kid, err := accountsApp.DB.getAccountKid(payload.ID)
+	// if err != nil {
+	// 	accountsApp.Logger.Printf("accounts: PutOne: failed to check for kid -- err: %s", err)
+	// 	utils.WriteErrorJSON(w, err)
+	// 	return
+	// }
 
 	// load fields
 	var acmeAccount accountDb
@@ -199,13 +216,7 @@ func (accountsApp *AccountsApp) PostNewAccount(w http.ResponseWriter, r *http.Re
 		utils.WriteErrorJSON(w, err)
 		return
 	}
-	// private key - get pem (only verifies private key id exists)
-	keyPem, err := accountsApp.DB.getKeyPem(payload.PrivateKeyID)
-	if err != nil {
-		accountsApp.Logger.Printf("accounts: PostNew: invalid private key id -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
-	}
+	// private key (pem valid is checked later in account creation)
 	// TOS must be accepted
 	if (payload.AcceptedTos != "true") && (payload.AcceptedTos != "on") {
 		accountsApp.Logger.Println("accounts: PostNew: must accept ToS")
@@ -215,88 +226,34 @@ func (accountsApp *AccountsApp) PostNewAccount(w http.ResponseWriter, r *http.Re
 	///
 
 	// load fields
-	var account accountDb
-	account.name = payload.Name
-
-	account.description.Valid = true
-	account.description.String = payload.Description
-
-	keyId, err := strconv.Atoi(payload.PrivateKeyID)
+	account, err := payload.accountPayloadToDb()
 	if err != nil {
-		accountsApp.Logger.Printf("accounts: PostNew: invalid key id -- err: %s", err)
+		accountsApp.Logger.Printf("accounts: PostNew: failed to load payload into db obj -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
-	account.privateKeyId.Valid = true
-	account.privateKeyId.Int32 = int32(keyId)
 
-	account.status.Valid = true
-	account.status.String = "Unknown"
-
-	account.email.Valid = true
-	account.email.String = payload.Email
-
-	account.acceptedTos.Valid = true
-	account.acceptedTos.Bool = true
-
-	account.isStaging.Valid = true
-	if (payload.IsStaging == "true") || (payload.IsStaging == "on") {
-		account.isStaging.Bool = true
-	} else {
-		account.isStaging.Bool = false
-	}
-
-	account.createdAt = 0 // will update later from LE
-	account.updatedAt = int(time.Now().Unix())
-
-	err = accountsApp.DB.postNewAccount(account)
+	// post initial account
+	id, err := accountsApp.DB.postNewAccount(account)
 	if err != nil {
 		accountsApp.Logger.Printf("accounts: PostNew: failed to write db -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 
-	// Create account with LE
-	var acmeAccount acme_utils.AcmeAccount
-	acmeAccount.Contact = []string{"mailto:" + payload.Email}
-	acmeAccount.TermsOfServiceAgreed = true
+	// load ID of new account
+	payload.ID = strconv.Itoa(id)
 
-	var acmeAccountResponse acme_utils.AcmeAccountResponse
-	if (payload.IsStaging == "true") || (payload.IsStaging == "on") {
-		acmeAccountResponse, err = accountsApp.Acme.StagingDir.CreateAccount(acmeAccount, keyPem)
-		if err != nil {
-			accountsApp.Logger.Printf("accounts: PostNew: failed to create LE account -- err: %s", err)
-			utils.WriteErrorJSON(w, err)
-			return
-		}
-	} else {
-		acmeAccountResponse, err = accountsApp.Acme.ProdDir.CreateAccount(acmeAccount, keyPem)
-		if err != nil {
-			accountsApp.Logger.Printf("accounts: PostNew: failed to create LE account -- err: %s", err)
-			utils.WriteErrorJSON(w, err)
-			return
-		}
+	// Create account with LE
+	acmeAccountResponse, err := accountsApp.createLeAccount(payload)
+	if err != nil {
+		accountsApp.Logger.Printf("accounts: PostNew: failed to create LE account -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
 	}
 
 	// Write the returned account info from LE to the db
-	account.email.String = strings.TrimPrefix(acmeAccountResponse.Contact[0], "mailto:")
-
-	unixCreated, err := acme_utils.LeToUnixTime(acmeAccountResponse.CreatedAt)
-	if err != nil {
-		unixCreated = 0
-	}
-	account.createdAt = int(unixCreated)
-
-	account.updatedAt = int(time.Now().Unix())
-
-	// already valid
-	account.status.String = acmeAccountResponse.Status
-
-	account.kid.Valid = true
-	account.kid.String = acmeAccountResponse.Location
-
-	// update the account with LE info
-	err = accountsApp.DB.putLEAccountInfo(account)
+	err = accountsApp.DB.putLEAccountInfo(acmeResponseDbObj(payload.ID, acmeAccountResponse))
 	if err != nil {
 		accountsApp.Logger.Printf("accounts: PostNew: failed to update db -- err: %s", err)
 		utils.WriteErrorJSON(w, err)

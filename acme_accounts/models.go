@@ -5,6 +5,7 @@ import (
 	"legocerthub-backend/private_keys"
 	"legocerthub-backend/utils/acme_utils"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -92,4 +93,48 @@ type NewAccountOptions struct {
 	TosUrl        string             `json:"tos_url"`
 	StagingTosUrl string             `json:"staging_tos_url"`
 	AvailableKeys []private_keys.Key `json:"available_keys"`
+}
+
+// load account payload into a db object
+func (payload *accountPayload) accountPayloadToDb() (accountDb, error) {
+	var accountDb accountDb
+
+	accountId, err := strconv.Atoi(payload.ID)
+	if err != nil {
+		return accountDb, err
+	}
+	accountDb.id = accountId
+
+	accountDb.name = payload.Name
+
+	accountDb.description.Valid = true
+	accountDb.description.String = payload.Description
+
+	keyId, err := strconv.Atoi(payload.PrivateKeyID)
+	if err != nil {
+		return accountDb, err
+	}
+	accountDb.privateKeyId.Valid = true
+	accountDb.privateKeyId.Int32 = int32(keyId)
+
+	accountDb.status.Valid = true
+	accountDb.status.String = "Unknown"
+
+	accountDb.email.Valid = true
+	accountDb.email.String = payload.Email
+
+	accountDb.acceptedTos.Valid = true
+	accountDb.acceptedTos.Bool = true
+
+	accountDb.isStaging.Valid = true
+	if (payload.IsStaging == "true") || (payload.IsStaging == "on") {
+		accountDb.isStaging.Bool = true
+	} else {
+		accountDb.isStaging.Bool = false
+	}
+
+	accountDb.createdAt = 0 // will update later from LE
+	accountDb.updatedAt = int(time.Now().Unix())
+
+	return accountDb, nil
 }

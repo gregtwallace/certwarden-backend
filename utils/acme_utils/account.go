@@ -12,6 +12,26 @@ import (
 	"net/http"
 )
 
+// LE account data
+type AcmeAccount struct {
+	Status               string   `json:"status,omitempty"`
+	Contact              []string `json:"contact,omitempty"`
+	TermsOfServiceAgreed bool     `json:"termsOfServiceAgreed,omitempty"`
+	OnlyReturnExisting   bool     `json:"onlyReturnExisting,omitempty"`
+}
+
+// LE response to account data post/update
+type AcmeAccountResponse struct {
+	JsonWebKey jsonWebKey `json:"key"`
+	Contact    []string   `json:"contact"`
+	Orders     string     `json:"orders"`
+	InitialIP  string     `json:"initialIp"`
+	CreatedAt  string     `json:"createdAt"`
+	Status     string     `json:"status"`
+	Location   string     `json:"-"` // omit because it is in the header
+}
+
+//
 func (dir AcmeDirectory) CreateAccount(acct AcmeAccount, keyPem string) (AcmeAccountResponse, error) {
 	var err error
 

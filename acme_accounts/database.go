@@ -129,7 +129,7 @@ func (accountAppDb *AccountAppDb) putExistingAccount(account accountDb) error {
 
 // putLEAccountInfo populates an account with data that is returned by LE when
 //  an account is POSTed to
-func (accountAppDb *AccountAppDb) putLEAccountInfo(account accountDb) error {
+func (accountAppDb *AccountAppDb) putLEAccountInfo(account AcmeAccountDb) error {
 	ctx, cancel := context.WithTimeout(context.Background(), accountAppDb.Timeout)
 	defer cancel()
 
@@ -143,7 +143,7 @@ func (accountAppDb *AccountAppDb) putLEAccountInfo(account accountDb) error {
 		updated_at = $4,
 		kid = $5
 	WHERE
-		name = $6`
+		id = $6`
 
 	_, err := accountAppDb.Database.ExecContext(ctx, query,
 		account.status,
@@ -151,7 +151,7 @@ func (accountAppDb *AccountAppDb) putLEAccountInfo(account accountDb) error {
 		account.createdAt,
 		account.updatedAt,
 		account.kid,
-		account.name)
+		account.id)
 	if err != nil {
 		return err
 	}
@@ -233,13 +233,14 @@ func (accountAppDb *AccountAppDb) getKeyPem(keyId string) (string, error) {
 	return pem.String, nil
 }
 
-func (accoundAppDb *AccountAppDb) postNewAccount(account accountDb) error {
+// postNewAccount inserts a new account into the db and returns the id of the new account
+func (accoundAppDb *AccountAppDb) postNewAccount(account accountDb) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), accoundAppDb.Timeout)
 	defer cancel()
 
 	tx, err := accoundAppDb.Database.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// insert the new account
@@ -248,7 +249,7 @@ func (accoundAppDb *AccountAppDb) postNewAccount(account accountDb) error {
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
-	_, err = tx.ExecContext(ctx, query,
+	result, err := tx.ExecContext(ctx, query,
 		account.name,
 		account.description,
 		account.privateKeyId,
@@ -261,7 +262,14 @@ func (accoundAppDb *AccountAppDb) postNewAccount(account accountDb) error {
 	)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return 0, err
+	}
+
+	// id of the new account
+	id, err := result.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		return 0, err
 	}
 
 	// verify the new account does not have a cert that uses the same key
@@ -279,16 +287,39 @@ func (accoundAppDb *AccountAppDb) postNewAccount(account accountDb) error {
 	err = row.Scan(&exists)
 	if err != nil && err != sql.ErrNoRows {
 		tx.Rollback()
-		return err
+		return 0, err
 	} else if exists {
 		tx.Rollback()
-		return errors.New("private key in use by certificate")
+		return 0, errors.New("private key in use by certificate")
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return int(id), nil
+}
+
+func (accountAppDb *AccountAppDb) getAccountKid(accountId string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), accountAppDb.Timeout)
+	defer cancel()
+
+	query := `
+		SELECT kid
+		FROM
+		  acme_accounts
+		WHERE
+			id = $1
+	`
+
+	row := accountAppDb.Database.QueryRowContext(ctx, query, accountId)
+	var kid sql.NullString
+	err := row.Scan(&kid)
+
+	if err != nil {
+		return "", err
+	}
+
+	return kid.String, nil
 }

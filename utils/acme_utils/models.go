@@ -40,22 +40,3 @@ type jsonWebKey struct {
 	CurvePointX    string `json:"x,omitempty"`   // EC
 	CurvePointY    string `json:"y,omitempty"`   // EC
 }
-
-// LE account data
-type AcmeAccount struct {
-	Status               string   `json:"status,omitempty"`
-	Contact              []string `json:"contact,omitempty"`
-	TermsOfServiceAgreed bool     `json:"termsOfServiceAgreed,omitempty"`
-	OnlyReturnExisting   bool     `json:"onlyReturnExisting,omitempty"`
-}
-
-// LE response to account data post/update
-type AcmeAccountResponse struct {
-	JsonWebKey jsonWebKey `json:"key"`
-	Contact    []string   `json:"contact"`
-	Orders     string     `json:"orders"`
-	InitialIP  string     `json:"initialIp"`
-	CreatedAt  string     `json:"createdAt"`
-	Status     string     `json:"status"`
-	Location   string     `json:"-"` // omit because it is in the header
-}
