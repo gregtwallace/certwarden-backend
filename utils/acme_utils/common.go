@@ -4,8 +4,10 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 )
@@ -61,10 +63,21 @@ func JwkEcKey(privateKey *ecdsa.PrivateKey) jsonWebKey {
 // acmeSignature generates the encoded signature that should be loaded into message.Signature
 func acmeEcSignature(message acmeMessage, privateKey *ecdsa.PrivateKey) (string, error) {
 	toSign := strings.Join([]string{message.ProtectedHeader, message.Payload}, ".")
-	// hash has to be generated based on the header.Algorithm or will error
-	hash := sha256.Sum256([]byte(toSign))
+	bitSize := privateKey.PublicKey.Params().BitSize
 
-	r, s, err := ecdsa.Sign(rand.Reader, privateKey, hash[:])
+	// hash has to be generated based on the header.Algorithm or will error
+	var hash []byte
+	if bitSize == 256 {
+		hash256 := sha256.Sum256([]byte(toSign))
+		hash = hash256[:]
+	} else if bitSize == 384 {
+		hash384 := sha512.Sum384([]byte(toSign))
+		hash = hash384[:]
+	} else {
+		return "", errors.New("Unsupported bitSize")
+	}
+
+	r, s, err := ecdsa.Sign(rand.Reader, privateKey, hash)
 	if err != nil {
 		return "", err
 	}
@@ -73,7 +86,7 @@ func acmeEcSignature(message acmeMessage, privateKey *ecdsa.PrivateKey) (string,
 
 	// Spec requires padding to octet length
 	// This should never be an issue with LE, but implement the spec anyway
-	octetLength := (privateKey.PublicKey.Params().BitSize + 7) >> 3
+	octetLength := (bitSize + 7) >> 3
 	// MUST include leading zeros in the output
 	rBuf := make([]byte, octetLength-len(rBytes), octetLength)
 	sBuf := make([]byte, octetLength-len(sBytes), octetLength)
