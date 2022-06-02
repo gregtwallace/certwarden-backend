@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type KeyAppDb struct {
+type KeysAppDb struct {
 	Database *sql.DB
 	Timeout  time.Duration
 }
@@ -15,7 +15,7 @@ type KeyAppDb struct {
 // PrivateKeys struct for database access
 type KeysApp struct {
 	Logger *log.Logger
-	DB     KeyAppDb
+	DB     KeysAppDb
 }
 
 // a single private key

@@ -6,14 +6,14 @@ import (
 )
 
 // dbGetAllPrivateKeys writes information about all private keys to json
-func (keysApp *KeysApp) dbGetAllKeys() ([]Key, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), keysApp.DB.Timeout)
+func (keysAppDb *KeysAppDb) dbGetAllKeys() ([]Key, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), keysAppDb.Timeout)
 	defer cancel()
 
 	query := `SELECT id, name, description, algorithm
 	FROM private_keys ORDER BY id`
 
-	rows, err := keysApp.DB.Database.QueryContext(ctx, query)
+	rows, err := keysAppDb.Database.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -41,8 +41,8 @@ func (keysApp *KeysApp) dbGetAllKeys() ([]Key, error) {
 }
 
 // dbGetOneKey returns a key from the db based on unique id
-func (keysApp *KeysApp) dbGetOneKey(id int) (Key, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), keysApp.DB.Timeout)
+func (keysAppDb *KeysAppDb) dbGetOneKey(id int) (Key, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), keysAppDb.Timeout)
 	defer cancel()
 
 	query := `SELECT id, name, description, algorithm, pem, api_key, created_at, updated_at
@@ -50,7 +50,7 @@ func (keysApp *KeysApp) dbGetOneKey(id int) (Key, error) {
 	WHERE id = $1
 	ORDER BY id`
 
-	row := keysApp.DB.Database.QueryRowContext(ctx, query, id)
+	row := keysAppDb.Database.QueryRowContext(ctx, query, id)
 
 	var oneKeyDb KeyDb
 	err := row.Scan(
@@ -75,8 +75,8 @@ func (keysApp *KeysApp) dbGetOneKey(id int) (Key, error) {
 
 // dbPutExistingKey sets an existing key equal to the PUT values (overwriting
 //  old values)
-func (keysApp *KeysApp) dbPutExistingKey(keyDb KeyDb) error {
-	ctx, cancel := context.WithTimeout(context.Background(), keysApp.DB.Timeout)
+func (keysAppDb *KeysAppDb) dbPutExistingKey(keyDb KeyDb) error {
+	ctx, cancel := context.WithTimeout(context.Background(), keysAppDb.Timeout)
 	defer cancel()
 
 	query := `
@@ -89,7 +89,7 @@ func (keysApp *KeysApp) dbPutExistingKey(keyDb KeyDb) error {
 	WHERE
 		id = $4`
 
-	_, err := keysApp.DB.Database.ExecContext(ctx, query,
+	_, err := keysAppDb.Database.ExecContext(ctx, query,
 		keyDb.Name,
 		keyDb.Description,
 		keyDb.UpdatedAt,
@@ -104,8 +104,8 @@ func (keysApp *KeysApp) dbPutExistingKey(keyDb KeyDb) error {
 }
 
 // dbPostNewKey creates a new key based on what was POSTed
-func (keysApp *KeysApp) dbPostNewKey(keyDb KeyDb) error {
-	ctx, cancel := context.WithTimeout(context.Background(), keysApp.DB.Timeout)
+func (keysAppDb *KeysAppDb) dbPostNewKey(keyDb KeyDb) error {
+	ctx, cancel := context.WithTimeout(context.Background(), keysAppDb.Timeout)
 	defer cancel()
 
 	query := `
@@ -113,7 +113,7 @@ func (keysApp *KeysApp) dbPostNewKey(keyDb KeyDb) error {
 	VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 
-	_, err := keysApp.DB.Database.ExecContext(ctx, query,
+	_, err := keysAppDb.Database.ExecContext(ctx, query,
 		keyDb.Name,
 		keyDb.Description,
 		keyDb.AlgorithmValue,
@@ -130,8 +130,8 @@ func (keysApp *KeysApp) dbPostNewKey(keyDb KeyDb) error {
 }
 
 // delete a private key from the database
-func (keysApp *KeysApp) dbDeleteKey(id int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), keysApp.DB.Timeout)
+func (keysAppDb *KeysAppDb) dbDeleteKey(id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), keysAppDb.Timeout)
 	defer cancel()
 
 	query := `
@@ -143,7 +143,7 @@ func (keysApp *KeysApp) dbDeleteKey(id int) error {
 
 	// TODO: Ensure can't delete a key that is in use on an account or certificate
 
-	result, err := keysApp.DB.Database.ExecContext(ctx, query, id)
+	result, err := keysAppDb.Database.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}

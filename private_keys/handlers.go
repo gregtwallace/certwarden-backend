@@ -14,7 +14,7 @@ import (
 // Get all of the private keys in our DB and write them as JSON to the API
 func (keysApp *KeysApp) GetAllKeys(w http.ResponseWriter, r *http.Request) {
 
-	keys, err := keysApp.dbGetAllKeys()
+	keys, err := keysApp.DB.dbGetAllKeys()
 	if err != nil {
 		keysApp.Logger.Printf("keys: GetAll: db failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
@@ -56,7 +56,7 @@ func (keysApp *KeysApp) GetOneKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key, err := keysApp.dbGetOneKey(id)
+	key, err := keysApp.DB.dbGetOneKey(id)
 	if err != nil {
 		keysApp.Logger.Printf("keys: GetOne: db failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
@@ -123,7 +123,7 @@ func (keysApp *KeysApp) PutOneKey(w http.ResponseWriter, r *http.Request) {
 
 	privateKey.UpdatedAt = int(time.Now().Unix())
 
-	err = keysApp.dbPutExistingKey(privateKey)
+	err = keysApp.DB.dbPutExistingKey(privateKey)
 	if err != nil {
 		keysApp.Logger.Printf("keys: PutOne: failed to write to db -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
@@ -225,7 +225,7 @@ func (keysApp *KeysApp) PostNewKey(w http.ResponseWriter, r *http.Request) {
 	privateKey.CreatedAt = int(time.Now().Unix())
 	privateKey.UpdatedAt = privateKey.CreatedAt
 
-	err = keysApp.dbPostNewKey(privateKey)
+	err = keysApp.DB.dbPostNewKey(privateKey)
 	if err != nil {
 		keysApp.Logger.Printf("keys: PostNew: failed to write to db -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
@@ -254,7 +254,7 @@ func (keysApp *KeysApp) DeleteKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = keysApp.dbDeleteKey(id)
+	err = keysApp.DB.dbDeleteKey(id)
 	if err != nil {
 		keysApp.Logger.Printf("keys: Delete: failed to db delete -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
