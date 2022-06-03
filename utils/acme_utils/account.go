@@ -16,7 +16,7 @@ import (
 // LE account data
 type AcmeAccount struct {
 	Status               string   `json:"status,omitempty"`
-	Contact              []string `json:"contact,omitempty"`
+	Contact              []string `json:"contact"`
 	TermsOfServiceAgreed bool     `json:"termsOfServiceAgreed,omitempty"`
 	OnlyReturnExisting   bool     `json:"onlyReturnExisting,omitempty"`
 }
@@ -253,8 +253,8 @@ func (dir AcmeDirectory) UpdateAccount(acct AcmeAccount, keyPem string, kid stri
 	if err != nil {
 		return AcmeAccountResponse{}, err
 	}
-	// kid isn't part of the JSON response, fetch it from the header
-	responseAccount.Location = response.Header.Get("Location")
+	// kid isn't in the header for updates
+	responseAccount.Location = kid
 
 	return responseAccount, nil
 

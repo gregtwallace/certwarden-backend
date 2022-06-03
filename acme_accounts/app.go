@@ -56,7 +56,7 @@ func (app *AccountsApp) createNewLEAccount(payload accountPayload) error {
 	return nil
 }
 
-// createNewAccount creates a new account and registers it with LE
+// updateLEAccount updates account settings with LE
 func (app *AccountsApp) updateLEAccount(payload accountPayload) error {
 	var acmeAccountResponse acme_utils.AcmeAccountResponse
 
