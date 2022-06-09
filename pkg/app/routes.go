@@ -1,8 +1,8 @@
 package app
 
 import (
-	"legocerthub-backend/acme_accounts"
-	"legocerthub-backend/private_keys"
+	"legocerthub-backend/pkg/acme_accounts"
+	"legocerthub-backend/pkg/private_keys"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"

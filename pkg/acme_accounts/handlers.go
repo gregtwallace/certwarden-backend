@@ -3,7 +3,7 @@ package acme_accounts
 import (
 	"encoding/json"
 	"errors"
-	"legocerthub-backend/utils"
+	"legocerthub-backend/pkg/utils"
 	"net/http"
 	"strconv"
 

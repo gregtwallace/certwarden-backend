@@ -2,8 +2,8 @@ package acme_accounts
 
 import (
 	"database/sql"
-	"legocerthub-backend/private_keys"
-	"legocerthub-backend/utils/acme_utils"
+	"legocerthub-backend/pkg/private_keys"
+	"legocerthub-backend/pkg/utils/acme_utils"
 	"log"
 	"strconv"
 	"time"

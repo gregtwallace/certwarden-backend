@@ -2,7 +2,7 @@ package private_keys
 
 import (
 	"database/sql"
-	"legocerthub-backend/utils"
+	"legocerthub-backend/pkg/utils"
 	"log"
 	"time"
 )

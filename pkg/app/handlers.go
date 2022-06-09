@@ -1,8 +1,8 @@
 package app
 
 import (
-	"legocerthub-backend/utils"
-	"legocerthub-backend/utils/acme_utils"
+	"legocerthub-backend/pkg/utils"
+	"legocerthub-backend/pkg/utils/acme_utils"
 	"net/http"
 )
 

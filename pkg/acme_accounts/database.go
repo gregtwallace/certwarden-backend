@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"legocerthub-backend/private_keys"
+	"legocerthub-backend/pkg/private_keys"
 	"strconv"
 )
 

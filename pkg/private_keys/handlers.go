@@ -3,7 +3,7 @@ package private_keys
 import (
 	"encoding/json"
 	"errors"
-	"legocerthub-backend/utils"
+	"legocerthub-backend/pkg/utils"
 	"net/http"
 	"strconv"
 	"time"

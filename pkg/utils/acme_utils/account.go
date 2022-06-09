@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"legocerthub-backend/utils"
+	"legocerthub-backend/pkg/utils"
 	"log"
 	"net/http"
 	"strconv"

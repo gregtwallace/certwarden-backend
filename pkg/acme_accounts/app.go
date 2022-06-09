@@ -1,7 +1,7 @@
 package acme_accounts
 
 import (
-	"legocerthub-backend/utils/acme_utils"
+	"legocerthub-backend/pkg/utils/acme_utils"
 	"strconv"
 )
 

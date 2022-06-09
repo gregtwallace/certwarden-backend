@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"legocerthub-backend/app"
+	"legocerthub-backend/pkg/app"
 
 	"log"
 	"net/http"
