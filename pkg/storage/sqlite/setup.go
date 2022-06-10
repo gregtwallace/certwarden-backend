@@ -10,17 +10,23 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// constant for DB timeout
+// config for DB
 const dbTimeout = time.Duration(5 * time.Second)
+const dbDsn = "./lego-certhub.db"
 
-type Storage struct {
-	Db      *sql.DB
-	Timeout time.Duration
+var dbOptions = url.Values{
+	"_fk": []string{"true"},
 }
 
-// function opens connection to the sqlite database
-//   this will also cause the file to be created, if it does not exist
-func OpenDB(dsn string, options url.Values) (*Storage, error) {
+// Storage is the struct that holds data about the connection
+type Storage struct {
+	Db      *sql.DB
+	Timeout time.Duration // TODO remove and just use constant for all db funcs?
+}
+
+// NewStorage() opens an existing sqlite database or creates a new one if needed.
+//   It also creates tables. It then returns Storage.
+func NewStorage() (*Storage, error) {
 	storage := new(Storage)
 	var err error
 
@@ -28,7 +34,7 @@ func OpenDB(dsn string, options url.Values) (*Storage, error) {
 	storage.Timeout = dbTimeout
 
 	// append options to the Dsn
-	connString := dsn + "?" + options.Encode()
+	connString := dbDsn + "?" + dbOptions.Encode()
 
 	storage.Db, err = sql.Open("sqlite3", connString)
 	if err != nil {
@@ -52,9 +58,17 @@ func OpenDB(dsn string, options url.Values) (*Storage, error) {
 	return storage, nil
 }
 
-// TODO - Close DB func for defer in main?
+// Close() closes the storage database
+func (storage *Storage) Close() error {
+	err := storage.Db.Close()
+	if err != nil {
+		return err
+	}
 
-// function creates tables in the event our database is new
+	return nil
+}
+
+// createDBTables creates tables in the event our database is new
 func (storage *Storage) createDBTables() error {
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
 	defer cancel()

@@ -4,7 +4,6 @@ import (
 	"legocerthub-backend/pkg/storage/sqlite"
 	"legocerthub-backend/pkg/utils/acme_utils"
 	"log"
-	"net/url"
 )
 
 const version = "0.0.1"
@@ -13,10 +12,6 @@ type Config struct {
 	Host string
 	Port int
 	Env  string
-	Db   struct {
-		Dsn     string
-		Options url.Values
-	}
 }
 
 type AppAcme struct {
