@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"legocerthub-backend/pkg/app"
+	"legocerthub-backend/pkg/storage/sqlite"
 
 	"log"
 	"net/http"
@@ -31,22 +32,19 @@ func main() {
 	cfg.Db.Options.Add("_fk", "true")
 
 	// open database connection
-	db, err := app.OpenDB(cfg)
+	storage, err := sqlite.OpenDB(cfg.Db.Dsn, cfg.Db.Options)
 	if err != nil {
 		logger.Fatalln(err)
 	}
-	defer db.Close()
+	defer storage.Db.Close()
 
 	// TODO: setup nonce management
 
 	// configure the Application
 	app := &app.Application{
-		Config: cfg,
-		Logger: logger,
-		DB: app.AppDb{
-			Database: db,
-			Timeout:  3 * time.Second,
-		},
+		Config:  cfg,
+		Logger:  logger,
+		Storage: storage,
 	}
 
 	// initialize directory structs (avoid nil pointers)
@@ -58,12 +56,6 @@ func main() {
 	}
 	// & start background process to check for updates periodically
 	go app.BackgroundDirManagement()
-
-	// create tables in the database if they don't exist
-	err = app.CreateDBTables()
-	if err != nil {
-		logger.Fatalln(err)
-	}
 
 	// configure the webserver
 	srv := &http.Server{

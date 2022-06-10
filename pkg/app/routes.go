@@ -17,8 +17,8 @@ func (app *Application) Routes() http.Handler {
 	// private keys definition and handlers
 	privateKeys := private_keys.KeysApp{}
 	privateKeys.Logger = app.Logger
-	privateKeys.DB.Database = app.DB.Database
-	privateKeys.DB.Timeout = app.DB.Timeout
+	privateKeys.DB.Database = app.Storage.Db
+	privateKeys.DB.Timeout = app.Storage.Timeout
 
 	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys", privateKeys.GetAllKeys)
 	router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys", privateKeys.PostNewKey)
@@ -29,8 +29,8 @@ func (app *Application) Routes() http.Handler {
 	// acme accounts definition and handlers
 	acmeAccounts := acme_accounts.AccountsApp{}
 	acmeAccounts.Logger = app.Logger
-	acmeAccounts.DB.Database = app.DB.Database
-	acmeAccounts.DB.Timeout = app.DB.Timeout
+	acmeAccounts.DB.Database = app.Storage.Db
+	acmeAccounts.DB.Timeout = app.Storage.Timeout
 	acmeAccounts.Acme.ProdDir = app.Acme.ProdDir
 	acmeAccounts.Acme.StagingDir = app.Acme.StagingDir
 

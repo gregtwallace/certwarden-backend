@@ -1,11 +1,10 @@
 package app
 
 import (
-	"database/sql"
+	"legocerthub-backend/pkg/storage/sqlite"
 	"legocerthub-backend/pkg/utils/acme_utils"
 	"log"
 	"net/url"
-	"time"
 )
 
 const version = "0.0.1"
@@ -20,21 +19,16 @@ type Config struct {
 	}
 }
 
-type AppDb struct {
-	Database *sql.DB
-	Timeout  time.Duration
-}
-
 type AppAcme struct {
 	ProdDir    *acme_utils.AcmeDirectory
 	StagingDir *acme_utils.AcmeDirectory
 }
 
 type Application struct {
-	Config Config
-	Logger *log.Logger
-	DB     AppDb
-	Acme   AppAcme
+	Config  Config
+	Logger  *log.Logger
+	Storage *sqlite.Storage
+	Acme    AppAcme
 }
 
 type appStatusDirectories struct {

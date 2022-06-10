@@ -1,39 +1,62 @@
-package app
+package sqlite
 
 import (
 	"context"
 	"database/sql"
 	"log"
+	"net/url"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// function opens connection to the sqlite database
-//   this will also cause the file to be created, if it does not exist
-func OpenDB(cfg Config) (*sql.DB, error) {
-	// append options to the Dsn
-	connString := cfg.Db.Dsn + "?" + cfg.Db.Options.Encode()
+// constant for DB timeout
+const dbTimeout = time.Duration(5 * time.Second)
 
-	db, err := sql.Open("sqlite3", connString)
-	if err != nil {
-		return nil, err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	err = db.PingContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
+type Storage struct {
+	Db      *sql.DB
+	Timeout time.Duration
 }
 
+// function opens connection to the sqlite database
+//   this will also cause the file to be created, if it does not exist
+func OpenDB(dsn string, options url.Values) (*Storage, error) {
+	storage := new(Storage)
+	var err error
+
+	// set timeout
+	storage.Timeout = dbTimeout
+
+	// append options to the Dsn
+	connString := dsn + "?" + options.Encode()
+
+	storage.Db, err = sql.Open("sqlite3", connString)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+	defer cancel()
+
+	err = storage.Db.PingContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// create tables in the database if they don't exist
+	err = storage.createDBTables()
+	if err != nil {
+		return nil, err
+	}
+
+	return storage, nil
+}
+
+// TODO - Close DB func for defer in main?
+
 // function creates tables in the event our database is new
-func (app *Application) CreateDBTables() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+func (storage *Storage) createDBTables() error {
+	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
 	defer cancel()
 
 	// private_keys
@@ -48,7 +71,7 @@ func (app *Application) CreateDBTables() error {
 		updated_at integer NOT NULL
 	)`
 
-	_, err := app.DB.Database.ExecContext(ctx, query)
+	_, err := storage.Db.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -73,7 +96,7 @@ func (app *Application) CreateDBTables() error {
 				ON UPDATE NO ACTION
 	)`
 
-	_, err = app.DB.Database.ExecContext(ctx, query)
+	_, err = storage.Db.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -111,7 +134,7 @@ func (app *Application) CreateDBTables() error {
 				ON UPDATE NO ACTION
 	)`
 
-	_, err = app.DB.Database.ExecContext(ctx, query)
+	_, err = storage.Db.ExecContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 		return err

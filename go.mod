@@ -9,4 +9,5 @@ replace legocerthub-backend/pkg/acme_accounts => /pkg/acme_accounts
 replace legocerthub-backend/pkg/utils/acme_utils => /pkg/utils/acme_utils
 replace legocerthub-backend/pkg/app => /pkg/app
 replace legocerthub-backend/pkg/private_keys => /pkg/private_keys
+replace legocerthub-backend/pkg/storage/sqlite => /pkg/storage/sqlite
 replace legocerthub-backend/pkg/utils => /pkg/utils
