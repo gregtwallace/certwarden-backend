@@ -1,6 +1,7 @@
 package app
 
 import (
+	"legocerthub-backend/pkg/private_keys"
 	"legocerthub-backend/pkg/storage/sqlite"
 	"legocerthub-backend/pkg/utils/acme_utils"
 	"log"
@@ -36,4 +37,13 @@ type appStatus struct {
 	Environment     string               `json:"environment"`
 	Version         string               `json:"version"`
 	AcmeDirectories appStatusDirectories `json:"acme_directories"`
+}
+
+// turn this into return an interface with methods??
+func (app *Application) GetStorage() private_keys.Storage {
+	return app.Storage
+}
+
+func (app *Application) GetLogger() *log.Logger {
+	return app.Logger
 }

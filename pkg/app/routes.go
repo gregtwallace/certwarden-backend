@@ -14,17 +14,18 @@ func (app *Application) Routes() http.Handler {
 	// app handlers (app already defined)
 	router.HandlerFunc(http.MethodGet, "/api/status", app.statusHandler)
 
-	// private keys definition and handlers
-	privateKeys := private_keys.KeysApp{}
-	privateKeys.Logger = app.Logger
-	privateKeys.DB.Database = app.Storage.Db
-	privateKeys.DB.Timeout = app.Storage.Timeout
+	// private keys service
+	keyService := private_keys.NewService(app)
 
-	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys", privateKeys.GetAllKeys)
-	router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys", privateKeys.PostNewKey)
-	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys/:id", privateKeys.GetOneKey)
-	router.HandlerFunc(http.MethodPut, "/api/v1/privatekeys/:id", privateKeys.PutOneKey)
-	router.HandlerFunc(http.MethodDelete, "/api/v1/privatekeys/:id", privateKeys.DeleteKey)
+	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys", keyService.GetAllKeys)
+	router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys", keyService.PostNewKey)
+	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys/:id", keyService.GetOneKey)
+	router.HandlerFunc(http.MethodPut, "/api/v1/privatekeys/:id", keyService.PutOneKey)
+	router.HandlerFunc(http.MethodDelete, "/api/v1/privatekeys/:id", keyService.DeleteKey)
+
+	// TODO MODIFY apps to have receiver for the stuff we pass in, as opposed to specific types
+	// e.g. func PrivateKeysApp.New which accepts an Interface as long as it implements the needed pieces
+	//   can make funcs such as .Logger() that returns the logger (assuming forced to use methods instead of types)
 
 	// acme accounts definition and handlers
 	acmeAccounts := acme_accounts.AccountsApp{}

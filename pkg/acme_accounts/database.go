@@ -5,8 +5,35 @@ import (
 	"database/sql"
 	"errors"
 	"legocerthub-backend/pkg/private_keys"
+	"legocerthub-backend/pkg/utils"
 	"strconv"
 )
+
+// TODO Delete after re-implementing acme_accounts
+type keyDb struct {
+	ID             int
+	Name           string
+	Description    sql.NullString
+	AlgorithmValue string
+	Pem            string
+	ApiKey         string
+	CreatedAt      int
+	UpdatedAt      int
+}
+
+// TODO Delete - KeyDbToKey translates the db object into the object the key service expects
+func (keyDb keyDb) KeyDbToKey() private_keys.Key {
+	return private_keys.Key{
+		ID:          keyDb.ID,
+		Name:        keyDb.Name,
+		Description: keyDb.Description.String,
+		Algorithm:   utils.AlgorithmByValue(keyDb.AlgorithmValue),
+		Pem:         keyDb.Pem,
+		ApiKey:      keyDb.ApiKey,
+		CreatedAt:   keyDb.CreatedAt,
+		UpdatedAt:   keyDb.UpdatedAt,
+	}
+}
 
 // dbGetAllAccounts returns a slice of all of the acme accounts in the database
 func (accountAppDb *AccountAppDb) getAllAccounts() ([]account, error) {
@@ -191,7 +218,7 @@ func (accountAppDb *AccountAppDb) getAvailableKeys() ([]private_keys.Key, error)
 
 	var availableKeys []private_keys.Key
 	for rows.Next() {
-		var oneKey private_keys.KeyDb
+		var oneKey keyDb
 
 		err = rows.Scan(
 			&oneKey.ID,
