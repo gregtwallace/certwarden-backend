@@ -79,7 +79,7 @@ func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request)
 }
 
 // Put (update) a single private key in DB
-func (service *Service) PutOneKey(w http.ResponseWriter, r *http.Request) {
+func (service *Service) PutExistingKey(w http.ResponseWriter, r *http.Request) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	var payload KeyPayload
