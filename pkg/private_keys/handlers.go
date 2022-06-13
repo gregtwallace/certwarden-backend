@@ -11,7 +11,7 @@ import (
 )
 
 // Get all of the private keys in our DB and write them as JSON to the API
-func (service *service) GetAllKeys(w http.ResponseWriter, r *http.Request) {
+func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) {
 
 	keys, err := service.storage.GetAllKeys()
 	if err != nil {
@@ -29,7 +29,7 @@ func (service *service) GetAllKeys(w http.ResponseWriter, r *http.Request) {
 }
 
 // Get a single private keys in our DB and write it as JSON to the API
-func (service *service) GetOneKey(w http.ResponseWriter, r *http.Request) {
+func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	// if id is new provide algo options list
@@ -71,7 +71,7 @@ func (service *service) GetOneKey(w http.ResponseWriter, r *http.Request) {
 }
 
 // Get options for a new private key in our DB and write it as JSON to the API
-func (service *service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request) {
+func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request) {
 	newKeyOptions := newKeyOptions{}
 	newKeyOptions.KeyAlgorithms = utils.ListOfAlgorithms()
 
@@ -79,7 +79,7 @@ func (service *service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request)
 }
 
 // Put (update) a single private key in DB
-func (service *service) PutOneKey(w http.ResponseWriter, r *http.Request) {
+func (service *Service) PutOneKey(w http.ResponseWriter, r *http.Request) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	var payload KeyPayload
@@ -127,7 +127,7 @@ func (service *service) PutOneKey(w http.ResponseWriter, r *http.Request) {
 }
 
 // Post (create) a new single private key in DB
-func (service *service) PostNewKey(w http.ResponseWriter, r *http.Request) {
+func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 	var payload KeyPayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
@@ -206,7 +206,7 @@ func (service *service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 }
 
 // delete a private key
-func (service *service) DeleteKey(w http.ResponseWriter, r *http.Request) {
+func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) {
 	params := httprouter.ParamsFromContext(r.Context())
 
 	id, err := strconv.Atoi(params.ByName("id"))
