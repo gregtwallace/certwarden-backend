@@ -38,29 +38,29 @@ func (keyDb *keyDb) keyDbToKey() private_keys.Key {
 
 // payloadToDb translates a client payload into the db object
 func payloadToDb(payload private_keys.KeyPayload) (keyDb, error) {
-	var converted keyDb
+	var dbObj keyDb
 	var err error
 
-	converted.ID, err = strconv.Atoi(payload.ID)
+	dbObj.ID, err = strconv.Atoi(payload.ID)
 	if err != nil {
 		return keyDb{}, err
 	}
 
-	converted.Name = payload.Name
+	dbObj.Name = payload.Name
 
-	converted.Description.Valid = true
-	converted.Description.String = payload.Description
+	dbObj.Description.Valid = true
+	dbObj.Description.String = payload.Description
 
-	converted.AlgorithmValue = payload.AlgorithmValue
+	dbObj.AlgorithmValue = payload.AlgorithmValue
 
-	converted.Pem = payload.PemContent
+	dbObj.Pem = payload.PemContent
 
 	// CreatedAt is always populated but only sometimes used
-	converted.CreatedAt = int(time.Now().Unix())
+	dbObj.CreatedAt = int(time.Now().Unix())
 
-	converted.UpdatedAt = converted.CreatedAt
+	dbObj.UpdatedAt = dbObj.CreatedAt
 
-	return converted, nil
+	return dbObj, nil
 }
 
 // dbGetAllPrivateKeys writes information about all private keys to json
