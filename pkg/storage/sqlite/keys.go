@@ -36,6 +36,33 @@ func (keyDb *keyDb) keyDbToKey() private_keys.Key {
 	}
 }
 
+// payloadToDb translates a client payload into the db object
+func payloadToDb(payload private_keys.KeyPayload) (keyDb, error) {
+	var converted keyDb
+	var err error
+
+	converted.ID, err = strconv.Atoi(payload.ID)
+	if err != nil {
+		return keyDb{}, err
+	}
+
+	converted.Name = payload.Name
+
+	converted.Description.Valid = true
+	converted.Description.String = payload.Description
+
+	converted.AlgorithmValue = payload.AlgorithmValue
+
+	converted.Pem = payload.PemContent
+
+	// CreatedAt is always populated but only sometimes used
+	converted.CreatedAt = int(time.Now().Unix())
+
+	converted.UpdatedAt = converted.CreatedAt
+
+	return converted, nil
+}
+
 // dbGetAllPrivateKeys writes information about all private keys to json
 func (storage Storage) GetAllKeys() ([]private_keys.Key, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
@@ -107,20 +134,11 @@ func (storage Storage) GetOneKey(id int) (private_keys.Key, error) {
 // dbPutExistingKey sets an existing key equal to the PUT values (overwriting
 //  old values)
 func (storage *Storage) PutExistingKey(payload private_keys.KeyPayload) error {
-	// load fields that are permitted to be updated
-	var key keyDb
-	var err error
-
-	key.ID, err = strconv.Atoi(payload.ID)
+	// load payload fields into db struct
+	key, err := payloadToDb(payload)
 	if err != nil {
 		return err
 	}
-	key.Name = payload.Name
-
-	key.Description.Valid = true
-	key.Description.String = payload.Description
-
-	key.UpdatedAt = int(time.Now().Unix())
 
 	// database action
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
@@ -152,26 +170,17 @@ func (storage *Storage) PutExistingKey(payload private_keys.KeyPayload) error {
 
 // dbPostNewKey creates a new key based on what was POSTed
 func (storage *Storage) PostNewKey(payload private_keys.KeyPayload) error {
-	// load fields
-	var key keyDb
-	var err error
-
-	key.Name = payload.Name
-
-	key.Description.Valid = true
-	key.Description.String = payload.Description
-
-	key.AlgorithmValue = payload.AlgorithmValue
-	key.Pem = payload.PemContent
+	// load payload fields into db struct
+	key, err := payloadToDb(payload)
+	if err != nil {
+		return err
+	}
 
 	// generate api key
 	key.ApiKey, err = utils.GenerateApiKey()
 	if err != nil {
 		return err
 	}
-
-	key.CreatedAt = int(time.Now().Unix())
-	key.UpdatedAt = key.CreatedAt
 
 	// database action
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
