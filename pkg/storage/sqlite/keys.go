@@ -12,27 +12,27 @@ import (
 
 // a single private key, as database table fields
 type keyDb struct {
-	ID             int
-	Name           string
-	Description    sql.NullString
-	AlgorithmValue string
-	Pem            string
-	ApiKey         string
-	CreatedAt      int
-	UpdatedAt      int
+	id             int
+	name           string
+	description    sql.NullString
+	algorithmValue string
+	pem            string
+	apiKey         string
+	createdAt      int
+	updatedAt      int
 }
 
 // KeyDbToKey translates the db object into the object the key service expects
 func (keyDb *keyDb) keyDbToKey() private_keys.Key {
 	return private_keys.Key{
-		ID:          keyDb.ID,
-		Name:        keyDb.Name,
-		Description: keyDb.Description.String,
-		Algorithm:   utils.AlgorithmByValue(keyDb.AlgorithmValue),
-		Pem:         keyDb.Pem,
-		ApiKey:      keyDb.ApiKey,
-		CreatedAt:   keyDb.CreatedAt,
-		UpdatedAt:   keyDb.UpdatedAt,
+		ID:          keyDb.id,
+		Name:        keyDb.name,
+		Description: keyDb.description.String,
+		Algorithm:   utils.AlgorithmByValue(keyDb.algorithmValue),
+		Pem:         keyDb.pem,
+		ApiKey:      keyDb.apiKey,
+		CreatedAt:   keyDb.createdAt,
+		UpdatedAt:   keyDb.updatedAt,
 	}
 }
 
@@ -41,24 +41,24 @@ func payloadToDb(payload private_keys.KeyPayload) (keyDb, error) {
 	var dbObj keyDb
 	var err error
 
-	dbObj.ID, err = strconv.Atoi(payload.ID)
+	dbObj.id, err = strconv.Atoi(payload.ID)
 	if err != nil {
 		return keyDb{}, err
 	}
 
-	dbObj.Name = payload.Name
+	dbObj.name = payload.Name
 
-	dbObj.Description.Valid = true
-	dbObj.Description.String = payload.Description
+	dbObj.description.Valid = true
+	dbObj.description.String = payload.Description
 
-	dbObj.AlgorithmValue = payload.AlgorithmValue
+	dbObj.algorithmValue = payload.AlgorithmValue
 
-	dbObj.Pem = payload.PemContent
+	dbObj.pem = payload.PemContent
 
 	// CreatedAt is always populated but only sometimes used
-	dbObj.CreatedAt = int(time.Now().Unix())
+	dbObj.createdAt = int(time.Now().Unix())
 
-	dbObj.UpdatedAt = dbObj.CreatedAt
+	dbObj.updatedAt = dbObj.createdAt
 
 	return dbObj, nil
 }
@@ -81,10 +81,10 @@ func (storage Storage) GetAllKeys() ([]private_keys.Key, error) {
 	for rows.Next() {
 		var oneKeyDb keyDb
 		err = rows.Scan(
-			&oneKeyDb.ID,
-			&oneKeyDb.Name,
-			&oneKeyDb.Description,
-			&oneKeyDb.AlgorithmValue,
+			&oneKeyDb.id,
+			&oneKeyDb.name,
+			&oneKeyDb.description,
+			&oneKeyDb.algorithmValue,
 		)
 		if err != nil {
 			return nil, err
@@ -112,14 +112,14 @@ func (storage Storage) GetOneKey(id int) (private_keys.Key, error) {
 
 	var oneKeyDb keyDb
 	err := row.Scan(
-		&oneKeyDb.ID,
-		&oneKeyDb.Name,
-		&oneKeyDb.Description,
-		&oneKeyDb.AlgorithmValue,
-		&oneKeyDb.Pem,
-		&oneKeyDb.ApiKey,
-		&oneKeyDb.CreatedAt,
-		&oneKeyDb.UpdatedAt,
+		&oneKeyDb.id,
+		&oneKeyDb.name,
+		&oneKeyDb.description,
+		&oneKeyDb.algorithmValue,
+		&oneKeyDb.pem,
+		&oneKeyDb.apiKey,
+		&oneKeyDb.createdAt,
+		&oneKeyDb.updatedAt,
 	)
 
 	if err != nil {
@@ -155,10 +155,10 @@ func (storage *Storage) PutExistingKey(payload private_keys.KeyPayload) error {
 		id = $4`
 
 	_, err = storage.Db.ExecContext(ctx, query,
-		key.Name,
-		key.Description,
-		key.UpdatedAt,
-		key.ID)
+		key.name,
+		key.description,
+		key.updatedAt,
+		key.id)
 	if err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func (storage *Storage) PostNewKey(payload private_keys.KeyPayload) error {
 	}
 
 	// generate api key
-	key.ApiKey, err = utils.GenerateApiKey()
+	key.apiKey, err = utils.GenerateApiKey()
 	if err != nil {
 		return err
 	}
@@ -192,13 +192,13 @@ func (storage *Storage) PostNewKey(payload private_keys.KeyPayload) error {
 	`
 
 	_, err = storage.Db.ExecContext(ctx, query,
-		key.Name,
-		key.Description,
-		key.AlgorithmValue,
-		key.Pem,
-		key.ApiKey,
-		key.CreatedAt,
-		key.UpdatedAt,
+		key.name,
+		key.description,
+		key.algorithmValue,
+		key.pem,
+		key.apiKey,
+		key.createdAt,
+		key.updatedAt,
 	)
 	if err != nil {
 		return err
