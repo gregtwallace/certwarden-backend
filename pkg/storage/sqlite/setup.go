@@ -21,7 +21,7 @@ var dbOptions = url.Values{
 // Storage is the struct that holds data about the connection
 type Storage struct {
 	Db      *sql.DB
-	Timeout time.Duration // TODO remove and just use constant for all db funcs?
+	Timeout time.Duration
 }
 
 // NewStorage() opens an existing sqlite database or creates a new one if needed.
