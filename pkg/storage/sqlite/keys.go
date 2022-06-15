@@ -235,3 +235,53 @@ func (storage *Storage) DeleteKey(id int) error {
 
 	return nil
 }
+
+// dbGetAvailableKeys returns a slice of private keys that exist but are not already associated
+//  with a known ACME account or certificate
+func (storage *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+	defer cancel()
+
+	// TODO - Once certs are added, need to check that table as well for keys in use
+	query := `
+		SELECT pk.id, pk.name, pk.description, pk.algorithm
+		FROM
+		  private_keys pk
+		WHERE
+			NOT EXISTS(
+				SELECT
+					aa.private_key_id
+				FROM
+					acme_accounts aa
+				WHERE
+					pk.id = aa.private_key_id
+			)
+	`
+
+	rows, err := storage.Db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var availableKeys []private_keys.Key
+	for rows.Next() {
+		var oneKey keyDb
+
+		err = rows.Scan(
+			&oneKey.id,
+			&oneKey.name,
+			&oneKey.description,
+			&oneKey.algorithmValue,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		convertedKey := oneKey.keyDbToKey()
+
+		availableKeys = append(availableKeys, convertedKey)
+	}
+
+	return availableKeys, nil
+}

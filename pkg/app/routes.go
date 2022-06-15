@@ -28,17 +28,12 @@ func (app *Application) Routes() http.Handler {
 	//   can make funcs such as .Logger() that returns the logger (assuming forced to use methods instead of types)
 
 	// acme accounts definition and handlers
-	acmeAccounts := acme_accounts.AccountsApp{}
-	acmeAccounts.Logger = app.Logger
-	acmeAccounts.DB.Database = app.Storage.Db
-	acmeAccounts.DB.Timeout = app.Storage.Timeout
-	acmeAccounts.Acme.ProdDir = app.Acme.ProdDir
-	acmeAccounts.Acme.StagingDir = app.Acme.StagingDir
+	accountService := acme_accounts.NewService(app)
 
-	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts", acmeAccounts.GetAllAccounts)
-	router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts", acmeAccounts.PostNewAccount)
-	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts/:id", acmeAccounts.GetOneAccount)
-	router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id", acmeAccounts.PutOneAccount)
+	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts", accountService.GetAllAccounts)
+	router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts", accountService.PostNewAccount)
+	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts/:id", accountService.GetOneAccount)
+	router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id", accountService.PutOneAccount)
 
 	return app.enableCORS(router)
 }

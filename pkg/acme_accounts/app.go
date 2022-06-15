@@ -1,25 +1,25 @@
 package acme_accounts
 
 import (
+	"errors"
 	"legocerthub-backend/pkg/utils/acme_utils"
-	"strconv"
 )
 
 // createNewAccount creates a new account and registers it with LE
-func (app *AccountsApp) createNewAccount(payload accountPayload) error {
-	// load fields
-	account, err := payload.accountPayloadToDb()
-	if err != nil {
-		return err
-	}
+func (service *Service) createNewAccount(payload AccountPayload) error {
+	var err error
 
 	// post initial account
-	payload.ID, err = app.DB.postNewAccount(account)
+	if payload.ID == nil {
+		// TODO: remove if checking nil pointer in validation
+		return errors.New("payload id cannot be nil")
+	}
+	*payload.ID, err = service.storage.PostNewAccount(payload)
 	if err != nil {
 		return err
 	}
 
-	err = app.createNewLEAccount(payload)
+	err = service.createNewLEAccount(payload)
 	if err != nil {
 		return err
 	}
@@ -28,27 +28,22 @@ func (app *AccountsApp) createNewAccount(payload accountPayload) error {
 }
 
 // createNewLEAccount takes a payload and registers it with LE as a new account
-func (app *AccountsApp) createNewLEAccount(payload accountPayload) error {
+func (service *Service) createNewLEAccount(payload AccountPayload) error {
 	var acmeAccountResponse acme_utils.AcmeAccountResponse
 
 	// fetch appropriate key
-	keyPem, err := app.DB.getAccountKeyPem(payload.ID)
+	keyPem, err := service.storage.GetAccountPem(*payload.ID)
 	if err != nil {
 		return err
 	}
 
-	acmeAccountResponse, err = app.Acme.createLeAccount(payload, keyPem)
+	acmeAccountResponse, err = service.createLeAccount(payload, keyPem)
 	if err != nil {
 		return err
 	}
 
 	// Write the returned account info from LE to the db
-	id, err := strconv.Atoi(payload.ID)
-	if err != nil {
-		return err
-	}
-
-	err = app.DB.putLEAccountInfo(acmeResponseDbObj(id, acmeAccountResponse))
+	err = service.storage.PutLEAccountInfo(*payload.ID, acmeAccountResponse)
 	if err != nil {
 		return err
 	}
@@ -57,33 +52,28 @@ func (app *AccountsApp) createNewLEAccount(payload accountPayload) error {
 }
 
 // updateLEAccount updates account settings with LE
-func (app *AccountsApp) updateLEAccount(payload accountPayload) error {
+func (service *Service) updateLEAccount(payload AccountPayload) error {
 	var acmeAccountResponse acme_utils.AcmeAccountResponse
 
 	// fetch appropriate key
-	keyPem, err := app.DB.getAccountKeyPem(payload.ID)
+	keyPem, err := service.storage.GetAccountPem(*payload.ID)
 	if err != nil {
 		return err
 	}
 
 	// get kid
-	kid, err := app.DB.getAccountKid(payload.ID)
+	kid, err := service.storage.GetAccountKid(*payload.ID)
 	if err != nil {
 		return err
 	}
 
-	acmeAccountResponse, err = app.Acme.updateLeAccount(payload, keyPem, kid)
+	acmeAccountResponse, err = service.updateLeAccount(payload, keyPem, kid)
 	if err != nil {
 		return err
 	}
 
 	// Write the returned account info from LE to the db
-	id, err := strconv.Atoi(payload.ID)
-	if err != nil {
-		return err
-	}
-
-	err = app.DB.putLEAccountInfo(acmeResponseDbObj(id, acmeAccountResponse))
+	err = service.storage.PutLEAccountInfo(*payload.ID, acmeAccountResponse)
 	if err != nil {
 		return err
 	}

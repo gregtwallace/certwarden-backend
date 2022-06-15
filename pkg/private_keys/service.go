@@ -6,7 +6,7 @@ import (
 
 // App interface is for connecting to the main app
 type App interface {
-	GetStorage() Storage
+	GetKeyStorage() Storage
 	GetLogger() *log.Logger
 }
 
@@ -28,7 +28,7 @@ type Service struct {
 func NewService(app App) *Service {
 	service := new(Service)
 
-	service.storage = app.GetStorage()
+	service.storage = app.GetKeyStorage()
 	service.logger = app.GetLogger()
 
 	return service

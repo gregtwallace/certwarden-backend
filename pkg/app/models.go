@@ -1,6 +1,7 @@
 package app
 
 import (
+	"legocerthub-backend/pkg/acme_accounts"
 	"legocerthub-backend/pkg/private_keys"
 	"legocerthub-backend/pkg/storage/sqlite"
 	"legocerthub-backend/pkg/utils/acme_utils"
@@ -15,16 +16,12 @@ type Config struct {
 	Env  string
 }
 
-type AppAcme struct {
-	ProdDir    *acme_utils.AcmeDirectory
-	StagingDir *acme_utils.AcmeDirectory
-}
-
 type Application struct {
-	Config  Config
-	Logger  *log.Logger
-	Storage *sqlite.Storage
-	Acme    AppAcme
+	Config         Config
+	Logger         *log.Logger
+	Storage        *sqlite.Storage
+	AcmeProdDir    *acme_utils.AcmeDirectory
+	AcmeStagingDir *acme_utils.AcmeDirectory
 }
 
 type appStatusDirectories struct {
@@ -39,11 +36,23 @@ type appStatus struct {
 	AcmeDirectories appStatusDirectories `json:"acme_directories"`
 }
 
-// turn this into return an interface with methods??
-func (app *Application) GetStorage() private_keys.Storage {
+/// return various needed components
+// hacky workaround for storage since can't just combine into one interface
+func (app *Application) GetKeyStorage() private_keys.Storage {
+	return app.Storage
+}
+func (app *Application) GetAccountStorage() acme_accounts.Storage {
 	return app.Storage
 }
 
 func (app *Application) GetLogger() *log.Logger {
 	return app.Logger
+}
+
+func (app *Application) GetProdDir() *acme_utils.AcmeDirectory {
+	return app.AcmeProdDir
+}
+
+func (app *Application) GetStagingDir() *acme_utils.AcmeDirectory {
+	return app.AcmeProdDir
 }
