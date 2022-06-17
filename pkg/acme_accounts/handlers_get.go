@@ -32,17 +32,17 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) {
 func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
-	// if id is new, provide some info
-	err := utils.IsIdValidNew(idParam)
-	if err == nil {
-		service.GetNewAccountOptions(w, r)
-		return
-	}
-
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Printf("accounts: GetOne: id param issue -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// if id is new, provide some info
+	err = utils.IsIdNew(&id)
+	if err == nil {
+		service.GetNewAccountOptions(w, r)
 		return
 	}
 

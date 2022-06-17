@@ -10,15 +10,15 @@ func (service *Service) createLeAccount(payload AccountPayload, keyPem string) (
 	var acmeAccount acme_utils.AcmeAccount
 
 	acmeAccount.TermsOfServiceAgreed = true
-	if payload.Email != "" {
-		acmeAccount.Contact = []string{"mailto:" + payload.Email}
+	if *payload.Email != "" {
+		acmeAccount.Contact = []string{"mailto:" + *payload.Email}
 	}
 
 	// vars for return
 	var acmeAccountResponse acme_utils.AcmeAccountResponse
 	var err error
 
-	if payload.IsStaging == true {
+	if *payload.IsStaging == true {
 		acmeAccountResponse, err = service.acmeStagingDir.CreateAccount(acmeAccount, keyPem)
 		if err != nil {
 			return acmeAccountResponse, err
@@ -39,15 +39,15 @@ func (service *Service) updateLeAccount(payload AccountPayload, keyPem string, k
 	var acmeAccount acme_utils.AcmeAccount
 
 	acmeAccount.TermsOfServiceAgreed = true
-	if payload.Email != "" {
-		acmeAccount.Contact = []string{"mailto:" + payload.Email}
+	if *payload.Email != "" {
+		acmeAccount.Contact = []string{"mailto:" + *payload.Email}
 	}
 
 	// vars for return
 	var acmeAccountResponse acme_utils.AcmeAccountResponse
 	var err error
 
-	if payload.IsStaging == true {
+	if *payload.IsStaging == true {
 		acmeAccountResponse, err = service.acmeStagingDir.UpdateAccount(acmeAccount, keyPem, kid)
 		if err != nil {
 			return acmeAccountResponse, err

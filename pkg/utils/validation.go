@@ -3,59 +3,55 @@ package utils
 import (
 	"errors"
 	"regexp"
-	"strconv"
 )
 
-// idIdMatch returns an error if the URI and payload don't match
-// otherwise it returns nil
-func isIdMatch(idParam string, idPayload string) error {
-	if idParam != idPayload {
+const newId = -1
+
+// IsIdNew returns an error if the id isn't the specified new
+// id value, or if the id value isn't nil (unspecified)
+func IsIdNew(id *int) error {
+	if id != nil && *id != newId {
+		return errors.New("invalid new id")
+	}
+
+	return nil
+}
+
+// IsIdExisting verifies id is specified, is not the new id and is greater
+// than or equal to 0.  This is the first building block for id validation.
+// Others include matching param to payload, and doing storage queries.
+func IsIdExisting(idPayload *int) error {
+	// verify payload id isn't nil
+	if idPayload == nil {
+		return errors.New("must specify id in payload")
+	}
+
+	// check that the id is not the new id
+	if *idPayload == newId {
+		return errors.New("existing id must not be new id")
+	}
+
+	// id must be >= 0
+	if *idPayload >= 0 {
+		return nil
+	}
+
+	return errors.New("invalid id")
+}
+
+// IsIdExistingMatch implements IsIdExisting but also includes param and
+// payload match.
+func IsIdExistingMatch(idParam int, idPayload *int) error {
+	// verify the payload is valid
+	err := IsIdExisting(idPayload)
+	if err != nil {
+		return err
+	}
+
+	// check the payload and the URI match
+	if *idPayload != idParam {
 		return errors.New("id param/payload mismatch")
 	}
-	return nil
-}
-
-// IsIdNewValid returns an error if not valid, nil if valid
-// -1 is the only valid new ID
-func IsIdValidNew(idPayload string) error {
-	idPayloadInt, err := strconv.Atoi(idPayload)
-	if err != nil {
-		return err
-	}
-
-	// check id equals new value of -1
-	if idPayloadInt != -1 {
-		return errors.New("invalid id for new")
-	}
-	return nil
-}
-
-// IsIdExistingValid returns an error if not valid, nil if valid
-// we'll generally assume the id is valid if >= 0
-func IsIdValidExisting(idParam string, idPayload string) error {
-	// check the payload and the URI match
-	err := isIdMatch(idParam, idPayload)
-	if err != nil {
-		return err
-	}
-
-	idPayloadInt, err := strconv.Atoi(idPayload)
-	if err != nil {
-		return err
-	}
-
-	// check id equals new value of -1
-	if idPayloadInt < 0 {
-		return errors.New("invalid id")
-	}
-
-	// check id is in the db TODO: Check if this is needed
-	// _, err = privateKeysApp.dbGetOnePrivateKey(id)
-	// if err != nil {
-	// 	privateKeysApp.Logger.Printf("privatekeys: PutOne: invalid payload id -- err: %s", err)
-	// 	utils.WriteErrorJSON(w, err)
-	// 	return
-	// }
 
 	return nil
 }

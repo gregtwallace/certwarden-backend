@@ -1,9 +1,7 @@
 package acme_accounts
 
 import (
-	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"legocerthub-backend/pkg/utils"
 	"net/http"
 	"strconv"
@@ -11,97 +9,20 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func (htmlPayload *accountHtmlPayload) toPayload() (AccountPayload, error) {
-	var payload AccountPayload
-	var err error
-
-	payload.ID, err = StringToInt(htmlPayload.ID)
-	if err != nil {
-		return AccountPayload{}, err
-	}
-
-	payload.Name = htmlPayload.Name
-
-	payload.Description = htmlPayload.Description
-
-	payload.Email = htmlPayload.Email
-
-	payload.PrivateKeyID, err = StringToInt(htmlPayload.PrivateKeyID)
-	if err != nil {
-		return AccountPayload{}, err
-	}
-
-	payload.AcceptedTos = StringToBool(htmlPayload.AcceptedTos)
-
-	payload.IsStaging = StringToBool(htmlPayload.IsStaging)
-
-	return payload, nil
-}
-
-func decodePayload(r *http.Request) (AccountPayload, error) {
-	var payload AccountPayload
-
-	// read body to allow for multiple unmarshal attempts
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return AccountPayload{}, err
-	}
-
-	err = json.Unmarshal(body, &payload)
-	if err != nil {
-		var htmlPayload accountHtmlPayload
-		err = json.Unmarshal(body, &htmlPayload)
-		if err != nil {
-			return AccountPayload{}, err
-		}
-		payload, err = htmlPayload.toPayload()
-		if err != nil {
-			return AccountPayload{}, err
-		}
-	}
-
-	return payload, nil
-}
-
-// TODO move these to a common package
-func StringToInt(s *string) (*int, error) {
-	i := new(int)
-	var err error
-
-	// return i as a nil pointer if s is a nil pointer
-	if s == nil {
-		i = nil
-	} else {
-		// else try to convert s into an int and return the pointer to that
-		*i, err = strconv.Atoi(*s)
-		if err != nil {
-			return i, err
-		}
-	}
-
-	return i, nil
-}
-
-func StringToBool(s string) bool {
-	var b bool
-
-	if s == "true" {
-		b = true
-	} else {
-		b = false
-	}
-
-	return b
-}
-
 // PutOneAccount is an http handler that overwrites the specified (by id) acme account with the
-//  data PUT by the client
+// data PUT by the client
 
 // TODO: fetch data from LE and update kid
 // if kid already exists, use it to update the email field
 
 func (service *Service) PutOneAccount(w http.ResponseWriter, r *http.Request) {
-	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	idParam, err := strconv.Atoi(idParamStr)
+	if err != nil {
+		service.logger.Printf("accounts: PutOne: invalid idParam -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
 
 	payload, err := decodePayload(r)
 	if err != nil {
@@ -112,24 +33,21 @@ func (service *Service) PutOneAccount(w http.ResponseWriter, r *http.Request) {
 
 	/// validation
 	// id
-	// TODO change IsIdValid to use ints
-	payloadId := strconv.Itoa(*payload.ID)
-
-	err = utils.IsIdValidExisting(idParam, payloadId)
+	err = service.isAccountIdExisting(idParam, payload.ID)
 	if err != nil {
 		service.logger.Printf("accounts: PutOne: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 	// name
-	err = utils.IsNameValid(payload.Name)
+	err = utils.IsNameValid(*payload.Name)
 	if err != nil {
 		service.logger.Printf("accounts: PutOne: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 	// email
-	err = utils.IsEmailValidOrBlank(payload.Email)
+	err = utils.IsEmailValidOrBlank(*payload.Email)
 	if err != nil {
 		service.logger.Printf("accounts: PutOne: invalid email -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
@@ -202,24 +120,22 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) {
 
 	/// do validation
 	// id
-	// TODO change IsIdValid to use ints
-	payloadId := strconv.Itoa(*payload.ID)
-
-	err = utils.IsIdValidNew(payloadId)
+	err = utils.IsIdNew(payload.ID)
 	if err != nil {
 		service.logger.Printf("accounts: PostNew: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 	// name
-	err = utils.IsNameValid(payload.Name)
+	err = utils.IsNameValid(*payload.Name)
 	if err != nil {
 		service.logger.Printf("accounts: PostNew: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
-	} // check db for duplicate name? probably unneeded as sql will error on insert
+	}
+	// check db for duplicate name? probably unneeded as sql will error on insert
 	// email
-	err = utils.IsEmailValidOrBlank(payload.Email)
+	err = utils.IsEmailValidOrBlank(*payload.Email)
 	if err != nil {
 		service.logger.Printf("accounts: PostNew: invalid email -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
@@ -227,7 +143,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) {
 	}
 	// private key (pem valid is checked later in account creation)
 	// TOS must be accepted
-	if payload.AcceptedTos != true {
+	if *payload.AcceptedTos != true {
 		service.logger.Println("accounts: PostNew: must accept ToS")
 		utils.WriteErrorJSON(w, errors.New("accounts: PostNew: must accept ToS"))
 		return

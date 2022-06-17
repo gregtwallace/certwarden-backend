@@ -1,7 +1,6 @@
 package private_keys
 
 import (
-	"encoding/json"
 	"errors"
 	"legocerthub-backend/pkg/utils"
 	"net/http"
@@ -32,14 +31,6 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) {
 func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
-	// if id is new provide algo options list
-	err := utils.IsIdValidNew(idParam)
-	if err == nil {
-		// run the new key options handler if the id is new
-		service.GetNewKeyOptions(w, r)
-		return
-	}
-
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Printf("keys: GetOne: id param error -- err: %s", err)
@@ -47,8 +38,14 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if id < 0 {
-		// if id < 0, it is definitely not valid
+	// if id is new provide algo options list
+	err = utils.IsIdNew(&id)
+	if err == nil {
+		// run the new key options handler if the id is new
+		service.GetNewKeyOptions(w, r)
+		return
+	} else if id < 0 {
+		// if id < 0 & not new, it is definitely not valid
 		err = errors.New("keys: GetOne: id param is invalid (less than 0 and not new)")
 		service.logger.Println(err)
 		utils.WriteErrorJSON(w, err)
@@ -80,10 +77,16 @@ func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request)
 
 // Put (update) a single private key in DB
 func (service *Service) PutExistingKey(w http.ResponseWriter, r *http.Request) {
-	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	idParam, err := strconv.Atoi(idParamStr)
+	if err != nil {
+		service.logger.Printf("keys: PutExisting: invalid idParam -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
 
 	var payload KeyPayload
-	err := json.NewDecoder(r.Body).Decode(&payload)
+	payload, err = decodePayload(r)
 	if err != nil {
 		service.logger.Printf("keys: PutOne: failed to decode json -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
@@ -92,14 +95,14 @@ func (service *Service) PutExistingKey(w http.ResponseWriter, r *http.Request) {
 
 	/// validation
 	// id
-	err = utils.IsIdValidExisting(idParam, payload.ID)
+	err = service.isIdExisting(idParam, payload.ID)
 	if err != nil {
 		service.logger.Printf("keys: PutOne: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 	// name
-	err = utils.IsNameValid(payload.Name)
+	err = utils.IsNameValid(*payload.Name)
 	if err != nil {
 		service.logger.Printf("keys: PutOne: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
@@ -129,7 +132,9 @@ func (service *Service) PutExistingKey(w http.ResponseWriter, r *http.Request) {
 // Post (create) a new single private key in DB
 func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 	var payload KeyPayload
-	err := json.NewDecoder(r.Body).Decode(&payload)
+	var err error
+
+	payload, err = decodePayload(r)
 	if err != nil {
 		service.logger.Printf("keys: PostNew: failed to decode json -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
@@ -138,30 +143,31 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 
 	/// do validation
 	// id
-	err = utils.IsIdValidNew(payload.ID)
+	err = utils.IsIdNew(payload.ID)
 	if err != nil {
 		service.logger.Printf("keys: PostNew: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 	// name
-	err = utils.IsNameValid(payload.Name)
+	err = utils.IsNameValid(*payload.Name)
 	if err != nil {
 		service.logger.Printf("keys: PostNew: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
-	} // check db for duplicate name? probably unneeded as sql will error on insert
+	}
+	// check db for duplicate name? probably unneeded as sql will error on insert
 
 	/// key add method
 	// error if no method specified
-	if (payload.AlgorithmValue == "") && (payload.PemContent == "") {
+	if (payload.AlgorithmValue == nil) && (payload.PemContent == nil) {
 		err = errors.New("keys: PostNew: no add method specified")
 		service.logger.Println(err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 	// error if more than one method specified
-	if (payload.AlgorithmValue != "") && (payload.PemContent != "") {
+	if (payload.AlgorithmValue != nil) && (payload.PemContent != nil) {
 		err = errors.New("keys: PostNew: multiple add methods specified")
 		service.logger.Println(err)
 		utils.WriteErrorJSON(w, err)
@@ -169,16 +175,20 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 	}
 	// generate or verify the key
 	// generate with algorithm, error if fails
-	if payload.AlgorithmValue != "" {
-		payload.PemContent, err = utils.GeneratePrivateKeyPem(payload.AlgorithmValue)
+	if payload.AlgorithmValue != nil {
+		// must initialize to avoid invalid address
+		payload.PemContent = new(string)
+		*payload.PemContent, err = utils.GeneratePrivateKeyPem(*payload.AlgorithmValue)
 		if err != nil {
 			service.logger.Printf("keys: PostNew: failed to generate key pem -- err: %s", err)
 			utils.WriteErrorJSON(w, err)
 			return
 		}
-	} else if payload.PemContent != "" {
+	} else if payload.PemContent != nil {
 		// pem inputted - verify pem and determine algorithm
-		payload.PemContent, payload.AlgorithmValue, err = utils.ValidatePrivateKeyPem(payload.PemContent)
+		// must initialize to avoid invalid address
+		payload.AlgorithmValue = new(string)
+		*payload.PemContent, *payload.AlgorithmValue, err = utils.ValidatePrivateKeyPem(*payload.PemContent)
 		if err != nil {
 			service.logger.Printf("keys: PostNew: failed to verify pem -- err: %s", err)
 			utils.WriteErrorJSON(w, err)

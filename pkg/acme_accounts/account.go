@@ -20,28 +20,6 @@ type Account struct {
 	Kid            string `json:"kid,omitempty"`
 }
 
-// acme account payload from PUT/POST
-type AccountPayload struct {
-	ID           *int   `json:"id"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	Email        string `json:"email"`
-	PrivateKeyID *int   `json:"private_key_id"`
-	AcceptedTos  bool   `json:"accepted_tos"`
-	IsStaging    bool   `json:"is_staging"`
-}
-
-// acme account payload from an html form (which only supports strings)
-type accountHtmlPayload struct {
-	ID           *string `json:"id"`
-	Name         string  `json:"name"`
-	Description  string  `json:"description"`
-	Email        string  `json:"email"`
-	PrivateKeyID *string `json:"private_key_id"`
-	AcceptedTos  string  `json:"accepted_tos"`
-	IsStaging    string  `json:"is_staging"`
-}
-
 // new account info
 // used to return info about valid options when making a new account
 type newAccountOptions struct {
