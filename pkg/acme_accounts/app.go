@@ -1,7 +1,6 @@
 package acme_accounts
 
 import (
-	"errors"
 	"legocerthub-backend/pkg/utils/acme_utils"
 )
 
@@ -9,11 +8,12 @@ import (
 func (service *Service) createNewAccount(payload AccountPayload) error {
 	var err error
 
-	// post initial account
+	// if payload id was empty, which is acceptable, initialize it
 	if payload.ID == nil {
-		// TODO: remove if checking nil pointer in validation
-		return errors.New("payload id cannot be nil")
+		payload.ID = new(int)
 	}
+
+	// post initial account
 	*payload.ID, err = service.storage.PostNewAccount(payload)
 	if err != nil {
 		return err
