@@ -39,14 +39,14 @@ func ListOfAlgorithms() []Algorithm {
 			Value:        "rsa3072",
 			Name:         "RSA 3072-bit",
 			KeyType:      "RSA",
-			SignatureAlg: "", // RS384 ??
+			SignatureAlg: "", // TODO: RS384 ??
 			BitLen:       3072,
 		},
 		{
 			Value:        "rsa4096",
 			Name:         "RSA 4096-bit",
 			KeyType:      "RSA",
-			SignatureAlg: "", // RS512 ??
+			SignatureAlg: "", // TODO: RS512 ??
 			BitLen:       4096,
 		},
 		{
