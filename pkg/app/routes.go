@@ -33,7 +33,7 @@ func (app *Application) Routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts", accountService.GetAllAccounts)
 	router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts", accountService.PostNewAccount)
 	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts/:id", accountService.GetOneAccount)
-	router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id", accountService.PutOneAccount)
+	router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id", accountService.PutNameDescAccount)
 
 	return app.enableCORS(router)
 }

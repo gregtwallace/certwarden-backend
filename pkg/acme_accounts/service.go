@@ -26,7 +26,7 @@ type Storage interface {
 
 	// specific things
 	GetAccountKid(int) (string, error)
-	PutExistingAccountNameDesc(AccountPayload) error
+	PutNameDescAccount(NameDescPayload) error
 	GetAccountPem(int) (string, error)
 	PutLEAccountInfo(id int, response acme_utils.AcmeAccountResponse) error
 }

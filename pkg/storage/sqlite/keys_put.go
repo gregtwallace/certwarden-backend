@@ -8,7 +8,7 @@ import (
 )
 
 // nameDescPayloadToDb translates the modify name/desc payload to a db object
-func nameDescPayloadToDb(payload private_keys.NameDescPayload) (keyDb, error) {
+func nameDescKeyPayloadToDb(payload private_keys.NameDescPayload) (keyDb, error) {
 	var dbObj keyDb
 	var err error
 
@@ -33,7 +33,7 @@ func nameDescPayloadToDb(payload private_keys.NameDescPayload) (keyDb, error) {
 //  old values)
 func (storage *Storage) PutNameDescKey(payload private_keys.NameDescPayload) error {
 	// load payload fields into db struct
-	key, err := nameDescPayloadToDb(payload)
+	key, err := nameDescKeyPayloadToDb(payload)
 	if err != nil {
 		return err
 	}
