@@ -49,8 +49,7 @@ func (storage *Storage) PutExistingAccount(payload acme_accounts.AccountPayload)
 //  an account is POSTed to
 func (storage *Storage) PutLEAccountInfo(id int, response acme_utils.AcmeAccountResponse) error {
 	// Load id and response into db obj
-	var accountDb accountDb
-	accountDb = acmeAccountToDb(id, response)
+	accountDb := acmeAccountToDb(id, response)
 
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
 	defer cancel()
