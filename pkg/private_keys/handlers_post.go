@@ -46,7 +46,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 
 	/// key add method
 	// error if no method specified
-	if (payload.AlgorithmValue == nil) && (payload.PemContent == nil) {
+	if (payload.AlgorithmValue == nil || *payload.AlgorithmValue == "") && (payload.PemContent == nil || *payload.PemContent == "") {
 		err = errors.New("keys: PostNew: no add method specified")
 		service.logger.Println(err)
 		utils.WriteErrorJSON(w, err)
