@@ -72,5 +72,10 @@ func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request)
 	newKeyOptions := newKeyOptions{}
 	newKeyOptions.KeyAlgorithms = utils.ListOfAlgorithms()
 
-	utils.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
+	err := utils.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
+	if err != nil {
+		service.logger.Printf("keys: GetNewKeyOptions: write json failed -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
 }
