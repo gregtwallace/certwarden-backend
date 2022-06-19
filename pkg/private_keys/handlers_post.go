@@ -8,7 +8,7 @@ import (
 )
 
 // PostPayload is a struct for posting a new key
-type PostPayload struct {
+type NewPayload struct {
 	ID             *int    `json:"id"`
 	Name           *string `json:"name"`
 	Description    *string `json:"description"`
@@ -18,7 +18,7 @@ type PostPayload struct {
 
 // PostNewKey creates a new private key and saves it to storage
 func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
-	var payload PostPayload
+	var payload NewPayload
 
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {

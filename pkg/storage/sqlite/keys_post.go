@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// payloadToDb translates a client payload into the db object
-func postPayloadToDb(payload private_keys.PostPayload) (keyDb, error) {
+// newPayloadToDb translates the new key payload to db object
+func newPayloadToDb(payload private_keys.NewPayload) (keyDb, error) {
 	var dbObj keyDb
 	var err error
 
@@ -36,9 +36,9 @@ func postPayloadToDb(payload private_keys.PostPayload) (keyDb, error) {
 }
 
 // dbPostNewKey creates a new key based on what was POSTed
-func (storage *Storage) PostNewKey(payload private_keys.PostPayload) error {
+func (storage *Storage) PostNewKey(payload private_keys.NewPayload) error {
 	// load payload fields into db struct
-	key, err := postPayloadToDb(payload)
+	key, err := newPayloadToDb(payload)
 	if err != nil {
 		return err
 	}

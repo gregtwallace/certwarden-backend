@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// payloadToDb translates a client payload into the db object
-func putPayloadToDb(payload private_keys.PutPayload) (keyDb, error) {
+// nameDescPayloadToDb translates the modify name/desc payload to a db object
+func nameDescPayloadToDb(payload private_keys.NameDescPayload) (keyDb, error) {
 	var dbObj keyDb
 	var err error
 
@@ -31,9 +31,9 @@ func putPayloadToDb(payload private_keys.PutPayload) (keyDb, error) {
 
 // dbPutExistingKey sets an existing key equal to the PUT values (overwriting
 //  old values)
-func (storage *Storage) PutExistingKey(payload private_keys.PutPayload) error {
+func (storage *Storage) PutNameDescKey(payload private_keys.NameDescPayload) error {
 	// load payload fields into db struct
-	key, err := putPayloadToDb(payload)
+	key, err := nameDescPayloadToDb(payload)
 	if err != nil {
 		return err
 	}

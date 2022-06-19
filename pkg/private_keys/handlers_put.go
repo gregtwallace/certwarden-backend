@@ -9,15 +9,16 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// PutPayload is the struct for editing an existing key
-type PutPayload struct {
+// NameDescPayload is the struct for editing an existing key
+type NameDescPayload struct {
 	ID          *int    `json:"id"`
 	Name        *string `json:"name"`
 	Description *string `json:"description"`
 }
 
 // PutExistingKey updates a key that already exists in storage.
-func (service *Service) PutExistingKey(w http.ResponseWriter, r *http.Request) {
+// only the name and description are allowed to be modified
+func (service *Service) PutNameDescKey(w http.ResponseWriter, r *http.Request) {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	idParam, err := strconv.Atoi(idParamStr)
 	if err != nil {
@@ -26,7 +27,7 @@ func (service *Service) PutExistingKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload PutPayload
+	var payload NameDescPayload
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Printf("keys: PutOne: failed to decode json -- err: %s", err)
@@ -52,7 +53,7 @@ func (service *Service) PutExistingKey(w http.ResponseWriter, r *http.Request) {
 	///
 
 	// PUT key payload
-	err = service.storage.PutExistingKey(payload)
+	err = service.storage.PutNameDescKey(payload)
 	if err != nil {
 		service.logger.Printf("keys: PutOne: failed to write to db -- err: %s", err)
 		utils.WriteErrorJSON(w, err)

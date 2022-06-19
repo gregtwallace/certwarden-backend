@@ -20,7 +20,7 @@ func (app *Application) Routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys", keyService.GetAllKeys)
 	router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys", keyService.PostNewKey)
 	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys/:id", keyService.GetOneKey)
-	router.HandlerFunc(http.MethodPut, "/api/v1/privatekeys/:id", keyService.PutExistingKey)
+	router.HandlerFunc(http.MethodPut, "/api/v1/privatekeys/:id", keyService.PutNameDescKey)
 	router.HandlerFunc(http.MethodDelete, "/api/v1/privatekeys/:id", keyService.DeleteKey)
 
 	// TODO MODIFY apps to have receiver for the stuff we pass in, as opposed to specific types
