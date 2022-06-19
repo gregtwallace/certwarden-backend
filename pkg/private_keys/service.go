@@ -14,7 +14,7 @@ type App interface {
 type Storage interface {
 	GetAllKeys() ([]Key, error)
 	GetOneKey(int) (Key, error)
-	PutExistingKey(KeyPayload) error
+	PutExistingKey(PutPayload) error
 	PostNewKey(PostPayload) error
 	DeleteKey(int) error
 }

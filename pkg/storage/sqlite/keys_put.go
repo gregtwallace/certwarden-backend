@@ -2,14 +2,38 @@ package sqlite
 
 import (
 	"context"
+	"errors"
 	"legocerthub-backend/pkg/private_keys"
+	"time"
 )
+
+// payloadToDb translates a client payload into the db object
+func putPayloadToDb(payload private_keys.PutPayload) (keyDb, error) {
+	var dbObj keyDb
+	var err error
+
+	// payload ID should never be missing at this point, regardless error if it somehow
+	//  is to avoid nil pointer dereference
+	if payload.ID == nil {
+		err = errors.New("id missing in payload")
+		return keyDb{}, err
+	}
+	dbObj.id = *payload.ID
+
+	dbObj.name = stringToNullString(payload.Name)
+
+	dbObj.description = stringToNullString(payload.Description)
+
+	dbObj.updatedAt = int(time.Now().Unix())
+
+	return dbObj, nil
+}
 
 // dbPutExistingKey sets an existing key equal to the PUT values (overwriting
 //  old values)
-func (storage *Storage) PutExistingKey(payload private_keys.KeyPayload) error {
+func (storage *Storage) PutExistingKey(payload private_keys.PutPayload) error {
 	// load payload fields into db struct
-	key, err := payloadToDb(payload)
+	key, err := putPayloadToDb(payload)
 	if err != nil {
 		return err
 	}

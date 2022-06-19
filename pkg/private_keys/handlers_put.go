@@ -1,12 +1,20 @@
 package private_keys
 
 import (
+	"encoding/json"
 	"legocerthub-backend/pkg/utils"
 	"net/http"
 	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 )
+
+// PutPayload is the struct for editing an existing key
+type PutPayload struct {
+	ID          *int    `json:"id"`
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+}
 
 // PutExistingKey updates a key that already exists in storage.
 func (service *Service) PutExistingKey(w http.ResponseWriter, r *http.Request) {
@@ -18,8 +26,8 @@ func (service *Service) PutExistingKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload KeyPayload
-	payload, err = decodePayload(r)
+	var payload PutPayload
+	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Printf("keys: PutOne: failed to decode json -- err: %s", err)
 		utils.WriteErrorJSON(w, err)

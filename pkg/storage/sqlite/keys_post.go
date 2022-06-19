@@ -29,9 +29,7 @@ func postPayloadToDb(payload private_keys.PostPayload) (keyDb, error) {
 
 	dbObj.pem = stringToNullString(payload.PemContent)
 
-	// CreatedAt is always populated but only sometimes used
 	dbObj.createdAt = int(time.Now().Unix())
-
 	dbObj.updatedAt = dbObj.createdAt
 
 	return dbObj, nil
