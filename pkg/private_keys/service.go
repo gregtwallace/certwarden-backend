@@ -15,7 +15,7 @@ type Storage interface {
 	GetAllKeys() ([]Key, error)
 	GetOneKey(int) (Key, error)
 	PutExistingKey(KeyPayload) error
-	PostNewKey(KeyPayload) error
+	PostNewKey(PostPayload) error
 	DeleteKey(int) error
 }
 

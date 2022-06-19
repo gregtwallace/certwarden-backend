@@ -1,17 +1,26 @@
 package private_keys
 
 import (
+	"encoding/json"
 	"errors"
 	"legocerthub-backend/pkg/utils"
 	"net/http"
 )
 
+// PostPayload is a struct for posting a new key
+type PostPayload struct {
+	ID             *int    `json:"id"`
+	Name           *string `json:"name"`
+	Description    *string `json:"description"`
+	AlgorithmValue *string `json:"algorithm_value"`
+	PemContent     *string `json:"pem"`
+}
+
 // PostNewKey creates a new private key and saves it to storage
 func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
-	var payload KeyPayload
-	var err error
+	var payload PostPayload
 
-	payload, err = decodePayload(r)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Printf("keys: PostNew: failed to decode json -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
@@ -44,7 +53,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// error if more than one method specified
-	if (payload.AlgorithmValue != nil) && (payload.PemContent != nil) {
+	if (payload.AlgorithmValue != nil && *payload.AlgorithmValue != "") && (payload.PemContent != nil && *payload.PemContent != "") {
 		err = errors.New("keys: PostNew: multiple add methods specified")
 		service.logger.Println(err)
 		utils.WriteErrorJSON(w, err)
@@ -52,7 +61,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 	}
 	// generate or verify the key
 	// generate with algorithm, error if fails
-	if payload.AlgorithmValue != nil {
+	if payload.AlgorithmValue != nil && *payload.AlgorithmValue != "" {
 		// must initialize to avoid invalid address
 		payload.PemContent = new(string)
 		*payload.PemContent, err = utils.GeneratePrivateKeyPem(*payload.AlgorithmValue)
@@ -61,7 +70,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 			utils.WriteErrorJSON(w, err)
 			return
 		}
-	} else if payload.PemContent != nil {
+	} else if payload.PemContent != nil && *payload.PemContent != "" {
 		// pem inputted - verify pem and determine algorithm
 		// must initialize to avoid invalid address
 		payload.AlgorithmValue = new(string)

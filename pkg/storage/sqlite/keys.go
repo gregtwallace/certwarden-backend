@@ -169,45 +169,6 @@ func (storage *Storage) PutExistingKey(payload private_keys.KeyPayload) error {
 	return nil
 }
 
-// dbPostNewKey creates a new key based on what was POSTed
-func (storage *Storage) PostNewKey(payload private_keys.KeyPayload) error {
-	// load payload fields into db struct
-	key, err := payloadToDb(payload)
-	if err != nil {
-		return err
-	}
-
-	// generate api key
-	key.apiKey, err = utils.GenerateApiKey()
-	if err != nil {
-		return err
-	}
-
-	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
-	defer cancel()
-
-	query := `
-	INSERT INTO private_keys (name, description, algorithm, pem, api_key, created_at, updated_at)
-	VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`
-
-	_, err = storage.Db.ExecContext(ctx, query,
-		key.name,
-		key.description,
-		key.algorithmValue,
-		key.pem,
-		key.apiKey,
-		key.createdAt,
-		key.updatedAt,
-	)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // delete a private key from the database
 func (storage *Storage) DeleteKey(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
