@@ -44,7 +44,7 @@ func (service *Service) PutNameDescKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// name
-	err = utils.IsNameValid(payload.Name)
+	err = service.isNameValid(payload.ID, payload.Name)
 	if err != nil {
 		service.logger.Printf("keys: PutOne: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)

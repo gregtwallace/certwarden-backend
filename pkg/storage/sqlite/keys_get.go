@@ -40,17 +40,27 @@ func (storage Storage) GetAllKeys() ([]private_keys.Key, error) {
 	return allKeys, nil
 }
 
-// dbGetOneKey returns a key from the db based on unique id
-func (storage Storage) GetOneKey(id int) (private_keys.Key, error) {
+// GetOneKeyById returns a key based on its unique id
+func (storage *Storage) GetOneKeyById(id int) (private_keys.Key, error) {
+	return storage.getOneKey(id, "")
+}
+
+// GetOneKeyByName returns a key based on its unique name
+func (storage *Storage) GetOneKeyByName(name string) (private_keys.Key, error) {
+	return storage.getOneKey(-1, name)
+}
+
+// dbGetOneKey returns a key from the db based on unique id or unique name
+func (storage Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
 	defer cancel()
 
 	query := `SELECT id, name, description, algorithm, pem, api_key, created_at, updated_at
 	FROM private_keys
-	WHERE id = $1
+	WHERE id = $1 OR name = $2
 	ORDER BY id`
 
-	row := storage.Db.QueryRowContext(ctx, query, id)
+	row := storage.Db.QueryRowContext(ctx, query, id, name)
 
 	var oneKeyDb keyDb
 	err := row.Scan(

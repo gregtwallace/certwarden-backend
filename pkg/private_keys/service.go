@@ -13,7 +13,8 @@ type App interface {
 // Storage interface for storage functions
 type Storage interface {
 	GetAllKeys() ([]Key, error)
-	GetOneKey(int) (Key, error)
+	GetOneKeyById(int) (Key, error)
+	GetOneKeyByName(string) (Key, error)
 	PutNameDescKey(NameDescPayload) error
 	PostNewKey(NewPayload) error
 	DeleteKey(int) error

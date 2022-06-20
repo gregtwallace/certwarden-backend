@@ -52,7 +52,7 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	key, err := service.storage.GetOneKey(id)
+	key, err := service.storage.GetOneKeyById(id)
 	if err != nil {
 		service.logger.Printf("keys: GetOne: db failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
