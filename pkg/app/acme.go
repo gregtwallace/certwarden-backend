@@ -44,7 +44,6 @@ func (app *Application) updateDirectory(env string, err chan<- error) {
 		app.Logger.Printf("%s environment directory updated succesfully.", env)
 	}
 
-	return
 }
 
 // UpdateAllDirectories will attempt to update both the prod and staging
@@ -63,7 +62,7 @@ func (app *Application) UpdateAllDirectories() error {
 
 	// return an error if any directory failed to update
 	if <-errs != nil || <-errs != nil {
-		return errors.New("Error(s) updating one or more ACME directories.")
+		return errors.New("Error(s) updating one or more ACME directories")
 	}
 
 	return nil
