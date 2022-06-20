@@ -21,7 +21,8 @@ type Storage interface {
 	// accounts
 	GetAllAccounts() ([]Account, error)
 	PostNewAccount(AccountPayload) (int, error)
-	GetOneAccount(int) (Account, error)
+	GetOneAccountById(int) (Account, error)
+	GetOneAccountByName(string) (Account, error)
 	PutExistingAccount(AccountPayload) error
 	DeleteAccount(int) error
 

@@ -36,7 +36,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// name
-	err = utils.IsNameValid(*payload.Name)
+	err = utils.IsNameValid(payload.Name)
 	if err != nil {
 		service.logger.Printf("keys: PostNew: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)

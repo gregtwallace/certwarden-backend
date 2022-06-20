@@ -39,14 +39,14 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 
 	/// validation
 	// id
-	err = service.isAccountIdExisting(idParam, payload.ID)
+	err = service.isIdExisting(idParam, payload.ID)
 	if err != nil {
 		service.logger.Printf("accounts: PutOne: invalid id -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
 	// name
-	err = utils.IsNameValid(*payload.Name)
+	err = service.isNameValid(payload.ID, payload.Name)
 	if err != nil {
 		service.logger.Printf("accounts: PutOne: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)

@@ -65,8 +65,18 @@ func (storage *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 	return allAccounts, nil
 }
 
-// GetOneAccount returns an Account based on its unique id
-func (storage *Storage) GetOneAccount(id int) (acme_accounts.Account, error) {
+// GetOneAccountById returns an Account based on its unique id
+func (storage *Storage) GetOneAccountById(id int) (acme_accounts.Account, error) {
+	return storage.getOneAccount(id, "")
+}
+
+// GetOneAccountByName returns an Account based on its unique name
+func (storage *Storage) GetOneAccountByName(name string) (acme_accounts.Account, error) {
+	return storage.getOneAccount(-1, name)
+}
+
+// getOneAccount returns an Account based on either its unique id or its unique name
+func (storage *Storage) getOneAccount(id int, name string) (acme_accounts.Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
 	defer cancel()
 
@@ -75,10 +85,10 @@ func (storage *Storage) GetOneAccount(id int) (acme_accounts.Account, error) {
 	FROM
 		acme_accounts aa
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
-	WHERE aa.id = $1
+	WHERE aa.id = $1 OR aa.name = $2
 	ORDER BY aa.id`
 
-	row := storage.Db.QueryRowContext(ctx, query, id)
+	row := storage.Db.QueryRowContext(ctx, query, id, name)
 
 	var oneAccount accountDb
 	err := row.Scan(

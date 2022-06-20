@@ -1,15 +1,29 @@
 package acme_accounts
 
 import (
+	"encoding/json"
 	"errors"
 	"legocerthub-backend/pkg/utils"
 	"net/http"
 )
 
+// NewPayload is the struct for creating a new account
+type NewPayload struct {
+	ID           *int    `json:"id"`
+	Name         *string `json:"name"`
+	Description  *string `json:"description"`
+	Email        *string `json:"email"`
+	PrivateKeyID *int    `json:"private_key_id"`
+	IsStaging    *bool   `json:"is_staging"`
+	AcceptedTos  *bool   `json:"accepted_tos"`
+}
+
 func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) {
-	payload, err := decodePayload(r)
+	var payload NewPayload
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		service.logger.Printf("accounts: PutOne: failed to decode payload: %s", err)
+		service.logger.Printf("accounts: PostNew: failed to decode json -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
@@ -23,15 +37,14 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// name
-	err = utils.IsNameValid(*payload.Name)
+	err = service.isNameValid(payload.ID, payload.Name)
 	if err != nil {
 		service.logger.Printf("accounts: PostNew: invalid name -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}
-	// check db for duplicate name? probably unneeded as sql will error on insert
 	// email
-	err = utils.IsEmailValidOrBlank(*payload.Email)
+	err = utils.IsEmailValidOrBlank(payload.Email)
 	if err != nil {
 		service.logger.Printf("accounts: PostNew: invalid email -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
@@ -39,20 +52,21 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) {
 	}
 	// private key (pem valid is checked later in account creation)
 	// TOS must be accepted
-	if *payload.AcceptedTos != true {
+	if !*payload.AcceptedTos {
 		service.logger.Println("accounts: PostNew: must accept ToS")
 		utils.WriteErrorJSON(w, errors.New("accounts: PostNew: must accept ToS"))
 		return
 	}
 	///
 
-	// payload -> LE create -> save to db
-	err = service.createNewAccount(payload)
-	if err != nil {
-		service.logger.Printf("accounts: PostNew: failed to create account -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
-	}
+	// TODO: Reimplement LE logic
+	// // payload -> LE create -> save to db
+	// err = service.createNewAccount(payload)
+	// if err != nil {
+	// 	service.logger.Printf("accounts: PostNew: failed to create account -- err: %s", err)
+	// 	utils.WriteErrorJSON(w, err)
+	// 	return
+	// }
 
 	// Write OK response to client
 	response := utils.JsonResp{

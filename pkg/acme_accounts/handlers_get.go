@@ -54,7 +54,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	acmeAccount, err := service.storage.GetOneAccount(id)
+	acmeAccount, err := service.storage.GetOneAccountById(id)
 	if err != nil {
 		service.logger.Printf("accounts: GetOne: db failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)

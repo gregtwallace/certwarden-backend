@@ -39,8 +39,8 @@ func IsIdExisting(idPayload *int) error {
 	return errors.New("invalid id")
 }
 
-// IsIdExistingMatch implements IsIdExisting but also includes param and
-// payload match.
+// IsIdExistingMatch implements IsIdExisting (not nil, non-new, >= 0) but
+// also includes param and payload match.
 func IsIdExistingMatch(idParam int, idPayload *int) error {
 	// verify the payload is valid
 	err := IsIdExisting(idPayload)
@@ -59,14 +59,19 @@ func IsIdExistingMatch(idParam int, idPayload *int) error {
 // IsNameValid returns an error if not valid, nil if valid
 // to be valid: must only contain symbols - _ . ~ letters and numbers
 // name is also not allowed to be blank (len <= 0)
-func IsNameValid(name string) error {
+func IsNameValid(namePayload *string) error {
+	// error if not specified
+	if namePayload == nil {
+		return errors.New("must specify name in payload")
+	}
+
 	regex, err := regexp.Compile("[^-_.~A-z0-9]|[\\^]")
 	if err != nil {
 		return err
 	}
 
-	invalid := regex.Match([]byte(name))
-	if invalid || len(name) <= 0 {
+	invalid := regex.Match([]byte(*namePayload))
+	if invalid || len(*namePayload) <= 0 {
 		return errors.New("invalid name")
 	}
 	return nil
@@ -74,15 +79,15 @@ func IsNameValid(name string) error {
 
 // IsEmailValidOrBlank returns an error if not valid, nil if valid
 // to be valid: must be either blank or an email address format
-func IsEmailValidOrBlank(email string) error {
+func IsEmailValidOrBlank(emailPayload *string) error {
 	// blank is permissible
-	if email == "" {
+	if *emailPayload == "" {
 		return nil
 	}
 
 	// valid email regex
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
-	isGood := emailRegex.MatchString(email)
+	isGood := emailRegex.MatchString(*emailPayload)
 	if isGood {
 		return nil
 	}
