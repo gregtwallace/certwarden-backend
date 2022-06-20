@@ -23,6 +23,7 @@ type Storage interface {
 	PostNewAccount(AccountPayload) (int, error)
 	GetOneAccount(int) (Account, error)
 	PutExistingAccount(AccountPayload) error
+	DeleteAccount(int) error
 
 	// specific things
 	GetAccountKid(int) (string, error)
