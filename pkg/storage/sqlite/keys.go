@@ -2,7 +2,7 @@ package sqlite
 
 import (
 	"database/sql"
-	"legocerthub-backend/pkg/private_keys"
+	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/utils"
 )
 

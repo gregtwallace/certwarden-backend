@@ -3,7 +3,7 @@ package sqlite
 import (
 	"context"
 	"errors"
-	"legocerthub-backend/pkg/acme_accounts"
+	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/utils/acme_utils"
 )
 

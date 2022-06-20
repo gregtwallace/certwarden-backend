@@ -3,7 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"legocerthub-backend/pkg/acme_accounts"
+	"legocerthub-backend/pkg/domain/acme_accounts"
 )
 
 // accountDbToAcc turns the database representation of an Account into an Account

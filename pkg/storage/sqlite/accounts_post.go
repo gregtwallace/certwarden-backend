@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"legocerthub-backend/pkg/acme_accounts"
+	"legocerthub-backend/pkg/domain/acme_accounts"
 )
 
 // postNewAccount inserts a new account into the db and returns the id of the new account

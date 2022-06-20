@@ -1,7 +1,7 @@
 package acme_accounts
 
 import (
-	"legocerthub-backend/pkg/private_keys"
+	"legocerthub-backend/pkg/domain/private_keys"
 )
 
 // a single ACME Account

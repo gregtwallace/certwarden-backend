@@ -2,7 +2,7 @@ package sqlite
 
 import (
 	"context"
-	"legocerthub-backend/pkg/private_keys"
+	"legocerthub-backend/pkg/domain/private_keys"
 )
 
 // dbGetAllPrivateKeys writes information about all private keys to json

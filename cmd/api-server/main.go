@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"legocerthub-backend/pkg/app"
+	"legocerthub-backend/pkg/domain/app"
 	"legocerthub-backend/pkg/storage/sqlite"
 
 	"log"

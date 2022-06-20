@@ -3,7 +3,7 @@ package sqlite
 import (
 	"context"
 	"errors"
-	"legocerthub-backend/pkg/private_keys"
+	"legocerthub-backend/pkg/domain/private_keys"
 	"time"
 )
 
