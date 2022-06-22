@@ -6,4 +6,4 @@ This is a personal side project of mine that I plan to use in my home
 production environment once complete.
 
 ## Frontend
-This repo is the frontend for the application which is built in GoLang.
+This repo is the backend for the application which is built in GoLang.
