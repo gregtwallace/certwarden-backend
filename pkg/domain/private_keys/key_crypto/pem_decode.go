@@ -22,25 +22,16 @@ func ValidateKeyPem(keyPem string) (string, string, error) {
 	// mac
 	pemBytes = bytes.Replace(pemBytes, []byte{13}, []byte{10}, -1)
 
-	// decode
-	pemBlock, rest := pem.Decode(pemBytes)
-	if pemBlock == nil {
-		return "", "", errors.New("key_crypto: failed to decode pem")
-	}
-	if len(rest) > 0 {
-		return "", "", errors.New("key_crypto: extraneous data present")
-	}
+	pemNormalized := string(pemBytes)
 
 	// get the algorithm value of the new key / confirm it is a supported
 	// pkcs and algorithm type
-	_, algorithmValue, err := pemBlockToKey(pemBlock, "")
+	_, algorithmValue, err := pemStringDecode(pemNormalized, "")
 	if err != nil {
 		return "", "", err
 	}
 
-	recreatedPem := pem.EncodeToMemory(pemBlock)
-
-	return string(recreatedPem), algorithmValue, nil
+	return pemNormalized, algorithmValue, nil
 }
 
 // PemStringToKey returns the PrivateKey for a given pem string
@@ -52,13 +43,9 @@ func PemStringToKey(keyPem string, algorithmValue string) (crypto.PrivateKey, er
 		return nil, errors.New("key_crypto: algorithmValue must be specified")
 	}
 
-	// decode
-	pemBlock, _ := pem.Decode([]byte(keyPem))
-	if pemBlock == nil {
-		return nil, errors.New("crypto: failed to decode pem")
-	}
-
-	privateKey, _, err := pemBlockToKey(pemBlock, algorithmValue)
+	// translate pem to private key and verify that key pem is of the specified
+	// algorithm type
+	privateKey, _, err := pemStringDecode(keyPem, algorithmValue)
 	if err != nil {
 		return nil, err
 	}
@@ -66,13 +53,19 @@ func PemStringToKey(keyPem string, algorithmValue string) (crypto.PrivateKey, er
 	return privateKey, nil
 }
 
-// pemBlockToKey returns a crypto.PrivateKey after parsing the pemBlock,
+// pemStringDecode returns a crypto.PrivateKey after parsing the pemBlock,
 // it also returns the algorithm.Value and an error
 // This is not intended to be called directly, but by helper functions
-func pemBlockToKey(pemBlock *pem.Block, algorithmValue string) (crypto.PrivateKey, string, error) {
+func pemStringDecode(keyPem string, algorithmValue string) (crypto.PrivateKey, string, error) {
 	var privateKey crypto.PrivateKey
 	var pemAlgorithValue string
 	var err error
+
+	// decode
+	pemBlock, _ := pem.Decode([]byte(keyPem))
+	if pemBlock == nil {
+		return "", "", errors.New("key_crypto: failed to decode pem")
+	}
 
 	// parsing depends on block type
 	switch pemBlock.Type {
