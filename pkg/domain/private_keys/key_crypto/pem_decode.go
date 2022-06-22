@@ -113,36 +113,32 @@ func pemStringDecode(keyPem string, algorithmValue string) (crypto.PrivateKey, s
 			return nil, "", err
 		}
 
-		switch pkcs8Key.(type) {
+		switch pkcs8Key := pkcs8Key.(type) {
 		case *rsa.PrivateKey:
-			rsaKey := pkcs8Key.(*rsa.PrivateKey)
-
 			// basic sanity check
-			err = rsaKey.Validate()
+			err = pkcs8Key.Validate()
 			if err != nil {
 				return nil, "", err
 			}
 
 			// find algorithm in list of supported algorithms
-			pemAlgorithValue, err = rsaAlgorithmByBits(rsaKey.N.BitLen())
+			pemAlgorithValue, err = rsaAlgorithmByBits(pkcs8Key.N.BitLen())
 			if err != nil {
 				return nil, "", err
 			}
 
 			// success!
-			privateKey = rsaKey
+			privateKey = pkcs8Key
 
 		case *ecdsa.PrivateKey:
-			ecdKey := pkcs8Key.(*ecdsa.PrivateKey)
-
 			// find algorithm in list of supported algorithms
-			pemAlgorithValue, err = ecdsaAlgorithmByCurve(ecdKey.Curve.Params().Name)
+			pemAlgorithValue, err = ecdsaAlgorithmByCurve(pkcs8Key.Curve.Params().Name)
 			if err != nil {
 				return nil, "", err
 			}
 
 			// success!
-			privateKey = ecdKey
+			privateKey = pkcs8Key
 
 		default:
 			return nil, "", errors.New("key_crypto: unsupported key type")
