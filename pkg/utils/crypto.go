@@ -10,6 +10,9 @@ import (
 	"errors"
 )
 
+// DELETE ME
+// Placeholder to keep acme_utils working until it is refactored
+
 // type to hold key algorithms
 type Algorithm struct {
 	Value             string                `json:"value"`
@@ -216,7 +219,7 @@ func PrivateKeyAlgorithmValue(pemBlock *pem.Block) (string, error) {
 //  pem.Block
 func PemDecodeAndNormalize(keyPem string) (*pem.Block, error) {
 	// normalize line breaks and decode
-	pemBlock, rest := pem.Decode(NormalizeNewLines([]byte(keyPem)))
+	pemBlock, rest := pem.Decode([]byte(keyPem))
 	if pemBlock == nil {
 		return nil, errors.New("Failed to decode Pem")
 	}

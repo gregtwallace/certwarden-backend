@@ -2,6 +2,7 @@ package private_keys
 
 import (
 	"errors"
+	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/utils"
 	"net/http"
 	"strconv"
@@ -70,7 +71,7 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) {
 // GetNewKeyOptions returns configuration options for a new private key as JSON
 func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request) {
 	newKeyOptions := newKeyOptions{}
-	newKeyOptions.KeyAlgorithms = utils.ListOfAlgorithms()
+	newKeyOptions.KeyAlgorithms = key_crypto.ListOfAlgorithms()
 
 	err := utils.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
 	if err != nil {

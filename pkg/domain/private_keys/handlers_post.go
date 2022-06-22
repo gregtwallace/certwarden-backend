@@ -3,6 +3,7 @@ package private_keys
 import (
 	"encoding/json"
 	"errors"
+	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/utils"
 	"net/http"
 )
@@ -63,7 +64,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 	if payload.AlgorithmValue != nil && *payload.AlgorithmValue != "" {
 		// must initialize to avoid invalid address
 		payload.PemContent = new(string)
-		*payload.PemContent, err = utils.GeneratePrivateKeyPem(*payload.AlgorithmValue)
+		*payload.PemContent, err = key_crypto.GeneratePrivateKeyPem(*payload.AlgorithmValue)
 		if err != nil {
 			service.logger.Printf("keys: PostNew: failed to generate key pem -- err: %s", err)
 			utils.WriteErrorJSON(w, err)
@@ -73,7 +74,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 		// pem inputted - verify pem and determine algorithm
 		// must initialize to avoid invalid address
 		payload.AlgorithmValue = new(string)
-		*payload.PemContent, *payload.AlgorithmValue, err = utils.ValidatePrivateKeyPem(*payload.PemContent)
+		*payload.PemContent, *payload.AlgorithmValue, err = key_crypto.ValidateKeyPem(*payload.PemContent)
 		if err != nil {
 			service.logger.Printf("keys: PostNew: failed to verify pem -- err: %s", err)
 			utils.WriteErrorJSON(w, err)

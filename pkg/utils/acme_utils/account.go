@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/utils"
 	"log"
 	"net/http"
@@ -70,7 +71,10 @@ func (dir AcmeDirectory) CreateAccount(acct AcmeAccount, keyPem string) (AcmeAcc
 	if err != nil {
 		return AcmeAccountResponse{}, err
 	}
-	alg := utils.AlgorithmByValue(algorithmValue)
+	alg, err := key_crypto.AlgorithmByValue(algorithmValue)
+	if err != nil {
+		return AcmeAccountResponse{}, err
+	}
 
 	var ecKey *ecdsa.PrivateKey
 	// var rsaKey *rsa.PrivateKey
@@ -177,7 +181,10 @@ func (dir AcmeDirectory) UpdateAccount(acct AcmeAccount, keyPem string, kid stri
 	if err != nil {
 		return AcmeAccountResponse{}, err
 	}
-	alg := utils.AlgorithmByValue(algorithmValue)
+	alg, err := key_crypto.AlgorithmByValue(algorithmValue)
+	if err != nil {
+		return AcmeAccountResponse{}, err
+	}
 
 	var ecKey *ecdsa.PrivateKey
 	// var rsaKey *rsa.PrivateKey

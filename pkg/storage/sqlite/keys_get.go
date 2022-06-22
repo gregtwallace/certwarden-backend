@@ -21,18 +21,21 @@ func (storage Storage) GetAllKeys() ([]private_keys.Key, error) {
 
 	var allKeys []private_keys.Key
 	for rows.Next() {
-		var oneKeyDb keyDb
+		var oneKey keyDb
 		err = rows.Scan(
-			&oneKeyDb.id,
-			&oneKeyDb.name,
-			&oneKeyDb.description,
-			&oneKeyDb.algorithmValue,
+			&oneKey.id,
+			&oneKey.name,
+			&oneKey.description,
+			&oneKey.algorithmValue,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		convertedKey := oneKeyDb.keyDbToKey()
+		convertedKey, err := oneKey.keyDbToKey()
+		if err != nil {
+			return nil, err
+		}
 
 		allKeys = append(allKeys, convertedKey)
 	}
@@ -78,7 +81,10 @@ func (storage Storage) getOneKey(id int, name string) (private_keys.Key, error) 
 		return private_keys.Key{}, err
 	}
 
-	convertedKey := oneKeyDb.keyDbToKey()
+	convertedKey, err := oneKeyDb.keyDbToKey()
+	if err != nil {
+		return private_keys.Key{}, err
+	}
 
 	return convertedKey, nil
 }
@@ -125,7 +131,10 @@ func (storage *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 			return nil, err
 		}
 
-		convertedKey := oneKey.keyDbToKey()
+		convertedKey, err := oneKey.keyDbToKey()
+		if err != nil {
+			return nil, err
+		}
 
 		availableKeys = append(availableKeys, convertedKey)
 	}
