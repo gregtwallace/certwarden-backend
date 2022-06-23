@@ -5,6 +5,7 @@ go 1.18
 require github.com/julienschmidt/httprouter v1.3.0
 require github.com/mattn/go-sqlite3 v1.14.12
 
+replace legocerthub-backend/pkg/acme => /pkg/acme
 replace legocerthub-backend/pkg/domain/acme_accounts => /pkg/domain/acme_accounts
 replace legocerthub-backend/pkg/domain/app => /pkg/domain/app
 replace legocerthub-backend/pkg/domain/private_keys => /pkg/domain/private_keys

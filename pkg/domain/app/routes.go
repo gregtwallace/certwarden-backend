@@ -1,8 +1,6 @@
 package app
 
 import (
-	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/domain/private_keys"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -11,30 +9,22 @@ import (
 func (app *Application) Routes() http.Handler {
 	router := httprouter.New()
 
-	// app handlers (app already defined)
+	// app
 	router.HandlerFunc(http.MethodGet, "/api/status", app.statusHandler)
 
-	// private keys service
-	keyService := private_keys.NewService(app)
+	// private_keys
+	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys", app.keys.GetAllKeys)
+	router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys", app.keys.PostNewKey)
+	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys/:id", app.keys.GetOneKey)
+	router.HandlerFunc(http.MethodPut, "/api/v1/privatekeys/:id", app.keys.PutNameDescKey)
+	router.HandlerFunc(http.MethodDelete, "/api/v1/privatekeys/:id", app.keys.DeleteKey)
 
-	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys", keyService.GetAllKeys)
-	router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys", keyService.PostNewKey)
-	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys/:id", keyService.GetOneKey)
-	router.HandlerFunc(http.MethodPut, "/api/v1/privatekeys/:id", keyService.PutNameDescKey)
-	router.HandlerFunc(http.MethodDelete, "/api/v1/privatekeys/:id", keyService.DeleteKey)
-
-	// TODO MODIFY apps to have receiver for the stuff we pass in, as opposed to specific types
-	// e.g. func PrivateKeysApp.New which accepts an Interface as long as it implements the needed pieces
-	//   can make funcs such as .Logger() that returns the logger (assuming forced to use methods instead of types)
-
-	// acme accounts definition and handlers
-	accountService := acme_accounts.NewService(app)
-
-	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts", accountService.GetAllAccounts)
-	router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts", accountService.PostNewAccount)
-	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts/:id", accountService.GetOneAccount)
-	router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id", accountService.PutNameDescAccount)
-	router.HandlerFunc(http.MethodDelete, "/api/v1/acmeaccounts/:id", accountService.DeleteAccount)
+	// acme_accounts
+	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts", app.accounts.GetAllAccounts)
+	router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts", app.accounts.PostNewAccount)
+	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts/:id", app.accounts.GetOneAccount)
+	router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id", app.accounts.PutNameDescAccount)
+	router.HandlerFunc(http.MethodDelete, "/api/v1/acmeaccounts/:id", app.accounts.DeleteAccount)
 
 	return app.enableCORS(router)
 }

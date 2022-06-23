@@ -1,6 +1,8 @@
 package acme_accounts
 
 import (
+	"errors"
+	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/utils/acme_utils"
 	"log"
@@ -9,8 +11,8 @@ import (
 // App interface is for connecting to the main app
 type App interface {
 	GetAccountStorage() Storage
-	GetProdDir() *acme_utils.AcmeDirectory
-	GetStagingDir() *acme_utils.AcmeDirectory
+	GetAcmeProdService() *acme.Service
+	GetAcmeStagingService() *acme.Service
 	GetLogger() *log.Logger
 }
 
@@ -33,23 +35,39 @@ type Storage interface {
 	PutLEAccountInfo(id int, response acme_utils.AcmeAccountResponse) error
 }
 
-// Keys service struct
+// Accounts service struct
 type Service struct {
-	storage        Storage
-	acmeProdDir    *acme_utils.AcmeDirectory
-	acmeStagingDir *acme_utils.AcmeDirectory
-	logger         *log.Logger
+	logger      *log.Logger
+	storage     Storage
+	acmeProd    *acme.Service
+	acmeStaging *acme.Service
 }
 
-func NewService(app App) *Service {
+// NewService creates a new acme_accounts service
+func NewService(app App) (*Service, error) {
 	service := new(Service)
 
-	service.storage = app.GetAccountStorage()
-
-	service.acmeProdDir = app.GetProdDir()
-	service.acmeStagingDir = app.GetStagingDir()
-
+	// logger
 	service.logger = app.GetLogger()
+	if service.logger == nil {
+		return nil, errors.New("acme_accounts: newservice requires valid logger")
+	}
 
-	return service
+	// storage
+	service.storage = app.GetAccountStorage()
+	if service.storage == nil {
+		return nil, errors.New("acme_accounts: newservice requires valid storage")
+	}
+
+	// acme services
+	service.acmeProd = app.GetAcmeProdService()
+	if service.acmeProd == nil {
+		return nil, errors.New("acme_accounts: newservice requires valid acme prod service")
+	}
+	service.acmeStaging = app.GetAcmeStagingService()
+	if service.acmeStaging == nil {
+		return nil, errors.New("acme_accounts: newservice requires valid acme staging service")
+	}
+
+	return service, nil
 }

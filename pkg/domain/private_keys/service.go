@@ -1,6 +1,7 @@
 package private_keys
 
 import (
+	"errors"
 	"log"
 )
 
@@ -22,15 +23,25 @@ type Storage interface {
 
 // Keys service struct
 type Service struct {
-	storage Storage
 	logger  *log.Logger
+	storage Storage
 }
 
-func NewService(app App) *Service {
+// NewService creates a new private_key service
+func NewService(app App) (*Service, error) {
 	service := new(Service)
 
-	service.storage = app.GetKeyStorage()
+	// logger
 	service.logger = app.GetLogger()
+	if service.logger == nil {
+		return nil, errors.New("private_keys: newservice requires valid logger")
+	}
 
-	return service
+	// storage
+	service.storage = app.GetKeyStorage()
+	if service.storage == nil {
+		return nil, errors.New("private_keys: newservice requires valid storage")
+	}
+
+	return service, nil
 }

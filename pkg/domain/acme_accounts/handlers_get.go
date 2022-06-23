@@ -74,8 +74,8 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) {
 func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Request) {
 	// TODO: Finish constructing all needed options
 	newAccountOptions := newAccountOptions{}
-	newAccountOptions.TosUrl = service.acmeProdDir.Meta.TermsOfService
-	newAccountOptions.StagingTosUrl = service.acmeStagingDir.Meta.TermsOfService
+	newAccountOptions.TosUrl = service.acmeProd.TosUrl()
+	newAccountOptions.StagingTosUrl = service.acmeStaging.TosUrl()
 
 	availableKeys, err := service.storage.GetAvailableKeys()
 	if err != nil {

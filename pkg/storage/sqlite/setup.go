@@ -24,9 +24,9 @@ type Storage struct {
 	Timeout time.Duration
 }
 
-// NewStorage() opens an existing sqlite database or creates a new one if needed.
+// OpenStorage opens an existing sqlite database or creates a new one if needed.
 //   It also creates tables. It then returns Storage.
-func NewStorage() (*Storage, error) {
+func OpenStorage() (*Storage, error) {
 	storage := new(Storage)
 	var err error
 

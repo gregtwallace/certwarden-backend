@@ -9,9 +9,8 @@ import (
 func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) {
 
 	currentStatus := appStatus{
-		Status:      "Available",
-		Environment: app.Config.Env,
-		Version:     version,
+		Status:  "Available",
+		Version: version,
 		AcmeDirectories: appStatusDirectories{
 			Production: acme_utils.LeProdDirectory,
 			Staging:    acme_utils.LeStagingDirectory,

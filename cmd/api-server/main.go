@@ -4,65 +4,47 @@ import (
 	"flag"
 	"fmt"
 	"legocerthub-backend/pkg/domain/app"
-	"legocerthub-backend/pkg/storage/sqlite"
-
 	"log"
+
 	"net/http"
-	"os"
 	"time"
 )
 
+// http server config options
+type webConfig struct {
+	host string
+	port int
+}
+
 func main() {
-	// create logger
-	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+	var err error
 
-	// parse command line and set config
-	var cfg app.Config
+	// configure the app
+	app, err := app.CreateAndConfigure()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-	flag.StringVar(&cfg.Host, "host", "localhost", "hostname to listen on")
-	flag.IntVar(&cfg.Port, "port", 4050, "port number to listen on")
-	flag.StringVar(&cfg.Env, "env", "dev", "application environment (dev | prod)")
+	// parse command line for web server config
+	var webCfg webConfig
+
+	flag.StringVar(&webCfg.host, "host", "localhost", "hostname to listen on")
+	flag.IntVar(&webCfg.port, "port", 4050, "port number to listen on")
 	flag.Parse()
 
-	// open database connection
-	storage, err := sqlite.NewStorage()
-	if err != nil {
-		logger.Fatalln(err)
-	}
-	defer storage.Close()
-
-	// TODO: setup nonce management
-
-	// configure the Application
-	app := &app.Application{
-		Config:  cfg,
-		Logger:  logger,
-		Storage: storage,
-	}
-
-	// initialize directory structs (avoid nil pointers)
-	app.InitDirectories()
-	// populate directory structs on the app
-	err = app.UpdateAllDirectories()
-	if err != nil {
-		logger.Fatalln(err)
-	}
-	// & start background process to check for updates periodically
-	go app.BackgroundDirManagement()
-
-	// configure the webserver
+	// configure webserver
 	srv := &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+		Addr:         fmt.Sprintf("%s:%d", webCfg.host, webCfg.port),
 		Handler:      app.Routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
 
-	// launch the webserver
-	logger.Println("Starting server on host", cfg.Host, "port", cfg.Port)
+	// launch webserver
+	app.GetLogger().Println("Starting server on host", webCfg.host, "port", webCfg.port)
 	err = srv.ListenAndServe()
 	if err != nil {
-		logger.Println(err)
+		app.GetLogger().Println(err)
 	}
 }

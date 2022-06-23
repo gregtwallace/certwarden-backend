@@ -1,27 +1,22 @@
 package app
 
 import (
+	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/storage/sqlite"
-	"legocerthub-backend/pkg/utils/acme_utils"
 	"log"
 )
 
 const version = "0.0.1"
 
-type Config struct {
-	Host string
-	Port int
-	Env  string
-}
-
 type Application struct {
-	Config         Config
-	Logger         *log.Logger
-	Storage        *sqlite.Storage
-	AcmeProdDir    *acme_utils.AcmeDirectory
-	AcmeStagingDir *acme_utils.AcmeDirectory
+	logger      *log.Logger
+	storage     *sqlite.Storage
+	keys        *private_keys.Service
+	acmeProd    *acme.Service
+	acmeStaging *acme.Service
+	accounts    *acme_accounts.Service
 }
 
 type appStatusDirectories struct {
@@ -37,22 +32,22 @@ type appStatus struct {
 }
 
 /// return various needed components
+func (app *Application) GetLogger() *log.Logger {
+	return app.logger
+}
+
 // hacky workaround for storage since can't just combine into one interface
 func (app *Application) GetKeyStorage() private_keys.Storage {
-	return app.Storage
+	return app.storage
 }
 func (app *Application) GetAccountStorage() acme_accounts.Storage {
-	return app.Storage
+	return app.storage
 }
 
-func (app *Application) GetLogger() *log.Logger {
-	return app.Logger
+func (app *Application) GetAcmeProdService() *acme.Service {
+	return app.acmeProd
 }
 
-func (app *Application) GetProdDir() *acme_utils.AcmeDirectory {
-	return app.AcmeProdDir
-}
-
-func (app *Application) GetStagingDir() *acme_utils.AcmeDirectory {
-	return app.AcmeProdDir
+func (app *Application) GetAcmeStagingService() *acme.Service {
+	return app.acmeStaging
 }
