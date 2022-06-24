@@ -97,7 +97,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		return nil, err
 	}
 
-	response, err = http.Post(header.Url, "application/jose+json", bytes.NewBuffer(messageJson))
+	response, err = http.Post(url, "application/jose+json", bytes.NewBuffer(messageJson))
 	if err != nil {
 		return nil, err
 	}
