@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/utils/acme_utils"
 )
 
 // accountPayloadToDb turns the client payload into a db object
@@ -101,38 +100,38 @@ func (storage *Storage) PutExistingAccount(payload acme_accounts.AccountPayload)
 	return nil
 }
 
-// putLEAccountInfo populates an account with data that is returned by LE when
-//  an account is POSTed to
-func (storage *Storage) PutLEAccountInfo(id int, response acme_utils.AcmeAccountResponse) error {
-	// Load id and response into db obj
-	accountDb := acmeAccountToDb(id, response)
+// // putLEAccountInfo populates an account with data that is returned by LE when
+// //  an account is POSTed to
+// func (storage *Storage) PutLEAccountInfo(id int, response acme_utils.AcmeAccountResponse) error {
+// 	// Load id and response into db obj
+// 	accountDb := acmeAccountToDb(id, response)
 
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
-	defer cancel()
+// 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+// 	defer cancel()
 
-	query := `
-	UPDATE
-		acme_accounts
-	SET
-		status = $1,
-		email = $2,
-		created_at = $3,
-		updated_at = $4,
-		kid = $5
-	WHERE
-		id = $6`
+// 	query := `
+// 	UPDATE
+// 		acme_accounts
+// 	SET
+// 		status = $1,
+// 		email = $2,
+// 		created_at = $3,
+// 		updated_at = $4,
+// 		kid = $5
+// 	WHERE
+// 		id = $6`
 
-	_, err := storage.Db.ExecContext(ctx, query,
-		accountDb.status,
-		accountDb.email,
-		accountDb.createdAt,
-		accountDb.updatedAt,
-		accountDb.kid,
-		accountDb.id)
-	if err != nil {
-		return err
-	}
+// 	_, err := storage.Db.ExecContext(ctx, query,
+// 		accountDb.status,
+// 		accountDb.email,
+// 		accountDb.createdAt,
+// 		accountDb.updatedAt,
+// 		accountDb.kid,
+// 		accountDb.id)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	// TODO: Handle 0 rows updated.
-	return nil
-}
+// 	// TODO: Handle 0 rows updated.
+// 	return nil
+// }

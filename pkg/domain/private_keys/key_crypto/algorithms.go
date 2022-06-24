@@ -10,7 +10,6 @@ type Algorithm struct {
 	Value             string                `json:"value"`
 	Name              string                `json:"name"`
 	KeyType           string                `json:"-"` // rsa or ecdsa
-	SignatureAlg      string                `json:"-"` // the corresponding signing algo for ACME
 	BitLen            int                   `json:"-"` // rsa
 	EllipticCurveName string                `json:"-"` // ecdsa
 	EllipticCurveFunc func() elliptic.Curve `json:"-"` // ecdsa
@@ -22,31 +21,27 @@ type Algorithm struct {
 func ListOfAlgorithms() []Algorithm {
 	return []Algorithm{
 		{
-			Value:        "rsa2048",
-			Name:         "RSA 2048-bit",
-			KeyType:      "RSA",
-			SignatureAlg: "RS256",
-			BitLen:       2048,
+			Value:   "rsa2048",
+			Name:    "RSA 2048-bit",
+			KeyType: "RSA",
+			BitLen:  2048,
 		},
 		{
-			Value:        "rsa3072",
-			Name:         "RSA 3072-bit",
-			KeyType:      "RSA",
-			SignatureAlg: "", // TODO: RS384 ??
-			BitLen:       3072,
+			Value:   "rsa3072",
+			Name:    "RSA 3072-bit",
+			KeyType: "RSA",
+			BitLen:  3072,
 		},
 		{
-			Value:        "rsa4096",
-			Name:         "RSA 4096-bit",
-			KeyType:      "RSA",
-			SignatureAlg: "", // TODO: RS512 ??
-			BitLen:       4096,
+			Value:   "rsa4096",
+			Name:    "RSA 4096-bit",
+			KeyType: "RSA",
+			BitLen:  4096,
 		},
 		{
 			Value:             "ecdsap256",
 			Name:              "ECDSA P-256",
 			KeyType:           "EC",
-			SignatureAlg:      "ES256",
 			EllipticCurveName: "P-256",
 			EllipticCurveFunc: elliptic.P256,
 		},
@@ -54,7 +49,6 @@ func ListOfAlgorithms() []Algorithm {
 			Value:             "ecdsap384",
 			Name:              "ECDSA P-384",
 			KeyType:           "EC",
-			SignatureAlg:      "ES384",
 			EllipticCurveName: "P-384",
 			EllipticCurveFunc: elliptic.P384,
 		},

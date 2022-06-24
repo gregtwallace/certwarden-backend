@@ -4,7 +4,6 @@ import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/utils/acme_utils"
 	"log"
 )
 
@@ -32,7 +31,7 @@ type Storage interface {
 	GetAccountKid(int) (string, error)
 	PutNameDescAccount(NameDescPayload) error
 	GetAccountPem(int) (string, error)
-	PutLEAccountInfo(id int, response acme_utils.AcmeAccountResponse) error
+	// PutLEAccountInfo(id int, response acme_utils.AcmeAccountResponse) error
 }
 
 // Accounts service struct

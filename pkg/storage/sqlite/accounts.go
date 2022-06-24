@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/utils/acme_utils"
-	"strings"
 	"time"
 )
 
@@ -63,32 +61,32 @@ func accountPayloadToDb(payload acme_accounts.AccountPayload) (accountDb, error)
 }
 
 // Turn LE response into Db object
-func acmeAccountToDb(accountId int, response acme_utils.AcmeAccountResponse) accountDb {
-	var account accountDb
+// func acmeAccountToDb(accountId int, response acme_utils.AcmeAccountResponse) accountDb {
+// 	var account accountDb
 
-	account.id = accountId
+// 	account.id = accountId
 
-	// avoid null if there is no contact
-	account.email.Valid = true
-	if len(response.Contact) == 0 {
-		account.email.String = ""
-	} else {
-		account.email.String = strings.TrimPrefix(response.Contact[0], "mailto:")
-	}
+// 	// avoid null if there is no contact
+// 	account.email.Valid = true
+// 	if len(response.Contact) == 0 {
+// 		account.email.String = ""
+// 	} else {
+// 		account.email.String = strings.TrimPrefix(response.Contact[0], "mailto:")
+// 	}
 
-	unixCreated, err := acme_utils.LeToUnixTime(response.CreatedAt)
-	if err != nil {
-		unixCreated = 0
-	}
-	account.createdAt = int(unixCreated)
+// 	unixCreated, err := acme_utils.LeToUnixTime(response.CreatedAt)
+// 	if err != nil {
+// 		unixCreated = 0
+// 	}
+// 	account.createdAt = int(unixCreated)
 
-	account.updatedAt = int(time.Now().Unix())
+// 	account.updatedAt = int(time.Now().Unix())
 
-	account.status.Valid = true
-	account.status.String = response.Status
+// 	account.status.Valid = true
+// 	account.status.String = response.Status
 
-	account.kid.Valid = true
-	account.kid.String = response.Location
+// 	account.kid.Valid = true
+// 	account.kid.String = response.Location
 
-	return account
-}
+// 	return account
+// }
