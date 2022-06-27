@@ -4,24 +4,37 @@ import (
 	"context"
 	"database/sql"
 	"legocerthub-backend/pkg/domain/acme_accounts"
+	"legocerthub-backend/pkg/domain/private_keys"
 )
 
 // accountDbToAcc turns the database representation of an Account into an Account
-func (accountDb *accountDb) accountDbToAcc() acme_accounts.Account {
-	return acme_accounts.Account{
-		ID:             accountDb.id,
-		Name:           accountDb.name,
-		Description:    accountDb.description.String,
-		PrivateKeyID:   int(accountDb.privateKeyId.Int32),
-		PrivateKeyName: accountDb.privateKeyName.String,
-		Status:         accountDb.status.String,
-		Email:          accountDb.email.String,
-		AcceptedTos:    accountDb.acceptedTos.Bool,
-		IsStaging:      accountDb.isStaging.Bool,
-		CreatedAt:      accountDb.createdAt,
-		UpdatedAt:      accountDb.updatedAt,
-		Kid:            accountDb.kid.String,
+func (accountDb *accountDb) accountDbToAcc() (acme_accounts.Account, error) {
+	var privateKey = new(private_keys.Key)
+	var err error
+
+	// convert embedded private key db
+	if accountDb.privateKey != nil {
+		*privateKey, err = accountDb.privateKey.keyDbToKey()
+		if err != nil {
+			return acme_accounts.Account{}, err
+		}
+	} else {
+		privateKey = nil
 	}
+
+	return acme_accounts.Account{
+		ID:          accountDb.id,
+		Name:        accountDb.name,
+		Description: accountDb.description.String,
+		PrivateKey:  privateKey,
+		Status:      accountDb.status.String,
+		Email:       accountDb.email.String,
+		AcceptedTos: accountDb.acceptedTos.Bool,
+		IsStaging:   accountDb.isStaging.Bool,
+		CreatedAt:   accountDb.createdAt,
+		UpdatedAt:   accountDb.updatedAt,
+		Kid:         accountDb.kid.String,
+	}, nil
 }
 
 // GetAllAccounts returns a slice of all of the Accounts in the database
@@ -29,7 +42,8 @@ func (storage *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
 	defer cancel()
 
-	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, aa.status, aa.email, aa.is_staging 
+	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, pk.description,
+	aa.status, aa.email, aa.is_staging 
 	FROM
 		acme_accounts aa
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
@@ -44,12 +58,15 @@ func (storage *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 	var allAccounts []acme_accounts.Account
 	for rows.Next() {
 		var oneAccount accountDb
+		// initialize keyDb pointer (or nil deref)
+		oneAccount.privateKey = new(keyDb)
 		err = rows.Scan(
 			&oneAccount.id,
 			&oneAccount.name,
 			&oneAccount.description,
-			&oneAccount.privateKeyId,
-			&oneAccount.privateKeyName,
+			&oneAccount.privateKey.id,
+			&oneAccount.privateKey.name,
+			&oneAccount.privateKey.description,
 			&oneAccount.status,
 			&oneAccount.email,
 			&oneAccount.isStaging,
@@ -58,7 +75,11 @@ func (storage *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 			return nil, err
 		}
 
-		convertedAccount := oneAccount.accountDbToAcc()
+		convertedAccount, err := oneAccount.accountDbToAcc()
+		if err != nil {
+			return nil, err
+		}
+
 		allAccounts = append(allAccounts, convertedAccount)
 	}
 
@@ -80,8 +101,8 @@ func (storage *Storage) getOneAccount(id int, name string) (acme_accounts.Accoun
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
 	defer cancel()
 
-	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, aa.status, aa.email, aa.is_staging,
-	aa.accepted_tos, aa.kid, aa.created_at, aa.updated_at
+	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, pk.description, pk.pem, 
+	aa.status, aa.email, aa.is_staging, aa.accepted_tos, aa.kid, aa.created_at, aa.updated_at
 	FROM
 		acme_accounts aa
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
@@ -91,12 +112,17 @@ func (storage *Storage) getOneAccount(id int, name string) (acme_accounts.Accoun
 	row := storage.Db.QueryRowContext(ctx, query, id, name)
 
 	var oneAccount accountDb
+	// initialize keyDb pointer (or nil deref)
+	oneAccount.privateKey = new(keyDb)
+
 	err := row.Scan(
 		&oneAccount.id,
 		&oneAccount.name,
 		&oneAccount.description,
-		&oneAccount.privateKeyId,
-		&oneAccount.privateKeyName,
+		&oneAccount.privateKey.id,
+		&oneAccount.privateKey.name,
+		&oneAccount.privateKey.description,
+		&oneAccount.privateKey.pem,
 		&oneAccount.status,
 		&oneAccount.email,
 		&oneAccount.isStaging,
@@ -109,7 +135,11 @@ func (storage *Storage) getOneAccount(id int, name string) (acme_accounts.Accoun
 		return acme_accounts.Account{}, err
 	}
 
-	convertedAccount := oneAccount.accountDbToAcc()
+	convertedAccount, err := oneAccount.accountDbToAcc()
+	if err != nil {
+		return acme_accounts.Account{}, err
+	}
+
 	return convertedAccount, nil
 }
 

@@ -9,16 +9,17 @@ import (
 // accountPayloadToDb turns the client payload into a db object
 func nameDescAccountPayloadToDb(payload acme_accounts.NameDescPayload) (accountDb, error) {
 	var dbObj accountDb
-	var err error
 
-	// payload ID should never be missing at this point, regardless error if it somehow
-	//  is to avoid nil pointer dereference
+	// mandatory, error if somehow does not exist
 	if payload.ID == nil {
-		err = errors.New("id missing in payload")
-		return accountDb{}, err
+		return accountDb{}, errors.New("accounts: name/desc payload: missing id")
 	}
 	dbObj.id = *payload.ID
 
+	// mandatory, error if somehow does not exist
+	if payload.Name == nil {
+		return accountDb{}, errors.New("accounts: name/desc payload: missing name")
+	}
 	dbObj.name = *payload.Name
 
 	dbObj.description = stringToNullString(payload.Description)

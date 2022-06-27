@@ -3,7 +3,35 @@ package sqlite
 import (
 	"context"
 	"legocerthub-backend/pkg/domain/private_keys"
+	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 )
+
+// KeyDbToKey translates the db object into the object the key service expects
+func (keyDb *keyDb) keyDbToKey() (private_keys.Key, error) {
+	var algorithm = new(key_crypto.Algorithm)
+	var err error
+
+	// if there is an algorithm value, specify the algorithm
+	if keyDb.algorithmValue.Valid {
+		*algorithm, err = key_crypto.AlgorithmByValue(keyDb.algorithmValue.String)
+		if err != nil {
+			return private_keys.Key{}, err
+		}
+	} else {
+		algorithm = nil
+	}
+
+	return private_keys.Key{
+		ID:          keyDb.id,
+		Name:        keyDb.name.String,
+		Description: keyDb.description.String,
+		Algorithm:   algorithm,
+		Pem:         keyDb.pem.String,
+		ApiKey:      keyDb.apiKey,
+		CreatedAt:   keyDb.createdAt,
+		UpdatedAt:   keyDb.updatedAt,
+	}, nil
+}
 
 // dbGetAllPrivateKeys writes information about all private keys to json
 func (storage Storage) GetAllKeys() ([]private_keys.Key, error) {

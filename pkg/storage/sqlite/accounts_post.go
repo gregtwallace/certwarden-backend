@@ -19,16 +19,24 @@ type NewPayload struct {
 }
 
 // accountPayloadToDb turns the client payload into a db object
-func newAccountPayloadToDb(payload acme_accounts.NewPayload) accountDb {
+func newAccountPayloadToDb(payload acme_accounts.NewPayload) (accountDb, error) {
 	var dbObj accountDb
 
+	// mandatory, error if somehow does not exist
+	if payload.Name == nil {
+		return accountDb{}, errors.New("accounts: new payload: missing name")
+	}
 	dbObj.name = *payload.Name
 
 	dbObj.description = stringToNullString(payload.Description)
 
 	dbObj.email = stringToNullString(payload.Email)
 
-	dbObj.privateKeyId = intToNullInt32(payload.PrivateKeyID)
+	// mandatory, error if somehow does not exist
+	if payload.PrivateKeyID == nil {
+		return accountDb{}, errors.New("accounts: new payload: missing private key id")
+	}
+	dbObj.privateKey.id = *payload.PrivateKeyID
 
 	dbObj.isStaging = boolToNullBool(payload.IsStaging)
 
@@ -41,15 +49,15 @@ func newAccountPayloadToDb(payload acme_accounts.NewPayload) accountDb {
 	dbObj.createdAt = int(time.Now().Unix())
 	dbObj.updatedAt = dbObj.createdAt
 
-	return dbObj
+	return dbObj, nil
 }
 
 // PostNewAccount inserts a new account into the db and returns the id of the new account
 func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (newAccountId int, err error) {
 	// Load payload into db obj
-	accountDb := newAccountPayloadToDb(payload)
+	accountDb, err := newAccountPayloadToDb(payload)
 	if err != nil {
-		return 0, err
+		return -2, err
 	}
 
 	// database update
@@ -58,7 +66,7 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (newAcc
 
 	tx, err := storage.Db.BeginTx(ctx, nil)
 	if err != nil {
-		return 0, err
+		return -2, err
 	}
 
 	// insert the new account
@@ -70,7 +78,7 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (newAcc
 	result, err := tx.ExecContext(ctx, query,
 		accountDb.name,
 		accountDb.description,
-		accountDb.privateKeyId,
+		accountDb.privateKey.id,
 		accountDb.status,
 		accountDb.email,
 		accountDb.acceptedTos,
@@ -80,14 +88,14 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (newAcc
 	)
 	if err != nil {
 		tx.Rollback()
-		return 0, err
+		return -2, err
 	}
 
 	// id of the new account
 	id, err := result.LastInsertId()
 	if err != nil {
 		tx.Rollback()
-		return 0, err
+		return -2, err
 	}
 
 	// verify the new account does not have a cert that uses the same key
@@ -99,21 +107,21 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (newAcc
 			private_key_id = $1
 	`
 
-	row := tx.QueryRowContext(ctx, query, accountDb.privateKeyId)
+	row := tx.QueryRowContext(ctx, query, accountDb.privateKey.id)
 
 	var exists bool
 	err = row.Scan(&exists)
 	if err != nil && err != sql.ErrNoRows {
 		tx.Rollback()
-		return 0, err
+		return -2, err
 	} else if exists {
 		tx.Rollback()
-		return 0, errors.New("private key in use by certificate")
+		return -2, errors.New("private key in use by certificate")
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return 0, err
+		return -2, err
 	}
 
 	newAccountId = int(id)

@@ -2,62 +2,21 @@ package sqlite
 
 import (
 	"database/sql"
-	"errors"
-	"legocerthub-backend/pkg/domain/acme_accounts"
-	"time"
 )
 
 // accountDb is the database representation of an Account object
 type accountDb struct {
-	id             int
-	name           string
-	description    sql.NullString
-	privateKeyId   sql.NullInt32
-	privateKeyName sql.NullString // comes from a join with key table
-	status         sql.NullString
-	email          sql.NullString
-	acceptedTos    sql.NullBool
-	isStaging      sql.NullBool
-	createdAt      int
-	updatedAt      int
-	kid            sql.NullString
-}
-
-// accountPayloadToDb turns the client payload into a db object
-func accountPayloadToDb(payload acme_accounts.AccountPayload) (accountDb, error) {
-	var dbObj accountDb
-	var err error
-
-	// payload ID should never be missing at this point, regardless error if it somehow
-	//  is to avoid nil pointer dereference
-	if payload.ID == nil {
-		err = errors.New("id missing in payload")
-		return accountDb{}, err
-	}
-	dbObj.id = *payload.ID
-
-	dbObj.name = *payload.Name
-
-	dbObj.description = stringToNullString(payload.Description)
-
-	dbObj.email = stringToNullString(payload.Email)
-
-	dbObj.privateKeyId = intToNullInt32(payload.PrivateKeyID)
-
-	// TODO: Cleanup - probably shouldn't need this
-	dbObj.status.Valid = true
-	dbObj.status.String = "Unknown"
-
-	dbObj.acceptedTos = boolToNullBool(payload.AcceptedTos)
-
-	dbObj.isStaging = boolToNullBool(payload.IsStaging)
-
-	// CreatedAt is always populated but only sometimes used
-	dbObj.createdAt = int(time.Now().Unix())
-
-	dbObj.updatedAt = dbObj.createdAt
-
-	return dbObj, nil
+	id          int
+	name        string
+	description sql.NullString
+	privateKey  *keyDb
+	status      sql.NullString
+	email       sql.NullString
+	acceptedTos sql.NullBool
+	isStaging   sql.NullBool
+	createdAt   int
+	updatedAt   int
+	kid         sql.NullString
 }
 
 // Turn LE response into Db object
