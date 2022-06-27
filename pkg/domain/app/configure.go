@@ -27,7 +27,6 @@ func CreateAndConfigure() (*Application, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer app.storage.Close()
 
 	// keys service
 	app.keys, err = private_keys.NewService(app)
@@ -53,4 +52,9 @@ func CreateAndConfigure() (*Application, error) {
 	}
 
 	return app, nil
+}
+
+// CloseStorage closes the storage connection
+func (app *Application) CloseStorage() {
+	app.storage.Close()
 }

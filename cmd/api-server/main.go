@@ -24,6 +24,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	defer app.CloseStorage()
 
 	// parse command line for web server config
 	var webCfg webConfig
