@@ -2,24 +2,14 @@ package sqlite
 
 import (
 	"context"
-	"errors"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/utils"
 	"time"
 )
 
 // newPayloadToDb translates the new key payload to db object
-func newPayloadToDb(payload private_keys.NewPayload) (keyDb, error) {
+func newKeyPayloadToDb(payload private_keys.NewPayload) keyDb {
 	var dbObj keyDb
-	var err error
-
-	// payload ID should never be missing at this point, regardless error if it somehow
-	//  is to avoid nil pointer dereference
-	if payload.ID == nil {
-		err = errors.New("id missing in payload")
-		return keyDb{}, err
-	}
-	dbObj.id = *payload.ID
 
 	dbObj.name = stringToNullString(payload.Name)
 
@@ -32,16 +22,13 @@ func newPayloadToDb(payload private_keys.NewPayload) (keyDb, error) {
 	dbObj.createdAt = int(time.Now().Unix())
 	dbObj.updatedAt = dbObj.createdAt
 
-	return dbObj, nil
+	return dbObj
 }
 
 // dbPostNewKey creates a new key based on what was POSTed
-func (storage *Storage) PostNewKey(payload private_keys.NewPayload) error {
+func (storage *Storage) PostNewKey(payload private_keys.NewPayload) (err error) {
 	// load payload fields into db struct
-	key, err := newPayloadToDb(payload)
-	if err != nil {
-		return err
-	}
+	key := newKeyPayloadToDb(payload)
 
 	// generate api key
 	key.apiKey, err = utils.GenerateApiKey()

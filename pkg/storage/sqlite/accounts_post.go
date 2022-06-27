@@ -5,12 +5,49 @@ import (
 	"database/sql"
 	"errors"
 	"legocerthub-backend/pkg/domain/acme_accounts"
+	"time"
 )
 
-// postNewAccount inserts a new account into the db and returns the id of the new account
-func (storage *Storage) PostNewAccount(payload acme_accounts.AccountPayload) (int, error) {
+type NewPayload struct {
+	ID           *int    `json:"id"`
+	Name         *string `json:"name"`
+	Description  *string `json:"description"`
+	Email        *string `json:"email"`
+	PrivateKeyID *int    `json:"private_key_id"`
+	IsStaging    *bool   `json:"is_staging"`
+	AcceptedTos  *bool   `json:"accepted_tos"`
+}
+
+// accountPayloadToDb turns the client payload into a db object
+func newAccountPayloadToDb(payload acme_accounts.NewPayload) accountDb {
+	var dbObj accountDb
+
+	dbObj.name = *payload.Name
+
+	dbObj.description = stringToNullString(payload.Description)
+
+	dbObj.email = stringToNullString(payload.Email)
+
+	dbObj.privateKeyId = intToNullInt32(payload.PrivateKeyID)
+
+	dbObj.isStaging = boolToNullBool(payload.IsStaging)
+
+	dbObj.acceptedTos = boolToNullBool(payload.AcceptedTos)
+
+	// initial ACME state is not known until later interaction with ACME
+	dbObj.status.Valid = true
+	dbObj.status.String = "unknown"
+
+	dbObj.createdAt = int(time.Now().Unix())
+	dbObj.updatedAt = dbObj.createdAt
+
+	return dbObj
+}
+
+// PostNewAccount inserts a new account into the db and returns the id of the new account
+func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (newAccountId int, err error) {
 	// Load payload into db obj
-	accountDb, err := accountPayloadToDb(payload)
+	accountDb := newAccountPayloadToDb(payload)
 	if err != nil {
 		return 0, err
 	}
@@ -79,5 +116,7 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.AccountPayload) (in
 		return 0, err
 	}
 
-	return int(id), nil
+	newAccountId = int(id)
+
+	return newAccountId, nil
 }

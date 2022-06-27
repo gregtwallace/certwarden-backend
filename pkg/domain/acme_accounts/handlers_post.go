@@ -59,14 +59,15 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) {
 	}
 	///
 
-	// TODO: Reimplement LE logic
-	// // payload -> LE create -> save to db
-	// err = service.createNewAccount(payload)
-	// if err != nil {
-	// 	service.logger.Printf("accounts: PostNew: failed to create account -- err: %s", err)
-	// 	utils.WriteErrorJSON(w, err)
-	// 	return
-	// }
+	// Save new account details to storage
+	// No ACME actions are performed. To actually register, a post should be
+	// sent to /register
+	service.storage.PostNewAccount(payload)
+	if err != nil {
+		service.logger.Printf("accounts: post new: failed to create account: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
 
 	// Write OK response to client
 	response := utils.JsonResp{

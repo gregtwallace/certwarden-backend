@@ -19,19 +19,17 @@ type App interface {
 type Storage interface {
 	// keys
 	GetAvailableKeys() ([]private_keys.Key, error)
+
 	// accounts
 	GetAllAccounts() ([]Account, error)
-	PostNewAccount(AccountPayload) (int, error)
 	GetOneAccountById(int) (Account, error)
 	GetOneAccountByName(string) (Account, error)
-	PutExistingAccount(AccountPayload) error
-	DeleteAccount(int) error
 
-	// specific things
-	GetAccountKid(int) (string, error)
+	PostNewAccount(NewPayload) (int, error)
+
 	PutNameDescAccount(NameDescPayload) error
-	GetAccountPem(int) (string, error)
-	// PutLEAccountInfo(id int, response acme_utils.AcmeAccountResponse) error
+
+	DeleteAccount(int) error
 }
 
 // Accounts service struct
