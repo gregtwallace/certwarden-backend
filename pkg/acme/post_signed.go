@@ -87,9 +87,15 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 
 	/// payload
 	message.Payload, err = encodeJson(payload)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	/// signature
 	message.Signature, err = accountKey.Sign(message)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	/// post
 	messageJson, err := json.Marshal(message)
