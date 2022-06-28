@@ -30,14 +30,14 @@ func encodeJson(data any) (string, error) {
 	return encodeString(jsonBytes), nil
 }
 
-// leToUnixTime turns an acme response formatted time into a unix time int
-func leToUnixTime(leTime string) (int64, error) {
+// acmeToUnixTime turns an acme response formatted time into a unix time int
+func acmeToUnixTime(acmeTime string) (int, error) {
 	layout := "2006-01-02T15:04:05Z"
 
-	time, err := time.Parse(layout, leTime)
+	time, err := time.Parse(layout, acmeTime)
 	if err != nil {
 		return 0, err
 	}
 
-	return time.Unix(), nil
+	return int(time.Unix()), nil
 }

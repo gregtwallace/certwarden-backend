@@ -41,8 +41,8 @@ type AccountKey struct {
 }
 
 // postToUrlSigned posts the payload to the specified url, using the specified AccountKeyInfo
-// and returns the response from ACME
-func (service *Service) postToUrlSigned(payload any, url string, accountKey AccountKey) (acmeResponse any, err error) {
+// and returns the response body (data / bytes) and headers from ACME
+func (service *Service) postToUrlSigned(payload any, url string, accountKey AccountKey) (body []byte, headers http.Header, err error) {
 	// message is what will ultimately be posted to ACME
 	var message acmeSignedMessage
 
@@ -52,7 +52,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	// alg
 	header.Algorithm, err = accountKey.signingAlg()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// key or kid
@@ -69,7 +69,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	// TODO - implement nonce manager
 	response, err := http.Get(service.dir.NewNonce)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	header.Nonce = response.Header.Get("Replay-Nonce")
 	response.Body.Close()
@@ -81,7 +81,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	// encord and insert into message
 	message.ProtectedHeader, err = encodeJson(header)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	/// header (end)
 
@@ -94,34 +94,22 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	/// post
 	messageJson, err := json.Marshal(message)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	response, err = http.Post(url, "application/jose+json", bytes.NewBuffer(messageJson))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	defer response.Body.Close()
 	// TODO: Add new nonce to nonce manager
 	_ = response.Header.Get("Replay-Nonce")
-	defer response.Body.Close()
 
-	// TODO: Remove and switch to returning response (i.e. remove this line)
-	_, err = ioutil.ReadAll(response.Body)
+	// read body of response
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	// body, err := ioutil.ReadAll(response.Body)
-
-	// TODO: return response
-	// unmarshal the LE response into an Account
-	// var responseAccount AcmeAccountResponse
-	// err = UnmarshalAcmeResp(body, &responseAccount)
-	// if err != nil {
-	// 	return AcmeAccountResponse{}, err
-	// }
-	// kid isn't part of the JSON response, fetch it from the header
-	// responseAccount.Location = response.Header.Get("Location")
-	// instead of just Location can return all headers to the calling func
-	// and then they can be parsed generally as appropriate by the caller
-
-	// TODO: return response
-	return
+	return bodyBytes, response.Header, nil
 }

@@ -3,7 +3,9 @@ package sqlite
 import (
 	"context"
 	"errors"
+	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
+	"time"
 )
 
 // accountPayloadToDb turns the client payload into a db object
@@ -62,38 +64,58 @@ func (storage *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload
 	return nil
 }
 
-// // putLEAccountInfo populates an account with data that is returned by LE when
-// //  an account is POSTed to
-// func (storage *Storage) PutLEAccountInfo(id int, response acme_utils.AcmeAccountResponse) error {
-// 	// Load id and response into db obj
-// 	accountDb := acmeAccountToDb(id, response)
+// leNewAccountResponseToDb translates the ACME response into the fields we want to save
+// in the database
+func leNewAccountResponseToDb(id int, response acme.AcmeNewAccountResponse) accountDb {
+	var account accountDb
+	var err error
 
-// 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
-// 	defer cancel()
+	account.id = id
+	email := response.Email()
+	account.email = stringToNullString(&email)
+	account.status = stringToNullString(&response.Status)
+	account.kid = stringToNullString(&response.Location)
+	account.createdAt, err = response.CreatedAtUnix()
+	if err != nil {
+		account.createdAt = 0
+	}
+	account.updatedAt = int(time.Now().Unix())
 
-// 	query := `
-// 	UPDATE
-// 		acme_accounts
-// 	SET
-// 		status = $1,
-// 		email = $2,
-// 		created_at = $3,
-// 		updated_at = $4,
-// 		kid = $5
-// 	WHERE
-// 		id = $6`
+	return account
+}
 
-// 	_, err := storage.Db.ExecContext(ctx, query,
-// 		accountDb.status,
-// 		accountDb.email,
-// 		accountDb.createdAt,
-// 		accountDb.updatedAt,
-// 		accountDb.kid,
-// 		accountDb.id)
-// 	if err != nil {
-// 		return err
-// 	}
+// putLEAccountInfo populates an account with data that is returned by LE when
+//  an account is POSTed to
+func (storage *Storage) PutLENewAccountResponse(id int, response acme.AcmeNewAccountResponse) error {
+	// Load id and response into db obj
+	accountDb := leNewAccountResponseToDb(id, response)
 
-// 	// TODO: Handle 0 rows updated.
-// 	return nil
-// }
+	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		acme_accounts
+	SET
+		status = $1,
+		email = $2,
+		created_at = $3,
+		updated_at = $4,
+		kid = $5
+	WHERE
+		id = $6`
+
+	_, err := storage.Db.ExecContext(ctx, query,
+		accountDb.status,
+		accountDb.email,
+		accountDb.createdAt,
+		accountDb.updatedAt,
+		accountDb.kid,
+		accountDb.id)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Handle 0 rows updated.
+	return nil
+}

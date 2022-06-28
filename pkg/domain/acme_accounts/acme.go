@@ -1,5 +1,24 @@
 package acme_accounts
 
+import (
+	"legocerthub-backend/pkg/acme"
+)
+
+// newAccountPayload() generates the payload for ACME to post to the
+// new-account endpoint
+func (account *Account) newAccountPayload() acme.NewAccountPayload {
+	var contact []string
+
+	if account.Email != "" {
+		contact = append(contact, "mailto:"+account.Email)
+	}
+
+	return acme.NewAccountPayload{
+		TosAgreed: account.AcceptedTos,
+		Contact:   contact,
+	}
+}
+
 // import (
 // 	"legocerthub-backend/pkg/utils/acme_utils"
 // )

@@ -101,7 +101,7 @@ func (storage *Storage) getOneAccount(id int, name string) (acme_accounts.Accoun
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
 	defer cancel()
 
-	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, pk.description, pk.pem, 
+	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, pk.description, pk.algorithm, pk.pem, 
 	aa.status, aa.email, aa.is_staging, aa.accepted_tos, aa.kid, aa.created_at, aa.updated_at
 	FROM
 		acme_accounts aa
@@ -122,6 +122,7 @@ func (storage *Storage) getOneAccount(id int, name string) (acme_accounts.Accoun
 		&oneAccount.privateKey.id,
 		&oneAccount.privateKey.name,
 		&oneAccount.privateKey.description,
+		&oneAccount.privateKey.algorithmValue,
 		&oneAccount.privateKey.pem,
 		&oneAccount.status,
 		&oneAccount.email,

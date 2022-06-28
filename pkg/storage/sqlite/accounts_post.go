@@ -21,6 +21,8 @@ type NewPayload struct {
 // accountPayloadToDb turns the client payload into a db object
 func newAccountPayloadToDb(payload acme_accounts.NewPayload) (accountDb, error) {
 	var dbObj accountDb
+	// initialize to avoid nil pointer
+	dbObj.privateKey = new(keyDb)
 
 	// mandatory, error if somehow does not exist
 	if payload.Name == nil {

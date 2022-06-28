@@ -3,8 +3,13 @@ package acme_accounts
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/utils"
 	"net/http"
+	"strconv"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 // NewPayload is the struct for creating a new account
@@ -59,9 +64,8 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) {
 	}
 	///
 
-	// Save new account details to storage
-	// No ACME actions are performed. To actually register, a post should be
-	// sent to /register
+	// Save new account details to storage.
+	// No ACME actions are performed.
 	service.storage.PostNewAccount(payload)
 	if err != nil {
 		service.logger.Printf("accounts: post new: failed to create account: %s", err)
@@ -76,6 +80,81 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) {
 	err = utils.WriteJSON(w, http.StatusOK, response, "response")
 	if err != nil {
 		service.logger.Printf("accounts: PostNew: write response json failed -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+}
+
+// NewAccount sends the account information to the ACME new-account endpoint
+// which effectively registers the account with ACME
+// endpoint: /api/v1/acmeaccounts/:id/new-account
+func (service *Service) NewAccount(w http.ResponseWriter, r *http.Request) {
+	// account id
+	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	idParam, err := strconv.Atoi(idParamStr)
+	if err != nil {
+		service.logger.Printf("accounts: PutOne: invalid idParam -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// read body to verify empty (there should not be a payload)
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		service.logger.Printf("accounts: new-account: failed to read request body -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	} else if len(b) != 0 {
+		err = errors.New("accounts: new-account: request body should be undefined")
+		service.logger.Println(err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// fetch the relevant account
+	acmeAccount, err := service.storage.GetOneAccountById(idParam)
+	if err != nil {
+		service.logger.Printf("accounts: new-account: failed to fetch account -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// get crypto key
+	key, err := acmeAccount.PrivateKey.CryptoKey()
+	if err != nil {
+		service.logger.Printf("accounts: new-account: failed to get crypto private key -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// send the new-account to ACME
+	var acmeResponse acme.AcmeNewAccountResponse
+	if acmeAccount.IsStaging {
+		acmeResponse, err = service.acmeStaging.NewAccount(acmeAccount.newAccountPayload(), key)
+	} else {
+		acmeResponse, err = service.acmeProd.NewAccount(acmeAccount.newAccountPayload(), key)
+	}
+	if err != nil {
+		service.logger.Printf("accounts: acme: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// save ACME response to account
+	err = service.storage.PutLENewAccountResponse(idParam, acmeResponse)
+	if err != nil {
+		service.logger.Printf("accounts: new-account: failed to save to storage -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// Write OK response to client
+	clientResponse := utils.JsonResp{
+		OK: true,
+	}
+	err = utils.WriteJSON(w, http.StatusOK, clientResponse, "response")
+	if err != nil {
+		service.logger.Printf("accounts: new-account: write response json failed -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
 		return
 	}

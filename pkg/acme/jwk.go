@@ -8,6 +8,8 @@ import (
 
 // jwk return a jwk for the AccountKey
 func (accountKey *AccountKey) jwk() (jwk *jsonWebKey, err error) {
+	jwk = new(jsonWebKey)
+
 	switch privateKey := accountKey.Key.(type) {
 	case *rsa.PrivateKey:
 		jwk.KeyType = "RSA"
