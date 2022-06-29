@@ -14,9 +14,15 @@ func (accountKey *AccountKey) jwk() (jwk *jsonWebKey, err error) {
 	case *rsa.PrivateKey:
 		jwk.KeyType = "RSA"
 
-		jwk.PublicExponent = encodeBinaryString(privateKey.E)
+		jwk.PublicExponent, err = encodeRsaExponent(*privateKey)
+		if err != nil {
+			return nil, err
+		}
 
-		jwk.Modulus = encodeString(privateKey.N.Bytes())
+		jwk.Modulus, err = encodeRsaModulus(*privateKey)
+		if err != nil {
+			return nil, err
+		}
 
 		return jwk, nil
 

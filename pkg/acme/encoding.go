@@ -1,9 +1,11 @@
 package acme
 
 import (
+	"bytes"
+	"crypto/rsa"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/json"
-	"strconv"
 	"time"
 )
 
@@ -11,12 +13,6 @@ import (
 // ACME requires (base64 RawURL format)
 func encodeString(data []byte) string {
 	return base64.RawURLEncoding.EncodeToString(data)
-}
-
-// encodeBinaryString returns an encoded binary string that is suitable
-// for ACME
-func encodeBinaryString(val int) string {
-	return encodeString([]byte(strconv.FormatInt(int64(val), 2)))
 }
 
 // encodeJson transforms a data object into json and then encodes it
@@ -28,6 +24,34 @@ func encodeJson(data any) (string, error) {
 	}
 
 	return encodeString(jsonBytes), nil
+}
+
+// encodeRsaExponent returns the value of e (rsa private key's exponent),
+// properly encoded for ACME jwk
+func encodeRsaExponent(privateKey rsa.PrivateKey) (string, error) {
+	bytesBuf := new(bytes.Buffer)
+	var err error
+
+	err = binary.Write(bytesBuf, binary.BigEndian, uint64(privateKey.E))
+	if err != nil {
+		return "", err
+	}
+
+	return encodeString(bytesBuf.Bytes()), nil
+}
+
+// encodeRsaModulus returns the value of n (rsa private key's modulus),
+// properly encoded for ACME jwk
+func encodeRsaModulus(privateKey rsa.PrivateKey) (string, error) {
+	bytesBuf := new(bytes.Buffer)
+	var err error
+
+	err = binary.Write(bytesBuf, binary.BigEndian, privateKey.N.Bytes())
+	if err != nil {
+		return "", err
+	}
+
+	return encodeString(bytesBuf.Bytes()), nil
 }
 
 // acmeToUnixTime turns an acme response formatted time into a unix time int
