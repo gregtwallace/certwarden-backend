@@ -39,7 +39,7 @@ func (storage Storage) GetAllKeys() ([]private_keys.Key, error) {
 	defer cancel()
 
 	query := `SELECT id, name, description, algorithm
-	FROM private_keys ORDER BY id`
+	FROM private_keys ORDER BY name`
 
 	rows, err := storage.Db.QueryContext(ctx, query)
 	if err != nil {

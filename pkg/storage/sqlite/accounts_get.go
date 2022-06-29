@@ -47,7 +47,7 @@ func (storage *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 	FROM
 		acme_accounts aa
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
-	ORDER BY aa.id`
+	ORDER BY aa.name`
 
 	rows, err := storage.Db.QueryContext(ctx, query)
 	if err != nil {
