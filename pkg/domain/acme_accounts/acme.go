@@ -19,64 +19,32 @@ func (account *Account) newAccountPayload() acme.NewAccountPayload {
 	}
 }
 
-// import (
-// 	"legocerthub-backend/pkg/utils/acme_utils"
-// )
-
-// // Create account with LE
-// func (service *Service) createLeAccount(payload AccountPayload, keyPem string) (acme_utils.AcmeAccountResponse, error) {
-// 	// payload to sent to LE
-// 	var acmeAccount acme_utils.AcmeAccount
-
-// 	acmeAccount.TermsOfServiceAgreed = true
-// 	if *payload.Email != "" {
-// 		acmeAccount.Contact = []string{"mailto:" + *payload.Email}
-// 	}
-
-// 	// vars for return
+// // updateLEAccount updates account settings with LE
+// func (service *Service) updateLEAccount(payload AccountPayload) error {
 // 	var acmeAccountResponse acme_utils.AcmeAccountResponse
-// 	var err error
 
-// 	if *payload.IsStaging == true {
-// 		acmeAccountResponse, err = service.acmeStagingDir.CreateAccount(acmeAccount, keyPem)
-// 		if err != nil {
-// 			return acmeAccountResponse, err
-// 		}
-// 	} else {
-// 		acmeAccountResponse, err = service.acmeProdDir.CreateAccount(acmeAccount, keyPem)
-// 		if err != nil {
-// 			return acmeAccountResponse, err
-// 		}
+// 	// fetch appropriate key
+// 	keyPem, err := service.storage.GetAccountPem(*payload.ID)
+// 	if err != nil {
+// 		return err
 // 	}
 
-// 	return acmeAccountResponse, nil
-// }
-
-// // Create account with LE
-// func (service *Service) updateLeAccount(payload AccountPayload, keyPem string, kid string) (acme_utils.AcmeAccountResponse, error) {
-// 	// payload to sent to LE
-// 	var acmeAccount acme_utils.AcmeAccount
-
-// 	acmeAccount.TermsOfServiceAgreed = true
-// 	if *payload.Email != "" {
-// 		acmeAccount.Contact = []string{"mailto:" + *payload.Email}
+// 	// get kid
+// 	kid, err := service.storage.GetAccountKid(*payload.ID)
+// 	if err != nil {
+// 		return err
 // 	}
 
-// 	// vars for return
-// 	var acmeAccountResponse acme_utils.AcmeAccountResponse
-// 	var err error
-
-// 	if *payload.IsStaging == true {
-// 		acmeAccountResponse, err = service.acmeStagingDir.UpdateAccount(acmeAccount, keyPem, kid)
-// 		if err != nil {
-// 			return acmeAccountResponse, err
-// 		}
-// 	} else {
-// 		acmeAccountResponse, err = service.acmeProdDir.UpdateAccount(acmeAccount, keyPem, kid)
-// 		if err != nil {
-// 			return acmeAccountResponse, err
-// 		}
+// 	acmeAccountResponse, err = service.updateLeAccount(payload, keyPem, kid)
+// 	if err != nil {
+// 		return err
 // 	}
 
-// 	return acmeAccountResponse, nil
+// 	// Write the returned account info from LE to the db
+// 	err = service.storage.PutLEAccountInfo(*payload.ID, acmeAccountResponse)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
 // }
