@@ -1,6 +1,7 @@
 package acme_accounts
 
 import (
+	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/private_keys"
 )
 
@@ -17,6 +18,19 @@ type Account struct {
 	CreatedAt   int               `json:"created_at,omitempty"`
 	UpdatedAt   int               `json:"updated_at,omitempty"`
 	Kid         string            `json:"kid,omitempty"`
+}
+
+// AccountKey() returns the ACME AccountKey which is a combination of the
+// crypto.PrivateKey and Kid
+func (account *Account) AccountKey() (accountKey acme.AccountKey, err error) {
+	accountKey.Key, err = account.PrivateKey.CryptoKey()
+	if err != nil {
+		return acme.AccountKey{}, err
+	}
+
+	accountKey.Kid = account.Kid
+
+	return accountKey, nil
 }
 
 // new account info

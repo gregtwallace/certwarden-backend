@@ -77,17 +77,12 @@ func IsNameValid(namePayload *string) error {
 	return nil
 }
 
-// IsEmailValidOrBlank returns an error if not valid, nil if valid
-// to be valid: must be either blank or an email address format
-func IsEmailValidOrBlank(emailPayload *string) error {
+// IsEmailValid returns an error if not valid, nil if valid
+// blank is not permissible
+func IsEmailValid(emailPayload *string) error {
 	// nil check, error
 	if emailPayload == nil {
 		return errors.New("email is nil pointer - must specify email in payload")
-	}
-
-	// blank is permissible
-	if *emailPayload == "" {
-		return nil
 	}
 
 	// valid email regex
@@ -96,5 +91,23 @@ func IsEmailValidOrBlank(emailPayload *string) error {
 	if isGood {
 		return nil
 	}
+
+	return errors.New("bad email address")
+}
+
+// IsEmailValidOrBlank returns an error if not valid, nil if valid
+// to be valid: must be either blank or an email address format
+func IsEmailValidOrBlank(emailPayload *string) (err error) {
+	// Check if email is valid (regex check)
+	err = IsEmailValid(emailPayload)
+	if err != nil {
+		// blank is permissible
+		if *emailPayload == "" {
+			return nil
+		}
+
+		return err
+	}
+
 	return errors.New("bad email address")
 }

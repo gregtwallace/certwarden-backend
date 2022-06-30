@@ -28,6 +28,7 @@ func (app *Application) Routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts/:id", app.accounts.GetOneAccount)
 	router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id", app.accounts.PutNameDescAccount)
 	router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts/:id/new-account", app.accounts.NewAccount)
+	router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id/email", app.accounts.ChangeEmail)
 
 	router.HandlerFunc(http.MethodDelete, "/api/v1/acmeaccounts/:id", app.accounts.DeleteAccount)
 

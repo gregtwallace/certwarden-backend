@@ -128,7 +128,7 @@ func (service *Service) NewAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// send the new-account to ACME
-	var acmeResponse acme.AcmeNewAccountResponse
+	var acmeResponse acme.AcmeAccountResponse
 	if acmeAccount.IsStaging {
 		acmeResponse, err = service.acmeStaging.NewAccount(acmeAccount.newAccountPayload(), key)
 	} else {
@@ -141,7 +141,7 @@ func (service *Service) NewAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// save ACME response to account
-	err = service.storage.PutLENewAccountResponse(idParam, acmeResponse)
+	err = service.storage.PutLEAccountResponse(idParam, acmeResponse)
 	if err != nil {
 		service.logger.Printf("accounts: new-account: failed to save to storage -- err: %s", err)
 		utils.WriteErrorJSON(w, err)

@@ -64,9 +64,9 @@ func (storage *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload
 	return nil
 }
 
-// leNewAccountResponseToDb translates the ACME response into the fields we want to save
+// leAccountResponseToDb translates the ACME account response into the fields we want to save
 // in the database
-func leNewAccountResponseToDb(id int, response acme.AcmeNewAccountResponse) accountDb {
+func leAccountResponseToDb(id int, response acme.AcmeAccountResponse) accountDb {
 	var account accountDb
 	var err error
 
@@ -74,7 +74,7 @@ func leNewAccountResponseToDb(id int, response acme.AcmeNewAccountResponse) acco
 	email := response.Email()
 	account.email = stringToNullString(&email)
 	account.status = stringToNullString(&response.Status)
-	account.kid = stringToNullString(&response.Location)
+	account.kid = stringToNullString(response.Location)
 	account.createdAt, err = response.CreatedAtUnix()
 	if err != nil {
 		account.createdAt = 0
@@ -84,11 +84,11 @@ func leNewAccountResponseToDb(id int, response acme.AcmeNewAccountResponse) acco
 	return account
 }
 
-// putLEAccountInfo populates an account with data that is returned by LE when
+// PutLEAccountResponse populates an account with data that is returned by LE when
 //  an account is POSTed to
-func (storage *Storage) PutLENewAccountResponse(id int, response acme.AcmeNewAccountResponse) error {
+func (storage *Storage) PutLEAccountResponse(id int, response acme.AcmeAccountResponse) error {
 	// Load id and response into db obj
-	accountDb := leNewAccountResponseToDb(id, response)
+	accountDb := leAccountResponseToDb(id, response)
 
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
 	defer cancel()
@@ -101,7 +101,7 @@ func (storage *Storage) PutLENewAccountResponse(id int, response acme.AcmeNewAcc
 		email = $2,
 		created_at = $3,
 		updated_at = $4,
-		kid = $5
+		kid = case when $5 is null then kid else $5 end
 	WHERE
 		id = $6`
 
