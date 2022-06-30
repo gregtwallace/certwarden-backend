@@ -89,7 +89,7 @@ func (storage Storage) getOneKey(id int, name string) (private_keys.Key, error) 
 	query := `SELECT id, name, description, algorithm, pem, api_key, created_at, updated_at
 	FROM private_keys
 	WHERE id = $1 OR name = $2
-	ORDER BY id`
+	`
 
 	row := storage.Db.QueryRowContext(ctx, query, id, name)
 
@@ -137,6 +137,7 @@ func (storage *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 				WHERE
 					pk.id = aa.private_key_id
 			)
+		ORDER BY name
 	`
 
 	rows, err := storage.Db.QueryContext(ctx, query)
