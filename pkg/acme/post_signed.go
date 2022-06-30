@@ -67,6 +67,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 
 	// nonce
 	// TODO - implement nonce manager
+	// TODO - remove service receiver, not needed after this is fixed
 	response, err := http.Get(service.dir.NewNonce)
 	if err != nil {
 		return nil, nil, err
@@ -116,6 +117,8 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	if err != nil {
 		return nil, nil, err
 	}
+
+	service.logger.Println(string(bodyBytes))
 
 	return bodyBytes, response.Header, nil
 }
