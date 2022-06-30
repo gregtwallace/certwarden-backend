@@ -50,3 +50,28 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 
 	return errors.New("name already in use")
 }
+
+// GetAvailableKeys returns a list of all available keys; storage should
+// return keys that exist but are not already in use by an account or a
+// certificate
+func (service *Service) GetAvailableKeys() (keys []Key, err error) {
+	return service.storage.GetAvailableKeys()
+}
+
+// IsPrivateKeyValid returns an error if the key is not valid and available
+func (service *Service) IsPrivateKeyValid(keyId *int) error {
+	// get available keys list
+	keys, err := service.storage.GetAvailableKeys()
+	if err != nil {
+		return err
+	}
+
+	// verify specified key id is in the available list
+	for _, key := range keys {
+		if key.ID == *keyId {
+			return nil
+		}
+	}
+
+	return errors.New("key does not exist or is not available")
+}

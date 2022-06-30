@@ -55,18 +55,24 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) {
 		utils.WriteErrorJSON(w, err)
 		return
 	}
-	// private key (pem valid is checked later in account creation)
 	// TOS must be accepted
 	if !*payload.AcceptedTos {
 		service.logger.Println("accounts: PostNew: must accept ToS")
 		utils.WriteErrorJSON(w, errors.New("accounts: PostNew: must accept ToS"))
 		return
 	}
+	// private key
+	err = service.keys.IsPrivateKeyValid(payload.PrivateKeyID)
+	if err != nil {
+		service.logger.Printf("accounts: PostNew: private key error -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
 	///
 
 	// Save new account details to storage.
 	// No ACME actions are performed.
-	service.storage.PostNewAccount(payload)
+	err = service.storage.PostNewAccount(payload)
 	if err != nil {
 		service.logger.Printf("accounts: post new: failed to create account: %s", err)
 		utils.WriteErrorJSON(w, err)

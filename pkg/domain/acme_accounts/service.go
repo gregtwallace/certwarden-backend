@@ -10,6 +10,7 @@ import (
 // App interface is for connecting to the main app
 type App interface {
 	GetAccountStorage() Storage
+	GetKeysService() *private_keys.Service
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
 	GetLogger() *log.Logger
@@ -17,15 +18,11 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	// keys
-	GetAvailableKeys() ([]private_keys.Key, error)
-
-	// accounts
 	GetAllAccounts() ([]Account, error)
 	GetOneAccountById(int) (Account, error)
 	GetOneAccountByName(string) (Account, error)
 
-	PostNewAccount(NewPayload) (int, error)
+	PostNewAccount(NewPayload) error
 
 	PutNameDescAccount(NameDescPayload) error
 	PutLEAccountResponse(id int, response acme.AcmeAccountResponse) error
@@ -37,6 +34,7 @@ type Storage interface {
 type Service struct {
 	logger      *log.Logger
 	storage     Storage
+	keys        *private_keys.Service
 	acmeProd    *acme.Service
 	acmeStaging *acme.Service
 }
@@ -53,6 +51,12 @@ func NewService(app App) (*Service, error) {
 
 	// storage
 	service.storage = app.GetAccountStorage()
+	if service.storage == nil {
+		return nil, errors.New("acme_accounts: newservice requires valid storage")
+	}
+
+	// key service
+	service.keys = app.GetKeysService()
 	if service.storage == nil {
 		return nil, errors.New("acme_accounts: newservice requires valid storage")
 	}

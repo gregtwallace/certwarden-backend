@@ -95,7 +95,7 @@ func (storage *Storage) createDBTables() error {
 	query = `CREATE TABLE IF NOT EXISTS acme_accounts (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		name text NOT NULL UNIQUE COLLATE NOCASE,
-		private_key_id integer NOT NULL,
+		private_key_id integer NOT NULL UNIQUE,
 		description text,
 		status text NOT NULL DEFAULT 'Unknown',
 		email text NOT NULL,
@@ -119,7 +119,7 @@ func (storage *Storage) createDBTables() error {
 	// certificates
 	query = `CREATE TABLE IF NOT EXISTS certificates (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-		private_key_id integer NOT NULL,
+		private_key_id integer NOT NULL UNIQUE,
 		acme_account_id integer NOT NULL,
 		name text NOT NULL UNIQUE COLLATE NOCASE,
 		description text,

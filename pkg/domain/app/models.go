@@ -44,6 +44,10 @@ func (app *Application) GetAccountStorage() acme_accounts.Storage {
 	return app.storage
 }
 
+func (app *Application) GetKeysService() *private_keys.Service {
+	return app.keys
+}
+
 func (app *Application) GetAcmeProdService() *acme.Service {
 	return app.acmeProd
 }

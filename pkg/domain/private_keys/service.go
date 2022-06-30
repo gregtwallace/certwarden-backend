@@ -19,6 +19,8 @@ type Storage interface {
 	PutNameDescKey(NameDescPayload) error
 	PostNewKey(NewPayload) error
 	DeleteKey(int) error
+
+	GetAvailableKeys() ([]Key, error)
 }
 
 // Keys service struct

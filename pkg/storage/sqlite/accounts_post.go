@@ -54,12 +54,12 @@ func newAccountPayloadToDb(payload acme_accounts.NewPayload) (accountDb, error) 
 	return dbObj, nil
 }
 
-// PostNewAccount inserts a new account into the db and returns the id of the new account
-func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (newAccountId int, err error) {
+// PostNewAccount inserts a new account into the db
+func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (err error) {
 	// Load payload into db obj
 	accountDb, err := newAccountPayloadToDb(payload)
 	if err != nil {
-		return -2, err
+		return err
 	}
 
 	// database update
@@ -68,7 +68,7 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (newAcc
 
 	tx, err := storage.Db.BeginTx(ctx, nil)
 	if err != nil {
-		return -2, err
+		return err
 	}
 
 	// insert the new account
@@ -77,7 +77,7 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (newAcc
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
-	result, err := tx.ExecContext(ctx, query,
+	_, err = tx.ExecContext(ctx, query,
 		accountDb.name,
 		accountDb.description,
 		accountDb.privateKey.id,
@@ -90,16 +90,10 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (newAcc
 	)
 	if err != nil {
 		tx.Rollback()
-		return -2, err
+		return err
 	}
 
-	// id of the new account
-	id, err := result.LastInsertId()
-	if err != nil {
-		tx.Rollback()
-		return -2, err
-	}
-
+	// table already enforces unique private_key_id, so no need to check
 	// verify the new account does not have a cert that uses the same key
 	query = `
 		SELECT private_key_id
@@ -115,18 +109,16 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (newAcc
 	err = row.Scan(&exists)
 	if err != nil && err != sql.ErrNoRows {
 		tx.Rollback()
-		return -2, err
+		return err
 	} else if exists {
 		tx.Rollback()
-		return -2, errors.New("private key in use by certificate")
+		return errors.New("private key in use by certificate")
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return -2, err
+		return err
 	}
 
-	newAccountId = int(id)
-
-	return newAccountId, nil
+	return nil
 }

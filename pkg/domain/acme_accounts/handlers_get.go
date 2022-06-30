@@ -77,7 +77,7 @@ func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Requ
 	newAccountOptions.TosUrl = service.acmeProd.TosUrl()
 	newAccountOptions.StagingTosUrl = service.acmeStaging.TosUrl()
 
-	availableKeys, err := service.storage.GetAvailableKeys()
+	availableKeys, err := service.keys.GetAvailableKeys()
 	if err != nil {
 		service.logger.Printf("accounts: GetNewOptions: failed to get available keys -- err: %s", err)
 		utils.WriteErrorJSON(w, err)
