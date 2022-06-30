@@ -101,13 +101,38 @@ func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.
 
 // UpdateAccountPayload is the payload used to update ACME accounts
 type UpdateAccountPayload struct {
-	Contact []string `json:"contact"`
+	Contact []string `json:"contact,omitempty"`
+	Status  string   `json:"status,omitempty"`
 }
 
 // UpdateAccount posts a secure message to the kid of the account
 // initially support only exists to update the email address
 // TODO: key rotation and account deactivation
 func (service *Service) UpdateAccount(payload UpdateAccountPayload, accountKey AccountKey) (response AcmeAccountResponse, err error) {
+
+	// post account update
+	bodyBytes, headers, err := service.postToUrlSigned(payload, accountKey.Kid, accountKey)
+	if err != nil {
+		return AcmeAccountResponse{}, err
+	}
+
+	// unmarshal response
+	response, err = unmarshalAccountResponse(bodyBytes, headers)
+	if err != nil {
+		return AcmeAccountResponse{}, err
+	}
+
+	return response, nil
+}
+
+// DeactivateAccount posts deactivated status to the ACME account
+// Once deactivated, accounts cannot be re-enabled. This action is DANGEROUS
+// and should only be done when there is a complete understanding of the repurcussions.
+func (service *Service) DeactivateAccount(accountKey AccountKey) (response AcmeAccountResponse, err error) {
+	// deactivate payload is always the same
+	payload := UpdateAccountPayload{
+		Status: "deactivated",
+	}
 
 	// post account update
 	bodyBytes, headers, err := service.postToUrlSigned(payload, accountKey.Kid, accountKey)

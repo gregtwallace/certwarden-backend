@@ -159,3 +159,80 @@ func (service *Service) NewAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+// Deactivate sets deactivated status for the ACME account
+// Once deactivated, accounts cannot be re-enabled. This action is DANGEROUS
+// and should only be done when there is a complete understanding of the repurcussions.
+// endpoint: /api/v1/acmeaccounts/:id/deactivate
+func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) {
+	// account id
+	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	idParam, err := strconv.Atoi(idParamStr)
+	if err != nil {
+		service.logger.Printf("accounts: deactivate: invalid idParam -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// read body to verify empty (there should not be a payload)
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		service.logger.Printf("accounts: deactivate: failed to read request body -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	} else if len(b) != 0 {
+		err = errors.New("accounts: deactivate: request body should be undefined")
+		service.logger.Println(err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// fetch the relevant account
+	acmeAccount, err := service.storage.GetOneAccountById(idParam)
+	if err != nil {
+		service.logger.Printf("accounts: deactivate: failed to fetch account -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// get AccountKey
+	accountKey, err := acmeAccount.AccountKey()
+	if err != nil {
+		service.logger.Printf("accounts: update email: failed to get crypto private key -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// send the new-account to ACME
+	var acmeResponse acme.AcmeAccountResponse
+	if acmeAccount.IsStaging {
+		acmeResponse, err = service.acmeStaging.DeactivateAccount(accountKey)
+	} else {
+		acmeResponse, err = service.acmeProd.DeactivateAccount(accountKey)
+	}
+	if err != nil {
+		service.logger.Printf("accounts: acme: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// save ACME response to account
+	err = service.storage.PutLEAccountResponse(idParam, acmeResponse)
+	if err != nil {
+		service.logger.Printf("accounts: new-account: failed to save to storage -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+	// Write OK response to client
+	clientResponse := utils.JsonResp{
+		OK: true,
+	}
+	err = utils.WriteJSON(w, http.StatusOK, clientResponse, "response")
+	if err != nil {
+		service.logger.Printf("accounts: new-account: write response json failed -- err: %s", err)
+		utils.WriteErrorJSON(w, err)
+		return
+	}
+
+}
