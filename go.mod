@@ -12,4 +12,3 @@ replace legocerthub-backend/pkg/domain/private_keys => /pkg/domain/private_keys
 replace legocerthub-backend/pkg/domain/private_keys/key_crypto => /pkg/domain/private_keys/key_crypto
 replace legocerthub-backend/pkg/storage/sqlite => /pkg/storage/sqlite
 replace legocerthub-backend/pkg/utils => /pkg/utils
-replace legocerthub-backend/pkg/utils/acme_utils => /pkg/utils/acme_utils
