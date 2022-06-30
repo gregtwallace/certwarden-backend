@@ -32,6 +32,7 @@ func encodeRsaExponent(privateKey rsa.PrivateKey) (string, error) {
 	bytesBuf := new(bytes.Buffer)
 	var err error
 
+	// uint32 also seems to work, but uint does not
 	err = binary.Write(bytesBuf, binary.BigEndian, uint64(privateKey.E))
 	if err != nil {
 		return "", err
