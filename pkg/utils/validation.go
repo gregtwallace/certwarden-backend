@@ -23,7 +23,7 @@ func IsIdNew(id *int) error {
 func IsIdExisting(idPayload *int) error {
 	// verify payload id isn't nil
 	if idPayload == nil {
-		return errors.New("must specify id in payload")
+		return errors.New("id is nil pointer - must specify id in payload")
 	}
 
 	// check that the id is not the new id
@@ -62,7 +62,7 @@ func IsIdExistingMatch(idParam int, idPayload *int) error {
 func IsNameValid(namePayload *string) error {
 	// error if not specified
 	if namePayload == nil {
-		return errors.New("must specify name in payload")
+		return errors.New("name is nil pointer - must specify name in payload")
 	}
 
 	regex, err := regexp.Compile("[^-_.~A-z0-9]|[\\^]")
@@ -80,6 +80,11 @@ func IsNameValid(namePayload *string) error {
 // IsEmailValidOrBlank returns an error if not valid, nil if valid
 // to be valid: must be either blank or an email address format
 func IsEmailValidOrBlank(emailPayload *string) error {
+	// nil check, error
+	if emailPayload == nil {
+		return errors.New("email is nil pointer - must specify email in payload")
+	}
+
 	// blank is permissible
 	if *emailPayload == "" {
 		return nil
