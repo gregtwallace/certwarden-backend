@@ -27,18 +27,9 @@ type AcmeAccountResponse struct {
 
 // Account response decoder
 func unmarshalAccountResponse(bodyBytes []byte, headers http.Header) (response AcmeAccountResponse, err error) {
-	// try to decode an error
-	var errorResponse AcmeErrorResponse
-	err = json.Unmarshal(bodyBytes, &errorResponse)
-	if err == nil {
-		// return error if acme response was an error
-		return AcmeAccountResponse{}, errorResponse.Error()
-	} else {
-		// if error didn't decode, decode generally
-		err = json.Unmarshal(bodyBytes, &response)
-		if err != nil {
-			return AcmeAccountResponse{}, err
-		}
+	err = json.Unmarshal(bodyBytes, &response)
+	if err != nil {
+		return AcmeAccountResponse{}, err
 	}
 
 	// kid isn't part of the JSON response, add it from the header.

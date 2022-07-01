@@ -104,9 +104,6 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		return nil, nil, err
 	}
 	defer response.Body.Close()
-	// TODO: Add new nonce to nonce manager
-	// TODO: Implement dealing with type urn:ietf:params:acme:error:badNonce (rfc8555 6.5)
-	_ = response.Header.Get("Replay-Nonce")
 
 	// read body of response
 	bodyBytes, err := ioutil.ReadAll(response.Body)
@@ -114,7 +111,32 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		return nil, nil, err
 	}
 
+	// TODO: remove (debugging)
 	service.logger.Println(string(bodyBytes))
+
+	// check if the response was an AcmeError
+	acmeError, err := unmarshalErrorResponse(bodyBytes)
+
+	// TODO: Retry logic, using scoped nonce
+	if acmeError.Type == "urn:ietf:params:acme:error:badNonce" {
+		// TODO
+		// scoped retry nonce should NOT be saved to manager
+	} else {
+		// save nonce in manager
+		nonce := response.Header.Get("Replay-Nonce")
+		service.logger.Println(nonce)
+		nonceErr := service.nonceManager.SaveNonce(nonce)
+		if nonceErr != nil {
+			// no need to error out of routine, just log the save failure
+			service.logger.Println(nonceErr)
+		}
+	}
+
+	// re: acmeError decode
+	// if it didn't error, that means an error response WAS decoded
+	if err == nil {
+		return nil, nil, acmeError.Error()
+	}
 
 	return bodyBytes, response.Header, nil
 }
