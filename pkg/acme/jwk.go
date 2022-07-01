@@ -14,15 +14,12 @@ func (accountKey *AccountKey) jwk() (jwk *jsonWebKey, err error) {
 	case *rsa.PrivateKey:
 		jwk.KeyType = "RSA"
 
-		jwk.PublicExponent, err = encodeRsaExponent(*privateKey)
+		jwk.PublicExponent, err = encodeInt(privateKey.E)
 		if err != nil {
 			return nil, err
 		}
-
-		jwk.Modulus, err = encodeRsaModulus(*privateKey)
-		if err != nil {
-			return nil, err
-		}
+		keyBitSize := privateKey.N.BitLen()
+		jwk.Modulus = encodeBigInt(privateKey.N, keyBitSize)
 
 		return jwk, nil
 
@@ -31,8 +28,9 @@ func (accountKey *AccountKey) jwk() (jwk *jsonWebKey, err error) {
 
 		jwk.CurveName = privateKey.Curve.Params().Name
 
-		jwk.CurvePointX = encodeString(privateKey.X.Bytes())
-		jwk.CurvePointY = encodeString(privateKey.Y.Bytes())
+		keyBitSize := privateKey.Curve.Params().BitSize
+		jwk.CurvePointX = encodeBigInt(privateKey.X, keyBitSize)
+		jwk.CurvePointY = encodeBigInt(privateKey.Y, keyBitSize)
 
 		return jwk, nil
 

@@ -2,10 +2,10 @@ package acme
 
 import (
 	"bytes"
-	"crypto/rsa"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
+	"math/big"
 	"time"
 )
 
@@ -26,14 +26,13 @@ func encodeJson(data any) (string, error) {
 	return encodeString(jsonBytes), nil
 }
 
-// encodeRsaExponent returns the value of e (rsa private key's exponent),
-// properly encoded for ACME jwk
-func encodeRsaExponent(privateKey rsa.PrivateKey) (string, error) {
+// encodeInt returns the value of an int properly encoded for ACME jwk
+func encodeInt(integer int) (string, error) {
 	bytesBuf := new(bytes.Buffer)
 	var err error
 
 	// uint32 also seems to work, but uint does not
-	err = binary.Write(bytesBuf, binary.BigEndian, uint64(privateKey.E))
+	err = binary.Write(bytesBuf, binary.BigEndian, uint64(integer))
 	if err != nil {
 		return "", err
 	}
@@ -41,18 +40,14 @@ func encodeRsaExponent(privateKey rsa.PrivateKey) (string, error) {
 	return encodeString(bytesBuf.Bytes()), nil
 }
 
-// encodeRsaModulus returns the value of n (rsa private key's modulus),
-// properly encoded for ACME jwk
-func encodeRsaModulus(privateKey rsa.PrivateKey) (string, error) {
-	bytesBuf := new(bytes.Buffer)
-	var err error
+// encodeBigInt returns the bytes of a bigInt properly encoded (based on the
+// bit size of the private key) for ACME jwk
+func encodeBigInt(bigInt *big.Int, keyBitSize int) (encodedProp string) {
+	// make buffer based on octet length (essentially divide by 8 and round up)
+	octetLen := (keyBitSize + 7) >> 3
+	bytesBuf := make([]byte, octetLen)
 
-	err = binary.Write(bytesBuf, binary.BigEndian, privateKey.N.Bytes())
-	if err != nil {
-		return "", err
-	}
-
-	return encodeString(bytesBuf.Bytes()), nil
+	return encodeString(bigInt.FillBytes(bytesBuf))
 }
 
 // acmeToUnixTime turns an acme response formatted time into a unix time int
