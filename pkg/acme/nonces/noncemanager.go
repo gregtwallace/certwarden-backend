@@ -66,6 +66,11 @@ func (manager *Manager) SaveNonce(nonce string) (err error) {
 	manager.mu.Lock()
 	defer manager.mu.Unlock()
 
+	// if nonce is empty, don't save
+	if nonce == "" {
+		return errors.New("cannot save empty nonce")
+	}
+
 	// if full, evict (read) the oldest nonce
 	if manager.nonces.isFull {
 		_, err = manager.nonces.read()
