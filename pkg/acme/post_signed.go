@@ -66,7 +66,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	}
 
 	// nonce
-	header.Nonce, err = service.nonceManager.GetNonce()
+	header.Nonce, err = service.nonceManager.Nonce()
 	if err != nil {
 		return nil, nil, err
 	}

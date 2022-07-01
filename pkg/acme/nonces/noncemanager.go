@@ -3,14 +3,12 @@ package nonces
 import (
 	"errors"
 	"net/http"
-	"sync"
 )
 
 // Manager is the NonceManager
 type Manager struct {
 	newNonceUrl *string
 	nonces      *ringBuffer
-	mu          sync.Mutex
 }
 
 // Manager buffer size
@@ -45,36 +43,39 @@ func (manager *Manager) fetchNonce() (nonce string, err error) {
 	return nonce, nil
 }
 
-// GetNonce returns the oldest nonce from the nonces buffer.
-// If the buffer is empty, a new nonce will be acquired by
+// Nonce returns the oldest nonce from the nonce buffer.
+// If the buffer cannot be read, a new nonce will be acquired by
 // fetching from the newNonceUrl
-func (manager *Manager) GetNonce() (nonce string, err error) {
-	manager.mu.Lock()
-	defer manager.mu.Unlock()
+func (manager *Manager) Nonce() (nonce string, err error) {
+	// try to read, if error fetch new
+	nonce, err = manager.nonces.read()
 
-	if manager.nonces.length() == 0 {
+	// if read failed, fetch from url
+	if err != nil {
 		return manager.fetchNonce()
 	}
 
-	return manager.nonces.read()
+	return nonce, err
 }
 
 // SaveNonce saves the nonce string to the nonces buffer.
 // if the buffer is full, the oldest nonce is evicted and the new
 // nonce is saved
 func (manager *Manager) SaveNonce(nonce string) (err error) {
-	manager.mu.Lock()
-	defer manager.mu.Unlock()
-
 	// if nonce is empty, don't save
 	if nonce == "" {
 		return errors.New("cannot save empty nonce")
 	}
 
-	// if full, evict (read) the oldest nonce
+	// lock nonces
+	manager.nonces.mu.Lock()
+	defer manager.nonces.mu.Unlock()
+
+	// if full, evict (read) a nonce. Ring is FIFO so the oldest
+	// nonce will be read and discarded.
 	if manager.nonces.isFull {
-		_, err = manager.nonces.read()
+		_, err = manager.nonces.readUnsafe()
 	}
 
-	return manager.nonces.write(nonce)
+	return manager.nonces.writeUnsafe(nonce)
 }

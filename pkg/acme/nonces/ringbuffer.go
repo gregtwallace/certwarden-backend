@@ -18,23 +18,31 @@ type ringBuffer struct {
 }
 
 // New initializes an empty RingBuffer of specified size
-func newRingBuffer(len int) *ringBuffer {
+func newRingBuffer(size int) *ringBuffer {
 	return &ringBuffer{
-		buf:       make([]string, len),
-		size:      len,
+		buf:       make([]string, size),
+		size:      size,
 		readNext:  0,
 		writeNext: 0,
 		isFull:    false,
 	}
 }
 
-// Length returns the number of strings currently in the ring
+// length returns the number of strings currently in the ring
 // buffer
 func (ring *ringBuffer) length() (len int) {
 	// lock ring
 	ring.mu.Lock()
 	defer ring.mu.Unlock()
 
+	// get length
+	return ring.lengthUnsafe()
+}
+
+// lengthUnsafe returns the number of strings currently in the ring
+// buffer but DOES NOT lock the mutex.  This should not be called
+// unless the mutex is already locked.
+func (ring *ringBuffer) lengthUnsafe() (len int) {
 	// calculate current length
 	// full or empty
 	if ring.readNext == ring.writeNext {
@@ -52,7 +60,7 @@ func (ring *ringBuffer) length() (len int) {
 	return ring.size - ring.readNext + ring.writeNext
 }
 
-// Read reads the string from the next read position and then
+// read reads the string from the next read position and then
 // updates the buffer properties accordingly.  An error is returned
 // if the buffer is empty
 func (ring *ringBuffer) read() (oldest string, err error) {
@@ -60,8 +68,15 @@ func (ring *ringBuffer) read() (oldest string, err error) {
 	ring.mu.Lock()
 	defer ring.mu.Unlock()
 
+	return ring.readUnsafe()
+}
+
+// readUnsafe reads the string from the next read position and then
+// updates the buffer properties accordingly.  An error is returned
+// if the buffer is empty. It DOES NOT lock the mutex!
+func (ring *ringBuffer) readUnsafe() (oldest string, err error) {
 	// check if empty
-	if ring.readNext == ring.writeNext && !ring.isFull {
+	if ring.lengthUnsafe() == 0 {
 		return "", errors.New("ringbuffer is empty")
 	}
 
@@ -82,17 +97,24 @@ func (ring *ringBuffer) read() (oldest string, err error) {
 	return oldest, nil
 }
 
-// Write writes new string to the nextWrite position and updates
+// write writes new string to the nextWrite position and updates
 // ring's properties accordingly.  An error is returns if the buffer
 // is full
 func (ring *ringBuffer) write(new string) (err error) {
-	if ring.isFull == true {
-		return errors.New("ringbuffer is full")
-	}
-
 	// lock ring
 	ring.mu.Lock()
 	defer ring.mu.Unlock()
+
+	return ring.writeUnsafe(new)
+}
+
+// writeUnsafe writes new string to the nextWrite position and updates
+// ring's properties accordingly.  An error is returns if the buffer
+// is full. It DOES NOT lock the mutex!
+func (ring *ringBuffer) writeUnsafe(new string) (err error) {
+	if ring.isFull == true {
+		return errors.New("ringbuffer is full")
+	}
 
 	// write next, move write pointer
 	ring.buf[ring.writeNext] = new
