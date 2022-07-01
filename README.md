@@ -5,5 +5,5 @@ solution for Let's Encrypt certificates.
 This is a personal side project of mine that I plan to use in my home
 production environment once complete.
 
-## Frontend
+## Backend
 This repo is the backend for the application which is built in GoLang.
