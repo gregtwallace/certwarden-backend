@@ -66,15 +66,10 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	}
 
 	// nonce
-	// TODO - implement nonce manager
-	// TODO - remove service receiver, not needed after this is fixed
-	response, err := http.Get(service.dir.NewNonce)
+	header.Nonce, err = service.nonceManager.GetNonce()
 	if err != nil {
 		return nil, nil, err
 	}
-	header.Nonce = response.Header.Get("Replay-Nonce")
-	response.Body.Close()
-	// TODO (end)
 
 	// url
 	header.Url = url
@@ -104,12 +99,13 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		return nil, nil, err
 	}
 
-	response, err = http.Post(url, "application/jose+json", bytes.NewBuffer(messageJson))
+	response, err := http.Post(url, "application/jose+json", bytes.NewBuffer(messageJson))
 	if err != nil {
 		return nil, nil, err
 	}
 	defer response.Body.Close()
 	// TODO: Add new nonce to nonce manager
+	// TODO: Implement dealing with type urn:ietf:params:acme:error:badNonce (rfc8555 6.5)
 	_ = response.Header.Get("Replay-Nonce")
 
 	// read body of response

@@ -2,6 +2,7 @@ package acme
 
 import (
 	"errors"
+	"legocerthub-backend/pkg/acme/nonces"
 	"log"
 )
 
@@ -13,10 +14,10 @@ type App interface {
 
 // Acme service struct
 type Service struct {
-	logger *log.Logger
-	dirUri string
-	dir    *acmeDirectory
-	// nonce manager
+	logger       *log.Logger
+	dirUri       string
+	dir          *acmeDirectory
+	nonceManager *nonces.Manager
 }
 
 // NewService creates a new acme service based on a directory uri
@@ -42,6 +43,9 @@ func NewService(app App, dirUri string) (*Service, error) {
 
 	// start go routine to check for periodic updates
 	service.backgroundDirManager()
+
+	// nonce manager
+	service.nonceManager = nonces.NewManager(&service.dir.NewNonce)
 
 	return service, nil
 }
