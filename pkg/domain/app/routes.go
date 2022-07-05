@@ -33,5 +33,8 @@ func (app *Application) Routes() http.Handler {
 
 	router.HandlerFunc(http.MethodDelete, "/api/v1/acmeaccounts/:id", app.accounts.DeleteAccount)
 
+	// invalid route
+	router.NotFound = http.HandlerFunc(app.notFoundHandler)
+
 	return app.enableCORS(router)
 }

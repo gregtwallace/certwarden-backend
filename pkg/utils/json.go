@@ -34,14 +34,23 @@ func WriteJSON(w http.ResponseWriter, status int, data interface{}, wrap string)
 	return nil
 }
 
-func WriteErrorJSON(w http.ResponseWriter, err error) {
-	type jsonError struct {
-		Message string `json:"message"`
-	}
+type jsonError struct {
+	Message string `json:"message"`
+}
 
+func WriteErrorJSON(w http.ResponseWriter, err error) {
 	currentError := jsonError{
 		Message: err.Error(),
 	}
 
 	WriteJSON(w, http.StatusBadRequest, currentError, "error")
+}
+
+// WriteErrorStatusJSON writes an error with the specified status and error
+func WriteErrorStatusJSON(w http.ResponseWriter, status int, err error) {
+	currentError := jsonError{
+		Message: err.Error(),
+	}
+
+	WriteJSON(w, status, currentError, "error")
 }
