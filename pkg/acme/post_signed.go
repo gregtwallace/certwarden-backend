@@ -46,7 +46,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	// message is what will ultimately be posted to ACME
 	var message acmeSignedMessage
 
-	/// header
+	/// build most of the header (pieces that won't change in the loop)
 	var header protectedHeader
 
 	// alg
@@ -73,62 +73,72 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 
 	// url
 	header.Url = url
-
-	// encord and insert into message
-	message.ProtectedHeader, err = encodeJson(header)
-	if err != nil {
-		return nil, nil, err
-	}
 	/// header (end)
 
-	/// payload
+	/// payload won't change in the loop
 	message.Payload, err = encodeJson(payload)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	/// signature
-	message.Signature, err = accountKey.Sign(message)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	/// post
-	messageJson, err := json.Marshal(message)
-	if err != nil {
-		return nil, nil, err
-	}
+	var messageJson []byte
+	var response *http.Response
+	var bodyBytes []byte
+	var acmeError AcmeErrorResponse
 
-	response, err := http.Post(url, "application/jose+json", bytes.NewBuffer(messageJson))
-	if err != nil {
-		return nil, nil, err
-	}
-	defer response.Body.Close()
+	// loop to allow retry on badNonce error, capped at 3 retries
+	for i, done := 0, false; i < 3 && !done; i++ {
+		// encord and insert header
+		message.ProtectedHeader, err = encodeJson(header)
+		if err != nil {
+			return nil, nil, err
+		}
 
-	// read body of response
-	bodyBytes, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, nil, err
-	}
+		// sign
+		message.Signature, err = accountKey.Sign(message)
+		if err != nil {
+			return nil, nil, err
+		}
 
-	// TODO: remove (debugging)
-	service.logger.Println(string(bodyBytes))
+		// marshal for posting
+		messageJson, err = json.Marshal(message)
+		if err != nil {
+			return nil, nil, err
+		}
 
-	// check if the response was an AcmeError
-	acmeError, err := unmarshalErrorResponse(bodyBytes)
+		// post to ACME
+		response, err = http.Post(url, "application/jose+json", bytes.NewBuffer(messageJson))
+		if err != nil {
+			return nil, nil, err
+		}
+		defer response.Body.Close() // TODO: do something with this to avoid leaving stuff hanging during loop?
 
-	// TODO: Retry logic, using scoped nonce
-	if acmeError.Type == "urn:ietf:params:acme:error:badNonce" {
-		// TODO
-		// scoped retry nonce should NOT be saved to manager
-	} else {
-		// save nonce in manager
-		nonce := response.Header.Get("Replay-Nonce")
-		service.logger.Println(nonce)
-		nonceErr := service.nonceManager.SaveNonce(nonce)
-		if nonceErr != nil {
-			// no need to error out of routine, just log the save failure
-			service.logger.Println(nonceErr)
+		// read body of response
+		bodyBytes, err = ioutil.ReadAll(response.Body)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// TODO: remove (debugging)
+		service.logger.Println(string(bodyBytes))
+
+		// check if the response was an AcmeError
+		acmeError, err = unmarshalErrorResponse(bodyBytes)
+
+		// if nonce error, update nonce with new scoped nonce before retry loop continues
+		if acmeError.Type == "urn:ietf:params:acme:error:badNonce" {
+			header.Nonce = response.Header.Get("Replay-Nonce")
+		} else {
+			// if anything other than nonce error:
+			// save nonce in manager
+			nonceErr := service.nonceManager.SaveNonce(response.Header.Get("Replay-Nonce"))
+			if nonceErr != nil {
+				// no need to error out of routine, just log the save failure
+				service.logger.Println(nonceErr)
+			}
+			// loop ends for any result other than badNonce
+			done = true
 		}
 	}
 
