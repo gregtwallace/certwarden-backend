@@ -19,18 +19,6 @@ type Application struct {
 	accounts    *acme_accounts.Service
 }
 
-type appStatusDirectories struct {
-	Production string `json:"prod"`
-	Staging    string `json:"staging"`
-}
-
-type appStatus struct {
-	Status          string               `json:"status"`
-	Environment     string               `json:"environment"`
-	Version         string               `json:"version"`
-	AcmeDirectories appStatusDirectories `json:"acme_directories"`
-}
-
 /// return various needed components
 func (app *Application) GetLogger() *log.Logger {
 	return app.logger

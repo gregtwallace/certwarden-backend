@@ -6,7 +6,19 @@ import (
 	"net/http"
 )
 
-// statusHandler writes some basic info as json
+type appStatus struct {
+	Status          string               `json:"status"`
+	Environment     string               `json:"environment"`
+	Version         string               `json:"version"`
+	AcmeDirectories appStatusDirectories `json:"acme_directories"`
+}
+
+type appStatusDirectories struct {
+	Production string `json:"prod"`
+	Staging    string `json:"staging"`
+}
+
+// statusHandler writes some basic info about the status of the Application
 func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) {
 
 	currentStatus := appStatus{

@@ -11,21 +11,19 @@ import (
 )
 
 // GetAllKeys returns all of the private keys in storage as JSON
-func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) {
+func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) error {
 
 	keys, err := service.storage.GetAllKeys()
 	if err != nil {
-		service.logger.Printf("keys: GetAll: db failed -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		return err
 	}
 
 	err = utils.WriteJSON(w, http.StatusOK, keys, "private_keys")
 	if err != nil {
-		service.logger.Printf("keys: GetAll: write json failed -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		return err
 	}
+
+	return nil
 }
 
 // Get a single private keys in our DB and write it as JSON to the API

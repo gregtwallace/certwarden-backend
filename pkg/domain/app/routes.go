@@ -13,7 +13,7 @@ func (app *Application) Routes() http.Handler {
 	router.HandlerFunc(http.MethodGet, "/api/status", app.statusHandler)
 
 	// private_keys
-	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys", app.keys.GetAllKeys)
+	router.Handler(http.MethodGet, "/api/v1/privatekeys", Handler{app, app.keys.GetAllKeys})
 	router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys", app.keys.PostNewKey)
 
 	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys/:id", app.keys.GetOneKey)
