@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"legocerthub-backend/pkg/acme"
 	"net/http"
 )
 
@@ -35,10 +36,23 @@ func WriteJSON(w http.ResponseWriter, status int, data interface{}, wrap string)
 }
 
 type jsonError struct {
+	Type    string `json:"type,omitempty"`
 	Message string `json:"message"`
 }
 
 func WriteErrorJSON(w http.ResponseWriter, err error) {
+	switch err := err.(type) {
+	case acme.AcmeErrorResponse:
+		e := jsonError{
+			Type:    err.Type,
+			Message: err.Detail,
+		}
+		WriteJSON(w, err.Status, e, "error")
+		return
+	default:
+		// break to generic
+	}
+
 	currentError := jsonError{
 		Message: err.Error(),
 	}

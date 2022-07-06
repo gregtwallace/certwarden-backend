@@ -2,8 +2,7 @@ package acme
 
 import (
 	"encoding/json"
-	"errors"
-	"strconv"
+	"fmt"
 )
 
 // LE error response
@@ -13,11 +12,9 @@ type AcmeErrorResponse struct {
 	Detail string `json:"detail"`
 }
 
-// Error() returns an error type for the acme error response
-func (acmeError *AcmeErrorResponse) Error() error {
-	status := strconv.Itoa(acmeError.Status)
-
-	return errors.New("response error: status: " + status + ", type: " + acmeError.Type + ", detail: " + acmeError.Detail)
+// Error() implements the error interface
+func (e AcmeErrorResponse) Error() string {
+	return fmt.Sprintf("%d: %s (%s)", e.Status, e.Type, e.Detail)
 }
 
 // unmarshalErrorResponse attempts to unmarshal into the error response object

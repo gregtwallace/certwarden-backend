@@ -145,7 +145,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	// re: acmeError decode
 	// if it didn't error, that means an error response WAS decoded
 	if err == nil {
-		return nil, nil, acmeError.Error()
+		return nil, nil, acmeError
 	}
 
 	return bodyBytes, response.Header, nil
