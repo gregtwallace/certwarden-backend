@@ -10,8 +10,8 @@ import (
 )
 
 // Directory URLs for Let's Encrypt
-const acmeProdUri string = "https://acme-v02.api.letsencrypt.org/directory"
-const acmeStagingUri string = "https://acme-staging-v02.api.letsencrypt.org/directory"
+const acmeProdUrl string = "https://acme-v02.api.letsencrypt.org/directory"
+const acmeStagingUrl string = "https://acme-staging-v02.api.letsencrypt.org/directory"
 
 // CreateAndConfigure creates an app object with logger, storage, and all needed
 // services
@@ -35,12 +35,12 @@ func CreateAndConfigure() (*Application, error) {
 	}
 
 	// acme services
-	app.acmeProd, err = acme.NewService(app, acmeProdUri)
+	app.acmeProd, err = acme.NewService(app, acmeProdUrl)
 	if err != nil {
 		return nil, err
 	}
 
-	app.acmeStaging, err = acme.NewService(app, acmeStagingUri)
+	app.acmeStaging, err = acme.NewService(app, acmeStagingUrl)
 	if err != nil {
 		return nil, err
 	}

@@ -25,8 +25,8 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) {
 		Status:  "Available",
 		Version: version,
 		AcmeDirectories: appStatusDirectories{
-			Production: app.acmeProd.TosUrl(),
-			Staging:    app.acmeStaging.TosUrl(),
+			Production: acmeProdUrl,
+			Staging:    acmeStagingUrl,
 		},
 	}
 
