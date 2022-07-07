@@ -6,12 +6,15 @@ import (
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/storage/sqlite"
 	"log"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 const version = "0.0.1"
 
 type Application struct {
 	logger      *log.Logger
+	router      *httprouter.Router
 	storage     *sqlite.Storage
 	keys        *private_keys.Service
 	acmeProd    *acme.Service

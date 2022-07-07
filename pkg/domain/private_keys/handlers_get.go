@@ -15,11 +15,13 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) error
 
 	keys, err := service.storage.GetAllKeys()
 	if err != nil {
+		service.logger.Printf("keys: GetAll: db failed -- err: %s", err)
 		return err
 	}
 
 	err = utils.WriteJSON(w, http.StatusOK, keys, "private_keys")
 	if err != nil {
+		service.logger.Printf("keys: GetAll: write json failed -- err: %s", err)
 		return err
 	}
 
@@ -27,54 +29,53 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) error
 }
 
 // Get a single private keys in our DB and write it as JSON to the API
-func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) {
+func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) error {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Printf("keys: GetOne: id param error -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		return err
 	}
 
 	// if id is new provide algo options list
 	err = utils.IsIdNew(&id)
 	if err == nil {
 		// run the new key options handler if the id is new
-		service.GetNewKeyOptions(w, r)
-		return
+		err = service.GetNewKeyOptions(w, r)
+		return err
 	} else if id < 0 {
 		// if id < 0 & not new, it is definitely not valid
 		err = errors.New("keys: GetOne: id param is invalid (less than 0 and not new)")
 		service.logger.Println(err)
-		utils.WriteErrorJSON(w, err)
-		return
+		return err
 	}
 
 	key, err := service.storage.GetOneKeyById(id)
 	if err != nil {
 		service.logger.Printf("keys: GetOne: db failed -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		return err
 	}
 
 	err = utils.WriteJSON(w, http.StatusOK, key, "private_key")
 	if err != nil {
 		service.logger.Printf("keys: GetOne: write json failed -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		return err
 	}
+
+	return nil
 }
 
 // GetNewKeyOptions returns configuration options for a new private key as JSON
-func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request) {
+func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request) error {
 	newKeyOptions := newKeyOptions{}
 	newKeyOptions.KeyAlgorithms = key_crypto.ListOfAlgorithms()
 
 	err := utils.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
 	if err != nil {
 		service.logger.Printf("keys: GetNewKeyOptions: write json failed -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		return err
 	}
+
+	return nil
 }

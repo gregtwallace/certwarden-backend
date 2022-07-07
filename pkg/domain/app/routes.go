@@ -6,35 +6,37 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// Routes creates the application's router and adds the routes. It also
+// inserts the CORS middleware before returning the routes
 func (app *Application) Routes() http.Handler {
-	router := httprouter.New()
+	app.router = httprouter.New()
 
 	// app
-	router.HandlerFunc(http.MethodGet, "/api/status", app.statusHandler)
+	app.router.HandlerFunc(http.MethodGet, "/api/status", app.statusHandler)
 
 	// private_keys
-	router.Handler(http.MethodGet, "/api/v1/privatekeys", Handler{app, app.keys.GetAllKeys})
-	router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys", app.keys.PostNewKey)
+	app.Handler(http.MethodGet, "/api/v1/privatekeys", app.keys.GetAllKeys)
+	app.router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys", app.keys.PostNewKey)
 
-	router.HandlerFunc(http.MethodGet, "/api/v1/privatekeys/:id", app.keys.GetOneKey)
-	router.HandlerFunc(http.MethodPut, "/api/v1/privatekeys/:id", app.keys.PutNameDescKey)
+	app.Handler(http.MethodGet, "/api/v1/privatekeys/:id", app.keys.GetOneKey)
+	app.router.HandlerFunc(http.MethodPut, "/api/v1/privatekeys/:id", app.keys.PutNameDescKey)
 
-	router.HandlerFunc(http.MethodDelete, "/api/v1/privatekeys/:id", app.keys.DeleteKey)
+	app.router.HandlerFunc(http.MethodDelete, "/api/v1/privatekeys/:id", app.keys.DeleteKey)
 
 	// acme_accounts
-	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts", app.accounts.GetAllAccounts)
-	router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts", app.accounts.PostNewAccount)
+	app.router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts", app.accounts.GetAllAccounts)
+	app.router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts", app.accounts.PostNewAccount)
 
-	router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts/:id", app.accounts.GetOneAccount)
-	router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id", app.accounts.PutNameDescAccount)
-	router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts/:id/new-account", app.accounts.NewAccount)
-	router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts/:id/deactivate", app.accounts.Deactivate)
-	router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id/email", app.accounts.ChangeEmail)
+	app.router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts/:id", app.accounts.GetOneAccount)
+	app.router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id", app.accounts.PutNameDescAccount)
+	app.router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts/:id/new-account", app.accounts.NewAccount)
+	app.router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts/:id/deactivate", app.accounts.Deactivate)
+	app.router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id/email", app.accounts.ChangeEmail)
 
-	router.HandlerFunc(http.MethodDelete, "/api/v1/acmeaccounts/:id", app.accounts.DeleteAccount)
+	app.router.HandlerFunc(http.MethodDelete, "/api/v1/acmeaccounts/:id", app.accounts.DeleteAccount)
 
 	// invalid route
-	router.NotFound = http.HandlerFunc(app.notFoundHandler)
+	app.router.NotFound = http.HandlerFunc(app.notFoundHandler)
 
-	return app.enableCORS(router)
+	return app.enableCORS(app.router)
 }

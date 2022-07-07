@@ -1,24 +1,36 @@
 package app
 
 import (
-	"legocerthub-backend/pkg/utils"
+	"legocerthub-backend/pkg/output"
+	"log"
 	"net/http"
 )
 
-// Handler struct adds an error handling layer to handler functions
+// Handler struct adds an error handling layer to handler functions. It includes
+// logger so errors can be logged and the handlerFunc is in the format the handler
+// functions will be in
 type Handler struct {
-	*Application
-	Func func(w http.ResponseWriter, r *http.Request) error
+	logger      *log.Logger
+	handlerFunc func(w http.ResponseWriter, r *http.Request) error
 }
 
-// ServeHTTP implements http.Handler and will be the centralized point for error
-// json writing
+// Handler creates a Handler on the app's router using the custom Handler struct
+func (app *Application) Handler(method string, path string, handler func(http.ResponseWriter, *http.Request) error) {
+	app.router.Handler(method, path, Handler{app.logger, handler})
+}
+
+// ServeHTTP implements http.Handler. Essentially the handlerFunc is executed
+// and the error is processed (logged and then written as JSON)
 func (handler Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	err := handler.Func(w, r)
+	err := handler.handlerFunc(w, r)
 
 	// if there was an error, log it and write error JSON
 	if err != nil {
-		handler.Application.logger.Printf("Error %s: %s", r.URL.Path, err.Error())
-		utils.WriteErrorJSON(w, err)
+		handler.logger.Printf("error %s: %s", r.URL.Path, err.Error())
+
+		writeErr := output.WriteErrorJSON(w, err)
+		if writeErr != nil {
+			handler.logger.Printf("error %s: failed to write json (%s)", r.URL.Path, writeErr.Error())
+		}
 	}
 }
