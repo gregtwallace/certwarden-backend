@@ -5,8 +5,6 @@ import (
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/storage/sqlite"
-	"log"
-	"os"
 )
 
 // Directory URLs for Let's Encrypt
@@ -21,9 +19,6 @@ func CreateAndConfigure() (*Application, error) {
 
 	// logger (zap)
 	app.initZapLogger()
-
-	// TODO remove old logger
-	app.oldLogger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
 	// storage
 	app.storage, err = sqlite.OpenStorage()

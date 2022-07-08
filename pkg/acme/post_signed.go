@@ -107,6 +107,9 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 			return nil, nil, err
 		}
 
+		// ACME to post (debugging)
+		service.logger.Debugf(string(messageJson))
+
 		// post to ACME
 		response, err = http.Post(url, "application/jose+json", bytes.NewBuffer(messageJson))
 		if err != nil {
@@ -120,8 +123,8 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 			return nil, nil, err
 		}
 
-		// TODO: remove (debugging)
-		service.logger.Println(string(bodyBytes))
+		// ACME response body (debugging)
+		service.logger.Debugf(string(bodyBytes))
 
 		// check if the response was an AcmeError
 		acmeError, err = unmarshalErrorResponse(bodyBytes)
@@ -135,7 +138,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 			nonceErr := service.nonceManager.SaveNonce(response.Header.Get("Replay-Nonce"))
 			if nonceErr != nil {
 				// no need to error out of routine, just log the save failure
-				service.logger.Println(nonceErr)
+				service.logger.Error(nonceErr)
 			}
 			// loop ends for any result other than badNonce
 			done = true

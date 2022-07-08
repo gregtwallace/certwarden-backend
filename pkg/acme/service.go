@@ -3,18 +3,19 @@ package acme
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme/nonces"
-	"log"
+
+	"go.uber.org/zap"
 )
 
 // App interface is for connecting to the main app
 type App interface {
 	//GetAccountStorage() Storage
-	GetOldLogger() *log.Logger
+	GetLogger() *zap.SugaredLogger
 }
 
 // Acme service struct
 type Service struct {
-	logger       *log.Logger
+	logger       *zap.SugaredLogger
 	dirUri       string
 	dir          *acmeDirectory
 	nonceManager *nonces.Manager
@@ -26,7 +27,7 @@ func NewService(app App, dirUri string) (*Service, error) {
 	var err error
 
 	// logger
-	service.logger = app.GetOldLogger()
+	service.logger = app.GetLogger()
 	if service.logger == nil {
 		return nil, errors.New("acme: newservice requires valid logger")
 	}

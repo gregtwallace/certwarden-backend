@@ -5,7 +5,6 @@ import (
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/storage/sqlite"
-	"log"
 
 	"github.com/julienschmidt/httprouter"
 	"go.uber.org/zap"
@@ -15,7 +14,6 @@ const version = "0.0.1"
 
 type Application struct {
 	logger      *zap.SugaredLogger
-	oldLogger   *log.Logger // TODO remove old logger
 	router      *httprouter.Router
 	storage     *sqlite.Storage
 	keys        *private_keys.Service
@@ -27,11 +25,6 @@ type Application struct {
 /// return various needed components
 func (app *Application) GetLogger() *zap.SugaredLogger {
 	return app.logger
-}
-
-//TODO Remove
-func (app *Application) GetOldLogger() *log.Logger {
-	return app.oldLogger
 }
 
 // hacky workaround for storage since can't just combine into one interface

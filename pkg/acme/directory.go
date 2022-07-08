@@ -29,7 +29,7 @@ func (service *Service) fetchAcmeDirectory() error {
 	var response *http.Response
 	var err error
 
-	service.logger.Printf("acme: updating directory from %s", service.dirUri)
+	service.logger.Infof("updating directory from %s", service.dirUri)
 
 	response, err = http.Get(service.dirUri)
 
@@ -52,11 +52,11 @@ func (service *Service) fetchAcmeDirectory() error {
 		return err
 	} else if reflect.DeepEqual(fetchedDir, *service.dir) {
 		// directory already up to date
-		service.logger.Printf("acme: directory %s already up to date", service.dirUri)
+		service.logger.Infof("directory %s already up to date", service.dirUri)
 	} else {
 		// fetched directory is different
 		*service.dir = fetchedDir
-		service.logger.Printf("acme: directory %s updated succesfully", service.dirUri)
+		service.logger.Infof("directory %s updated succesfully", service.dirUri)
 	}
 
 	return nil
@@ -78,7 +78,7 @@ func (service *Service) backgroundDirManager() {
 
 			err := service.fetchAcmeDirectory()
 			if err != nil {
-				service.logger.Printf("acme: directory update failed, will retry shortly: %v", err)
+				service.logger.Errorf("directory update failed, will retry shortly: %v", err)
 				// if something failed, decrease the wait to try again
 				waitTime = failWaitTime
 			} else {
