@@ -1,17 +1,18 @@
 package acme_accounts
 
 import (
+	"database/sql"
 	"encoding/json"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/utils"
-	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/julienschmidt/httprouter"
 )
 
-// NameDescPayload is the struct for editing an existing key
+// NameDescPayload is the struct for editing an existing account name and desc
 type NameDescPayload struct {
 	ID          *int    `json:"id"`
 	Name        *string `json:"name"`
@@ -20,60 +21,58 @@ type NameDescPayload struct {
 
 // PutNameDescAccount is a handler that sets the name and description of an account
 // within storage
-func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Request) {
+func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Request) (err error) {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+
+	// convert id param to an integer
 	idParam, err := strconv.Atoi(idParamStr)
 	if err != nil {
-		service.logger.Printf("accounts: PutOne: invalid idParam -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 
+	// payload decoding
 	var payload NameDescPayload
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		service.logger.Printf("accounts: PutOne: failed to decode payload: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 
 	/// validation
 	// id
 	err = service.isIdExisting(idParam, payload.ID)
 	if err != nil {
-		service.logger.Printf("accounts: PutOne: invalid id -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 	// name
 	err = service.isNameValid(payload.ID, payload.Name)
 	if err != nil {
-		service.logger.Printf("accounts: PutOne: invalid name -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 	///
 
-	// update db
-	err = service.storage.PutNameDescAccount(payload)
+	// save account name and desc to storage, which also returns the account id with new
+	// name and description
+	account, err := service.storage.PutNameDescAccount(payload)
 	if err != nil {
-		service.logger.Printf("accounts: PutOne: failed to write to db -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
 	}
 
-	response := utils.JsonResp{
-		OK: true,
-	}
-	err = utils.WriteJSON(w, http.StatusOK, response, "response")
+	// return response to client
+	_, err = output.WriteJSON(w, http.StatusOK, account, "acme_account")
 	if err != nil {
-		service.logger.Printf("accounts: PutOne: write json failed -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
 	}
+
+	return nil
 }
 
-// NameDescPayload is the struct for editing an existing key
+// ChangeEmailPayload is the struct for updating an account's email address
 type ChangeEmailPayload struct {
 	ID    *int    `json:"id"`
 	Email *string `json:"email"`
@@ -81,92 +80,96 @@ type ChangeEmailPayload struct {
 
 // ChangeEmail() is a handler that updates an ACME account with the specified
 // email address and saves the updated address to storage
-func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) {
-	// get id param and payload
+func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err error) {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+
+	// convert id param to an integer
 	idParam, err := strconv.Atoi(idParamStr)
 	if err != nil {
-		service.logger.Printf("accounts: update email: invalid id -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 
+	// decode payload
 	var payload ChangeEmailPayload
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		service.logger.Printf("accounts: update email: failed to decode payload: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 
 	/// validation
 	// id
 	err = service.isIdExisting(idParam, payload.ID)
 	if err != nil {
-		service.logger.Printf("accounts: update email: invalid id -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 	// email (update cannot be to blank)
 	err = utils.IsEmailValid(payload.Email)
 	if err != nil {
-		service.logger.Printf("accounts: update email: invalid email -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 	///
 
 	// fetch the relevant account
-	acmeAccount, err := service.storage.GetOneAccountById(idParam)
+	account, err := service.storage.GetOneAccountById(idParam)
 	if err != nil {
-		service.logger.Printf("accounts: update email: failed to fetch account -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		if err == sql.ErrNoRows {
+			service.logger.Debug(err)
+			return output.ErrNotFound
+		} else {
+			service.logger.Error(err)
+			return output.ErrStorageGeneric
+		}
 	}
 
 	// get AccountKey
-	accountKey, err := acmeAccount.AccountKey()
+	accountKey, err := account.accountKey()
 	if err != nil {
-		service.logger.Printf("accounts: update email: failed to get crypto private key -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Error(err)
+		return output.ErrInternal
 	}
 
-	// ACME update email payload
+	// make ACME update email payload
 	acmePayload := acme.UpdateAccountPayload{
 		Contact: emailToContact(*payload.Email),
 	}
-	log.Println(acmePayload.Contact)
 
-	// send the new-account to ACME
+	// send the email update to ACME
 	var acmeResponse acme.AcmeAccountResponse
-	if acmeAccount.IsStaging {
+	if account.IsStaging {
 		acmeResponse, err = service.acmeStaging.UpdateAccount(acmePayload, accountKey)
 	} else {
 		acmeResponse, err = service.acmeProd.UpdateAccount(acmePayload, accountKey)
 	}
 	if err != nil {
-		service.logger.Printf("accounts: acme: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Error(err)
+		return output.ErrInternal
 	}
 
 	// save ACME response to account
 	err = service.storage.PutLEAccountResponse(idParam, acmeResponse)
 	if err != nil {
-		service.logger.Printf("accounts: update email: failed to save to storage -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
 	}
 
-	// Write OK response to client
-	clientResponse := utils.JsonResp{
-		OK: true,
-	}
-	err = utils.WriteJSON(w, http.StatusOK, clientResponse, "response")
+	// fetch the updated account
+	account, err = service.storage.GetOneAccountById(idParam)
 	if err != nil {
-		service.logger.Printf("accounts: update email: write response json failed -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		// no need for no row
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
 	}
+
+	// return modified account to client
+	_, err = output.WriteJSON(w, http.StatusOK, account, "acme_account")
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
+	}
+
+	return nil
 }

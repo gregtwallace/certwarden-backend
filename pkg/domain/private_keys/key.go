@@ -6,6 +6,8 @@ import (
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 )
 
+var errBadKey = errors.New("bad crypto key")
+
 // a single private key
 type Key struct {
 	ID          int                   `json:"id"`
@@ -22,7 +24,7 @@ type Key struct {
 func (key *Key) CryptoKey() (cryptoKey crypto.PrivateKey, err error) {
 	// nil pointer check
 	if key == nil || key.Algorithm == nil {
-		return nil, errors.New("key: bad key object")
+		return nil, errBadKey
 	}
 
 	// generate key from pem

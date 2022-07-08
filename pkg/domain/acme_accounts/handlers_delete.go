@@ -1,7 +1,8 @@
 package acme_accounts
 
 import (
-	"legocerthub-backend/pkg/utils"
+	"database/sql"
+	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
 
@@ -9,32 +10,41 @@ import (
 )
 
 // DeleteKey deletes a private key from storage
-func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) {
-	params := httprouter.ParamsFromContext(r.Context())
+func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) (err error) {
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
-	id, err := strconv.Atoi(params.ByName("id"))
+	// convert id param to an integer
+	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		service.logger.Printf("accounts: Delete: id param error -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 
-	// TODO: Validate note in use, though storage may also do this
+	// TODO: Validate not in use, though storage should do this with foreign key check
 
+	// delete from storage
 	err = service.storage.DeleteAccount(id)
 	if err != nil {
-		service.logger.Printf("accounts: Delete: failed to db delete -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		if err == sql.ErrNoRows {
+			service.logger.Debug(err)
+			return output.ErrNotFound
+		} else {
+			service.logger.Error(err)
+			return output.ErrStorageGeneric
+		}
 	}
 
-	response := utils.JsonResp{
-		OK: true,
+	// return response to client
+	response := output.JsonResponse{
+		Status:  http.StatusOK,
+		Message: "deleted",
 	}
-	err = utils.WriteJSON(w, http.StatusOK, response, "response")
+
+	_, err = output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
-		service.logger.Printf("accounts: Delete: write response json failed -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
 	}
+
+	return nil
 }

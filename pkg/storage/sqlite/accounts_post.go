@@ -55,11 +55,11 @@ func newAccountPayloadToDb(payload acme_accounts.NewPayload) (accountDb, error) 
 }
 
 // PostNewAccount inserts a new account into the db
-func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (err error) {
+func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (account acme_accounts.Account, err error) {
 	// Load payload into db obj
 	accountDb, err := newAccountPayloadToDb(payload)
 	if err != nil {
-		return err
+		return acme_accounts.Account{}, err
 	}
 
 	// database update
@@ -68,16 +68,17 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (err er
 
 	tx, err := storage.Db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return acme_accounts.Account{}, err
 	}
 
 	// insert the new account
 	query := `
 	INSERT INTO acme_accounts (name, description, private_key_id, status, email, accepted_tos, is_staging, created_at, updated_at)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+	RETURNING id
 	`
 
-	_, err = tx.ExecContext(ctx, query,
+	err = tx.QueryRowContext(ctx, query,
 		accountDb.name,
 		accountDb.description,
 		accountDb.privateKey.id,
@@ -87,10 +88,11 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (err er
 		accountDb.isStaging,
 		accountDb.createdAt,
 		accountDb.updatedAt,
-	)
+	).Scan(&accountDb.id)
+
 	if err != nil {
 		tx.Rollback()
-		return err
+		return acme_accounts.Account{}, err
 	}
 
 	// table already enforces unique private_key_id, so no need to check
@@ -109,16 +111,21 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (err er
 	err = row.Scan(&exists)
 	if err != nil && err != sql.ErrNoRows {
 		tx.Rollback()
-		return err
+		return acme_accounts.Account{}, err
 	} else if exists {
 		tx.Rollback()
-		return errors.New("private key in use by certificate")
+		return acme_accounts.Account{}, errors.New("private key in use by certificate")
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return err
+		return acme_accounts.Account{}, err
 	}
 
-	return nil
+	account, err = accountDb.accountDbToAcc()
+	if err != nil {
+		return acme_accounts.Account{}, err
+	}
+
+	return account, nil
 }

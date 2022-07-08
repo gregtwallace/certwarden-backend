@@ -64,6 +64,7 @@ func (storage *Storage) PutNameDescKey(payload private_keys.NameDescPayload) (ke
 		return private_keys.Key{}, err
 	}
 
+	// convert to key
 	key, err = keyDb.keyDbToKey()
 	if err != nil {
 		return private_keys.Key{}, err

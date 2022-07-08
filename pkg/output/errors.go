@@ -5,6 +5,7 @@ import "fmt"
 var (
 	// generic
 	ErrNotFound = Error{Status: 404, Message: "not found"}
+	ErrInternal = Error{Status: 500, Message: "internal error"}
 
 	// storage errors
 	ErrStorageGeneric = Error{Status: 500, Message: "storage error"}

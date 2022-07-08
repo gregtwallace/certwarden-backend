@@ -4,8 +4,11 @@ import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/private_keys"
-	"log"
+
+	"go.uber.org/zap"
 )
+
+var errServiceComponent = errors.New("necessary account service component is missing")
 
 // App interface is for connecting to the main app
 type App interface {
@@ -13,7 +16,7 @@ type App interface {
 	GetKeysService() *private_keys.Service
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
-	GetOldLogger() *log.Logger
+	GetLogger() *zap.SugaredLogger
 }
 
 // Storage interface for storage functions
@@ -22,9 +25,9 @@ type Storage interface {
 	GetOneAccountById(int) (Account, error)
 	GetOneAccountByName(string) (Account, error)
 
-	PostNewAccount(NewPayload) error
+	PostNewAccount(NewPayload) (Account, error)
 
-	PutNameDescAccount(NameDescPayload) error
+	PutNameDescAccount(NameDescPayload) (Account, error)
 	PutLEAccountResponse(id int, response acme.AcmeAccountResponse) error
 
 	DeleteAccount(int) error
@@ -32,7 +35,7 @@ type Storage interface {
 
 // Accounts service struct
 type Service struct {
-	logger      *log.Logger
+	logger      *zap.SugaredLogger
 	storage     Storage
 	keys        *private_keys.Service
 	acmeProd    *acme.Service
@@ -44,31 +47,31 @@ func NewService(app App) (*Service, error) {
 	service := new(Service)
 
 	// logger
-	service.logger = app.GetOldLogger()
+	service.logger = app.GetLogger()
 	if service.logger == nil {
-		return nil, errors.New("acme_accounts: newservice requires valid logger")
+		return nil, errServiceComponent
 	}
 
 	// storage
 	service.storage = app.GetAccountStorage()
 	if service.storage == nil {
-		return nil, errors.New("acme_accounts: newservice requires valid storage")
+		return nil, errServiceComponent
 	}
 
 	// key service
 	service.keys = app.GetKeysService()
 	if service.storage == nil {
-		return nil, errors.New("acme_accounts: newservice requires valid storage")
+		return nil, errServiceComponent
 	}
 
 	// acme services
 	service.acmeProd = app.GetAcmeProdService()
 	if service.acmeProd == nil {
-		return nil, errors.New("acme_accounts: newservice requires valid acme prod service")
+		return nil, errServiceComponent
 	}
 	service.acmeStaging = app.GetAcmeStagingService()
 	if service.acmeStaging == nil {
-		return nil, errors.New("acme_accounts: newservice requires valid acme staging service")
+		return nil, errServiceComponent
 	}
 
 	return service, nil

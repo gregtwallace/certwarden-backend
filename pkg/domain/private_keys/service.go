@@ -6,6 +6,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var errServiceComponent = errors.New("necessary key service component is missing")
+
 // App interface is for connecting to the main app
 type App interface {
 	GetKeyStorage() Storage
@@ -37,13 +39,13 @@ func NewService(app App) (*Service, error) {
 	// logger
 	service.logger = app.GetLogger()
 	if service.logger == nil {
-		return nil, errors.New("private_keys: newservice requires valid logger")
+		return nil, errServiceComponent
 	}
 
 	// storage
 	service.storage = app.GetKeyStorage()
 	if service.storage == nil {
-		return nil, errors.New("private_keys: newservice requires valid storage")
+		return nil, errServiceComponent
 	}
 
 	return service, nil

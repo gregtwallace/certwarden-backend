@@ -31,15 +31,14 @@ func nameDescAccountPayloadToDb(payload acme_accounts.NameDescPayload) (accountD
 
 // putExistingAccountNameDesc only updates the name and desc in the database
 // refactor to more generic for anything that can be updated??
-func (storage *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) error {
+func (storage *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) (account acme_accounts.Account, err error) {
 	// Load payload into db obj
 	accountDb, err := nameDescAccountPayloadToDb(payload)
 	if err != nil {
-		return err
+		return acme_accounts.Account{}, err
 	}
 
 	// database update
-
 	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
 	defer cancel()
 
@@ -50,18 +49,29 @@ func (storage *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload
 		name = $1,
 		description = $2
 	WHERE
-		id = $3`
+		id = $3
+	RETURNING id, status, is_staging	
+	`
 
-	_, err = storage.Db.ExecContext(ctx, query,
+	err = storage.Db.QueryRowContext(ctx, query,
 		accountDb.name,
 		accountDb.description,
-		accountDb.id)
+		accountDb.id,
+	).Scan(&accountDb.id,
+		&accountDb.status,
+		&accountDb.isStaging)
+
 	if err != nil {
-		return err
+		return acme_accounts.Account{}, err
 	}
 
-	// TODO: Handle 0 rows updated.
-	return nil
+	// convert to account
+	account, err = accountDb.accountDbToAcc()
+	if err != nil {
+		return acme_accounts.Account{}, err
+	}
+
+	return account, nil
 }
 
 // leAccountResponseToDb translates the ACME account response into the fields we want to save

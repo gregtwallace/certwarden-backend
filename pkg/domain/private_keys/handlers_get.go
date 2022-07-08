@@ -43,10 +43,9 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 		return output.ErrValidationFailed
 	}
 
-	// if id is new provide algo options list
+	// if id is new, provide some info
 	err = utils.IsIdNew(&id)
 	if err == nil {
-		// run the new key options handler if the id is new
 		return service.GetNewKeyOptions(w, r)
 	}
 

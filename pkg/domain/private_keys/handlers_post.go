@@ -21,6 +21,7 @@ type NewPayload struct {
 func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err error) {
 	var payload NewPayload
 
+	// decode body into payload
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)

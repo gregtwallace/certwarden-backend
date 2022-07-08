@@ -10,9 +10,9 @@ type Account struct {
 	ID          int               `json:"id"`
 	Name        string            `json:"name"`
 	Description string            `json:"description"`
-	PrivateKey  *private_keys.Key `json:"private_key"`
+	PrivateKey  *private_keys.Key `json:"private_key,omitempty"`
 	Status      string            `json:"status"`
-	Email       string            `json:"email"`
+	Email       string            `json:"email,omitempty"`
 	AcceptedTos bool              `json:"accepted_tos,omitempty"`
 	IsStaging   bool              `json:"is_staging"`
 	CreatedAt   int               `json:"created_at,omitempty"`
@@ -22,7 +22,7 @@ type Account struct {
 
 // AccountKey() returns the ACME AccountKey which is a combination of the
 // crypto.PrivateKey and Kid
-func (account *Account) AccountKey() (accountKey acme.AccountKey, err error) {
+func (account *Account) accountKey() (accountKey acme.AccountKey, err error) {
 	accountKey.Key, err = account.PrivateKey.CryptoKey()
 	if err != nil {
 		return acme.AccountKey{}, err

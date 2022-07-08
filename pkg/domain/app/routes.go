@@ -24,16 +24,16 @@ func (app *Application) Routes() http.Handler {
 	app.makeHandle(http.MethodDelete, "/api/v1/privatekeys/:id", app.keys.DeleteKey)
 
 	// acme_accounts
-	app.router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts", app.accounts.GetAllAccounts)
-	app.router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts", app.accounts.PostNewAccount)
+	app.makeHandle(http.MethodGet, "/api/v1/acmeaccounts", app.accounts.GetAllAccounts)
+	app.makeHandle(http.MethodPost, "/api/v1/acmeaccounts", app.accounts.PostNewAccount)
 
-	app.router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts/:id", app.accounts.GetOneAccount)
-	app.router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id", app.accounts.PutNameDescAccount)
-	app.router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts/:id/new-account", app.accounts.NewAccount)
-	app.router.HandlerFunc(http.MethodPost, "/api/v1/acmeaccounts/:id/deactivate", app.accounts.Deactivate)
-	app.router.HandlerFunc(http.MethodPut, "/api/v1/acmeaccounts/:id/email", app.accounts.ChangeEmail)
+	app.makeHandle(http.MethodGet, "/api/v1/acmeaccounts/:id", app.accounts.GetOneAccount)
+	app.makeHandle(http.MethodPut, "/api/v1/acmeaccounts/:id", app.accounts.PutNameDescAccount)
+	app.makeHandle(http.MethodPost, "/api/v1/acmeaccounts/:id/new-account", app.accounts.NewAcmeAccount)
+	app.makeHandle(http.MethodPost, "/api/v1/acmeaccounts/:id/deactivate", app.accounts.Deactivate)
+	app.makeHandle(http.MethodPut, "/api/v1/acmeaccounts/:id/email", app.accounts.ChangeEmail)
 
-	app.router.HandlerFunc(http.MethodDelete, "/api/v1/acmeaccounts/:id", app.accounts.DeleteAccount)
+	app.makeHandle(http.MethodDelete, "/api/v1/acmeaccounts/:id", app.accounts.DeleteAccount)
 
 	// invalid route
 	app.router.NotFound = app.makeHandler(app.notFoundHandler)
