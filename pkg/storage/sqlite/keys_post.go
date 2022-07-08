@@ -26,14 +26,14 @@ func newKeyPayloadToDb(payload private_keys.NewPayload) keyDb {
 }
 
 // dbPostNewKey creates a new key based on what was POSTed
-func (storage *Storage) PostNewKey(payload private_keys.NewPayload) (key private_keys.Key, err error) {
+func (storage *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err error) {
 	// load payload fields into db struct
 	keyDb := newKeyPayloadToDb(payload)
 
 	// generate api key
 	keyDb.apiKey, err = utils.GenerateApiKey()
 	if err != nil {
-		return private_keys.Key{}, err
+		return -2, err
 	}
 
 	// database action
@@ -55,16 +55,11 @@ func (storage *Storage) PostNewKey(payload private_keys.NewPayload) (key private
 		keyDb.apiKey,
 		keyDb.createdAt,
 		keyDb.updatedAt,
-	).Scan(&keyDb.id)
+	).Scan(&id)
 
 	if err != nil {
-		return private_keys.Key{}, err
+		return -2, err
 	}
 
-	key, err = keyDb.keyDbToKey()
-	if err != nil {
-		return private_keys.Key{}, err
-	}
-
-	return key, nil
+	return id, nil
 }

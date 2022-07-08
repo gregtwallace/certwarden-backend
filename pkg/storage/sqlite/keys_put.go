@@ -31,11 +31,11 @@ func nameDescKeyPayloadToDb(payload private_keys.NameDescPayload) (keyDb, error)
 
 // dbPutExistingKey sets an existing key equal to the PUT values (overwriting
 //  old values)
-func (storage *Storage) PutNameDescKey(payload private_keys.NameDescPayload) (key private_keys.Key, err error) {
+func (storage *Storage) PutNameDescKey(payload private_keys.NameDescPayload) (err error) {
 	// load payload fields into db struct
 	keyDb, err := nameDescKeyPayloadToDb(payload)
 	if err != nil {
-		return private_keys.Key{}, err
+		return err
 	}
 
 	// database action
@@ -51,24 +51,17 @@ func (storage *Storage) PutNameDescKey(payload private_keys.NameDescPayload) (ke
 		updated_at = $3
 	WHERE
 		id = $4
-	RETURNING id
 	`
 
-	err = storage.Db.QueryRowContext(ctx, query,
+	_, err = storage.Db.ExecContext(ctx, query,
 		keyDb.name,
 		keyDb.description,
 		keyDb.updatedAt,
-		keyDb.id).Scan(&keyDb.id)
+		keyDb.id)
 
 	if err != nil {
-		return private_keys.Key{}, err
+		return err
 	}
 
-	// convert to key
-	key, err = keyDb.keyDbToKey()
-	if err != nil {
-		return private_keys.Key{}, err
-	}
-
-	return key, nil
+	return nil
 }

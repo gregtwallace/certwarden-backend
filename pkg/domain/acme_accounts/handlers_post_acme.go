@@ -2,6 +2,7 @@ package acme_accounts
 
 import (
 	"database/sql"
+	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
 	"net/http"
@@ -64,16 +65,13 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (
 		return output.ErrStorageGeneric
 	}
 
-	// fetch the updated account
-	account, err = service.storage.GetOneAccountById(idParam)
-	if err != nil {
-		// no need for no row
-		service.logger.Error(err)
-		return output.ErrStorageGeneric
+	// return response to client
+	response := output.JsonResponse{
+		Status:  http.StatusOK,
+		Message: fmt.Sprintf("registered (id: %d)", idParam),
 	}
 
-	// return modified account to client
-	_, err = output.WriteJSON(w, http.StatusOK, account, "acme_account")
+	_, err = output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
@@ -137,16 +135,13 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrStorageGeneric
 	}
 
-	// fetch the updated account
-	account, err = service.storage.GetOneAccountById(idParam)
-	if err != nil {
-		// no need for no row
-		service.logger.Error(err)
-		return output.ErrStorageGeneric
+	// return response to client
+	response := output.JsonResponse{
+		Status:  http.StatusOK,
+		Message: fmt.Sprintf("deactivated (id: %d)", idParam),
 	}
 
-	// return modified account to client
-	_, err = output.WriteJSON(w, http.StatusOK, account, "acme_account")
+	_, err = output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

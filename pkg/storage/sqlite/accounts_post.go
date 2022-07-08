@@ -55,11 +55,11 @@ func newAccountPayloadToDb(payload acme_accounts.NewPayload) (accountDb, error) 
 }
 
 // PostNewAccount inserts a new account into the db
-func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (account acme_accounts.Account, err error) {
+func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (id int, err error) {
 	// Load payload into db obj
 	accountDb, err := newAccountPayloadToDb(payload)
 	if err != nil {
-		return acme_accounts.Account{}, err
+		return -2, err
 	}
 
 	// database update
@@ -68,7 +68,7 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (accoun
 
 	tx, err := storage.Db.BeginTx(ctx, nil)
 	if err != nil {
-		return acme_accounts.Account{}, err
+		return -2, err
 	}
 
 	// insert the new account
@@ -88,11 +88,11 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (accoun
 		accountDb.isStaging,
 		accountDb.createdAt,
 		accountDb.updatedAt,
-	).Scan(&accountDb.id)
+	).Scan(&id)
 
 	if err != nil {
 		tx.Rollback()
-		return acme_accounts.Account{}, err
+		return -2, err
 	}
 
 	// table already enforces unique private_key_id, so no need to check
@@ -111,21 +111,16 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (accoun
 	err = row.Scan(&exists)
 	if err != nil && err != sql.ErrNoRows {
 		tx.Rollback()
-		return acme_accounts.Account{}, err
+		return -2, err
 	} else if exists {
 		tx.Rollback()
-		return acme_accounts.Account{}, errors.New("private key in use by certificate")
+		return -2, errors.New("private key in use by certificate")
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return acme_accounts.Account{}, err
+		return -2, err
 	}
 
-	account, err = accountDb.accountDbToAcc()
-	if err != nil {
-		return acme_accounts.Account{}, err
-	}
-
-	return account, nil
+	return id, nil
 }

@@ -31,11 +31,11 @@ func nameDescAccountPayloadToDb(payload acme_accounts.NameDescPayload) (accountD
 
 // putExistingAccountNameDesc only updates the name and desc in the database
 // refactor to more generic for anything that can be updated??
-func (storage *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) (account acme_accounts.Account, err error) {
+func (storage *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) (err error) {
 	// Load payload into db obj
 	accountDb, err := nameDescAccountPayloadToDb(payload)
 	if err != nil {
-		return acme_accounts.Account{}, err
+		return err
 	}
 
 	// database update
@@ -50,28 +50,19 @@ func (storage *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload
 		description = $2
 	WHERE
 		id = $3
-	RETURNING id, status, is_staging	
 	`
 
-	err = storage.Db.QueryRowContext(ctx, query,
+	_, err = storage.Db.ExecContext(ctx, query,
 		accountDb.name,
 		accountDb.description,
 		accountDb.id,
-	).Scan(&accountDb.id,
-		&accountDb.status,
-		&accountDb.isStaging)
+	)
 
 	if err != nil {
-		return acme_accounts.Account{}, err
+		return err
 	}
 
-	// convert to account
-	account, err = accountDb.accountDbToAcc()
-	if err != nil {
-		return acme_accounts.Account{}, err
-	}
-
-	return account, nil
+	return nil
 }
 
 // leAccountResponseToDb translates the ACME account response into the fields we want to save

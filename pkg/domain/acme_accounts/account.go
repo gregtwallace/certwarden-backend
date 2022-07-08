@@ -11,10 +11,10 @@ type Account struct {
 	Name        string            `json:"name"`
 	Description string            `json:"description"`
 	PrivateKey  *private_keys.Key `json:"private_key,omitempty"`
-	Status      string            `json:"status"`
-	Email       string            `json:"email,omitempty"`
+	Status      string            `json:"status,omitempty"`
+	Email       string            `json:"email"`
 	AcceptedTos bool              `json:"accepted_tos,omitempty"`
-	IsStaging   bool              `json:"is_staging"`
+	IsStaging   bool              `json:"is_staging,omitempty"`
 	CreatedAt   int               `json:"created_at,omitempty"`
 	UpdatedAt   int               `json:"updated_at,omitempty"`
 	Kid         string            `json:"kid,omitempty"`

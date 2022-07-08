@@ -2,6 +2,7 @@ package acme_accounts
 
 import (
 	"database/sql"
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
@@ -37,7 +38,7 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) (e
 	// return response to client
 	response := output.JsonResponse{
 		Status:  http.StatusOK,
-		Message: "deleted",
+		Message: fmt.Sprintf("deleted (id: %d)", id),
 	}
 
 	_, err = output.WriteJSON(w, response.Status, response, "response")

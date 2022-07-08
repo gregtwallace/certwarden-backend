@@ -2,6 +2,7 @@ package private_keys
 
 import (
 	"database/sql"
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
@@ -37,7 +38,7 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err e
 	// return response to client
 	response := output.JsonResponse{
 		Status:  http.StatusOK,
-		Message: "deleted",
+		Message: fmt.Sprintf("deleted (id: %d)", id),
 	}
 
 	_, err = output.WriteJSON(w, response.Status, response, "response")

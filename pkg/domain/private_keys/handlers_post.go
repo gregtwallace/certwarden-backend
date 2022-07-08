@@ -2,6 +2,7 @@ package private_keys
 
 import (
 	"encoding/json"
+	"fmt"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/utils"
@@ -75,15 +76,20 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 	}
 	///
 
-	// save new key to storage, which also returns the new key
-	key, err := service.storage.PostNewKey(payload)
+	// save new key to storage, which also returns the new key id
+	id, err := service.storage.PostNewKey(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
 	// return response to client
-	_, err = output.WriteJSON(w, http.StatusCreated, key, "response")
+	response := output.JsonResponse{
+		Status:  http.StatusCreated,
+		Message: fmt.Sprintf("created (id: %d)", id),
+	}
+
+	_, err = output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

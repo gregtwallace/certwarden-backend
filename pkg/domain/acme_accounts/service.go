@@ -25,9 +25,9 @@ type Storage interface {
 	GetOneAccountById(int) (Account, error)
 	GetOneAccountByName(string) (Account, error)
 
-	PostNewAccount(NewPayload) (Account, error)
+	PostNewAccount(NewPayload) (id int, err error)
 
-	PutNameDescAccount(NameDescPayload) (Account, error)
+	PutNameDescAccount(NameDescPayload) error
 	PutLEAccountResponse(id int, response acme.AcmeAccountResponse) error
 
 	DeleteAccount(int) error

@@ -2,6 +2,7 @@ package private_keys
 
 import (
 	"encoding/json"
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
@@ -52,14 +53,19 @@ func (service *Service) PutNameDescKey(w http.ResponseWriter, r *http.Request) (
 
 	// save key name and desc to storage, which also returns the key id with new
 	// name and description
-	key, err := service.storage.PutNameDescKey(payload)
+	err = service.storage.PutNameDescKey(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
 	// return response to client
-	_, err = output.WriteJSON(w, http.StatusOK, key, "private_key")
+	response := output.JsonResponse{
+		Status:  http.StatusOK,
+		Message: fmt.Sprintf("updated (id: %d)", idParam),
+	}
+
+	_, err = output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

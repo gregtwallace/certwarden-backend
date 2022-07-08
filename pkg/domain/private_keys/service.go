@@ -19,8 +19,9 @@ type Storage interface {
 	GetAllKeys() ([]Key, error)
 	GetOneKeyById(int) (Key, error)
 	GetOneKeyByName(string) (Key, error)
-	PutNameDescKey(NameDescPayload) (Key, error)
-	PostNewKey(NewPayload) (Key, error)
+
+	PostNewKey(NewPayload) (keyId int, err error)
+	PutNameDescKey(NameDescPayload) error
 	DeleteKey(int) error
 
 	GetAvailableKeys() ([]Key, error)

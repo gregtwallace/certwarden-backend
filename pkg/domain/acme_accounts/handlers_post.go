@@ -2,6 +2,7 @@ package acme_accounts
 
 import (
 	"encoding/json"
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/utils"
 	"net/http"
@@ -62,14 +63,19 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (
 
 	// Save new account details to storage.
 	// No ACME actions are performed.
-	account, err := service.storage.PostNewAccount(payload)
+	id, err := service.storage.PostNewAccount(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
 	// return response to client
-	_, err = output.WriteJSON(w, http.StatusCreated, account, "acme_account")
+	response := output.JsonResponse{
+		Status:  http.StatusCreated,
+		Message: fmt.Sprintf("created (id: %d)", id),
+	}
+
+	_, err = output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

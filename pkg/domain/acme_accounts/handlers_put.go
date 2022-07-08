@@ -3,6 +3,7 @@ package acme_accounts
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/utils"
@@ -56,14 +57,19 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 
 	// save account name and desc to storage, which also returns the account id with new
 	// name and description
-	account, err := service.storage.PutNameDescAccount(payload)
+	err = service.storage.PutNameDescAccount(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
 	// return response to client
-	_, err = output.WriteJSON(w, http.StatusOK, account, "acme_account")
+	response := output.JsonResponse{
+		Status:  http.StatusOK,
+		Message: fmt.Sprintf("updated (id: %d)", idParam),
+	}
+
+	_, err = output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
@@ -156,16 +162,13 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 		return output.ErrStorageGeneric
 	}
 
-	// fetch the updated account
-	account, err = service.storage.GetOneAccountById(idParam)
-	if err != nil {
-		// no need for no row
-		service.logger.Error(err)
-		return output.ErrStorageGeneric
+	// return response to client
+	response := output.JsonResponse{
+		Status:  http.StatusOK,
+		Message: fmt.Sprintf("updated (id: %d)", idParam),
 	}
 
-	// return modified account to client
-	_, err = output.WriteJSON(w, http.StatusOK, account, "acme_account")
+	_, err = output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
