@@ -1,0 +1,156 @@
+package acme_accounts
+
+import (
+	"database/sql"
+	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/output"
+	"net/http"
+	"strconv"
+
+	"github.com/julienschmidt/httprouter"
+)
+
+// NewAcmeAccount sends the account information to the ACME new-account endpoint
+// which effectively registers the account with ACME
+// endpoint: /api/v1/acmeaccounts/:id/new-account
+func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (err error) {
+	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+
+	// convert id param to an integer
+	idParam, err := strconv.Atoi(idParamStr)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// fetch the relevant account
+	account, err := service.storage.GetOneAccountById(idParam)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			service.logger.Debug(err)
+			return output.ErrNotFound
+		} else {
+			service.logger.Error(err)
+			return output.ErrStorageGeneric
+		}
+	}
+
+	// no need to validate, can try to register any account
+	// that has a cryptokey
+
+	// get crypto key
+	key, err := account.PrivateKey.CryptoKey()
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// send the new-account to ACME
+	var acmeResponse acme.AcmeAccountResponse
+	if account.IsStaging {
+		acmeResponse, err = service.acmeStaging.NewAccount(account.newAccountPayload(), key)
+	} else {
+		acmeResponse, err = service.acmeProd.NewAccount(account.newAccountPayload(), key)
+	}
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// save ACME response to account
+	err = service.storage.PutLEAccountResponse(idParam, acmeResponse)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+
+	// fetch the updated account
+	account, err = service.storage.GetOneAccountById(idParam)
+	if err != nil {
+		// no need for no row
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+
+	// return modified account to client
+	_, err = output.WriteJSON(w, http.StatusOK, account, "acme_account")
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
+	}
+
+	return nil
+}
+
+// Deactivate sets deactivated status for the ACME account
+// Once deactivated, accounts cannot be re-enabled. This action is DANGEROUS
+// and should only be done when there is a complete understanding of the repurcussions.
+// endpoint: /api/v1/acmeaccounts/:id/deactivate
+func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) (err error) {
+	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+
+	// convert id param to an integer
+	idParam, err := strconv.Atoi(idParamStr)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// fetch the relevant account
+	account, err := service.storage.GetOneAccountById(idParam)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			service.logger.Debug(err)
+			return output.ErrNotFound
+		} else {
+			service.logger.Error(err)
+			return output.ErrStorageGeneric
+		}
+	}
+
+	// no need to validate, can try to deactivate any account
+	// that has an accountKey
+
+	// get AccountKey
+	accountKey, err := account.accountKey()
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// send the new-account to ACME
+	var acmeResponse acme.AcmeAccountResponse
+	if account.IsStaging {
+		acmeResponse, err = service.acmeStaging.DeactivateAccount(accountKey)
+	} else {
+		acmeResponse, err = service.acmeProd.DeactivateAccount(accountKey)
+	}
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// save ACME response to account
+	err = service.storage.PutLEAccountResponse(idParam, acmeResponse)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+
+	// fetch the updated account
+	account, err = service.storage.GetOneAccountById(idParam)
+	if err != nil {
+		// no need for no row
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+
+	// return modified account to client
+	_, err = output.WriteJSON(w, http.StatusOK, account, "acme_account")
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
+	}
+
+	return nil
+}
