@@ -2,13 +2,14 @@ package private_keys
 
 import (
 	"errors"
-	"log"
+
+	"go.uber.org/zap"
 )
 
 // App interface is for connecting to the main app
 type App interface {
 	GetKeyStorage() Storage
-	GetLogger() *log.Logger
+	GetLogger() *zap.SugaredLogger
 }
 
 // Storage interface for storage functions
@@ -16,8 +17,8 @@ type Storage interface {
 	GetAllKeys() ([]Key, error)
 	GetOneKeyById(int) (Key, error)
 	GetOneKeyByName(string) (Key, error)
-	PutNameDescKey(NameDescPayload) error
-	PostNewKey(NewPayload) error
+	PutNameDescKey(NameDescPayload) (Key, error)
+	PostNewKey(NewPayload) (Key, error)
 	DeleteKey(int) error
 
 	GetAvailableKeys() ([]Key, error)
@@ -25,7 +26,7 @@ type Storage interface {
 
 // Keys service struct
 type Service struct {
-	logger  *log.Logger
+	logger  *zap.SugaredLogger
 	storage Storage
 }
 

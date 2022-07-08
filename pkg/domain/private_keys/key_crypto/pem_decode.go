@@ -10,6 +10,12 @@ import (
 	"errors"
 )
 
+var (
+	errUnsupportedPem    = errors.New("unsupported pem input")
+	errMismatchAlgorithm = errors.New("algorithm and pem mismatch")
+	errMissingAlgorithm  = errors.New("missing algorithm")
+)
+
 // ValidateKeyPem sanitizes a pem string and then returns the sanitized pem string,
 // the algorithm.Value, and an error if the pem has a problem.
 // This function is used to verify imported keys before saving
@@ -40,7 +46,7 @@ func ValidateKeyPem(keyPem string) (string, string, error) {
 func PemStringToKey(keyPem string, algorithmValue string) (crypto.PrivateKey, error) {
 	// require algorithm validation
 	if algorithmValue == "" {
-		return nil, errors.New("key_crypto: algorithmValue must be specified")
+		return nil, errMissingAlgorithm
 	}
 
 	// translate pem to private key and verify that key pem is of the specified
@@ -64,7 +70,7 @@ func pemStringDecode(keyPem string, algorithmValue string) (crypto.PrivateKey, s
 	// decode
 	pemBlock, _ := pem.Decode([]byte(keyPem))
 	if pemBlock == nil {
-		return "", "", errors.New("key_crypto: failed to decode pem")
+		return "", "", errUnsupportedPem
 	}
 
 	// parsing depends on block type
@@ -141,16 +147,16 @@ func pemStringDecode(keyPem string, algorithmValue string) (crypto.PrivateKey, s
 			privateKey = pkcs8Key
 
 		default:
-			return nil, "", errors.New("key_crypto: unsupported key type")
+			return nil, "", errUnsupportedPem
 		}
 
 	default:
-		return nil, "", errors.New("key_crypto: unsupported pem block type")
+		return nil, "", errUnsupportedPem
 	}
 
 	// if an algorithmValue was specified in function call, verify the pem matches
 	if algorithmValue != "" && algorithmValue != pemAlgorithValue {
-		return nil, "", errors.New("key_crypto: pem does not match algorithm")
+		return nil, "", errMismatchAlgorithm
 	}
 
 	return privateKey, pemAlgorithValue, nil

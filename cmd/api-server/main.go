@@ -43,9 +43,9 @@ func main() {
 	}
 
 	// launch webserver
-	app.GetLogger().Println("Starting server on host", webCfg.host, "port", webCfg.port)
+	app.GetLogger().Infof("starting lego-certhub on %s:%d", webCfg.host, webCfg.port)
 	err = srv.ListenAndServe()
 	if err != nil {
-		app.GetLogger().Println(err)
+		app.GetLogger().Panicf("failed to start server %s", err)
 	}
 }

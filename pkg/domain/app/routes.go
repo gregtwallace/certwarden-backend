@@ -16,12 +16,12 @@ func (app *Application) Routes() http.Handler {
 
 	// private_keys
 	app.Handler(http.MethodGet, "/api/v1/privatekeys", app.keys.GetAllKeys)
-	app.router.HandlerFunc(http.MethodPost, "/api/v1/privatekeys", app.keys.PostNewKey)
+	app.Handler(http.MethodPost, "/api/v1/privatekeys", app.keys.PostNewKey)
 
 	app.Handler(http.MethodGet, "/api/v1/privatekeys/:id", app.keys.GetOneKey)
-	app.router.HandlerFunc(http.MethodPut, "/api/v1/privatekeys/:id", app.keys.PutNameDescKey)
+	app.Handler(http.MethodPut, "/api/v1/privatekeys/:id", app.keys.PutNameDescKey)
 
-	app.router.HandlerFunc(http.MethodDelete, "/api/v1/privatekeys/:id", app.keys.DeleteKey)
+	app.Handler(http.MethodDelete, "/api/v1/privatekeys/:id", app.keys.DeleteKey)
 
 	// acme_accounts
 	app.router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts", app.accounts.GetAllAccounts)

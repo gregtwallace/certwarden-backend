@@ -13,7 +13,7 @@ type App interface {
 	GetKeysService() *private_keys.Service
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
-	GetLogger() *log.Logger
+	GetOldLogger() *log.Logger
 }
 
 // Storage interface for storage functions
@@ -44,7 +44,7 @@ func NewService(app App) (*Service, error) {
 	service := new(Service)
 
 	// logger
-	service.logger = app.GetLogger()
+	service.logger = app.GetOldLogger()
 	if service.logger == nil {
 		return nil, errors.New("acme_accounts: newservice requires valid logger")
 	}

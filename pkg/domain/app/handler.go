@@ -2,15 +2,16 @@ package app
 
 import (
 	"legocerthub-backend/pkg/output"
-	"log"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 // Handler struct adds an error handling layer to handler functions. It includes
 // logger so errors can be logged and the handlerFunc is in the format the handler
 // functions will be in
 type Handler struct {
-	logger      *log.Logger
+	logger      *zap.SugaredLogger
 	handlerFunc func(w http.ResponseWriter, r *http.Request) error
 }
 
@@ -26,11 +27,13 @@ func (handler Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// if there was an error, log it and write error JSON
 	if err != nil {
-		handler.logger.Printf("error %s: %s", r.URL.Path, err.Error())
-
-		writeErr := output.WriteErrorJSON(w, err)
+		writtenErr, writeErr := output.WriteErrorJSON(w, err)
 		if writeErr != nil {
-			handler.logger.Printf("error %s: failed to write json (%s)", r.URL.Path, writeErr.Error())
+			handler.logger.Errorf("failed to send error to client for %s: failed to write json (%s)", r.URL.Path, writeErr.Error())
+		} else {
+			handler.logger.Debugf("error sent to client for %s: %s", r.URL.Path, writtenErr)
 		}
+	} else {
+		handler.logger.Debugf("%s %s: handled without error", r.Method, r.URL.Path)
 	}
 }

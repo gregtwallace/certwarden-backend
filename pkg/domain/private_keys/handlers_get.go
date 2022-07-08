@@ -1,8 +1,10 @@
 package private_keys
 
 import (
+	"database/sql"
 	"errors"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
+	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/utils"
 	"net/http"
 	"strconv"
@@ -10,57 +12,68 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// GetAllKeys returns all of the private keys in storage as JSON
-func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) error {
+var errBodyExists = errors.New("body is not empty")
 
+// GetAllKeys returns all of the private keys in storage as JSON
+func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) (err error) {
+	// get keys from storage
 	keys, err := service.storage.GetAllKeys()
 	if err != nil {
-		service.logger.Printf("keys: GetAll: db failed -- err: %s", err)
-		return err
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
 	}
 
-	err = utils.WriteJSON(w, http.StatusOK, keys, "private_keys")
+	// return response to client
+	_, err = output.WriteJSON(w, http.StatusOK, keys, "private_keys")
 	if err != nil {
-		service.logger.Printf("keys: GetAll: write json failed -- err: %s", err)
-		return err
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
 	}
 
 	return nil
 }
 
-// Get a single private keys in our DB and write it as JSON to the API
-func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) error {
+// GetOneKey returns a single private key as JSON
+func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err error) {
+	// convert id param to an integer
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
-
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
-		service.logger.Printf("keys: GetOne: id param error -- err: %s", err)
-		return err
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 
 	// if id is new provide algo options list
 	err = utils.IsIdNew(&id)
 	if err == nil {
 		// run the new key options handler if the id is new
-		err = service.GetNewKeyOptions(w, r)
-		return err
-	} else if id < 0 {
-		// if id < 0 & not new, it is definitely not valid
-		err = errors.New("keys: GetOne: id param is invalid (less than 0 and not new)")
-		service.logger.Println(err)
-		return err
+		return service.GetNewKeyOptions(w, r)
 	}
 
+	// if id < 0 & not new, it is definitely not valid
+	err = utils.IsIdExisting(&id)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// get the key from storage
 	key, err := service.storage.GetOneKeyById(id)
 	if err != nil {
-		service.logger.Printf("keys: GetOne: db failed -- err: %s", err)
-		return err
+		if err == sql.ErrNoRows {
+			service.logger.Debug(err)
+			return output.ErrStorageNoRecord
+		} else {
+			service.logger.Error(err)
+			return output.ErrStorageGeneric
+		}
 	}
 
-	err = utils.WriteJSON(w, http.StatusOK, key, "private_key")
+	// return response to client
+	_, err = output.WriteJSON(w, http.StatusOK, key, "private_key")
 	if err != nil {
-		service.logger.Printf("keys: GetOne: write json failed -- err: %s", err)
-		return err
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
 	}
 
 	return nil
@@ -71,10 +84,11 @@ func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request)
 	newKeyOptions := newKeyOptions{}
 	newKeyOptions.KeyAlgorithms = key_crypto.ListOfAlgorithms()
 
-	err := utils.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
+	// return response to client
+	_, err := output.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
 	if err != nil {
-		service.logger.Printf("keys: GetNewKeyOptions: write json failed -- err: %s", err)
-		return err
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
 	}
 
 	return nil

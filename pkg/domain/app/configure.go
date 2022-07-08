@@ -19,8 +19,11 @@ func CreateAndConfigure() (*Application, error) {
 	app := new(Application)
 	var err error
 
-	// logger
-	app.logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
+	// logger (zap)
+	app.initZapLogger()
+
+	// TODO remove old logger
+	app.oldLogger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
 	// storage
 	app.storage, err = sqlite.OpenStorage()

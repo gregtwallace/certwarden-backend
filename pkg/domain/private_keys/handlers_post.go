@@ -2,8 +2,8 @@ package private_keys
 
 import (
 	"encoding/json"
-	"errors"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
+	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/utils"
 	"net/http"
 )
@@ -18,46 +18,39 @@ type NewPayload struct {
 }
 
 // PostNewKey creates a new private key and saves it to storage
-func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
+func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err error) {
 	var payload NewPayload
 
-	err := json.NewDecoder(r.Body).Decode(&payload)
+	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		service.logger.Printf("keys: PostNew: failed to decode json -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 
 	/// do validation
 	// id
 	err = utils.IsIdNew(payload.ID)
 	if err != nil {
-		service.logger.Printf("keys: PostNew: invalid id -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 	// name
 	err = service.isNameValid(payload.ID, payload.Name)
 	if err != nil {
-		service.logger.Printf("keys: PostNew: invalid name -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 
 	/// key add method
 	// error if no method specified
 	if (payload.AlgorithmValue == nil || *payload.AlgorithmValue == "") && (payload.PemContent == nil || *payload.PemContent == "") {
-		err = errors.New("keys: PostNew: no add method specified")
-		service.logger.Println(err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(ErrBadKey)
+		return output.ErrValidationFailed
 	}
 	// error if more than one method specified
 	if (payload.AlgorithmValue != nil && *payload.AlgorithmValue != "") && (payload.PemContent != nil && *payload.PemContent != "") {
-		err = errors.New("keys: PostNew: multiple add methods specified")
-		service.logger.Println(err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(ErrBadKey)
+		return output.ErrValidationFailed
 	}
 	// generate or verify the key
 	// generate with algorithm, error if fails
@@ -66,9 +59,8 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 		payload.PemContent = new(string)
 		*payload.PemContent, err = key_crypto.GeneratePrivateKeyPem(*payload.AlgorithmValue)
 		if err != nil {
-			service.logger.Printf("keys: PostNew: failed to generate key pem -- err: %s", err)
-			utils.WriteErrorJSON(w, err)
-			return
+			service.logger.Debug(err)
+			return output.ErrValidationFailed
 		}
 	} else if payload.PemContent != nil && *payload.PemContent != "" {
 		// pem inputted - verify pem and determine algorithm
@@ -76,27 +68,25 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) {
 		payload.AlgorithmValue = new(string)
 		*payload.PemContent, *payload.AlgorithmValue, err = key_crypto.ValidateKeyPem(*payload.PemContent)
 		if err != nil {
-			service.logger.Printf("keys: PostNew: failed to verify pem -- err: %s", err)
-			utils.WriteErrorJSON(w, err)
-			return
+			service.logger.Debug(err)
+			return output.ErrValidationFailed
 		}
 	}
 	///
 
-	err = service.storage.PostNewKey(payload)
+	// save new key to storage, which also returns the new key
+	key, err := service.storage.PostNewKey(payload)
 	if err != nil {
-		service.logger.Printf("keys: PostNew: failed to write to db -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
 	}
 
-	response := utils.JsonResp{
-		OK: true,
-	}
-	err = utils.WriteJSON(w, http.StatusOK, response, "response")
+	// return response to client
+	_, err = output.WriteJSON(w, http.StatusCreated, key, "response")
 	if err != nil {
-		service.logger.Printf("keys: PostNew: write response json failed -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
 	}
+
+	return nil
 }

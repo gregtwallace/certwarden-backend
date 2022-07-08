@@ -7,7 +7,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 )
 
 // GeneratePrivateKeyPem generates a key in PEM format based on the
@@ -24,7 +23,8 @@ func GeneratePrivateKeyPem(algorithmValue string) (string, error) {
 	} else if algorithm.KeyType == "EC" {
 		return generateECDSAPrivateKeyPem(algorithm.EllipticCurveFunc())
 	}
-	return "", errors.New("key generation: invalid algorithm value")
+
+	return "", errUnsupportedAlgorithm
 }
 
 // generateRSAPrivateKeyPem generates an RSA key of specified number of bits

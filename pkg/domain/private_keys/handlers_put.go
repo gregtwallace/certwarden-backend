@@ -2,7 +2,7 @@ package private_keys
 
 import (
 	"encoding/json"
-	"legocerthub-backend/pkg/utils"
+	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
 
@@ -18,55 +18,52 @@ type NameDescPayload struct {
 
 // PutExistingKey updates a key that already exists in storage.
 // only the name and description are allowed to be modified
-func (service *Service) PutNameDescKey(w http.ResponseWriter, r *http.Request) {
+func (service *Service) PutNameDescKey(w http.ResponseWriter, r *http.Request) (err error) {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+
+	// convert id param to an integer
 	idParam, err := strconv.Atoi(idParamStr)
 	if err != nil {
-		service.logger.Printf("keys: PutExisting: invalid idParam -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 
 	var payload NameDescPayload
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		service.logger.Printf("keys: PutOne: failed to decode json -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 
 	/// validation
 	// id
 	err = service.isIdExisting(idParam, payload.ID)
 	if err != nil {
-		service.logger.Printf("keys: PutOne: invalid id -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 	// name
 	err = service.isNameValid(payload.ID, payload.Name)
 	if err != nil {
-		service.logger.Printf("keys: PutOne: invalid name -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
 	///
 
-	// PUT key payload
-	err = service.storage.PutNameDescKey(payload)
+	// save key name and desc to storage, which also returns the key id with new
+	// name and description
+	key, err := service.storage.PutNameDescKey(payload)
 	if err != nil {
-		service.logger.Printf("keys: PutOne: failed to write to db -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
 	}
 
-	response := utils.JsonResp{
-		OK: true,
-	}
-	err = utils.WriteJSON(w, http.StatusOK, response, "response")
+	// return response to client
+	_, err = output.WriteJSON(w, http.StatusOK, key, "private_key")
 	if err != nil {
-		service.logger.Printf("keys: PutOne: write json failed -- err: %s", err)
-		utils.WriteErrorJSON(w, err)
-		return
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
 	}
+
+	return nil
 }

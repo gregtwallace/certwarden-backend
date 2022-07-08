@@ -2,7 +2,7 @@ package sqlite
 
 import (
 	"context"
-	"errors"
+	"database/sql"
 )
 
 // DeleteKey deletes a private key from the database
@@ -28,8 +28,11 @@ func (storage *Storage) DeleteKey(id int) error {
 	if err != nil {
 		return err
 	}
+
+	// if the record wasn't found, return no rows error
+	// not exactly the purpose of this error, but it'll do
 	if resultRows == 0 {
-		return errors.New("keys: Delete: failed to db delete -- 0 rows changed")
+		return sql.ErrNoRows
 	}
 
 	return nil

@@ -9,7 +9,7 @@ import (
 // App interface is for connecting to the main app
 type App interface {
 	//GetAccountStorage() Storage
-	GetLogger() *log.Logger
+	GetOldLogger() *log.Logger
 }
 
 // Acme service struct
@@ -26,9 +26,9 @@ func NewService(app App, dirUri string) (*Service, error) {
 	var err error
 
 	// logger
-	service.logger = app.GetLogger()
+	service.logger = app.GetOldLogger()
 	if service.logger == nil {
-		return nil, errors.New("acme: newservice requires valid storage")
+		return nil, errors.New("acme: newservice requires valid logger")
 	}
 
 	// acme directory

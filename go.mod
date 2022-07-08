@@ -5,6 +5,12 @@ go 1.18
 require github.com/julienschmidt/httprouter v1.3.0
 require github.com/mattn/go-sqlite3 v1.14.12
 
+require (
+	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/multierr v1.8.0 // indirect
+	go.uber.org/zap v1.21.0 // indirect
+)
+
 replace legocerthub-backend/pkg/acme => /pkg/acme
 replace legocerthub-backend/pkg/acme/nonces => /pkg/acme/nonces
 replace legocerthub-backend/pkg/domain/acme_accounts => /pkg/domain/acme_accounts

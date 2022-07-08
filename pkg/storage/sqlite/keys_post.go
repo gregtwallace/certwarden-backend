@@ -26,14 +26,14 @@ func newKeyPayloadToDb(payload private_keys.NewPayload) keyDb {
 }
 
 // dbPostNewKey creates a new key based on what was POSTed
-func (storage *Storage) PostNewKey(payload private_keys.NewPayload) (err error) {
+func (storage *Storage) PostNewKey(payload private_keys.NewPayload) (key private_keys.Key, err error) {
 	// load payload fields into db struct
-	key := newKeyPayloadToDb(payload)
+	keyDb := newKeyPayloadToDb(payload)
 
 	// generate api key
-	key.apiKey, err = utils.GenerateApiKey()
+	keyDb.apiKey, err = utils.GenerateApiKey()
 	if err != nil {
-		return err
+		return private_keys.Key{}, err
 	}
 
 	// database action
@@ -43,20 +43,28 @@ func (storage *Storage) PostNewKey(payload private_keys.NewPayload) (err error) 
 	query := `
 	INSERT INTO private_keys (name, description, algorithm, pem, api_key, created_at, updated_at)
 	VALUES ($1, $2, $3, $4, $5, $6, $7)
+	RETURNING id
 	`
 
-	_, err = storage.Db.ExecContext(ctx, query,
-		key.name,
-		key.description,
-		key.algorithmValue,
-		key.pem,
-		key.apiKey,
-		key.createdAt,
-		key.updatedAt,
-	)
+	// insert and scan the new id
+	err = storage.Db.QueryRowContext(ctx, query,
+		keyDb.name,
+		keyDb.description,
+		keyDb.algorithmValue,
+		keyDb.pem,
+		keyDb.apiKey,
+		keyDb.createdAt,
+		keyDb.updatedAt,
+	).Scan(&keyDb.id)
+
 	if err != nil {
-		return err
+		return private_keys.Key{}, err
 	}
 
-	return nil
+	key, err = keyDb.keyDbToKey()
+	if err != nil {
+		return private_keys.Key{}, err
+	}
+
+	return key, nil
 }

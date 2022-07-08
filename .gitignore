@@ -1,2 +1,5 @@
 # database files
 *.db
+
+# log file
+lego-certhub.log.json

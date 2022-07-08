@@ -5,6 +5,8 @@ import (
 	"errors"
 )
 
+var errUnsupportedAlgorithm = errors.New("unsupported algorithm")
+
 // Algorithm is a type to hold key algorithms
 type Algorithm struct {
 	Value             string                `json:"value"`
@@ -67,7 +69,7 @@ func AlgorithmByValue(value string) (Algorithm, error) {
 		}
 	}
 
-	return Algorithm{}, errors.New("key_crypto: unsupported algorithm")
+	return Algorithm{}, errUnsupportedAlgorithm
 }
 
 // function to return algorithm value for an RSA algorithm of specified bits
@@ -78,7 +80,7 @@ func rsaAlgorithmByBits(bits int) (string, error) {
 			return item.Value, nil
 		}
 	}
-	return "", errors.New("key_crypto: unsupported rsa algorithm")
+	return "", errUnsupportedAlgorithm
 }
 
 // function to return algorithm value for an ECDSA algorithm with specified curve name
@@ -89,5 +91,5 @@ func ecdsaAlgorithmByCurve(curveName string) (string, error) {
 			return item.Value, nil
 		}
 	}
-	return "", errors.New("key_crypto: unsupported ecdsa algorithm")
+	return "", errUnsupportedAlgorithm
 }

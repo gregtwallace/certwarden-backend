@@ -6,6 +6,8 @@ import (
 	"legocerthub-backend/pkg/utils"
 )
 
+var ErrBadKey = errors.New("invalid pem or generation method")
+
 // IsIdExistingValid returns an error if not valid, nil if valid
 // we'll generally assume the id is valid if >= 0
 func (service *Service) isIdExisting(idParam int, idPayload *int) error {
