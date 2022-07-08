@@ -12,16 +12,16 @@ func (app *Application) Routes() http.Handler {
 	app.router = httprouter.New()
 
 	// app
-	app.router.HandlerFunc(http.MethodGet, "/api/status", app.statusHandler)
+	app.makeHandle(http.MethodGet, "/api/status", app.statusHandler)
 
 	// private_keys
-	app.Handler(http.MethodGet, "/api/v1/privatekeys", app.keys.GetAllKeys)
-	app.Handler(http.MethodPost, "/api/v1/privatekeys", app.keys.PostNewKey)
+	app.makeHandle(http.MethodGet, "/api/v1/privatekeys", app.keys.GetAllKeys)
+	app.makeHandle(http.MethodPost, "/api/v1/privatekeys", app.keys.PostNewKey)
 
-	app.Handler(http.MethodGet, "/api/v1/privatekeys/:id", app.keys.GetOneKey)
-	app.Handler(http.MethodPut, "/api/v1/privatekeys/:id", app.keys.PutNameDescKey)
+	app.makeHandle(http.MethodGet, "/api/v1/privatekeys/:id", app.keys.GetOneKey)
+	app.makeHandle(http.MethodPut, "/api/v1/privatekeys/:id", app.keys.PutNameDescKey)
 
-	app.Handler(http.MethodDelete, "/api/v1/privatekeys/:id", app.keys.DeleteKey)
+	app.makeHandle(http.MethodDelete, "/api/v1/privatekeys/:id", app.keys.DeleteKey)
 
 	// acme_accounts
 	app.router.HandlerFunc(http.MethodGet, "/api/v1/acmeaccounts", app.accounts.GetAllAccounts)
@@ -36,7 +36,7 @@ func (app *Application) Routes() http.Handler {
 	app.router.HandlerFunc(http.MethodDelete, "/api/v1/acmeaccounts/:id", app.accounts.DeleteAccount)
 
 	// invalid route
-	app.router.NotFound = http.HandlerFunc(app.notFoundHandler)
+	app.router.NotFound = app.makeHandler(app.notFoundHandler)
 
 	return app.enableCORS(app.router)
 }

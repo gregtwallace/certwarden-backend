@@ -27,7 +27,7 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err e
 	if err != nil {
 		if err == sql.ErrNoRows {
 			service.logger.Debug(err)
-			return output.ErrStorageNoRecord
+			return output.ErrNotFound
 		} else {
 			service.logger.Error(err)
 			return output.ErrStorageGeneric

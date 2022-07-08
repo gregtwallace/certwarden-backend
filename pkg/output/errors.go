@@ -3,9 +3,11 @@ package output
 import "fmt"
 
 var (
+	// generic
+	ErrNotFound = Error{Status: 404, Message: "not found"}
+
 	// storage errors
-	ErrStorageNoRecord = Error{Status: 404, Message: "no record"}
-	ErrStorageGeneric  = Error{Status: 500, Message: "storage error"}
+	ErrStorageGeneric = Error{Status: 500, Message: "storage error"}
 
 	// json
 	ErrWriteJsonFailed = Error{Status: 500, Message: "json response write failed"}
