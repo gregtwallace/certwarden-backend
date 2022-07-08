@@ -10,6 +10,7 @@ import (
 type JsonResponse struct {
 	Status  int    `json:"status"`
 	Type    string `json:"type,omitempty"`
+	ID      int    `json:"record_id,omitempty"`
 	Message any    `json:"message"`
 }
 

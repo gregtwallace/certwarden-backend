@@ -3,7 +3,6 @@ package acme_accounts
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/utils"
@@ -66,7 +65,8 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	// return response to client
 	response := output.JsonResponse{
 		Status:  http.StatusOK,
-		Message: fmt.Sprintf("updated (id: %d)", idParam),
+		Message: "updated",
+		ID:      idParam,
 	}
 
 	_, err = output.WriteJSON(w, response.Status, response, "response")
@@ -165,7 +165,8 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 	// return response to client
 	response := output.JsonResponse{
 		Status:  http.StatusOK,
-		Message: fmt.Sprintf("updated (id: %d)", idParam),
+		Message: "updated",
+		ID:      idParam,
 	}
 
 	_, err = output.WriteJSON(w, response.Status, response, "response")

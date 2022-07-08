@@ -2,7 +2,6 @@ package private_keys
 
 import (
 	"encoding/json"
-	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
@@ -62,7 +61,8 @@ func (service *Service) PutNameDescKey(w http.ResponseWriter, r *http.Request) (
 	// return response to client
 	response := output.JsonResponse{
 		Status:  http.StatusOK,
-		Message: fmt.Sprintf("updated (id: %d)", idParam),
+		Message: "updated",
+		ID:      idParam,
 	}
 
 	_, err = output.WriteJSON(w, response.Status, response, "response")

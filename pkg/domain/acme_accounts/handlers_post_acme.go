@@ -2,7 +2,6 @@ package acme_accounts
 
 import (
 	"database/sql"
-	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
 	"net/http"
@@ -68,7 +67,8 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (
 	// return response to client
 	response := output.JsonResponse{
 		Status:  http.StatusOK,
-		Message: fmt.Sprintf("registered (id: %d)", idParam),
+		Message: "registered",
+		ID:      idParam,
 	}
 
 	_, err = output.WriteJSON(w, response.Status, response, "response")
@@ -138,7 +138,8 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) (err 
 	// return response to client
 	response := output.JsonResponse{
 		Status:  http.StatusOK,
-		Message: fmt.Sprintf("deactivated (id: %d)", idParam),
+		Message: "deactivated",
+		ID:      idParam,
 	}
 
 	_, err = output.WriteJSON(w, response.Status, response, "response")
