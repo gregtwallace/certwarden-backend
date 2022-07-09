@@ -93,7 +93,7 @@ func (store *Storage) DeleteAccount(id int) error {
 		id = $1
 	`
 
-	_, err = store.Db.ExecContext(ctx, query, id)
+	_, err = tx.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
