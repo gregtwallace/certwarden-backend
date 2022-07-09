@@ -1,8 +1,8 @@
 package private_keys
 
 import (
-	"database/sql"
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/storage"
 	"net/http"
 	"strconv"
 
@@ -25,9 +25,10 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err e
 	// delete from storage
 	err = service.storage.DeleteKey(id)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			service.logger.Debug(err)
-			return output.ErrNotFound
+		// special error case for in use
+		if err == storage.ErrInUse {
+			service.logger.Warn(err)
+			return output.ErrDeleteInUse
 		} else {
 			service.logger.Error(err)
 			return output.ErrStorageGeneric

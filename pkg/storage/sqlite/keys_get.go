@@ -2,8 +2,10 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
+	"legocerthub-backend/pkg/storage"
 )
 
 // KeyDbToKey translates the db object into the object the key service expects
@@ -34,14 +36,14 @@ func (keyDb *keyDb) keyDbToKey() (private_keys.Key, error) {
 }
 
 // dbGetAllPrivateKeys writes information about all private keys to json
-func (storage Storage) GetAllKeys() ([]private_keys.Key, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+func (store Storage) GetAllKeys() ([]private_keys.Key, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `SELECT id, name, description, algorithm
 	FROM private_keys ORDER BY name`
 
-	rows, err := storage.Db.QueryContext(ctx, query)
+	rows, err := store.Db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -72,18 +74,18 @@ func (storage Storage) GetAllKeys() ([]private_keys.Key, error) {
 }
 
 // GetOneKeyById returns a key based on its unique id
-func (storage *Storage) GetOneKeyById(id int) (private_keys.Key, error) {
-	return storage.getOneKey(id, "")
+func (store *Storage) GetOneKeyById(id int) (private_keys.Key, error) {
+	return store.getOneKey(id, "")
 }
 
 // GetOneKeyByName returns a key based on its unique name
-func (storage *Storage) GetOneKeyByName(name string) (private_keys.Key, error) {
-	return storage.getOneKey(-1, name)
+func (store *Storage) GetOneKeyByName(name string) (private_keys.Key, error) {
+	return store.getOneKey(-1, name)
 }
 
 // dbGetOneKey returns a key from the db based on unique id or unique name
-func (storage Storage) getOneKey(id int, name string) (private_keys.Key, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `SELECT id, name, description, algorithm, pem, api_key, created_at, updated_at
@@ -91,7 +93,7 @@ func (storage Storage) getOneKey(id int, name string) (private_keys.Key, error) 
 	WHERE id = $1 OR name = $2
 	`
 
-	row := storage.Db.QueryRowContext(ctx, query, id, name)
+	row := store.Db.QueryRowContext(ctx, query, id, name)
 
 	var oneKeyDb keyDb
 	err := row.Scan(
@@ -106,6 +108,10 @@ func (storage Storage) getOneKey(id int, name string) (private_keys.Key, error) 
 	)
 
 	if err != nil {
+		// if no record exists
+		if err == sql.ErrNoRows {
+			err = storage.ErrNoRecord
+		}
 		return private_keys.Key{}, err
 	}
 
@@ -119,8 +125,8 @@ func (storage Storage) getOneKey(id int, name string) (private_keys.Key, error) 
 
 // GetAvailableKeys returns a slice of private keys that exist but are not already associated
 // with a known ACME account or certificate
-func (storage *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	// TODO - Once certs are added, need to check that table as well for keys in use
@@ -140,7 +146,7 @@ func (storage *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 		ORDER BY name
 	`
 
-	rows, err := storage.Db.QueryContext(ctx, query)
+	rows, err := store.Db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}

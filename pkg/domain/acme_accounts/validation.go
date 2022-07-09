@@ -2,14 +2,13 @@ package acme_accounts
 
 import (
 	"database/sql"
-	"errors"
-	"legocerthub-backend/pkg/utils"
+	"legocerthub-backend/pkg/validation"
 )
 
 // isAccountIdExisting returns an error if not valid, nil if valid
 func (service *Service) isIdExisting(idParam int, idPayload *int) error {
 	// basic check
-	err := utils.IsIdExistingMatch(idParam, idPayload)
+	err := validation.IsIdExistingMatch(idParam, idPayload)
 	if err != nil {
 		return err
 	}
@@ -26,7 +25,7 @@ func (service *Service) isIdExisting(idParam int, idPayload *int) error {
 // isNameValid returns an error if not valid, nil if valid
 func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 	// basic check
-	err := utils.IsNameValid(namePayload)
+	err := validation.IsNameValid(namePayload)
 	if err != nil {
 		return err
 	}
@@ -47,5 +46,5 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 		return nil
 	}
 
-	return errors.New("name already in use")
+	return validation.ErrNameInUse
 }

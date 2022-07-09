@@ -31,7 +31,7 @@ func nameDescAccountPayloadToDb(payload acme_accounts.NameDescPayload) (accountD
 
 // putExistingAccountNameDesc only updates the name and desc in the database
 // refactor to more generic for anything that can be updated??
-func (storage *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) (err error) {
+func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) (err error) {
 	// Load payload into db obj
 	accountDb, err := nameDescAccountPayloadToDb(payload)
 	if err != nil {
@@ -39,7 +39,7 @@ func (storage *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload
 	}
 
 	// database update
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `
@@ -52,7 +52,7 @@ func (storage *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload
 		id = $3
 	`
 
-	_, err = storage.Db.ExecContext(ctx, query,
+	_, err = store.Db.ExecContext(ctx, query,
 		accountDb.name,
 		accountDb.description,
 		accountDb.id,
@@ -87,11 +87,11 @@ func leAccountResponseToDb(id int, response acme.AcmeAccountResponse) accountDb 
 
 // PutLEAccountResponse populates an account with data that is returned by LE when
 //  an account is POSTed to
-func (storage *Storage) PutLEAccountResponse(id int, response acme.AcmeAccountResponse) error {
+func (store *Storage) PutLEAccountResponse(id int, response acme.AcmeAccountResponse) error {
 	// Load id and response into db obj
 	accountDb := leAccountResponseToDb(id, response)
 
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `
@@ -106,7 +106,7 @@ func (storage *Storage) PutLEAccountResponse(id int, response acme.AcmeAccountRe
 	WHERE
 		id = $6`
 
-	_, err := storage.Db.ExecContext(ctx, query,
+	_, err := store.Db.ExecContext(ctx, query,
 		accountDb.status,
 		accountDb.email,
 		accountDb.createdAt,

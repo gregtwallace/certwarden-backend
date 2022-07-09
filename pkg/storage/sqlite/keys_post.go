@@ -26,7 +26,7 @@ func newKeyPayloadToDb(payload private_keys.NewPayload) keyDb {
 }
 
 // dbPostNewKey creates a new key based on what was POSTed
-func (storage *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err error) {
+func (store *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err error) {
 	// load payload fields into db struct
 	keyDb := newKeyPayloadToDb(payload)
 
@@ -37,7 +37,7 @@ func (storage *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err
 	}
 
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `
@@ -47,7 +47,7 @@ func (storage *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err
 	`
 
 	// insert and scan the new id
-	err = storage.Db.QueryRowContext(ctx, query,
+	err = store.Db.QueryRowContext(ctx, query,
 		keyDb.name,
 		keyDb.description,
 		keyDb.algorithmValue,

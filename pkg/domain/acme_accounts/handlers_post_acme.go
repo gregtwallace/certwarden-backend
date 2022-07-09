@@ -1,7 +1,6 @@
 package acme_accounts
 
 import (
-	"database/sql"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
 	"net/http"
@@ -26,13 +25,8 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (
 	// fetch the relevant account
 	account, err := service.storage.GetOneAccountById(idParam)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			service.logger.Debug(err)
-			return output.ErrNotFound
-		} else {
-			service.logger.Error(err)
-			return output.ErrStorageGeneric
-		}
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
 	}
 
 	// no need to validate, can try to register any account
@@ -97,13 +91,8 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) (err 
 	// fetch the relevant account
 	account, err := service.storage.GetOneAccountById(idParam)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			service.logger.Debug(err)
-			return output.ErrNotFound
-		} else {
-			service.logger.Error(err)
-			return output.ErrStorageGeneric
-		}
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
 	}
 
 	// no need to validate, can try to deactivate any account

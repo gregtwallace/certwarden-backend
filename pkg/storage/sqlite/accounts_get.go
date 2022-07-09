@@ -38,8 +38,8 @@ func (accountDb *accountDb) accountDbToAcc() (acme_accounts.Account, error) {
 }
 
 // GetAllAccounts returns a slice of all of the Accounts in the database
-func (storage *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+func (store *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, pk.description,
@@ -49,7 +49,7 @@ func (storage *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
 	ORDER BY aa.name`
 
-	rows, err := storage.Db.QueryContext(ctx, query)
+	rows, err := store.Db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -87,18 +87,18 @@ func (storage *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 }
 
 // GetOneAccountById returns an Account based on its unique id
-func (storage *Storage) GetOneAccountById(id int) (acme_accounts.Account, error) {
-	return storage.getOneAccount(id, "")
+func (store *Storage) GetOneAccountById(id int) (acme_accounts.Account, error) {
+	return store.getOneAccount(id, "")
 }
 
 // GetOneAccountByName returns an Account based on its unique name
-func (storage *Storage) GetOneAccountByName(name string) (acme_accounts.Account, error) {
-	return storage.getOneAccount(-1, name)
+func (store *Storage) GetOneAccountByName(name string) (acme_accounts.Account, error) {
+	return store.getOneAccount(-1, name)
 }
 
 // getOneAccount returns an Account based on either its unique id or its unique name
-func (storage *Storage) getOneAccount(id int, name string) (acme_accounts.Account, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, pk.description, pk.algorithm, pk.pem, 
@@ -109,7 +109,7 @@ func (storage *Storage) getOneAccount(id int, name string) (acme_accounts.Accoun
 	WHERE aa.id = $1 OR aa.name = $2
 	ORDER BY aa.id`
 
-	row := storage.Db.QueryRowContext(ctx, query, id, name)
+	row := store.Db.QueryRowContext(ctx, query, id, name)
 
 	var oneAccount accountDb
 	// initialize keyDb pointer (or nil deref)
@@ -144,8 +144,8 @@ func (storage *Storage) getOneAccount(id int, name string) (acme_accounts.Accoun
 	return convertedAccount, nil
 }
 
-func (storage *Storage) GetAccountPem(id int) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+func (store *Storage) GetAccountPem(id int) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `SELECT pk.pem
@@ -156,7 +156,7 @@ func (storage *Storage) GetAccountPem(id int) (string, error) {
 		aa.id = $1
 	`
 
-	row := storage.Db.QueryRowContext(ctx, query, id)
+	row := store.Db.QueryRowContext(ctx, query, id)
 	var pem sql.NullString
 	err := row.Scan(&pem)
 
@@ -167,8 +167,8 @@ func (storage *Storage) GetAccountPem(id int) (string, error) {
 	return pem.String, nil
 }
 
-func (storage *Storage) GetAccountKid(id int) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+func (store *Storage) GetAccountKid(id int) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `
@@ -179,7 +179,7 @@ func (storage *Storage) GetAccountKid(id int) (string, error) {
 			id = $1
 	`
 
-	row := storage.Db.QueryRowContext(ctx, query, id)
+	row := store.Db.QueryRowContext(ctx, query, id)
 	var kid sql.NullString
 	err := row.Scan(&kid)
 

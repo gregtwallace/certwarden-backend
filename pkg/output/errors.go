@@ -9,6 +9,7 @@ var (
 
 	// storage errors
 	ErrStorageGeneric = Error{Status: 500, Message: "storage error"}
+	ErrDeleteInUse    = Error{Status: 409, Message: "record in use, can't delete"}
 
 	// json
 	ErrWriteJsonFailed = Error{Status: 500, Message: "json response write failed"}

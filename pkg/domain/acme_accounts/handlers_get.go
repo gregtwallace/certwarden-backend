@@ -1,9 +1,9 @@
 package acme_accounts
 
 import (
-	"database/sql"
 	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/utils"
+	"legocerthub-backend/pkg/storage"
+	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
 
@@ -41,13 +41,13 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (e
 	}
 
 	// if id is new, provide some info
-	err = utils.IsIdNew(&id)
+	err = validation.IsIdNew(&id)
 	if err == nil {
 		return service.GetNewAccountOptions(w, r)
 	}
 
 	// if id < 0 & not new, it is definitely not valid
-	err = utils.IsIdExisting(&id)
+	err = validation.IsIdExisting(&id)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -56,7 +56,8 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (e
 	// get from storage
 	account, err := service.storage.GetOneAccountById(id)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		// special error case for no record found
+		if err == storage.ErrNoRecord {
 			service.logger.Debug(err)
 			return output.ErrNotFound
 		} else {

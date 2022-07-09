@@ -1,4 +1,4 @@
-package utils
+package validation
 
 import (
 	"errors"
@@ -9,24 +9,29 @@ const newId = -1
 
 var (
 	// id
-	errBadId      = errors.New("bad id")
-	errMissingId  = errors.New("missing id")
-	errMismatchId = errors.New("id param and payload mismatch")
+	ErrIdBad      = errors.New("bad id")
+	ErrIdMissing  = errors.New("missing id")
+	ErrIdMismatch = errors.New("id param and payload mismatch")
 
 	// name
-	errBadName     = errors.New("bad name")
-	errMissingName = errors.New("missing name")
+	ErrNameBad     = errors.New("bad name")
+	ErrNameMissing = errors.New("missing name")
+	ErrNameInUse   = errors.New("name already in use")
 
 	// email
-	errBadEmail     = errors.New("bad email")
-	errMissingEmail = errors.New("missing email")
+	ErrEmailBad     = errors.New("bad email")
+	ErrEmailMissing = errors.New("missing email")
+
+	// key
+	ErrKeyBadOption = errors.New("invalid key option")
+	ErrKeyBad       = errors.New("bad private key")
 )
 
 // IsIdNew returns an error if the id isn't the specified new
 // id value, or if the id value isn't nil (unspecified)
 func IsIdNew(id *int) error {
 	if id != nil && *id != newId {
-		return errBadId
+		return ErrIdBad
 	}
 
 	return nil
@@ -38,12 +43,12 @@ func IsIdNew(id *int) error {
 func IsIdExisting(idPayload *int) error {
 	// verify payload id isn't nil
 	if idPayload == nil {
-		return errMissingId
+		return ErrIdMissing
 	}
 
 	// check that the id is not the new id
 	if *idPayload == newId {
-		return errBadId
+		return ErrIdBad
 	}
 
 	// id must be >= 0
@@ -51,7 +56,7 @@ func IsIdExisting(idPayload *int) error {
 		return nil
 	}
 
-	return errBadId
+	return ErrIdBad
 }
 
 // IsIdExistingMatch implements IsIdExisting (not nil, non-new, >= 0) but
@@ -65,7 +70,7 @@ func IsIdExistingMatch(idParam int, idPayload *int) error {
 
 	// check the payload and the URI match
 	if *idPayload != idParam {
-		return errMismatchId
+		return ErrIdMismatch
 	}
 
 	return nil
@@ -77,7 +82,7 @@ func IsIdExistingMatch(idParam int, idPayload *int) error {
 func IsNameValid(namePayload *string) error {
 	// error if not specified
 	if namePayload == nil {
-		return errMissingName
+		return ErrNameMissing
 	}
 
 	regex, err := regexp.Compile("[^-_.~A-z0-9]|[\\^]")
@@ -88,7 +93,7 @@ func IsNameValid(namePayload *string) error {
 
 	invalid := regex.Match([]byte(*namePayload))
 	if invalid || len(*namePayload) <= 0 {
-		return errBadName
+		return ErrNameBad
 	}
 	return nil
 }
@@ -98,7 +103,7 @@ func IsNameValid(namePayload *string) error {
 func IsEmailValid(emailPayload *string) error {
 	// nil check, error
 	if emailPayload == nil {
-		return errMissingEmail
+		return ErrEmailMissing
 	}
 
 	// valid email regex
@@ -108,7 +113,7 @@ func IsEmailValid(emailPayload *string) error {
 		return nil
 	}
 
-	return errBadEmail
+	return ErrEmailBad
 }
 
 // IsEmailValidOrBlank returns an error if not valid, nil if valid
@@ -125,5 +130,5 @@ func IsEmailValidOrBlank(emailPayload *string) (err error) {
 		return err
 	}
 
-	return errBadEmail
+	return ErrEmailBad
 }

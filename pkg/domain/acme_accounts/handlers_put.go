@@ -1,11 +1,10 @@
 package acme_accounts
 
 import (
-	"database/sql"
 	"encoding/json"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/utils"
+	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
 
@@ -112,7 +111,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 		return output.ErrValidationFailed
 	}
 	// email (update cannot be to blank)
-	err = utils.IsEmailValid(payload.Email)
+	err = validation.IsEmailValid(payload.Email)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -122,13 +121,8 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 	// fetch the relevant account
 	account, err := service.storage.GetOneAccountById(idParam)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			service.logger.Debug(err)
-			return output.ErrNotFound
-		} else {
-			service.logger.Error(err)
-			return output.ErrStorageGeneric
-		}
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
 	}
 
 	// get AccountKey

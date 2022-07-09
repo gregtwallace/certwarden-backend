@@ -3,7 +3,7 @@ package acme_accounts
 import (
 	"encoding/json"
 	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/utils"
+	"legocerthub-backend/pkg/validation"
 	"net/http"
 )
 
@@ -30,7 +30,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (
 
 	/// do validation
 	// id
-	err = utils.IsIdNew(payload.ID)
+	err = validation.IsIdNew(payload.ID)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -42,7 +42,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 	// email
-	err = utils.IsEmailValidOrBlank(payload.Email)
+	err = validation.IsEmailValidOrBlank(payload.Email)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -53,7 +53,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 	// private key
-	err = service.keys.IsPrivateKeyValid(payload.PrivateKeyID)
+	err = service.keys.IsPrivateKeyAvailable(payload.PrivateKeyID)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed

@@ -1,18 +1,15 @@
 package private_keys
 
 import (
-	"database/sql"
-	"errors"
-	"legocerthub-backend/pkg/utils"
+	"legocerthub-backend/pkg/storage"
+	"legocerthub-backend/pkg/validation"
 )
-
-var ErrBadKey = errors.New("invalid pem or generation method")
 
 // IsIdExistingValid returns an error if not valid, nil if valid
 // we'll generally assume the id is valid if >= 0
 func (service *Service) isIdExisting(idParam int, idPayload *int) error {
 	// basic check
-	err := utils.IsIdExistingMatch(idParam, idPayload)
+	err := validation.IsIdExistingMatch(idParam, idPayload)
 	if err != nil {
 		return err
 	}
@@ -29,7 +26,7 @@ func (service *Service) isIdExisting(idParam int, idPayload *int) error {
 // isNameValid returns an error if not valid, nil if valid
 func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 	// basic check
-	err := utils.IsNameValid(namePayload)
+	err := validation.IsNameValid(namePayload)
 	if err != nil {
 		return err
 	}
@@ -37,7 +34,7 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 	// make sure the name isn't already in use in storage
 	// the db
 	account, err := service.storage.GetOneKeyByName(*namePayload)
-	if err == sql.ErrNoRows {
+	if err == storage.ErrNoRecord {
 		// no rows means name is not in use
 		return nil
 	} else if err != nil {
@@ -50,7 +47,7 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 		return nil
 	}
 
-	return errors.New("name already in use")
+	return validation.ErrNameInUse
 }
 
 // GetAvailableKeys returns a list of all available keys; storage should
@@ -61,7 +58,7 @@ func (service *Service) GetAvailableKeys() (keys []Key, err error) {
 }
 
 // IsPrivateKeyValid returns an error if the key is not valid and available
-func (service *Service) IsPrivateKeyValid(keyId *int) error {
+func (service *Service) IsPrivateKeyAvailable(keyId *int) error {
 	// get available keys list
 	keys, err := service.storage.GetAvailableKeys()
 	if err != nil {
@@ -75,5 +72,5 @@ func (service *Service) IsPrivateKeyValid(keyId *int) error {
 		}
 	}
 
-	return errors.New("key does not exist or is not available")
+	return validation.ErrKeyBad
 }

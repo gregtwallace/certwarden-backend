@@ -55,7 +55,7 @@ func newAccountPayloadToDb(payload acme_accounts.NewPayload) (accountDb, error) 
 }
 
 // PostNewAccount inserts a new account into the db
-func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (id int, err error) {
+func (store *Storage) PostNewAccount(payload acme_accounts.NewPayload) (id int, err error) {
 	// Load payload into db obj
 	accountDb, err := newAccountPayloadToDb(payload)
 	if err != nil {
@@ -63,10 +63,10 @@ func (storage *Storage) PostNewAccount(payload acme_accounts.NewPayload) (id int
 	}
 
 	// database update
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	tx, err := storage.Db.BeginTx(ctx, nil)
+	tx, err := store.Db.BeginTx(ctx, nil)
 	if err != nil {
 		return -2, err
 	}

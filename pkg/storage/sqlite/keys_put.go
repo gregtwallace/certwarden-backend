@@ -31,7 +31,7 @@ func nameDescKeyPayloadToDb(payload private_keys.NameDescPayload) (keyDb, error)
 
 // dbPutExistingKey sets an existing key equal to the PUT values (overwriting
 //  old values)
-func (storage *Storage) PutNameDescKey(payload private_keys.NameDescPayload) (err error) {
+func (store *Storage) PutNameDescKey(payload private_keys.NameDescPayload) (err error) {
 	// load payload fields into db struct
 	keyDb, err := nameDescKeyPayloadToDb(payload)
 	if err != nil {
@@ -39,7 +39,7 @@ func (storage *Storage) PutNameDescKey(payload private_keys.NameDescPayload) (er
 	}
 
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), storage.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `
@@ -53,7 +53,7 @@ func (storage *Storage) PutNameDescKey(payload private_keys.NameDescPayload) (er
 		id = $4
 	`
 
-	_, err = storage.Db.ExecContext(ctx, query,
+	_, err = store.Db.ExecContext(ctx, query,
 		keyDb.name,
 		keyDb.description,
 		keyDb.updatedAt,
