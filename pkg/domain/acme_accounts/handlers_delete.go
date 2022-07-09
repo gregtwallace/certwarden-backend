@@ -2,7 +2,6 @@ package acme_accounts
 
 import (
 	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/storage"
 	"net/http"
 	"strconv"
 
@@ -20,19 +19,29 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) (e
 		return output.ErrValidationFailed
 	}
 
-	// TODO: Validate not in use, though storage should do this with foreign key check
+	// verify account exists
+	err = service.isIdExisting(id)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrNotFound
+	}
+
+	// confirm account is not in use
+	inUse, err := service.storage.AccountInUse(id)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+	if inUse == true {
+		service.logger.Warn(err)
+		return output.ErrDeleteInUse
+	}
 
 	// delete from storage
 	err = service.storage.DeleteAccount(id)
 	if err != nil {
-		// special error case for in use
-		if err == storage.ErrInUse {
-			service.logger.Warn(err)
-			return output.ErrDeleteInUse
-		} else {
-			service.logger.Error(err)
-			return output.ErrStorageGeneric
-		}
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
 	}
 
 	// return response to client

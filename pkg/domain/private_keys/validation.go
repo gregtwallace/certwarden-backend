@@ -19,7 +19,7 @@ func (service *Service) isIdExisting(id int) (err error) {
 // IsIdExistingMatch returns an error if not valid, nil if valid
 // we'll generally assume the id is valid if >= 0
 func (service *Service) isIdExistingMatch(idParam int, idPayload *int) error {
-	// basic check for match
+	// basic check
 	err := validation.IsIdExistingMatch(idParam, idPayload)
 	if err != nil {
 		return err

@@ -5,7 +5,46 @@ import (
 	"legocerthub-backend/pkg/storage"
 )
 
-// DeleteKey deletes a private key from the database
+// AccountInUse returns a bool if the specified account is in use, it returns
+// an error if the account does not exist (or any other error)
+func (store *Storage) AccountInUse(id int) (inUse bool, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	// check account exists
+	// if scan in succeeds, account exists
+	query := `
+	SELECT id
+	FROM acme_accounts
+	WHERE id = $1
+	`
+
+	row := store.Db.QueryRowContext(ctx, query, id)
+	temp := -2
+	row.Scan(&temp)
+	if temp == -2 {
+		return false, storage.ErrNoRecord
+	}
+
+	// check not in use in certs
+	// if scan in succeeds, record exists in certificates
+	query = `
+	SELECT id
+	FROM certificates
+	WHERE acme_account_id = $1
+	`
+
+	row = store.Db.QueryRowContext(ctx, query, id)
+	temp = -2
+	row.Scan(&temp)
+	if temp != -2 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// DeleteAccount deletes an account from the database
 func (store *Storage) DeleteAccount(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()

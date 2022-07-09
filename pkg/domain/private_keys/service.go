@@ -25,6 +25,7 @@ type Storage interface {
 	DeleteKey(int) error
 
 	GetAvailableKeys() ([]Key, error)
+	KeyInUse(id int) (inUse bool, err error)
 }
 
 // Keys service struct

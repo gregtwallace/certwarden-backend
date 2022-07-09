@@ -31,6 +31,8 @@ type Storage interface {
 	PutLEAccountResponse(id int, response acme.AcmeAccountResponse) error
 
 	DeleteAccount(int) error
+
+	AccountInUse(id int) (inUse bool, err error)
 }
 
 // Accounts service struct

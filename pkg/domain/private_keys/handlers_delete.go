@@ -2,7 +2,6 @@ package private_keys
 
 import (
 	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/storage"
 	"net/http"
 	"strconv"
 
@@ -20,19 +19,29 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err e
 		return output.ErrValidationFailed
 	}
 
-	// TODO: Validate not in use, though storage should do this with foreign key check
+	// verify key exists
+	err = service.isIdExisting(id)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrNotFound
+	}
+
+	// confirm key is not in use
+	inUse, err := service.storage.KeyInUse(id)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+	if inUse == true {
+		service.logger.Warn(err)
+		return output.ErrDeleteInUse
+	}
 
 	// delete from storage
 	err = service.storage.DeleteKey(id)
 	if err != nil {
-		// special error case for in use
-		if err == storage.ErrInUse {
-			service.logger.Warn(err)
-			return output.ErrDeleteInUse
-		} else {
-			service.logger.Error(err)
-			return output.ErrStorageGeneric
-		}
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
 	}
 
 	// return response to client
