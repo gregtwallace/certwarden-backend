@@ -5,17 +5,28 @@ import (
 	"legocerthub-backend/pkg/validation"
 )
 
-// IsIdExistingValid returns an error if not valid, nil if valid
+// isIdExisting returns an error if not valid (ie the key does not exist)
+func (service *Service) isIdExisting(id int) (err error) {
+	// check id exists in storage
+	_, err = service.storage.GetOneKeyById(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// IsIdExistingMatch returns an error if not valid, nil if valid
 // we'll generally assume the id is valid if >= 0
-func (service *Service) isIdExisting(idParam int, idPayload *int) error {
-	// basic check
+func (service *Service) isIdExistingMatch(idParam int, idPayload *int) error {
+	// basic check for match
 	err := validation.IsIdExistingMatch(idParam, idPayload)
 	if err != nil {
 		return err
 	}
 
-	// check id exists in storage
-	_, err = service.storage.GetOneKeyById(*idPayload)
+	// check id exists
+	err = service.isIdExisting(*idPayload)
 	if err != nil {
 		return err
 	}

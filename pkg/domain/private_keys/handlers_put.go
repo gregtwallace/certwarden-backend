@@ -37,7 +37,7 @@ func (service *Service) PutNameDescKey(w http.ResponseWriter, r *http.Request) (
 
 	/// validation
 	// id
-	err = service.isIdExisting(idParam, payload.ID)
+	err = service.isIdExistingMatch(idParam, payload.ID)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
