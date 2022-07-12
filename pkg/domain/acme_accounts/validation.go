@@ -1,7 +1,7 @@
 package acme_accounts
 
 import (
-	"database/sql"
+	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
 )
 
@@ -43,7 +43,7 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 	// make sure the name isn't already in use in storage
 	// the db
 	account, err := service.storage.GetOneAccountByName(*namePayload)
-	if err == sql.ErrNoRows {
+	if err == storage.ErrNoRecord {
 		// no rows means name is not in use
 		return nil
 	} else if err != nil {
