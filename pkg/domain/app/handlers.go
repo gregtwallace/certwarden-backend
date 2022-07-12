@@ -23,7 +23,7 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 	currentStatus := appStatus{
 		Status:  "available",
 		DevMode: app.devMode,
-		Version: version,
+		Version: appVersion,
 		AcmeDirectories: appStatusDirectories{
 			Production: acmeProdUrl,
 			Staging:    acmeStagingUrl,

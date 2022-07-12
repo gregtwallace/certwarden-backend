@@ -1,11 +1,17 @@
 package app
 
 import (
+	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
+	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/storage/sqlite"
+	"runtime"
 )
+
+// application version
+const appVersion = "0.0.1"
 
 // Directory URLs for Let's Encrypt
 const acmeProdUrl string = "https://acme-v02.api.letsencrypt.org/directory"
@@ -18,14 +24,17 @@ func CreateAndConfigure(devMode bool) (*Application, error) {
 	var err error
 
 	// is the server in development mode?
-	// this changes some basic things like: log level, connection timeouts, and
-	// json indent
+	// this changes some basic things like: log level and connection timeouts
 	// This does NOT prevent interactions with ACME production environment!
-	// TODO: Implement these changes
+	// TODO: Implement json indent vs. not?
 	app.devMode = devMode
 
 	// logger (zap)
 	app.initZapLogger()
+
+	// create http client
+	userAgent := fmt.Sprintf("LeGoCertHub/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
+	app.httpClient = httpclient.New(userAgent, devMode)
 
 	// storage
 	app.storage, err = sqlite.OpenStorage()

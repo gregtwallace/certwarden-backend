@@ -3,6 +3,7 @@ package acme
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme/nonces"
+	"legocerthub-backend/pkg/httpclient"
 
 	"go.uber.org/zap"
 )
@@ -11,11 +12,13 @@ import (
 type App interface {
 	//GetAccountStorage() Storage
 	GetLogger() *zap.SugaredLogger
+	GetHttpClient() *httpclient.Client
 }
 
 // Acme service struct
 type Service struct {
 	logger       *zap.SugaredLogger
+	httpClient   *httpclient.Client
 	dirUri       string
 	dir          *acmeDirectory
 	nonceManager *nonces.Manager
@@ -32,6 +35,9 @@ func NewService(app App, dirUri string) (*Service, error) {
 		return nil, errors.New("acme: newservice requires valid logger")
 	}
 
+	// http client
+	service.httpClient = app.GetHttpClient()
+
 	// acme directory
 	service.dirUri = dirUri
 	service.dir = new(acmeDirectory)
@@ -46,7 +52,7 @@ func NewService(app App, dirUri string) (*Service, error) {
 	service.backgroundDirManager()
 
 	// nonce manager
-	service.nonceManager = nonces.NewManager(&service.dir.NewNonce)
+	service.nonceManager = nonces.NewManager(service.httpClient, &service.dir.NewNonce)
 
 	return service, nil
 }

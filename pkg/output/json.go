@@ -28,7 +28,7 @@ func WrapJSON(data interface{}, wrap string) map[string]interface{} {
 func WriteJSON(w http.ResponseWriter, status int, data interface{}, wrap string) (jsonWritten string, err error) {
 	wrappedData := WrapJSON(data, wrap)
 
-	// TO-DO: Replace with regular Marshal (and/or add logic for dev vs. prod)
+	// TODO: Replace with regular Marshal (and/or add logic for dev vs. prod)
 	jsonBytes, err := json.MarshalIndent(wrappedData, "", "\t")
 	// jsonBytes, err := json.Marshal(wrappedData)
 	if err != nil {

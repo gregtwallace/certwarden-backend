@@ -3,7 +3,6 @@ package acme
 import (
 	"encoding/json"
 	"io/ioutil"
-	"net/http"
 	"reflect"
 	"time"
 )
@@ -26,12 +25,9 @@ type acmeDirectory struct {
 // getAcmeDirectory returns an AcmeDirectory object based on data fetched
 // from an ACME directory URI.
 func (service *Service) fetchAcmeDirectory() error {
-	var response *http.Response
-	var err error
-
 	service.logger.Infof("updating directory from %s", service.dirUri)
 
-	response, err = http.Get(service.dirUri)
+	response, err := service.httpClient.Get(service.dirUri)
 
 	if err != nil {
 		return err

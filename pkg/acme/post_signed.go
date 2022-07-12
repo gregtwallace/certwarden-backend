@@ -111,7 +111,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		service.logger.Debugf(string(messageJson))
 
 		// post to ACME
-		response, err = http.Post(url, "application/jose+json", bytes.NewBuffer(messageJson))
+		response, err = service.httpClient.Post(url, "application/jose+json", bytes.NewBuffer(messageJson))
 		if err != nil {
 			return nil, nil, err
 		}

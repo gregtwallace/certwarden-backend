@@ -2,11 +2,12 @@ package nonces
 
 import (
 	"errors"
-	"net/http"
+	"legocerthub-backend/pkg/httpclient"
 )
 
 // Manager is the NonceManager
 type Manager struct {
+	httpClient  *httpclient.Client
 	newNonceUrl *string
 	nonces      *ringBuffer
 }
@@ -15,9 +16,10 @@ type Manager struct {
 const bufferSize = 32
 
 // NewManager creates a new nonce manager
-func NewManager(nonceUrl *string) *Manager {
+func NewManager(client *httpclient.Client, nonceUrl *string) *Manager {
 	manager := new(Manager)
 
+	manager.httpClient = client
 	manager.newNonceUrl = nonceUrl
 	manager.nonces = newRingBuffer(bufferSize)
 
@@ -28,7 +30,7 @@ func NewManager(nonceUrl *string) *Manager {
 // if fetching fails or the header does not contain a nonce,
 // an error is returned
 func (manager *Manager) fetchNonce() (nonce string, err error) {
-	response, err := http.Get(*manager.newNonceUrl)
+	response, err := manager.httpClient.Head(*manager.newNonceUrl)
 	if err != nil {
 		return "", err
 	}
