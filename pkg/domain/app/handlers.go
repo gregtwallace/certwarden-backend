@@ -7,7 +7,7 @@ import (
 
 type appStatus struct {
 	Status          string               `json:"status"`
-	Environment     string               `json:"environment"`
+	DevMode         bool                 `json:"development_mode,omitempty"`
 	Version         string               `json:"version"`
 	AcmeDirectories appStatusDirectories `json:"acme_directories"`
 }
@@ -21,7 +21,8 @@ type appStatusDirectories struct {
 func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (err error) {
 
 	currentStatus := appStatus{
-		Status:  "Available",
+		Status:  "available",
+		DevMode: app.devMode,
 		Version: version,
 		AcmeDirectories: appStatusDirectories{
 			Production: acmeProdUrl,

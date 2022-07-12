@@ -10,10 +10,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// application version
 const version = "0.0.1"
 
 type Application struct {
 	logger      *zap.SugaredLogger
+	devMode     bool
 	router      *httprouter.Router
 	storage     *sqlite.Storage
 	keys        *private_keys.Service

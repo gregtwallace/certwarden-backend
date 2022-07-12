@@ -13,12 +13,19 @@ const acmeStagingUrl string = "https://acme-staging-v02.api.letsencrypt.org/dire
 
 // CreateAndConfigure creates an app object with logger, storage, and all needed
 // services
-func CreateAndConfigure() (*Application, error) {
+func CreateAndConfigure(devMode bool) (*Application, error) {
 	app := new(Application)
 	var err error
 
 	// logger (zap)
 	app.initZapLogger()
+
+	// is the server in development mode?
+	// this changes some basic things like: log level, connection timeouts, and
+	// json indent
+	// This does NOT prevent interactions with ACME production environment!
+	// TODO: Implement these changes
+	app.devMode = devMode
 
 	// storage
 	app.storage, err = sqlite.OpenStorage()

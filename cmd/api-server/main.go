@@ -17,21 +17,22 @@ type webConfig struct {
 }
 
 func main() {
-	var err error
+	// parse command line for config options
+	var webCfg webConfig
+	var devMode bool
+
+	flag.StringVar(&webCfg.host, "host", "localhost", "hostname to listen on")
+	flag.IntVar(&webCfg.port, "port", 4050, "port number to listen on")
+	// TODO: change default to false
+	flag.BoolVar(&devMode, "development", true, "run the server in dev mode")
+	flag.Parse()
 
 	// configure the app
-	app, err := app.CreateAndConfigure()
+	app, err := app.CreateAndConfigure(devMode)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	defer app.CloseStorage()
-
-	// parse command line for web server config
-	var webCfg webConfig
-
-	flag.StringVar(&webCfg.host, "host", "localhost", "hostname to listen on")
-	flag.IntVar(&webCfg.port, "port", 4050, "port number to listen on")
-	flag.Parse()
 
 	// configure webserver
 	srv := &http.Server{
