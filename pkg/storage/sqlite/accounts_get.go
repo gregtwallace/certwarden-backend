@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
+	"legocerthub-backend/pkg/storage"
 )
 
 // accountDbToAcc turns the database representation of an Account into an Account
@@ -132,7 +133,12 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 		&oneAccount.createdAt,
 		&oneAccount.updatedAt,
 	)
+
 	if err != nil {
+		// if no record exists
+		if err == sql.ErrNoRows {
+			err = storage.ErrNoRecord
+		}
 		return acme_accounts.Account{}, err
 	}
 
