@@ -17,15 +17,15 @@ func CreateAndConfigure(devMode bool) (*Application, error) {
 	app := new(Application)
 	var err error
 
-	// logger (zap)
-	app.initZapLogger()
-
 	// is the server in development mode?
 	// this changes some basic things like: log level, connection timeouts, and
 	// json indent
 	// This does NOT prevent interactions with ACME production environment!
 	// TODO: Implement these changes
 	app.devMode = devMode
+
+	// logger (zap)
+	app.initZapLogger()
 
 	// storage
 	app.storage, err = sqlite.OpenStorage()
