@@ -24,7 +24,7 @@ func main() {
 	flag.StringVar(&webCfg.host, "host", "localhost", "hostname to listen on")
 	flag.IntVar(&webCfg.port, "port", 4050, "port number to listen on")
 	// TODO: change default to false
-	flag.BoolVar(&devMode, "development", true, "run the server in dev mode")
+	flag.BoolVar(&devMode, "development", true, "run the server in development mode")
 	flag.Parse()
 
 	// configure the app
@@ -35,12 +35,20 @@ func main() {
 	defer app.CloseStorage()
 
 	// configure webserver
+	readTimeout := 5 * time.Second
+	writeTimeout := 10 * time.Second
+	// allow longer timeouts when in development
+	if devMode {
+		readTimeout = 15 * time.Second
+		writeTimeout = 30 * time.Second
+	}
+
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", webCfg.host, webCfg.port),
 		Handler:      app.Routes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  1 * time.Minute,
+		ReadTimeout:  readTimeout,
+		WriteTimeout: writeTimeout,
 	}
 
 	// launch webserver
