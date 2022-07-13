@@ -6,6 +6,7 @@ import (
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/httpclient"
+	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
 	"runtime"
 )
@@ -26,7 +27,6 @@ func CreateAndConfigure(devMode bool) (*Application, error) {
 	// is the server in development mode?
 	// this changes some basic things like: log level and connection timeouts
 	// This does NOT prevent interactions with ACME production environment!
-	// TODO: Implement json indent vs. not?
 	app.devMode = devMode
 
 	// logger (zap)
@@ -35,6 +35,12 @@ func CreateAndConfigure(devMode bool) (*Application, error) {
 	// create http client
 	userAgent := fmt.Sprintf("LeGoCertHub/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
 	app.httpClient = httpclient.New(userAgent, devMode)
+
+	// output service
+	app.output, err = output.NewService(app)
+	if err != nil {
+		return nil, err
+	}
 
 	// storage
 	app.storage, err = sqlite.OpenStorage()

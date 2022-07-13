@@ -12,6 +12,7 @@ import (
 // format.
 type handler struct {
 	logger      *zap.SugaredLogger
+	output      *output.Service
 	handlerFunc customHandlerFunc
 }
 
@@ -20,7 +21,7 @@ type customHandlerFunc func(w http.ResponseWriter, r *http.Request) error
 
 // handlerFunc converts a customer handeler function into a standard http.Handler
 func (app *Application) makeHandler(handlerFunc customHandlerFunc) http.Handler {
-	return handler{app.logger, handlerFunc}
+	return handler{app.logger, app.output, handlerFunc}
 }
 
 // makeHandle creates a Handle on the app's router using the custom handler function
@@ -35,7 +36,7 @@ func (handler handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// if there was an error, log it and write error JSON
 	if err != nil {
-		writtenErr, writeErr := output.WriteErrorJSON(w, err)
+		writtenErr, writeErr := handler.output.WriteErrorJSON(w, err)
 		if writeErr != nil {
 			handler.logger.Errorf("failed to send error to client for %s: failed to write json (%s)", r.URL.Path, writeErr)
 		} else {

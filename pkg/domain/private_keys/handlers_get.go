@@ -24,7 +24,7 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// return response to client
-	_, err = output.WriteJSON(w, http.StatusOK, keys, "private_keys")
+	_, err = service.output.WriteJSON(w, http.StatusOK, keys, "private_keys")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
@@ -70,7 +70,7 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 	}
 
 	// return response to client
-	_, err = output.WriteJSON(w, http.StatusOK, key, "private_key")
+	_, err = service.output.WriteJSON(w, http.StatusOK, key, "private_key")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
@@ -85,7 +85,7 @@ func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request)
 	newKeyOptions.KeyAlgorithms = key_crypto.ListOfAlgorithms()
 
 	// return response to client
-	_, err := output.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
+	_, err := service.output.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

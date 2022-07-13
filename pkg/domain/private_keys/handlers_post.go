@@ -89,7 +89,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 		ID:      id,
 	}
 
-	_, err = output.WriteJSON(w, response.Status, response, "response")
+	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

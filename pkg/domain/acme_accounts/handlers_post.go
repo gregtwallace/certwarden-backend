@@ -75,7 +75,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (
 		ID:      id,
 	}
 
-	_, err = output.WriteJSON(w, response.Status, response, "response")
+	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

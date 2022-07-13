@@ -5,6 +5,7 @@ import (
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/httpclient"
+	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
 
 	"github.com/julienschmidt/httprouter"
@@ -15,6 +16,7 @@ type Application struct {
 	devMode     bool
 	logger      *zap.SugaredLogger
 	httpClient  *httpclient.Client
+	output      *output.Service
 	router      *httprouter.Router
 	storage     *sqlite.Storage
 	keys        *private_keys.Service
@@ -24,12 +26,20 @@ type Application struct {
 }
 
 /// return various needed components
+func (app *Application) GetDevMode() bool {
+	return app.devMode
+}
+
 func (app *Application) GetLogger() *zap.SugaredLogger {
 	return app.logger
 }
 
 func (app *Application) GetHttpClient() *httpclient.Client {
 	return app.httpClient
+}
+
+func (app *Application) GetOutputter() *output.Service {
+	return app.output
 }
 
 // hacky workaround for storage since can't just combine into one interface

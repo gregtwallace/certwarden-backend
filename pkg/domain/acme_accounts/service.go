@@ -4,6 +4,7 @@ import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/private_keys"
+	"legocerthub-backend/pkg/output"
 
 	"go.uber.org/zap"
 )
@@ -12,11 +13,12 @@ var errServiceComponent = errors.New("necessary account service component is mis
 
 // App interface is for connecting to the main app
 type App interface {
+	GetLogger() *zap.SugaredLogger
+	GetOutputter() *output.Service
 	GetAccountStorage() Storage
 	GetKeysService() *private_keys.Service
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
-	GetLogger() *zap.SugaredLogger
 }
 
 // Storage interface for storage functions
@@ -38,6 +40,7 @@ type Storage interface {
 // Accounts service struct
 type Service struct {
 	logger      *zap.SugaredLogger
+	output      *output.Service
 	storage     Storage
 	keys        *private_keys.Service
 	acmeProd    *acme.Service
@@ -51,6 +54,12 @@ func NewService(app App) (*Service, error) {
 	// logger
 	service.logger = app.GetLogger()
 	if service.logger == nil {
+		return nil, errServiceComponent
+	}
+
+	// output service
+	service.output = app.GetOutputter()
+	if service.output == nil {
 		return nil, errServiceComponent
 	}
 

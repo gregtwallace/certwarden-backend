@@ -30,7 +30,7 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 		},
 	}
 
-	_, err = output.WriteJSON(w, http.StatusOK, currentStatus, "status")
+	_, err = app.output.WriteJSON(w, http.StatusOK, currentStatus, "status")
 	if err != nil {
 		app.logger.Error(err)
 		return output.ErrWriteJsonFailed
@@ -41,7 +41,7 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 
 // notFoundHandler is called when there is not a matching route on the router
 func (app *Application) notFoundHandler(w http.ResponseWriter, r *http.Request) (err error) {
-	_, err = output.WriteErrorJSON(w, output.ErrNotFound)
+	_, err = app.output.WriteErrorJSON(w, output.ErrNotFound)
 	if err != nil {
 		app.logger.Error(err)
 		return output.ErrWriteJsonFailed

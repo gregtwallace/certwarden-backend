@@ -2,6 +2,7 @@ package private_keys
 
 import (
 	"errors"
+	"legocerthub-backend/pkg/output"
 
 	"go.uber.org/zap"
 )
@@ -10,8 +11,9 @@ var errServiceComponent = errors.New("necessary key service component is missing
 
 // App interface is for connecting to the main app
 type App interface {
-	GetKeyStorage() Storage
 	GetLogger() *zap.SugaredLogger
+	GetOutputter() *output.Service
+	GetKeyStorage() Storage
 }
 
 // Storage interface for storage functions
@@ -31,6 +33,7 @@ type Storage interface {
 // Keys service struct
 type Service struct {
 	logger  *zap.SugaredLogger
+	output  *output.Service
 	storage Storage
 }
 
@@ -41,6 +44,12 @@ func NewService(app App) (*Service, error) {
 	// logger
 	service.logger = app.GetLogger()
 	if service.logger == nil {
+		return nil, errServiceComponent
+	}
+
+	// output service
+	service.output = app.GetOutputter()
+	if service.output == nil {
 		return nil, errServiceComponent
 	}
 
