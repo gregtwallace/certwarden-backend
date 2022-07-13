@@ -15,6 +15,7 @@ replace legocerthub-backend/pkg/acme => /pkg/acme
 replace legocerthub-backend/pkg/acme/nonces => /pkg/acme/nonces
 replace legocerthub-backend/pkg/domain/acme_accounts => /pkg/domain/acme_accounts
 replace legocerthub-backend/pkg/domain/app => /pkg/domain/app
+replace legocerthub-backend/pkg/domain/certificates => /pkg/domain/certificates
 replace legocerthub-backend/pkg/domain/private_keys => /pkg/domain/private_keys
 replace legocerthub-backend/pkg/domain/private_keys/key_crypto => /pkg/domain/private_keys/key_crypto
 replace legocerthub-backend/pkg/httpclient => /pkg/httpclient

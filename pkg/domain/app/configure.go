@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
+	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
@@ -67,6 +68,12 @@ func CreateAndConfigure(devMode bool) (*Application, error) {
 
 	// accounts service
 	app.accounts, err = acme_accounts.NewService(app)
+	if err != nil {
+		return nil, err
+	}
+
+	// certificates service
+	app.certificates, err = certificates.NewService(app)
 	if err != nil {
 		return nil, err
 	}
