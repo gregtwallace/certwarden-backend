@@ -59,6 +59,10 @@ func (client *Client) newRequest(method string, url string, body io.Reader) (*ht
 	// set user agent, required per RFC8555 6.1
 	request.Header.Set("User-Agent", client.userAgent)
 
+	// set preferred language (SHOULD do this per RFC 8555, 6.1)
+	// TODO: Implement user choice?
+	request.Header.Set("Accept-Language", "en-US, en;q=0.8")
+
 	return request, nil
 }
 
