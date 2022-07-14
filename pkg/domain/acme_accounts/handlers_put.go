@@ -139,7 +139,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 
 	// send the email update to ACME
 	var acmeResponse acme.AcmeAccountResponse
-	if account.IsStaging {
+	if *account.IsStaging {
 		acmeResponse, err = service.acmeStaging.UpdateAccount(acmePayload, accountKey)
 	} else {
 		acmeResponse, err = service.acmeProd.UpdateAccount(acmePayload, accountKey)

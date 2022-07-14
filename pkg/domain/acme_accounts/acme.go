@@ -18,7 +18,7 @@ func emailToContact(email string) (contact []string) {
 // new-account endpoint
 func (account *Account) newAccountPayload() acme.NewAccountPayload {
 	return acme.NewAccountPayload{
-		TosAgreed: account.AcceptedTos,
-		Contact:   emailToContact(account.Email),
+		TosAgreed: *account.AcceptedTos,
+		Contact:   emailToContact(*account.Email),
 	}
 }

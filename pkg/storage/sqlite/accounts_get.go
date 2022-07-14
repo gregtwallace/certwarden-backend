@@ -26,15 +26,15 @@ func (accountDb *accountDb) accountDbToAcc() (acme_accounts.Account, error) {
 	return acme_accounts.Account{
 		ID:          accountDb.id,
 		Name:        accountDb.name,
-		Description: accountDb.description.String,
+		Description: nullStringToString(accountDb.description),
 		PrivateKey:  privateKey,
 		Status:      accountDb.status.String,
-		Email:       accountDb.email.String,
-		AcceptedTos: accountDb.acceptedTos.Bool,
-		IsStaging:   accountDb.isStaging.Bool,
+		Email:       nullStringToString(accountDb.email),
+		AcceptedTos: nullBoolToBool(accountDb.acceptedTos),
+		IsStaging:   nullBoolToBool(accountDb.isStaging),
 		CreatedAt:   accountDb.createdAt,
 		UpdatedAt:   accountDb.updatedAt,
-		Kid:         accountDb.kid.String,
+		Kid:         nullStringToString(accountDb.kid),
 	}, nil
 }
 

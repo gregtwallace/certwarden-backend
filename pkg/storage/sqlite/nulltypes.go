@@ -3,6 +3,7 @@ package sqlite
 import "database/sql"
 
 // Funcs to transform payload types into null types (for db obj)
+// as well as null type to regular type
 
 // boolToNullBool converts a *bool to a NullBool
 func boolToNullBool(b *bool) sql.NullBool {
@@ -16,6 +17,18 @@ func boolToNullBool(b *bool) sql.NullBool {
 	}
 
 	return nullBool
+}
+
+// nullBoolToBool converts the nullbool to a bool pointer
+func nullBoolToBool(nullBool sql.NullBool) *bool {
+	if nullBool.Valid {
+		b := new(bool)
+		*b = nullBool.Bool
+
+		return b
+	}
+
+	return nil
 }
 
 // intToNullInt32 converts an *int to a NullInt32
@@ -44,4 +57,16 @@ func stringToNullString(s *string) sql.NullString {
 	}
 
 	return nullString
+}
+
+// nullStringToString converts the nullstring to a string pointer
+func nullStringToString(nullString sql.NullString) *string {
+	if nullString.Valid {
+		s := new(string)
+		*s = nullString.String
+
+		return s
+	}
+
+	return nil
 }
