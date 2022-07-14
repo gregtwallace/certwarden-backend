@@ -10,6 +10,7 @@ import (
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
 	"runtime"
+	"sync"
 )
 
 // application version
@@ -56,12 +57,37 @@ func CreateAndConfigure(devMode bool) (*Application, error) {
 	}
 
 	// acme services
-	app.acmeProd, err = acme.NewService(app, acmeProdUrl)
-	if err != nil {
-		return nil, err
+	// use waitgroup to expedite directory fetching
+	var wg sync.WaitGroup
+	wgSize := 2
+
+	wg.Add(wgSize)
+	wgErrors := make(chan error, wgSize)
+
+	// prod
+	go func() {
+		defer wg.Done()
+		app.acmeProd, err = acme.NewService(app, acmeProdUrl)
+		wgErrors <- err
+	}()
+
+	// staging
+	go func() {
+		defer wg.Done()
+		app.acmeStaging, err = acme.NewService(app, acmeStagingUrl)
+		wgErrors <- err
+	}()
+
+	wg.Wait()
+
+	// check for errors
+	close(wgErrors)
+	for err = range wgErrors {
+		if err != nil {
+			break
+		}
 	}
 
-	app.acmeStaging, err = acme.NewService(app, acmeStagingUrl)
 	if err != nil {
 		return nil, err
 	}
