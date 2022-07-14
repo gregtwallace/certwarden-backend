@@ -11,8 +11,8 @@ var errBadKey = errors.New("bad crypto key")
 // a single private key
 type Key struct {
 	ID          int                   `json:"id"`
-	Name        string                `json:"name"`
-	Description string                `json:"description"`
+	Name        string                `json:"name,omitempty"`
+	Description *string               `json:"description,omitempty"`
 	Algorithm   *key_crypto.Algorithm `json:"algorithm,omitempty"`
 	Pem         string                `json:"pem,omitempty"`
 	ApiKey      string                `json:"api_key,omitempty"`

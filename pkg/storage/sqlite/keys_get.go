@@ -26,7 +26,7 @@ func (keyDb *keyDb) keyDbToKey() (private_keys.Key, error) {
 	return private_keys.Key{
 		ID:          keyDb.id,
 		Name:        keyDb.name.String,
-		Description: keyDb.description.String,
+		Description: nullStringToString(keyDb.description),
 		Algorithm:   algorithm,
 		Pem:         keyDb.pem.String,
 		ApiKey:      keyDb.apiKey,
