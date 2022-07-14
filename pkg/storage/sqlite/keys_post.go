@@ -4,7 +4,6 @@ import (
 	"context"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/utils"
-	"time"
 )
 
 // newPayloadToDb translates the new key payload to db object
@@ -19,7 +18,7 @@ func newKeyPayloadToDb(payload private_keys.NewPayload) keyDb {
 
 	dbObj.pem = stringToNullString(payload.PemContent)
 
-	dbObj.createdAt = int(time.Now().Unix())
+	dbObj.createdAt = timeNow()
 	dbObj.updatedAt = dbObj.createdAt
 
 	return dbObj
@@ -31,7 +30,8 @@ func (store *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err e
 	keyDb := newKeyPayloadToDb(payload)
 
 	// generate api key
-	keyDb.apiKey, err = utils.GenerateApiKey()
+	apiKey, err := utils.GenerateApiKey()
+	keyDb.apiKey = stringToNullString(&apiKey)
 	if err != nil {
 		return -2, err
 	}

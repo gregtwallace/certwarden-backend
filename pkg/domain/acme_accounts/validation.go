@@ -52,7 +52,7 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 	}
 
 	// if the returned account is the account being edited, no error
-	if account.ID == *idPayload {
+	if *account.ID == *idPayload {
 		return nil
 	}
 

@@ -24,14 +24,14 @@ func (keyDb *keyDb) keyDbToKey() (private_keys.Key, error) {
 	}
 
 	return private_keys.Key{
-		ID:          keyDb.id,
-		Name:        keyDb.name.String,
+		ID:          nullInt32ToInt(keyDb.id),
+		Name:        nullStringToString(keyDb.name),
 		Description: nullStringToString(keyDb.description),
 		Algorithm:   algorithm,
-		Pem:         keyDb.pem.String,
-		ApiKey:      keyDb.apiKey,
-		CreatedAt:   keyDb.createdAt,
-		UpdatedAt:   keyDb.updatedAt,
+		Pem:         nullStringToString(keyDb.pem),
+		ApiKey:      nullStringToString(keyDb.apiKey),
+		CreatedAt:   nullInt32ToInt(keyDb.createdAt),
+		UpdatedAt:   nullInt32ToInt(keyDb.updatedAt),
 	}, nil
 }
 

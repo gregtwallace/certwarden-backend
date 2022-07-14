@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"legocerthub-backend/pkg/domain/private_keys"
-	"time"
 )
 
 // nameDescPayloadToDb translates the modify name/desc payload to a db object
@@ -18,13 +17,13 @@ func nameDescKeyPayloadToDb(payload private_keys.NameDescPayload) (keyDb, error)
 		err = errors.New("id missing in payload")
 		return keyDb{}, err
 	}
-	dbObj.id = *payload.ID
+	dbObj.id = intToNullInt32(payload.ID)
 
 	dbObj.name = stringToNullString(payload.Name)
 
 	dbObj.description = stringToNullString(payload.Description)
 
-	dbObj.updatedAt = int(time.Now().Unix())
+	dbObj.updatedAt = timeNow()
 
 	return dbObj, nil
 }

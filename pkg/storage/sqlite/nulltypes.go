@@ -45,6 +45,18 @@ func intToNullInt32(i *int) sql.NullInt32 {
 	return nullInt32
 }
 
+// NullInt32ToInt converts a NullInt32 into an int pointer
+func nullInt32ToInt(nullInt sql.NullInt32) *int {
+	if nullInt.Valid {
+		i := new(int)
+		*i = int(nullInt.Int32)
+
+		return i
+	}
+
+	return nil
+}
+
 // stringToNullString converts a *string to a NullString
 func stringToNullString(s *string) sql.NullString {
 	var nullString sql.NullString

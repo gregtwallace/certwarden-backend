@@ -7,16 +7,16 @@ import (
 
 // a single ACME Account
 type Account struct {
-	ID          int               `json:"id"`
-	Name        string            `json:"name"`
-	Description *string           `json:"description"`
+	ID          *int              `json:"id,omitempty"`
+	Name        *string           `json:"name,omitempty"`
+	Description *string           `json:"description,omitempty"`
 	PrivateKey  *private_keys.Key `json:"private_key,omitempty"`
-	Status      string            `json:"status,omitempty"`
+	Status      *string           `json:"status,omitempty"`
 	Email       *string           `json:"email,omitempty"`
 	AcceptedTos *bool             `json:"accepted_tos,omitempty"`
 	IsStaging   *bool             `json:"is_staging,omitempty"`
-	CreatedAt   int               `json:"created_at,omitempty"`
-	UpdatedAt   int               `json:"updated_at,omitempty"`
+	CreatedAt   *int              `json:"created_at,omitempty"`
+	UpdatedAt   *int              `json:"updated_at,omitempty"`
 	Kid         *string           `json:"kid,omitempty"`
 }
 

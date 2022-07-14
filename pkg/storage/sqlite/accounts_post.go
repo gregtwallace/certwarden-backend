@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"legocerthub-backend/pkg/domain/acme_accounts"
-	"time"
 )
 
 type NewPayload struct {
@@ -28,7 +27,7 @@ func newAccountPayloadToDb(payload acme_accounts.NewPayload) (accountDb, error) 
 	if payload.Name == nil {
 		return accountDb{}, errors.New("accounts: new payload: missing name")
 	}
-	dbObj.name = *payload.Name
+	dbObj.name = stringToNullString(payload.Name)
 
 	dbObj.description = stringToNullString(payload.Description)
 
@@ -38,7 +37,7 @@ func newAccountPayloadToDb(payload acme_accounts.NewPayload) (accountDb, error) 
 	if payload.PrivateKeyID == nil {
 		return accountDb{}, errors.New("accounts: new payload: missing private key id")
 	}
-	dbObj.privateKey.id = *payload.PrivateKeyID
+	dbObj.privateKey.id = intToNullInt32(payload.PrivateKeyID)
 
 	dbObj.isStaging = boolToNullBool(payload.IsStaging)
 
@@ -48,7 +47,7 @@ func newAccountPayloadToDb(payload acme_accounts.NewPayload) (accountDb, error) 
 	dbObj.status.Valid = true
 	dbObj.status.String = "unknown"
 
-	dbObj.createdAt = int(time.Now().Unix())
+	dbObj.createdAt = timeNow()
 	dbObj.updatedAt = dbObj.createdAt
 
 	return dbObj, nil

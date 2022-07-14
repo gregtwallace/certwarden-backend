@@ -54,7 +54,7 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 	}
 
 	// if the returned key is the key being edited, no error
-	if account.ID == *idPayload {
+	if *account.ID == *idPayload {
 		return nil
 	}
 
@@ -78,7 +78,7 @@ func (service *Service) IsPrivateKeyAvailable(keyId *int) error {
 
 	// verify specified key id is in the available list
 	for _, key := range keys {
-		if key.ID == *keyId {
+		if *key.ID == *keyId {
 			return nil
 		}
 	}

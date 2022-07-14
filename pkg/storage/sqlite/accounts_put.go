@@ -5,7 +5,6 @@ import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
-	"time"
 )
 
 // accountPayloadToDb turns the client payload into a db object
@@ -16,13 +15,13 @@ func nameDescAccountPayloadToDb(payload acme_accounts.NameDescPayload) (accountD
 	if payload.ID == nil {
 		return accountDb{}, errors.New("accounts: name/desc payload: missing id")
 	}
-	dbObj.id = *payload.ID
+	dbObj.id = intToNullInt32(payload.ID)
 
 	// mandatory, error if somehow does not exist
 	if payload.Name == nil {
 		return accountDb{}, errors.New("accounts: name/desc payload: missing name")
 	}
-	dbObj.name = *payload.Name
+	dbObj.name = stringToNullString(payload.Name)
 
 	dbObj.description = stringToNullString(payload.Description)
 
@@ -71,16 +70,19 @@ func leAccountResponseToDb(id int, response acme.AcmeAccountResponse) accountDb 
 	var account accountDb
 	var err error
 
-	account.id = id
+	account.id = intToNullInt32(&id)
 	email := response.Email()
 	account.email = stringToNullString(&email)
 	account.status = stringToNullString(&response.Status)
 	account.kid = stringToNullString(response.Location)
-	account.createdAt, err = response.CreatedAtUnix()
+
+	createdAt, err := response.CreatedAtUnix()
 	if err != nil {
-		account.createdAt = 0
+		createdAt = 0
 	}
-	account.updatedAt = int(time.Now().Unix())
+	account.createdAt = intToNullInt32(&createdAt)
+
+	account.updatedAt = timeNow()
 
 	return account
 }
