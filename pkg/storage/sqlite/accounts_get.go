@@ -43,8 +43,8 @@ func (store *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, pk.description,
-	aa.status, aa.email, aa.is_staging 
+	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name,
+	aa.status, aa.email, aa.is_staging, aa.accepted_tos
 	FROM
 		acme_accounts aa
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
@@ -67,10 +67,10 @@ func (store *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 			&oneAccount.description,
 			&oneAccount.privateKey.id,
 			&oneAccount.privateKey.name,
-			&oneAccount.privateKey.description,
 			&oneAccount.status,
 			&oneAccount.email,
 			&oneAccount.isStaging,
+			&oneAccount.acceptedTos,
 		)
 		if err != nil {
 			return nil, err
@@ -102,7 +102,7 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, pk.description, pk.algorithm, pk.pem, 
+	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, pk.algorithm,
 	aa.status, aa.email, aa.is_staging, aa.accepted_tos, aa.kid, aa.created_at, aa.updated_at
 	FROM
 		acme_accounts aa
@@ -122,9 +122,7 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 		&oneAccount.description,
 		&oneAccount.privateKey.id,
 		&oneAccount.privateKey.name,
-		&oneAccount.privateKey.description,
 		&oneAccount.privateKey.algorithmValue,
-		&oneAccount.privateKey.pem,
 		&oneAccount.status,
 		&oneAccount.email,
 		&oneAccount.isStaging,
