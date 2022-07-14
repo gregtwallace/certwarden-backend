@@ -30,7 +30,7 @@ func main() {
 	// configure the app
 	app, err := app.CreateAndConfigure(devMode)
 	if err != nil {
-		log.Fatalln(err)
+		log.Panicf("panic: failed to configure app: %s", err)
 	}
 	defer app.CloseStorage()
 
@@ -55,6 +55,6 @@ func main() {
 	app.GetLogger().Infof("starting lego-certhub on %s:%d", webCfg.host, webCfg.port)
 	err = srv.ListenAndServe()
 	if err != nil {
-		app.GetLogger().Panicf("failed to start server %s", err)
+		app.GetLogger().Panicf("panic: failed to start http server: %s", err)
 	}
 }
