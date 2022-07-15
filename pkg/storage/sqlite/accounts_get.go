@@ -148,48 +148,48 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 	return convertedAccount, nil
 }
 
-func (store *Storage) GetAccountPem(id int) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
-	defer cancel()
+// func (store *Storage) GetAccountPem(id int) (string, error) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+// 	defer cancel()
 
-	query := `SELECT pk.pem
-	FROM
-		acme_accounts aa
-		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
-	WHERE
-		aa.id = $1
-	`
+// 	query := `SELECT pk.pem
+// 	FROM
+// 		acme_accounts aa
+// 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
+// 	WHERE
+// 		aa.id = $1
+// 	`
 
-	row := store.Db.QueryRowContext(ctx, query, id)
-	var pem sql.NullString
-	err := row.Scan(&pem)
+// 	row := store.Db.QueryRowContext(ctx, query, id)
+// 	var pem sql.NullString
+// 	err := row.Scan(&pem)
 
-	if err != nil {
-		return "", err
-	}
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	return pem.String, nil
-}
+// 	return pem.String, nil
+// }
 
-func (store *Storage) GetAccountKid(id int) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
-	defer cancel()
+// func (store *Storage) GetAccountKid(id int) (string, error) {
+// 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+// 	defer cancel()
 
-	query := `
-		SELECT kid
-		FROM
-		  acme_accounts
-		WHERE
-			id = $1
-	`
+// 	query := `
+// 		SELECT kid
+// 		FROM
+// 		  acme_accounts
+// 		WHERE
+// 			id = $1
+// 	`
 
-	row := store.Db.QueryRowContext(ctx, query, id)
-	var kid sql.NullString
-	err := row.Scan(&kid)
+// 	row := store.Db.QueryRowContext(ctx, query, id)
+// 	var kid sql.NullString
+// 	err := row.Scan(&kid)
 
-	if err != nil {
-		return "", err
-	}
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	return kid.String, nil
-}
+// 	return kid.String, nil
+// }
