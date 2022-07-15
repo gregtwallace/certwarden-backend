@@ -32,6 +32,6 @@ type Certificate struct {
 // new account info
 // used to return info about valid options when making a new account
 type newCertOptions struct {
-	AvailableKeys     []private_keys.Key      `json:"available_keys"`
-	AvailableAccounts []acme_accounts.Account `json:"available_accounts"`
+	AvailableKeys     []private_keys.Key      `json:"private_keys"`
+	AvailableAccounts []acme_accounts.Account `json:"acme_accounts"`
 }
