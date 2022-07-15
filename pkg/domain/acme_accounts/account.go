@@ -43,5 +43,5 @@ func (account *Account) accountKey() (accountKey acme.AccountKey, err error) {
 type newAccountOptions struct {
 	TosUrl        string             `json:"tos_url"`
 	StagingTosUrl string             `json:"staging_tos_url"`
-	AvailableKeys []private_keys.Key `json:"available_keys"`
+	AvailableKeys []private_keys.Key `json:"private_keys"`
 }
