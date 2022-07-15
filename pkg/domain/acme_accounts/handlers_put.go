@@ -119,7 +119,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 	///
 
 	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam)
+	account, err := service.storage.GetOneAccountById(idParam, true)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric

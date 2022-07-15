@@ -88,21 +88,21 @@ func (store *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 }
 
 // GetOneAccountById returns an Account based on its unique id
-func (store *Storage) GetOneAccountById(id int) (acme_accounts.Account, error) {
-	return store.getOneAccount(id, "")
+func (store *Storage) GetOneAccountById(id int, withPem bool) (acme_accounts.Account, error) {
+	return store.getOneAccount(id, "", withPem)
 }
 
 // GetOneAccountByName returns an Account based on its unique name
-func (store *Storage) GetOneAccountByName(name string) (acme_accounts.Account, error) {
-	return store.getOneAccount(-1, name)
+func (store *Storage) GetOneAccountByName(name string, withPem bool) (acme_accounts.Account, error) {
+	return store.getOneAccount(-1, name, withPem)
 }
 
 // getOneAccount returns an Account based on either its unique id or its unique name
-func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account, error) {
+func (store *Storage) getOneAccount(id int, name string, withPem bool) (acme_accounts.Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, pk.algorithm,
+	query := `SELECT aa.id, aa.name, aa.description, pk.id, pk.name, pk.algorithm, pk.pem,
 	aa.status, aa.email, aa.is_staging, aa.accepted_tos, aa.kid, aa.created_at, aa.updated_at
 	FROM
 		acme_accounts aa
@@ -123,6 +123,7 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 		&oneAccount.privateKey.id,
 		&oneAccount.privateKey.name,
 		&oneAccount.privateKey.algorithmValue,
+		&oneAccount.privateKey.pem,
 		&oneAccount.status,
 		&oneAccount.email,
 		&oneAccount.isStaging,
@@ -138,6 +139,11 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 			err = storage.ErrNoRecord
 		}
 		return acme_accounts.Account{}, err
+	}
+
+	// if not fetching pem, invalidate it
+	if !withPem {
+		oneAccount.privateKey.pem.Valid = false
 	}
 
 	convertedAccount, err := oneAccount.accountDbToAcc()

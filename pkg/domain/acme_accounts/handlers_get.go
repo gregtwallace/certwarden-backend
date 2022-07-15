@@ -54,7 +54,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (e
 	}
 
 	// get from storage
-	account, err := service.storage.GetOneAccountById(id)
+	account, err := service.storage.GetOneAccountById(id, false)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {

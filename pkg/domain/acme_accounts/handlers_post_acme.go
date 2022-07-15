@@ -23,7 +23,7 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (
 	}
 
 	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam)
+	account, err := service.storage.GetOneAccountById(idParam, true)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
@@ -89,7 +89,7 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam)
+	account, err := service.storage.GetOneAccountById(idParam, true)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
