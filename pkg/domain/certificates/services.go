@@ -18,6 +18,7 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
+	GetAllCertificates() ([]Certificate, error)
 }
 
 // Keys service struct
