@@ -68,3 +68,7 @@ func (app *Application) GetAcmeProdService() *acme.Service {
 func (app *Application) GetAcmeStagingService() *acme.Service {
 	return app.acmeStaging
 }
+
+func (app *Application) GetAcctsService() *acme_accounts.Service {
+	return app.accounts
+}

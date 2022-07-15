@@ -58,3 +58,9 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 
 	return validation.ErrNameInUse
 }
+
+// GetAvailableAccounts returns a list of accounts that have status = valid and have also
+// accepted the ToS (which is probably redundant)
+func (service *Service) GetAvailableAccounts() ([]Account, error) {
+	return service.storage.GetAvailableAccounts()
+}

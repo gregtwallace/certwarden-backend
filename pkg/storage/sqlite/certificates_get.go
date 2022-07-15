@@ -2,9 +2,11 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/certificates/challenges"
 	"legocerthub-backend/pkg/domain/private_keys"
+	"legocerthub-backend/pkg/storage"
 	"strings"
 
 	"legocerthub-backend/pkg/domain/certificates"
@@ -83,7 +85,7 @@ func (certDb *certificateDb) certDbToCert() (cert certificates.Certificate, err 
 	}, nil
 }
 
-func (store *Storage) GetAllCertificates() (certs []certificates.Certificate, err error) {
+func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
@@ -103,7 +105,6 @@ func (store *Storage) GetAllCertificates() (certs []certificates.Certificate, er
 	}
 	defer rows.Close()
 
-	var allCerts []certificates.Certificate
 	for rows.Next() {
 		var oneCert certificateDb
 		// initialize keyDb & accountDb pointer (or nil deref)
@@ -131,8 +132,84 @@ func (store *Storage) GetAllCertificates() (certs []certificates.Certificate, er
 			return nil, err
 		}
 
-		allCerts = append(allCerts, convertedCert)
+		certs = append(certs, convertedCert)
 	}
 
-	return allCerts, nil
+	return certs, nil
+}
+
+// GetOneAccountById returns an Account based on its unique id
+func (store *Storage) GetOneCertById(id int) (cert certificates.Certificate, err error) {
+	return store.getOneCert(id, "")
+}
+
+// GetOneAccountByName returns an Account based on its unique name
+func (store *Storage) GetOneCertByName(name string) (cert certificates.Certificate, err error) {
+	return store.getOneCert(-1, name)
+}
+
+// getOneAccount returns an Account based on either its unique id or its unique name
+func (store *Storage) getOneCert(id int, name string) (cert certificates.Certificate, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	query := `
+	SELECT c.id, c.name, c.description, c.challenge_type, c.subject, c.subject_alts, c.csr_com_name, 
+	c.csr_org, c.csr_country, c.csr_city, c.created_at, c.updated_at, c.api_key, c.pem, c.valid_from, c.valid_to,
+	aa.id, aa.name, aa.is_staging,
+	pk.id, pk.name, pk.algorithm
+	FROM
+		certificates c
+		LEFT JOIN private_keys pk on (c.private_key_id = pk.id)
+		LEFT JOIN acme_accounts aa on (c.acme_account_id = aa.id)
+	WHERE c.id = $1 OR c.name = $2
+	ORDER BY c.name
+	`
+
+	row := store.Db.QueryRowContext(ctx, query, id, name)
+
+	var oneCert certificateDb
+	// initialize keyDb & accountDb pointer (or nil deref)
+	oneCert.privateKey = new(keyDb)
+	oneCert.acmeAccount = new(accountDb)
+
+	err = row.Scan(
+		&oneCert.id,
+		&oneCert.name,
+		&oneCert.description,
+		&oneCert.challengeTypeValue,
+		&oneCert.subject,
+		&oneCert.subjectAlts,
+		&oneCert.commonName,
+		&oneCert.organization,
+		&oneCert.country,
+		&oneCert.city,
+		&oneCert.createdAt,
+		&oneCert.updatedAt,
+		&oneCert.apiKey,
+		&oneCert.pem,
+		&oneCert.validFrom,
+		&oneCert.validTo,
+		&oneCert.acmeAccount.id,
+		&oneCert.acmeAccount.name,
+		&oneCert.acmeAccount.isStaging,
+		&oneCert.privateKey.id,
+		&oneCert.privateKey.name,
+		&oneCert.privateKey.algorithmValue,
+	)
+
+	if err != nil {
+		// if no record exists
+		if err == sql.ErrNoRows {
+			err = storage.ErrNoRecord
+		}
+		return certificates.Certificate{}, err
+	}
+
+	cert, err = oneCert.certDbToCert()
+	if err != nil {
+		return certificates.Certificate{}, err
+	}
+
+	return cert, nil
 }

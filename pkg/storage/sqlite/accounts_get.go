@@ -193,3 +193,51 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 
 // 	return kid.String, nil
 // }
+
+// GetAvailableAccounts returns a slice of Accounts that exist and have a valid status
+func (store *Storage) GetAvailableAccounts() (accts []acme_accounts.Account, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	query := `
+		SELECT aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging
+		FROM
+			acme_accounts aa
+		WHERE
+			aa.status = "valid" AND
+			aa.accepted_tos = true
+		ORDER BY aa.name
+	`
+
+	rows, err := store.Db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var oneAcct accountDb
+
+		err = rows.Scan(
+			&oneAcct.id,
+			&oneAcct.name,
+			&oneAcct.description,
+			&oneAcct.status,
+			&oneAcct.email,
+			&oneAcct.acceptedTos,
+			&oneAcct.isStaging,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		acct, err := oneAcct.accountDbToAcc()
+		if err != nil {
+			return nil, err
+		}
+
+		accts = append(accts, acct)
+	}
+
+	return accts, nil
+}
