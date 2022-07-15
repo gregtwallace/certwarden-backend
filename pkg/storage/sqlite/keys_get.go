@@ -129,7 +129,6 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	// TODO - Once certs are added, need to check that table as well for keys in use
 	query := `
 		SELECT pk.id, pk.name, pk.description, pk.algorithm
 		FROM
@@ -142,6 +141,15 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 					acme_accounts aa
 				WHERE
 					pk.id = aa.private_key_id
+			)
+			AND
+			NOT EXISTS(
+				SELECT
+					c.private_key_id
+				FROM
+					certificates c
+				WHERE
+					pk.id = c.private_key_id
 			)
 		ORDER BY name
 	`
