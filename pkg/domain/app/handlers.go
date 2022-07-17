@@ -30,7 +30,7 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 		},
 	}
 
-	_, err = app.output.WriteJSON(w, http.StatusOK, currentStatus, "status")
+	_, err = app.output.WriteJSON(w, http.StatusOK, currentStatus, "server")
 	if err != nil {
 		app.logger.Error(err)
 		return output.ErrWriteJsonFailed
