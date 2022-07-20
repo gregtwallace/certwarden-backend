@@ -43,9 +43,9 @@ func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) 
 	UPDATE
 		acme_accounts
 	SET
-	name = case when $1 is null then name else $1 end,
-	description = case when $2 is null then description else $2 end,
-	updated_at = $3
+		name = case when $1 is null then name else $1 end,
+		description = case when $2 is null then description else $2 end,
+		updated_at = $3
 	WHERE
 		id = $4
 	`
