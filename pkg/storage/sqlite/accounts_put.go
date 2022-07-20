@@ -17,13 +17,11 @@ func nameDescAccountPayloadToDb(payload acme_accounts.NameDescPayload) (accountD
 	}
 	dbObj.id = intToNullInt32(payload.ID)
 
-	// mandatory, error if somehow does not exist
-	if payload.Name == nil {
-		return accountDb{}, errors.New("accounts: name/desc payload: missing name")
-	}
 	dbObj.name = stringToNullString(payload.Name)
 
 	dbObj.description = stringToNullString(payload.Description)
+
+	dbObj.updatedAt = timeNow()
 
 	return dbObj, nil
 }
@@ -45,15 +43,17 @@ func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) 
 	UPDATE
 		acme_accounts
 	SET
-		name = $1,
-		description = $2
+	name = case when $1 is null then name else $1 end,
+	description = case when $2 is null then description else $2 end,
+	updated_at = $3
 	WHERE
-		id = $3
+		id = $4
 	`
 
 	_, err = store.Db.ExecContext(ctx, query,
 		accountDb.name,
 		accountDb.description,
+		accountDb.updatedAt,
 		accountDb.id,
 	)
 
