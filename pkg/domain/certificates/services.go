@@ -32,6 +32,8 @@ type Storage interface {
 	PostNewCert(payload NewPayload) (id int, err error)
 
 	PutDetailsCert(payload DetailsUpdatePayload) (err error)
+
+	DeleteCert(id int) (err error)
 }
 
 // Keys service struct
