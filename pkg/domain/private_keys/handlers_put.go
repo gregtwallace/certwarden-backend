@@ -42,11 +42,13 @@ func (service *Service) PutNameDescKey(w http.ResponseWriter, r *http.Request) (
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
-	// name
-	err = service.isNameValid(payload.ID, payload.Name)
-	if err != nil {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
+	// name (optional)
+	if payload.Name != nil {
+		err = service.isNameValid(payload.ID, payload.Name)
+		if err != nil {
+			service.logger.Debug(err)
+			return output.ErrValidationFailed
+		}
 	}
 	///
 
