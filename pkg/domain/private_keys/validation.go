@@ -43,7 +43,6 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 	}
 
 	// make sure the name isn't already in use in storage
-	// the db
 	account, err := service.storage.GetOneKeyByName(*namePayload)
 	if err == storage.ErrNoRecord {
 		// no rows means name is not in use
@@ -71,7 +70,7 @@ func (service *Service) GetAvailableKeys() (keys []Key, err error) {
 // IsPrivateKeyValid returns an error if the key is not valid and available
 func (service *Service) IsPrivateKeyAvailable(keyId *int) error {
 	// get available keys list
-	keys, err := service.storage.GetAvailableKeys()
+	keys, err := service.GetAvailableKeys()
 	if err != nil {
 		return err
 	}

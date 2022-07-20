@@ -2,41 +2,47 @@ package challenges
 
 import "errors"
 
-var errUnsupportedChallengeType = errors.New("unsupported challenge type")
+var errUnsupportedChallengeMethod = errors.New("unsupported challenge method")
 
-// ChallengeType is a type to hold challenge types
-type ChallengeType struct {
+// ChallengeMethod is a struct to hold various challenge methods.
+// This is not "challenge type" as the spec is specifc to types and this app
+// is more general.
+// In particular, multiple DNS providers may be integrated in addition
+// to a generic DNS option that relies on an external script.
+type ChallengeMethod struct {
 	Value string `json:"value"`
 	Name  string `json:"name"`
+	Type  string `json:"type"`
 }
 
-// ListOfChallengeTypes() returns a constant list of challenge types
+// ListOfChallengeMethods() returns a constant list of challenge methods
 // The Value must be unique
 // TODO: write a go test to confirm uniqueness
-func ListOfChallengeTypes() []ChallengeType {
-	return []ChallengeType{
+func ListOfChallengeMethods() []ChallengeMethod {
+	return []ChallengeMethod{
 		{
-			Value: "http-01",
-			Name:  "HTTP-01",
+			// serve the http record from this server
+			Value: "http-01-internal",
+			Name:  "HTTP-01 (Self Served)",
+			Type:  "http-01",
 		},
 		{
-			Value: "dns-01-cloudflare",
-			Name:  "DNS-01 (Cloudflare)",
+			// call external scripts to create and delete dns records
+			Value: "dns-01-script",
+			Name:  "DNS-01 (Manual)",
+			Type:  "dns-01",
 		},
 	}
 }
 
-// ChallengeTypeByValue returns a challenge type based on its Value
-// Returns an error if the challenge type is not supported
-func ChallengeTypeByValue(value string) (ChallengeType, error) {
-	// TODO: Rework using range
-	challengeTypes := ListOfChallengeTypes()
-
-	for i := 0; i < len(challengeTypes); i++ {
-		if value == challengeTypes[i].Value {
-			return challengeTypes[i], nil
+// ChallengeTypeByValue returns a challenge method based on its Value
+// Returns an error if the challenge method is not supported
+func ChallengeMethodByValue(value string) (ChallengeMethod, error) {
+	for _, method := range ListOfChallengeMethods() {
+		if value == method.Value {
+			return method, nil
 		}
 	}
 
-	return ChallengeType{}, errUnsupportedChallengeType
+	return ChallengeMethod{}, errUnsupportedChallengeMethod
 }

@@ -59,8 +59,27 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 	return validation.ErrNameInUse
 }
 
-// GetAvailableAccounts returns a list of accounts that have status = valid and have also
+// GetAvailableAccounts returns a list of accounts that have status == valid and have also
 // accepted the ToS (which is probably redundant)
 func (service *Service) GetAvailableAccounts() ([]Account, error) {
 	return service.storage.GetAvailableAccounts()
+}
+
+// IsAcmeAccountValid returns an error if the account does not exist or does not have
+// a status == valid, and accepted_tos == true
+func (service *Service) IsAcmeAccountValid(accountId *int) error {
+	// get available accounts list
+	accounts, err := service.GetAvailableAccounts()
+	if err != nil {
+		return err
+	}
+
+	// verify specified account id is available
+	for _, account := range accounts {
+		if *account.ID == *accountId {
+			return nil
+		}
+	}
+
+	return validation.ErrKeyBad
 }

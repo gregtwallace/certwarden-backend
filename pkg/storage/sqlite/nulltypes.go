@@ -1,6 +1,9 @@
 package sqlite
 
-import "database/sql"
+import (
+	"database/sql"
+	"strings"
+)
 
 // Funcs to transform payload types into null types (for db obj)
 // as well as null type to regular type
@@ -78,6 +81,39 @@ func nullStringToString(nullString sql.NullString) *string {
 		*s = nullString.String
 
 		return s
+	}
+
+	return nil
+}
+
+// sliceToCommaNullString converts a slice of strings into a single string
+// separated by commas
+func sliceToCommaNullString(ss *[]string) sql.NullString {
+	var nullString sql.NullString
+
+	if ss == nil {
+		nullString.Valid = false
+	} else {
+		nullString.Valid = true
+		nullString.String = strings.Join(*ss, ",")
+	}
+
+	return nullString
+}
+
+// commaNullStringToSlice converts a string that is a comma separated list
+// of strings into a slice of strings
+func commaNullStringToSlice(nullString sql.NullString) *[]string {
+	if nullString.Valid {
+		// if the string isn't empty, parse it
+		if nullString.String != "" {
+			s := nullStringToString(nullString)
+			slice := strings.Split(*s, ",")
+			return &slice
+		} else {
+			// empty string = empty array
+			return new([]string)
+		}
 	}
 
 	return nil

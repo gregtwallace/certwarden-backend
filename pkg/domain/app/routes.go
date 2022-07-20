@@ -37,6 +37,8 @@ func (app *Application) Routes() http.Handler {
 
 	// certificates
 	app.makeHandle(http.MethodGet, "/api/v1/certificates", app.certificates.GetAllCerts)
+	app.makeHandle(http.MethodPost, "/api/v1/certificates", app.certificates.PostNewCert)
+
 	app.makeHandle(http.MethodGet, "/api/v1/certificates/:id", app.certificates.GetOneCert)
 
 	// invalid route

@@ -25,6 +25,10 @@ var (
 	// key
 	ErrKeyBadOption = errors.New("invalid key option")
 	ErrKeyBad       = errors.New("bad private key")
+
+	// domain
+	ErrDomainBad     = errors.New("bad domain or subject name")
+	ErrDomainMissing = errors.New("missing domain or subject")
 )
 
 // IsIdNew returns an error if the id isn't the specified new
@@ -131,4 +135,25 @@ func IsEmailValidOrBlank(emailPayload *string) (err error) {
 	}
 
 	return ErrEmailBad
+}
+
+// IsDomainValid returns an error if not valid, nil if valid
+// to be valid, regex is based off of:
+// https://tools.ietf.org/id/draft-liman-tld-names-00.html
+// this is likely more inclusive than ACME server will permit
+// TODO(?): restrict this further
+func IsDomainValid(domain *string) (err error) {
+	// nil check, error
+	if domain == nil {
+		return ErrDomainMissing
+	}
+
+	// valid email regex
+	emailRegex := regexp.MustCompile(`^([A-Za-z][A-Za-z0-9-]{0,61}[A-Za-z0-9]\.)*[A-Za-z][A-Za-z0-9-]{0,61}[A-Za-z0-9]$`)
+	isGood := emailRegex.MatchString(*domain)
+	if isGood {
+		return nil
+	}
+
+	return ErrDomainBad
 }

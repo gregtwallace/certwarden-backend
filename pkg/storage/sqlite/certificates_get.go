@@ -7,7 +7,6 @@ import (
 	"legocerthub-backend/pkg/domain/certificates/challenges"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/storage"
-	"strings"
 
 	"legocerthub-backend/pkg/domain/certificates"
 )
@@ -37,9 +36,9 @@ func (certDb *certificateDb) certDbToCert() (cert certificates.Certificate, err 
 	}
 
 	// if there is a challenge type value, specify the challenge type
-	var challengeType = new(challenges.ChallengeType)
-	if certDb.challengeTypeValue.Valid {
-		*challengeType, err = challenges.ChallengeTypeByValue(certDb.challengeTypeValue.String)
+	var challengeType = new(challenges.ChallengeMethod)
+	if certDb.challengeMethodValue.Valid {
+		*challengeType, err = challenges.ChallengeMethodByValue(certDb.challengeMethodValue.String)
 		if err != nil {
 			return certificates.Certificate{}, err
 		}
@@ -47,41 +46,27 @@ func (certDb *certificateDb) certDbToCert() (cert certificates.Certificate, err 
 		challengeType = nil
 	}
 
-	// subject alts convert from strings separated by comma to slice
-	var subjectAlts = new([]string)
-	if certDb.subjectAlts.Valid {
-		// if the string isn't empty, parse it
-		if certDb.subjectAlts.String != "" {
-			s := nullStringToString(certDb.subjectAlts)
-			*subjectAlts = strings.Split(*s, ",")
-		} else {
-			// empty string = empty array
-			*subjectAlts = []string{}
-		}
-	} else {
-		subjectAlts = nil
-	}
-
 	return certificates.Certificate{
-		ID:            nullInt32ToInt(certDb.id),
-		Name:          nullStringToString(certDb.name),
-		Description:   nullStringToString(certDb.description),
-		PrivateKey:    privateKey,
-		AcmeAccount:   acmeAccount,
-		ChallengeType: challengeType,
-		Subject:       nullStringToString(certDb.subject),
-		SubjectAlts:   subjectAlts,
-		CommonName:    nullStringToString(certDb.commonName),
-		Organization:  nullStringToString(certDb.organization),
-		Country:       nullStringToString(certDb.country),
-		State:         nullStringToString(certDb.state),
-		City:          nullStringToString(certDb.city),
-		CreatedAt:     nullInt32ToInt(certDb.createdAt),
-		UpdatedAt:     nullInt32ToInt(certDb.updatedAt),
-		ApiKey:        nullStringToString(certDb.apiKey),
-		Pem:           nullStringToString(certDb.pem),
-		ValidFrom:     nullInt32ToInt(certDb.validFrom),
-		ValidTo:       nullInt32ToInt(certDb.validTo),
+		ID:                 nullInt32ToInt(certDb.id),
+		Name:               nullStringToString(certDb.name),
+		Description:        nullStringToString(certDb.description),
+		PrivateKey:         privateKey,
+		AcmeAccount:        acmeAccount,
+		ChallengeType:      challengeType,
+		Subject:            nullStringToString(certDb.subject),
+		SubjectAltNames:    commaNullStringToSlice(certDb.subjectAltNames),
+		CommonName:         nullStringToString(certDb.commonName),
+		Organization:       nullStringToString(certDb.organization),
+		OrganizationalUnit: nullStringToString(certDb.organizationalUnit),
+		Country:            nullStringToString(certDb.country),
+		State:              nullStringToString(certDb.state),
+		City:               nullStringToString(certDb.city),
+		CreatedAt:          nullInt32ToInt(certDb.createdAt),
+		UpdatedAt:          nullInt32ToInt(certDb.updatedAt),
+		ApiKey:             nullStringToString(certDb.apiKey),
+		Pem:                nullStringToString(certDb.pem),
+		ValidFrom:          nullInt32ToInt(certDb.validFrom),
+		ValidTo:            nullInt32ToInt(certDb.validTo),
 	}, nil
 }
 
@@ -114,7 +99,7 @@ func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error
 			&oneCert.id,
 			&oneCert.name,
 			&oneCert.subject,
-			&oneCert.subjectAlts,
+			&oneCert.subjectAltNames,
 			&oneCert.description,
 			&oneCert.privateKey.id,
 			&oneCert.privateKey.name,
@@ -154,7 +139,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 	defer cancel()
 
 	query := `
-	SELECT c.id, c.name, c.description, c.challenge_type, c.subject, c.subject_alts, c.csr_com_name, 
+	SELECT c.id, c.name, c.description, c.challenge_method, c.subject, c.subject_alts, c.csr_com_name, 
 	c.csr_org, c.csr_country, c.csr_city, c.created_at, c.updated_at, c.api_key, c.pem, c.valid_from, c.valid_to,
 	aa.id, aa.name, aa.is_staging,
 	pk.id, pk.name, pk.algorithm
@@ -177,9 +162,9 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		&oneCert.id,
 		&oneCert.name,
 		&oneCert.description,
-		&oneCert.challengeTypeValue,
+		&oneCert.challengeMethodValue,
 		&oneCert.subject,
-		&oneCert.subjectAlts,
+		&oneCert.subjectAltNames,
 		&oneCert.commonName,
 		&oneCert.organization,
 		&oneCert.country,
