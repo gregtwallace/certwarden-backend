@@ -45,8 +45,8 @@ func (store *Storage) PutNameDescKey(payload private_keys.NameDescPayload) (err 
 	UPDATE
 		private_keys
 	SET
-		name = $1,
-		description = $2,
+		name = case when $1 is null then name else $1 end,
+		description = case when $2 is null then description else $2 end,
 		updated_at = $3
 	WHERE
 		id = $4
