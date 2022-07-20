@@ -30,6 +30,8 @@ type Storage interface {
 	GetOneCertByName(name string) (cert Certificate, err error)
 
 	PostNewCert(payload NewPayload) (id int, err error)
+
+	PutDetailsCert(payload DetailsUpdatePayload) (err error)
 }
 
 // Keys service struct

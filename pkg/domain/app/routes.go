@@ -44,6 +44,8 @@ func (app *Application) Routes() http.Handler {
 
 	app.makeHandle(http.MethodPost, "/api/v1/certificates", app.certificates.PostNewCert)
 
+	app.makeHandle(http.MethodPut, "/api/v1/certificates/:id", app.certificates.PutDetailsCert)
+
 	// invalid route
 	app.router.NotFound = app.makeHandler(app.notFoundHandler)
 

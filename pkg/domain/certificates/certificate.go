@@ -13,7 +13,7 @@ type Certificate struct {
 	Description        *string                     `json:"description"`
 	PrivateKey         *private_keys.Key           `json:"private_key,omitempty"`
 	AcmeAccount        *acme_accounts.Account      `json:"acme_account,omitempty"`
-	ChallengeType      *challenges.ChallengeMethod `json:"challenge_type,omitempty"`
+	ChallengeMethod    *challenges.ChallengeMethod `json:"challenge_method,omitempty"`
 	Subject            *string                     `json:"subject,omitempty"`
 	SubjectAltNames    *[]string                   `json:"subject_alts,omitempty"`
 	CommonName         *string                     `json:"common_name,omitempty"`

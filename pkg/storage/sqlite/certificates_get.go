@@ -35,15 +35,15 @@ func (certDb *certificateDb) certDbToCert() (cert certificates.Certificate, err 
 		acmeAccount = nil
 	}
 
-	// if there is a challenge type value, specify the challenge type
-	var challengeType = new(challenges.ChallengeMethod)
+	// if there is a challenge type value, specify the challenge method
+	var challengeMethod = new(challenges.ChallengeMethod)
 	if certDb.challengeMethodValue.Valid {
-		*challengeType, err = challenges.ChallengeMethodByValue(certDb.challengeMethodValue.String)
+		*challengeMethod, err = challenges.ChallengeMethodByValue(certDb.challengeMethodValue.String)
 		if err != nil {
 			return certificates.Certificate{}, err
 		}
 	} else {
-		challengeType = nil
+		challengeMethod = nil
 	}
 
 	return certificates.Certificate{
@@ -52,7 +52,7 @@ func (certDb *certificateDb) certDbToCert() (cert certificates.Certificate, err 
 		Description:        nullStringToString(certDb.description),
 		PrivateKey:         privateKey,
 		AcmeAccount:        acmeAccount,
-		ChallengeType:      challengeType,
+		ChallengeMethod:    challengeMethod,
 		Subject:            nullStringToString(certDb.subject),
 		SubjectAltNames:    commaNullStringToSlice(certDb.subjectAltNames),
 		CommonName:         nullStringToString(certDb.commonName),
