@@ -7,16 +7,6 @@ import (
 	"legocerthub-backend/pkg/domain/acme_accounts"
 )
 
-type NewPayload struct {
-	ID           *int    `json:"id"`
-	Name         *string `json:"name"`
-	Description  *string `json:"description"`
-	Email        *string `json:"email"`
-	PrivateKeyID *int    `json:"private_key_id"`
-	IsStaging    *bool   `json:"is_staging"`
-	AcceptedTos  *bool   `json:"accepted_tos"`
-}
-
 // accountPayloadToDb turns the client payload into a db object
 func newAccountPayloadToDb(payload acme_accounts.NewPayload) (accountDb, error) {
 	var dbObj accountDb
