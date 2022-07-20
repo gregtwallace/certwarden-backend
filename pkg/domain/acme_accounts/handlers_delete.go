@@ -8,7 +8,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// DeleteKey deletes a private key from storage
+// DeleteAccount deletes an acme account from storage
 func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) (err error) {
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
