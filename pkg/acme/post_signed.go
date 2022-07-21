@@ -117,6 +117,8 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		}
 		defer response.Body.Close() // TODO: do something with this to avoid leaving stuff hanging during loop?
 
+		service.logger.Debugf("acme response status code: %d", response.StatusCode)
+
 		// read body of response
 		bodyBytes, err = ioutil.ReadAll(response.Body)
 		if err != nil {
