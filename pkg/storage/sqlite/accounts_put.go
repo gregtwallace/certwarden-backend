@@ -68,7 +68,6 @@ func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) 
 // in the database
 func leAccountResponseToDb(id int, response acme.AcmeAccountResponse) accountDb {
 	var account accountDb
-	var err error
 
 	account.id = intToNullInt32(&id)
 	email := response.Email()
@@ -76,11 +75,7 @@ func leAccountResponseToDb(id int, response acme.AcmeAccountResponse) accountDb 
 	account.status = stringToNullString(&response.Status)
 	account.kid = stringToNullString(response.Location)
 
-	createdAt, err := response.CreatedAtUnix()
-	if err != nil {
-		createdAt = 0
-	}
-	account.createdAt = intToNullInt32(&createdAt)
+	account.createdAt = intToNullInt32(response.CreatedAt.ToUnixTime())
 
 	account.updatedAt = timeNow()
 

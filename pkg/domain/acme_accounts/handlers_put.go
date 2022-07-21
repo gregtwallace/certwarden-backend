@@ -128,7 +128,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 	}
 
 	// get AccountKey
-	accountKey, err := account.accountKey()
+	accountKey, err := account.AccountKey()
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal

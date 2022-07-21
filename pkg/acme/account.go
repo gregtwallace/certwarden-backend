@@ -15,10 +15,10 @@ type NewAccountPayload struct {
 
 // LE response to account data post/update
 type AcmeAccountResponse struct {
-	Contact   []string `json:"contact"`
-	CreatedAt string   `json:"createdAt"`
-	Status    string   `json:"status"`
-	Location  *string  `json:"-"` // omit because it is in the header
+	Contact   []string       `json:"contact"`
+	CreatedAt acmeTimeString `json:"createdAt"`
+	Status    string         `json:"status"`
+	Location  *string        `json:"-"` // omit because it is in the header
 	// -- also available but not in use
 	// JsonWebKey jsonWebKey `json:"key"`
 	// Orders     string     `json:"orders"`
@@ -43,17 +43,6 @@ func unmarshalAccountResponse(bodyBytes []byte, headers http.Header) (response A
 	}
 
 	return response, nil
-}
-
-// CreatedAt() returns the created at time in unix format. If there is an error
-// converting, return 0
-func (response *AcmeAccountResponse) CreatedAtUnix() (int, error) {
-	time, err := acmeToUnixTime(response.CreatedAt)
-	if err != nil {
-		return 0, err
-	}
-
-	return time, nil
 }
 
 // Email() returns an email address from the first string in the Contact slice.

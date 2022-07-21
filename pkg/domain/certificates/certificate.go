@@ -15,7 +15,7 @@ type Certificate struct {
 	AcmeAccount        *acme_accounts.Account      `json:"acme_account,omitempty"`
 	ChallengeMethod    *challenges.ChallengeMethod `json:"challenge_method,omitempty"`
 	Subject            *string                     `json:"subject,omitempty"`
-	SubjectAltNames    *[]string                   `json:"subject_alts,omitempty"`
+	SubjectAltNames    []string                    `json:"subject_alts,omitempty"`
 	CommonName         *string                     `json:"common_name,omitempty"`
 	Organization       *string                     `json:"organization,omitempty"`
 	OrganizationalUnit *string                     `json:"organizational_unit,omitempty"`

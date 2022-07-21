@@ -22,7 +22,7 @@ type Account struct {
 
 // AccountKey() returns the ACME AccountKey which is a combination of the
 // crypto.PrivateKey and Kid
-func (account *Account) accountKey() (accountKey acme.AccountKey, err error) {
+func (account *Account) AccountKey() (accountKey acme.AccountKey, err error) {
 	accountKey.Key, err = account.PrivateKey.CryptoKey()
 	if err != nil {
 		return acme.AccountKey{}, err

@@ -50,14 +50,27 @@ func encodeBigInt(bigInt *big.Int, keyBitSize int) (encodedProp string) {
 	return encodeString(bigInt.FillBytes(bytesBuf))
 }
 
-// acmeToUnixTime turns an acme response formatted time into a unix time int
-func acmeToUnixTime(acmeTime string) (int, error) {
-	layout := "2006-01-02T15:04:05Z"
+// acmeTimeString is a string that has a method to convert to unix time
+// this allows convenient conversion to unix time from various acme
+// responses
+type acmeTimeString string
 
-	time, err := time.Parse(layout, acmeTime)
-	if err != nil {
-		return 0, err
+// ToUnixTime turns an acmeTimeString (acme response formatted time string) into a
+// unix time int. If nil pointer, return nil; if error, return 0.
+func (ats *acmeTimeString) ToUnixTime() (val *int) {
+	if ats == nil {
+		return nil
 	}
 
-	return int(time.Unix()), nil
+	val = new(int)
+	layout := "2006-01-02T15:04:05Z"
+
+	time, err := time.Parse(layout, string(*ats))
+	if err != nil {
+		return val
+	}
+
+	*val = int(time.Unix())
+
+	return val
 }

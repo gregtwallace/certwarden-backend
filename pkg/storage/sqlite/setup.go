@@ -101,12 +101,12 @@ func (store *Storage) createDBTables() error {
 		email text NOT NULL,
 		accepted_tos boolean DEFAULT 0,
 		is_staging boolean DEFAULT 0,
-		created_at datetime NOT NULL,
-		updated_at datetime NOT NULL,
+		created_at integer NOT NULL,
+		updated_at integer NOT NULL,
 		kid text UNIQUE,
 		FOREIGN KEY (private_key_id)
 			REFERENCES private_keys (id)
-				ON DELETE NO ACTION
+				ON DELETE RESTRICT
 				ON UPDATE NO ACTION
 	)`
 
@@ -132,22 +132,57 @@ func (store *Storage) createDBTables() error {
 		csr_country text,
 		csr_state text,
 		csr_city text,
-		created_at datetime NOT NULL,
-		updated_at datetime NOT NULL,
+		created_at integer NOT NULL,
+		updated_at integer NOT NULL,
 		api_key text NOT NULL,
 		pem text,
-		valid_from datetime,
-		valid_to datetime,
+		valid_from integer,
+		valid_to integer,
 		is_valid boolean DEFAULT 0,
 		FOREIGN KEY (private_key_id)
 			REFERENCES private_keys (id)
-				ON DELETE NO ACTION
+				ON DELETE RESTRICT
 				ON UPDATE NO ACTION,
 		FOREIGN KEY (acme_account_id)
 			REFERENCES acme_accounts (id)
-				ON DELETE NO ACTION
+				ON DELETE RESTRICT
 				ON UPDATE NO ACTION
 	)`
+
+	_, err = store.Db.ExecContext(ctx, query)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	// ACME orders
+	query = `CREATE TABLE IF NOT EXISTS acme_orders (
+			id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+			acme_account_id integer NOT NULL,
+			private_key_id integer,
+			certificate_id integer NOT NULL,
+			acme_location text NOT NULL UNIQUE,
+			status text NOT NULL,
+			expires integer,
+			dns_identifiers text NOT NULL,
+			authorizations text NOT NULL,
+			finalize text NOT NULL,
+			certificate_url text,
+			created_at integer NOT NULL,
+			updated_at integer NOT NULL,
+			FOREIGN KEY (acme_account_id)
+				REFERENCES acme_accounts (id)
+					ON DELETE SET NULL
+					ON UPDATE NO ACTION,
+			FOREIGN KEY (private_key_id)
+				REFERENCES private_keys (id)
+					ON DELETE SET NULL
+					ON UPDATE NO ACTION,
+			FOREIGN KEY (certificate_id)
+				REFERENCES certificates (id)
+					ON DELETE SET NULL
+					ON UPDATE NO ACTION
+		)`
 
 	_, err = store.Db.ExecContext(ctx, query)
 	if err != nil {

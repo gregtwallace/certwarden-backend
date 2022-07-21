@@ -123,17 +123,17 @@ func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error
 	return certs, nil
 }
 
-// GetOneAccountById returns an Account based on its unique id
+// GetOneCertById returns a Cert based on its unique id
 func (store *Storage) GetOneCertById(id int) (cert certificates.Certificate, err error) {
 	return store.getOneCert(id, "")
 }
 
-// GetOneAccountByName returns an Account based on its unique name
+// GetOneCertByName returns a Cert based on its unique name
 func (store *Storage) GetOneCertByName(name string) (cert certificates.Certificate, err error) {
 	return store.getOneCert(-1, name)
 }
 
-// getOneAccount returns an Account based on either its unique id or its unique name
+// getOneCert returns a Cert based on either its unique id or its unique name
 func (store *Storage) getOneCert(id int, name string) (cert certificates.Certificate, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()

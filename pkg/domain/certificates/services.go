@@ -30,10 +30,13 @@ type Storage interface {
 	GetOneCertByName(name string) (cert Certificate, err error)
 
 	PostNewCert(payload NewPayload) (id int, err error)
+	PostNewOrder(cert Certificate, response acme.OrderResponse) (newId int, err error)
 
 	PutDetailsCert(payload DetailsUpdatePayload) (err error)
 
 	DeleteCert(id int) (err error)
+
+	GetOneAccountById(id int, withPem bool) (acme_accounts.Account, error)
 }
 
 // Keys service struct
