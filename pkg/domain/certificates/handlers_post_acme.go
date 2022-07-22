@@ -23,14 +23,7 @@ func (service *Service) OrderCert(w http.ResponseWriter, r *http.Request) (err e
 	}
 
 	// fetch the relevant cert
-	cert, err := service.storage.GetOneCertById(idParam)
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrStorageGeneric
-	}
-
-	// fetch the relevant account (needed to get sensitive info to make Account Key)
-	account, err := service.storage.GetOneAccountById(*cert.AcmeAccount.ID, true)
+	cert, err := service.storage.GetOneCertById(idParam, true)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
@@ -39,7 +32,7 @@ func (service *Service) OrderCert(w http.ResponseWriter, r *http.Request) (err e
 	// no need to validate, can try to order any cert in storage
 
 	// get account key
-	key, err := account.AccountKey()
+	key, err := cert.AcmeAccount.AccountKey()
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal

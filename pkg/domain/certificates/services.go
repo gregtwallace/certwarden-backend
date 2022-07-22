@@ -26,8 +26,8 @@ type App interface {
 // Storage interface for storage functions
 type Storage interface {
 	GetAllCerts() (certs []Certificate, err error)
-	GetOneCertById(id int) (cert Certificate, err error)
-	GetOneCertByName(name string) (cert Certificate, err error)
+	GetOneCertById(id int, withAcctPem bool) (cert Certificate, err error)
+	GetOneCertByName(name string, withAcctPem bool) (cert Certificate, err error)
 
 	PostNewCert(payload NewPayload) (id int, err error)
 	PostNewOrder(cert Certificate, response acme.OrderResponse) (newId int, err error)

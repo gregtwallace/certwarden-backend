@@ -7,7 +7,7 @@ import (
 
 // isIdExisting returns an error if not valid, nil if valid
 func (service *Service) isIdExisting(id int) (err error) {
-	_, err = service.storage.GetOneCertById(id)
+	_, err = service.storage.GetOneCertById(id, false)
 	if err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 	}
 
 	// make sure the name isn't already in use in storage
-	account, err := service.storage.GetOneCertByName(*namePayload)
+	account, err := service.storage.GetOneCertByName(*namePayload, false)
 	if err == storage.ErrNoRecord {
 		// no rows means name is not in use
 		return nil

@@ -54,7 +54,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// get from storage
-	cert, err := service.storage.GetOneCertById(id)
+	cert, err := service.storage.GetOneCertById(id, false)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {
