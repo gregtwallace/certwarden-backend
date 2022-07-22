@@ -24,7 +24,7 @@ func newOrderRespToDb(cert certificates.Certificate, response acme.OrderResponse
 
 	order.status = stringToNullString(&response.Status)
 	order.expires = intToNullInt32(response.Expires.ToUnixTime())
-	order.dnsIdentifiers = sliceToCommaNullString(response.DnsIdentifiers())
+	order.dnsIdentifiers = sliceToCommaNullString(response.Identifiers.DnsIdentifiers())
 	order.authorizations = sliceToCommaNullString(response.Authorizations)
 	order.finalize = stringToNullString(&response.Finalize)
 

@@ -76,9 +76,14 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	/// header (end)
 
 	/// payload won't change in the loop
-	message.Payload, err = encodeJson(payload)
-	if err != nil {
-		return nil, nil, err
+	// if payload is empty, don't encode it
+	if payload == "" {
+		message.Payload = ""
+	} else {
+		message.Payload, err = encodeJson(payload)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	/// post
@@ -87,7 +92,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	var bodyBytes []byte
 	var acmeError AcmeErrorResponse
 
-	// loop to allow retry on badNonce error, capped at 3 retries
+	// loop to allow retry on badNonce error, capped at 3 tries
 	for i, done := 0, false; i < 3 && !done; i++ {
 		// encord and insert header
 		message.ProtectedHeader, err = encodeJson(header)
@@ -154,4 +159,10 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	}
 
 	return bodyBytes, response.Header, nil
+}
+
+// postAsGet implements POST-as-GET as specified in rfc8555 6.3.
+// Specific functions that use this will also need to be defined
+func (service *Service) postAsGet(url string, accountKey AccountKey) (body []byte, headers http.Header, err error) {
+	return service.postToUrlSigned("", url, accountKey)
 }

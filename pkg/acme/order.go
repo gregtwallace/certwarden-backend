@@ -17,15 +17,19 @@ type Identifier struct {
 	Value string `json:"value"`
 }
 
+// a slice of identifiers
+// allows writing a method for an array of them
+type IdentifierSlice []Identifier
+
 // LE response with order information
 type OrderResponse struct {
-	Status         string         `json:"status"`
-	Expires        acmeTimeString `json:"expires"`
-	Identifiers    []Identifier   `json:"identifiers"`
-	Authorizations []string       `json:"authorizations"`
-	Finalize       string         `json:"finalize"`
-	Certificate    string         `json:"certificate,omitempty"`
-	Location       string         `json:"-"` // omit because it is in the header
+	Status         string          `json:"status"`
+	Expires        acmeTimeString  `json:"expires"`
+	Identifiers    IdentifierSlice `json:"identifiers"`
+	Authorizations []string        `json:"authorizations"`
+	Finalize       string          `json:"finalize"`
+	Certificate    string          `json:"certificate,omitempty"`
+	Location       string          `json:"-"` // omit because it is in the header
 	// not implemented
 	// NotBefore      acmeTimeString `json:"notBefore"`
 	// NotAfter       acmeTimeString `json:"notAfter"`
@@ -33,10 +37,10 @@ type OrderResponse struct {
 
 // dnsIdentifiers returns a slice of the value strings for a response's
 // array of identifier objects that are of type 'dns'
-func (resp *OrderResponse) DnsIdentifiers() []string {
+func (ids *IdentifierSlice) DnsIdentifiers() []string {
 	var s []string
 
-	for _, id := range resp.Identifiers {
+	for _, id := range *ids {
 		if id.Type == "dns" {
 			s = append(s, id.Value)
 		}

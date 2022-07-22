@@ -57,6 +57,18 @@ func (service *Service) OrderCert(w http.ResponseWriter, r *http.Request) (err e
 		return output.ErrInternal
 	}
 
+	// TODO: THIS IS TEMPORARY FOR TESTING just to confirm auths can be PaG'ed
+	for i := range acmeResponse.Authorizations {
+		var auth acme.AuthResponse
+		if *cert.AcmeAccount.IsStaging {
+			auth, err = service.acmeStaging.GetAuth(acmeResponse.Authorizations[i], key)
+		} else {
+			auth, err = service.acmeStaging.GetAuth(acmeResponse.Authorizations[i], key)
+		}
+		service.logger.Debug(auth)
+	}
+	// TODO: End TEMPORARY
+
 	// save ACME response to order storage
 	newOrderId, err := service.storage.PostNewOrder(cert, acmeResponse)
 	if err != nil {
