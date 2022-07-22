@@ -55,8 +55,11 @@ func (service *Service) OrderCert(w http.ResponseWriter, r *http.Request) (err e
 		var auth acme.AuthResponse
 		if *cert.AcmeAccount.IsStaging {
 			auth, err = service.acmeStaging.GetAuth(acmeResponse.Authorizations[i], key)
+
+			service.http01.AddToken(auth.Challenges[0].Token)
 		} else {
 			auth, err = service.acmeStaging.GetAuth(acmeResponse.Authorizations[i], key)
+			service.http01.AddToken(auth.Challenges[0].Token)
 		}
 		service.logger.Debug(auth)
 	}

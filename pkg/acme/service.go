@@ -10,7 +10,6 @@ import (
 
 // App interface is for connecting to the main app
 type App interface {
-	//GetAccountStorage() Storage
 	GetLogger() *zap.SugaredLogger
 	GetHttpClient() *httpclient.Client
 }
@@ -24,7 +23,7 @@ type Service struct {
 	nonceManager *nonces.Manager
 }
 
-// NewService creates a new acme service based on a directory uri
+// NewService creates a new service
 func NewService(app App, dirUri string) (*Service, error) {
 	service := new(Service)
 	var err error

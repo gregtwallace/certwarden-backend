@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/challenges/http01"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/private_keys"
@@ -20,23 +21,28 @@ const appVersion = "0.0.1"
 const acmeProdUrl string = "https://acme-v02.api.letsencrypt.org/directory"
 const acmeStagingUrl string = "https://acme-staging-v02.api.letsencrypt.org/directory"
 
+type Configuration struct {
+	DevMode    bool
+	Http01Port int
+}
+
 // CreateAndConfigure creates an app object with logger, storage, and all needed
 // services
-func CreateAndConfigure(devMode bool) (*Application, error) {
+func CreateAndConfigure(config Configuration) (*Application, error) {
 	app := new(Application)
 	var err error
 
 	// is the server in development mode?
 	// this changes some basic things like: log level and connection timeouts
 	// This does NOT prevent interactions with ACME production environment!
-	app.devMode = devMode
+	app.devMode = config.DevMode
 
 	// logger (zap)
 	app.initZapLogger()
 
 	// create http client
 	userAgent := fmt.Sprintf("LeGoCertHub/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
-	app.httpClient = httpclient.New(userAgent, devMode)
+	app.httpClient = httpclient.New(userAgent, config.DevMode)
 
 	// output service
 	app.output, err = output.NewService(app)
@@ -94,6 +100,12 @@ func CreateAndConfigure(devMode bool) (*Application, error) {
 
 	// accounts service
 	app.accounts, err = acme_accounts.NewService(app)
+	if err != nil {
+		return nil, err
+	}
+
+	// http-01 challenge server
+	app.http01, err = http01.NewService(app, config.Http01Port)
 	if err != nil {
 		return nil, err
 	}

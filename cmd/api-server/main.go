@@ -19,16 +19,17 @@ type webConfig struct {
 func main() {
 	// parse command line for config options
 	var webCfg webConfig
-	var devMode bool
+	var appCfg app.Configuration
 
 	flag.StringVar(&webCfg.host, "host", "localhost", "hostname to listen on")
-	flag.IntVar(&webCfg.port, "port", 4050, "port number to listen on")
+	flag.IntVar(&webCfg.port, "port", 4050, "port number for API to listen on")
+	flag.IntVar(&appCfg.Http01Port, "http01port", 4060, "port number for http01 challenge server to listen on")
 	// TODO: change default to false
-	flag.BoolVar(&devMode, "development", true, "run the server in development mode")
+	flag.BoolVar(&appCfg.DevMode, "development", true, "run the server in development mode")
 	flag.Parse()
 
 	// configure the app
-	app, err := app.CreateAndConfigure(devMode)
+	app, err := app.CreateAndConfigure(appCfg)
 	if err != nil {
 		log.Panicf("panic: failed to configure app: %s", err)
 	}
@@ -38,7 +39,7 @@ func main() {
 	readTimeout := 5 * time.Second
 	writeTimeout := 10 * time.Second
 	// allow longer timeouts when in development
-	if devMode {
+	if appCfg.DevMode {
 		readTimeout = 15 * time.Second
 		writeTimeout = 30 * time.Second
 	}

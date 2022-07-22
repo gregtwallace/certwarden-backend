@@ -3,6 +3,7 @@ package certificates
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/challenges/http01"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/output"
@@ -10,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var errServiceComponent = errors.New("necessary key service component is missing")
+var errServiceComponent = errors.New("necessary cert service component is missing")
 
 // App interface is for connecting to the main app
 type App interface {
@@ -21,6 +22,7 @@ type App interface {
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
 	GetAcctsService() *acme_accounts.Service
+	GetHttp01Service() *http01.Service
 }
 
 // Storage interface for storage functions
@@ -48,9 +50,10 @@ type Service struct {
 	acmeProd    *acme.Service
 	acmeStaging *acme.Service
 	accounts    *acme_accounts.Service
+	http01      *http01.Service
 }
 
-// NewService creates a new private_key service
+// NewService creates a new service
 func NewService(app App) (*Service, error) {
 	service := new(Service)
 
@@ -91,6 +94,12 @@ func NewService(app App) (*Service, error) {
 	// account services
 	service.accounts = app.GetAcctsService()
 	if service.acmeStaging == nil {
+		return nil, errServiceComponent
+	}
+
+	// http-01 challenge service
+	service.http01 = app.GetHttp01Service()
+	if service.http01 == nil {
 		return nil, errServiceComponent
 	}
 
