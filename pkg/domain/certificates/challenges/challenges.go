@@ -38,9 +38,11 @@ func ListOfChallengeMethods() []ChallengeMethod {
 // ChallengeTypeByValue returns a challenge method based on its Value
 // Returns an error if the challenge method is not supported
 func ChallengeMethodByValue(value string) (ChallengeMethod, error) {
-	for _, method := range ListOfChallengeMethods() {
-		if value == method.Value {
-			return method, nil
+	allMethods := ListOfChallengeMethods()
+
+	for i := range allMethods {
+		if value == allMethods[i].Value {
+			return allMethods[i], nil
 		}
 	}
 

@@ -60,12 +60,11 @@ func ListOfAlgorithms() []Algorithm {
 // AlgorithmByValue returns an algorithm based on its Value
 // Returns an error if the algorithm is not supported
 func AlgorithmByValue(value string) (Algorithm, error) {
-	// TODO: Rework using range
-	supportedAlgorithms := ListOfAlgorithms()
+	allAlgs := ListOfAlgorithms()
 
-	for i := 0; i < len(supportedAlgorithms); i++ {
-		if value == supportedAlgorithms[i].Value {
-			return supportedAlgorithms[i], nil
+	for i := range allAlgs {
+		if value == allAlgs[i].Value {
+			return allAlgs[i], nil
 		}
 	}
 
@@ -75,9 +74,11 @@ func AlgorithmByValue(value string) (Algorithm, error) {
 // function to return algorithm value for an RSA algorithm of specified bits
 // returns string containing the value
 func rsaAlgorithmByBits(bits int) (string, error) {
-	for _, item := range ListOfAlgorithms() {
-		if (item.KeyType == "RSA") && (item.BitLen == bits) {
-			return item.Value, nil
+	allAlgs := ListOfAlgorithms()
+
+	for i := range allAlgs {
+		if (allAlgs[i].KeyType == "RSA") && (allAlgs[i].BitLen == bits) {
+			return allAlgs[i].Value, nil
 		}
 	}
 	return "", errUnsupportedAlgorithm
@@ -86,9 +87,11 @@ func rsaAlgorithmByBits(bits int) (string, error) {
 // function to return algorithm value for an ECDSA algorithm with specified curve name
 // returns string containing the value
 func ecdsaAlgorithmByCurve(curveName string) (string, error) {
-	for _, item := range ListOfAlgorithms() {
-		if (item.KeyType == "EC") && (item.EllipticCurveName == curveName) {
-			return item.Value, nil
+	allAlgs := ListOfAlgorithms()
+
+	for i := range allAlgs {
+		if (allAlgs[i].KeyType == "EC") && (allAlgs[i].EllipticCurveName == curveName) {
+			return allAlgs[i].Value, nil
 		}
 	}
 	return "", errUnsupportedAlgorithm
