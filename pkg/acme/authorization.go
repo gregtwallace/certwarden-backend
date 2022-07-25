@@ -29,6 +29,9 @@ func (service *Service) GetAuth(authUrl string, accountKey AccountKey) (response
 
 	// POST-as-GET
 	bodyBytes, headers, err := service.postAsGet(authUrl, accountKey)
+	if err != nil {
+		return AuthResponse{}, err
+	}
 
 	// unmarshal response
 	response, err = unmarshalGetAuthResponse(bodyBytes, headers)
