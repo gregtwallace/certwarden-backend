@@ -53,15 +53,19 @@ func (service *Service) OrderCert(w http.ResponseWriter, r *http.Request) (err e
 	// TODO: THIS IS TEMPORARY FOR TESTING just to confirm auths can be PaG'ed
 	for i := range acmeResponse.Authorizations {
 		var auth acme.AuthResponse
+		var chall acme.Challenge
 		if *cert.AcmeAccount.IsStaging {
 			auth, err = service.acmeStaging.GetAuth(acmeResponse.Authorizations[i], key)
 
-			service.http01.AddToken(auth.Challenges[0].Token)
+			service.http01.AddToken(auth.Challenges[0].Token, key)
+
+			chall, err = service.acmeStaging.ValidateChallenge(auth.Challenges[0].Url, key)
+
+			service.logger.Debug(chall)
 		} else {
-			auth, err = service.acmeStaging.GetAuth(acmeResponse.Authorizations[i], key)
-			service.http01.AddToken(auth.Challenges[0].Token)
+
 		}
-		service.logger.Debug(auth)
+
 	}
 	// TODO: End TEMPORARY
 

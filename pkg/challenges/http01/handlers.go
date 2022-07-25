@@ -17,17 +17,15 @@ func (service *Service) challengeHandler(w http.ResponseWriter, r *http.Request)
 	service.mu.RLock()
 	defer service.mu.RUnlock()
 
-	for i := range service.tokens {
-		if service.tokens[i] == token {
-			service.logger.Debugf("writing challenge token to http-01 client: %s", token)
+	if keyAuth, exists := service.tokens[token]; exists {
+		service.logger.Debugf("writing challenge token to http-01 client: %s", token)
 
-			w.Header().Set("Content-Type", "application/octet-stream")
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(token))
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(keyAuth))
 
-			// done / exit
-			return
-		}
+		// done / exit
+		return
 	}
 
 	// if token was not found, 404

@@ -2,7 +2,6 @@ package acme
 
 import (
 	"bytes"
-	"crypto"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -22,22 +21,6 @@ type protectedHeader struct {
 	KeyId      string      `json:"kid,omitempty"`
 	Nonce      string      `json:"nonce"`
 	Url        string      `json:"url"`
-}
-
-// jsonWebKey for the ACME protectedHeader
-type jsonWebKey struct {
-	KeyType        string `json:"kty,omitempty"`
-	PublicExponent string `json:"e,omitempty"`   // RSA
-	Modulus        string `json:"n,omitempty"`   // RSA
-	CurveName      string `json:"crv,omitempty"` // EC
-	CurvePointX    string `json:"x,omitempty"`   // EC
-	CurvePointY    string `json:"y,omitempty"`   // EC
-}
-
-// AccountKey is the necessary account / key information for signed message generation
-type AccountKey struct {
-	Key crypto.PrivateKey
-	Kid string
 }
 
 // postToUrlSigned posts the payload to the specified url, using the specified AccountKeyInfo

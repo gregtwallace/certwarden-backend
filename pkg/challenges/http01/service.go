@@ -19,7 +19,7 @@ type App interface {
 type Service struct {
 	devMode bool
 	logger  *zap.SugaredLogger
-	tokens  []string
+	tokens  map[string]string
 	mu      sync.RWMutex // added mutex due to unsafe if add and remove token both run
 }
 
@@ -36,8 +36,8 @@ func NewService(app App, port int) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// allocate token slice
-	service.tokens = make([]string, 50)
+	// allocate token map
+	service.tokens = make(map[string]string, 50)
 
 	// start web server for http01 challenges
 	err := service.startServer(port)

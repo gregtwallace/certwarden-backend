@@ -14,15 +14,6 @@ type AuthResponse struct {
 	Wildcard   bool           `json:"wildcard,omitempty"`
 }
 
-// ACME challenge object
-type Challenge struct {
-	Type      string         `json:"type"`
-	Url       string         `json:"url"`
-	Status    string         `json:"status"`
-	Validated acmeTimeString `json:"validated,omitempty"`
-	Token     string         `json:"token"`
-}
-
 // Account response decoder
 func unmarshalGetAuthResponse(bodyBytes []byte, headers http.Header) (response AuthResponse, err error) {
 	err = json.Unmarshal(bodyBytes, &response)
