@@ -6,7 +6,7 @@ import (
 )
 
 // ACME authorization response
-type AuthResponse struct {
+type Authorization struct {
 	Identifier Identifier     `json:"identifier"` // see orders
 	Status     string         `json:"status"`
 	Expires    acmeTimeString `json:"expires"`
@@ -15,28 +15,28 @@ type AuthResponse struct {
 }
 
 // Account response decoder
-func unmarshalGetAuthResponse(bodyBytes []byte, headers http.Header) (response AuthResponse, err error) {
+func unmarshalAuthorization(bodyBytes []byte, headers http.Header) (response Authorization, err error) {
 	err = json.Unmarshal(bodyBytes, &response)
 	if err != nil {
-		return AuthResponse{}, err
+		return Authorization{}, err
 	}
 
 	return response, nil
 }
 
 // GetAuth does a POST-as-GET to feth an authorization object
-func (service *Service) GetAuth(authUrl string, accountKey AccountKey) (response AuthResponse, err error) {
+func (service *Service) GetAuth(authUrl string, accountKey AccountKey) (response Authorization, err error) {
 
 	// POST-as-GET
 	bodyBytes, headers, err := service.postAsGet(authUrl, accountKey)
 	if err != nil {
-		return AuthResponse{}, err
+		return Authorization{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalGetAuthResponse(bodyBytes, headers)
+	response, err = unmarshalAuthorization(bodyBytes, headers)
 	if err != nil {
-		return AuthResponse{}, err
+		return Authorization{}, err
 	}
 
 	return response, nil

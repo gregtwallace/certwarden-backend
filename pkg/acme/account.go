@@ -14,7 +14,7 @@ type NewAccountPayload struct {
 }
 
 // LE response to account data post/update
-type AcmeAccountResponse struct {
+type Account struct {
 	Contact   []string       `json:"contact"`
 	CreatedAt acmeTimeString `json:"createdAt"`
 	Status    string         `json:"status"`
@@ -26,10 +26,10 @@ type AcmeAccountResponse struct {
 }
 
 // Account response decoder
-func unmarshalAccountResponse(bodyBytes []byte, headers http.Header) (response AcmeAccountResponse, err error) {
+func unmarshalAccount(bodyBytes []byte, headers http.Header) (response Account, err error) {
 	err = json.Unmarshal(bodyBytes, &response)
 	if err != nil {
-		return AcmeAccountResponse{}, err
+		return Account{}, err
 	}
 
 	// kid isn't part of the JSON response, add it from the header.
@@ -47,7 +47,7 @@ func unmarshalAccountResponse(bodyBytes []byte, headers http.Header) (response A
 
 // Email() returns an email address from the first string in the Contact slice.
 // Any other contacts are discarded.
-func (response *AcmeAccountResponse) Email() string {
+func (response *Account) Email() string {
 	// if contacts are empty, email is blank
 	if len(response.Contact) == 0 {
 		return ""
@@ -57,7 +57,7 @@ func (response *AcmeAccountResponse) Email() string {
 }
 
 // NewAccount posts a secure message to the NewAccount URL of the directory
-func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.PrivateKey) (response AcmeAccountResponse, err error) {
+func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.PrivateKey) (response Account, err error) {
 	// Create ACME accountKey
 	// Register account should never use kid, it must always use JWK
 	var accountKey AccountKey
@@ -67,13 +67,13 @@ func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.
 	// post new-account
 	bodyBytes, headers, err := service.postToUrlSigned(payload, service.dir.NewAccount, accountKey)
 	if err != nil {
-		return AcmeAccountResponse{}, err
+		return Account{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalAccountResponse(bodyBytes, headers)
+	response, err = unmarshalAccount(bodyBytes, headers)
 	if err != nil {
-		return AcmeAccountResponse{}, err
+		return Account{}, err
 	}
 
 	return response, nil
@@ -88,18 +88,18 @@ type UpdateAccountPayload struct {
 // UpdateAccount posts a secure message to the kid of the account
 // initially support only exists to update the email address
 // TODO: key rotation and account deactivation
-func (service *Service) UpdateAccount(payload UpdateAccountPayload, accountKey AccountKey) (response AcmeAccountResponse, err error) {
+func (service *Service) UpdateAccount(payload UpdateAccountPayload, accountKey AccountKey) (response Account, err error) {
 
 	// post account update
 	bodyBytes, headers, err := service.postToUrlSigned(payload, accountKey.Kid, accountKey)
 	if err != nil {
-		return AcmeAccountResponse{}, err
+		return Account{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalAccountResponse(bodyBytes, headers)
+	response, err = unmarshalAccount(bodyBytes, headers)
 	if err != nil {
-		return AcmeAccountResponse{}, err
+		return Account{}, err
 	}
 
 	return response, nil
@@ -108,7 +108,7 @@ func (service *Service) UpdateAccount(payload UpdateAccountPayload, accountKey A
 // DeactivateAccount posts deactivated status to the ACME account
 // Once deactivated, accounts cannot be re-enabled. This action is DANGEROUS
 // and should only be done when there is a complete understanding of the repurcussions.
-func (service *Service) DeactivateAccount(accountKey AccountKey) (response AcmeAccountResponse, err error) {
+func (service *Service) DeactivateAccount(accountKey AccountKey) (response Account, err error) {
 	// deactivate payload is always the same
 	payload := UpdateAccountPayload{
 		Status: "deactivated",
@@ -117,13 +117,13 @@ func (service *Service) DeactivateAccount(accountKey AccountKey) (response AcmeA
 	// post account update
 	bodyBytes, headers, err := service.postToUrlSigned(payload, accountKey.Kid, accountKey)
 	if err != nil {
-		return AcmeAccountResponse{}, err
+		return Account{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalAccountResponse(bodyBytes, headers)
+	response, err = unmarshalAccount(bodyBytes, headers)
 	if err != nil {
-		return AcmeAccountResponse{}, err
+		return Account{}, err
 	}
 
 	return response, nil

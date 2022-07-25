@@ -19,7 +19,7 @@ type Service struct {
 	logger       *zap.SugaredLogger
 	httpClient   *httpclient.Client
 	dirUri       string
-	dir          *acmeDirectory
+	dir          *directory
 	nonceManager *nonces.Manager
 }
 
@@ -39,7 +39,7 @@ func NewService(app App, dirUri string) (*Service, error) {
 
 	// acme directory
 	service.dirUri = dirUri
-	service.dir = new(acmeDirectory)
+	service.dir = new(directory)
 
 	// initial population
 	err = service.fetchAcmeDirectory()

@@ -26,7 +26,7 @@ type Order struct {
 	Status         string          `json:"status"`
 	Expires        acmeTimeString  `json:"expires"`
 	Identifiers    IdentifierSlice `json:"identifiers"`
-	Error          AcmeError
+	Error          Error
 	Authorizations []string       `json:"authorizations"`
 	Finalize       string         `json:"finalize"`
 	Certificate    string         `json:"certificate,omitempty"`
@@ -50,7 +50,7 @@ func (ids *IdentifierSlice) DnsIdentifiers() []string {
 }
 
 // Account response decoder
-func unmarshalOrderResponse(bodyBytes []byte, headers http.Header) (response Order, err error) {
+func unmarshalOrder(bodyBytes []byte, headers http.Header) (response Order, err error) {
 	err = json.Unmarshal(bodyBytes, &response)
 	if err != nil {
 		return Order{}, err
@@ -72,7 +72,7 @@ func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey)
 	}
 
 	// unmarshal response
-	response, err = unmarshalOrderResponse(bodyBytes, headers)
+	response, err = unmarshalOrder(bodyBytes, headers)
 	if err != nil {
 		return Order{}, err
 	}
@@ -89,7 +89,7 @@ func (service *Service) GetOrder(orderUrl string, accountKey AccountKey) (respon
 	}
 
 	// unmarshal response
-	response, err = unmarshalOrderResponse(bodyBytes, headers)
+	response, err = unmarshalOrder(bodyBytes, headers)
 	if err != nil {
 		return Order{}, err
 	}

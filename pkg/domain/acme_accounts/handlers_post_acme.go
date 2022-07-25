@@ -40,7 +40,7 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (
 	}
 
 	// send the new-account to ACME
-	var acmeResponse acme.AcmeAccountResponse
+	var acmeResponse acme.Account
 	if *account.IsStaging {
 		acmeResponse, err = service.acmeStaging.NewAccount(account.newAccountPayload(), key)
 	} else {
@@ -106,7 +106,7 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// send the new-account to ACME
-	var acmeResponse acme.AcmeAccountResponse
+	var acmeResponse acme.Account
 	if *account.IsStaging {
 		acmeResponse, err = service.acmeStaging.DeactivateAccount(accountKey)
 	} else {

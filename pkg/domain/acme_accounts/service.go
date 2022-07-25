@@ -30,7 +30,7 @@ type Storage interface {
 	PostNewAccount(NewPayload) (id int, err error)
 
 	PutNameDescAccount(NameDescPayload) error
-	PutLEAccountResponse(id int, response acme.AcmeAccountResponse) error
+	PutLEAccountResponse(id int, response acme.Account) error
 
 	DeleteAccount(int) error
 

@@ -66,7 +66,7 @@ func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) 
 
 // leAccountResponseToDb translates the ACME account response into the fields we want to save
 // in the database
-func leAccountResponseToDb(id int, response acme.AcmeAccountResponse) accountDb {
+func leAccountResponseToDb(id int, response acme.Account) accountDb {
 	var account accountDb
 
 	account.id = intToNullInt32(&id)
@@ -84,7 +84,7 @@ func leAccountResponseToDb(id int, response acme.AcmeAccountResponse) accountDb 
 
 // PutLEAccountResponse populates an account with data that is returned by LE when
 //  an account is POSTed to
-func (store *Storage) PutLEAccountResponse(id int, response acme.AcmeAccountResponse) error {
+func (store *Storage) PutLEAccountResponse(id int, response acme.Account) error {
 	// Load id and response into db obj
 	accountDb := leAccountResponseToDb(id, response)
 

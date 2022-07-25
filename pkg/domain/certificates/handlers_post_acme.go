@@ -52,7 +52,7 @@ func (service *Service) OrderCert(w http.ResponseWriter, r *http.Request) (err e
 
 	// TODO: THIS IS TEMPORARY FOR TESTING just to confirm auths can be PaG'ed
 	for i := range acmeResponse.Authorizations {
-		var auth acme.AuthResponse
+		var auth acme.Authorization
 		var chall acme.Challenge
 		if *cert.AcmeAccount.IsStaging {
 			auth, err = service.acmeStaging.GetAuth(acmeResponse.Authorizations[i], key)

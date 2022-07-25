@@ -8,7 +8,7 @@ import (
 )
 
 // acmeDirectory struct holds ACME directory object
-type acmeDirectory struct {
+type directory struct {
 	NewNonce   string `json:"newNonce"`
 	NewAccount string `json:"newAccount"`
 	NewOrder   string `json:"newOrder"`
@@ -42,7 +42,7 @@ func (service *Service) fetchAcmeDirectory() error {
 		return err
 	}
 
-	var fetchedDir acmeDirectory
+	var fetchedDir directory
 	err = json.Unmarshal(body, &fetchedDir)
 	if err != nil {
 		return err

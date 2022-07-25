@@ -15,7 +15,7 @@ type Challenge struct {
 }
 
 // Account response decoder
-func unmarshalChallengeResponse(bodyBytes []byte, headers http.Header) (response Challenge, err error) {
+func unmarshalChallenge(bodyBytes []byte, headers http.Header) (response Challenge, err error) {
 	err = json.Unmarshal(bodyBytes, &response)
 	if err != nil {
 		return Challenge{}, err
@@ -34,7 +34,7 @@ func (service *Service) ValidateChallenge(challengeUrl string, accountKey Accoun
 	}
 
 	// unmarshal response
-	response, err = unmarshalChallengeResponse(bodyBytes, headers)
+	response, err = unmarshalChallenge(bodyBytes, headers)
 	if err != nil {
 		return Challenge{}, err
 	}
