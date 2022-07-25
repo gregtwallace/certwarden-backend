@@ -38,6 +38,15 @@ func (account *Account) AccountKey() (accountKey acme.AccountKey, err error) {
 	return accountKey, nil
 }
 
+// newAccountPayload() generates the payload for ACME to post to the
+// new-account endpoint
+func (account *Account) newAccountPayload() acme.NewAccountPayload {
+	return acme.NewAccountPayload{
+		TosAgreed: *account.AcceptedTos,
+		Contact:   emailToContact(*account.Email),
+	}
+}
+
 // new account info
 // used to return info about valid options when making a new account
 type newAccountOptions struct {
