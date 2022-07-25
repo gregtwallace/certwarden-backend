@@ -1,4 +1,4 @@
-package certificates
+package orders
 
 import (
 	"legocerthub-backend/pkg/acme"
@@ -9,10 +9,11 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// OrderCert sends the account information to the ACME new-order endpoint
-// which creates a new order for the certificate
+// NewOrder sends the account information to the ACME new-order endpoint
+// which creates a new order for the certificate. If an order already exists
+// ACME may send back the existing order instead of creating a new one
 // endpoint: /api/v1/certificates/:id/order
-func (service *Service) OrderCert(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err error) {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	// convert id param to an integer
@@ -41,9 +42,9 @@ func (service *Service) OrderCert(w http.ResponseWriter, r *http.Request) (err e
 	//send the new-account to ACME
 	var acmeResponse acme.Order
 	if *cert.AcmeAccount.IsStaging {
-		acmeResponse, err = service.acmeStaging.NewOrder(cert.newOrderPayload(), key)
+		acmeResponse, err = service.acmeStaging.NewOrder(cert.NewOrderPayload(), key)
 	} else {
-		acmeResponse, err = service.acmeProd.NewOrder(cert.newOrderPayload(), key)
+		acmeResponse, err = service.acmeProd.NewOrder(cert.NewOrderPayload(), key)
 	}
 	if err != nil {
 		service.logger.Error(err)
@@ -75,6 +76,8 @@ func (service *Service) OrderCert(w http.ResponseWriter, r *http.Request) (err e
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
+
+	// TODO: Kickoff order fulfillement
 
 	// return response to client
 	response := output.JsonResponse{

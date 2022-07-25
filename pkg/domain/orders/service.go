@@ -1,41 +1,33 @@
-package certificates
+package orders
 
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/domain/private_keys"
+	"legocerthub-backend/pkg/acme/challenges/http01"
+	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/output"
 
 	"go.uber.org/zap"
 )
 
-var errServiceComponent = errors.New("necessary cert service component is missing")
+var errServiceComponent = errors.New("necessary orders service component is missing")
 
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
-	GetCertificatesStorage() Storage
-	GetKeysService() *private_keys.Service
+	GetOrderStorage() Storage
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
-	GetAcctsService() *acme_accounts.Service
+	GetHttp01Service() *http01.Service
 }
 
 // Storage interface for storage functions
 type Storage interface {
-	GetAllCerts() (certs []Certificate, err error)
-	GetOneCertById(id int, withAcctPem bool) (cert Certificate, err error)
-	GetOneCertByName(name string, withAcctPem bool) (cert Certificate, err error)
+	GetOneCertById(id int, withAcctPem bool) (cert certificates.Certificate, err error)
 
-	PostNewCert(payload NewPayload) (id int, err error)
-
-	PutDetailsCert(payload DetailsUpdatePayload) (err error)
-
-	DeleteCert(id int) (err error)
-
-	GetOneAccountById(id int, withPem bool) (acme_accounts.Account, error)
+	// orders
+	PostNewOrder(cert certificates.Certificate, response acme.Order) (newId int, err error)
 }
 
 // Keys service struct
@@ -43,13 +35,12 @@ type Service struct {
 	logger      *zap.SugaredLogger
 	output      *output.Service
 	storage     Storage
-	keys        *private_keys.Service
 	acmeProd    *acme.Service
 	acmeStaging *acme.Service
-	accounts    *acme_accounts.Service
+	http01      *http01.Service
 }
 
-// NewService creates a new service
+// NewService creates a new private_key service
 func NewService(app App) (*Service, error) {
 	service := new(Service)
 
@@ -66,13 +57,7 @@ func NewService(app App) (*Service, error) {
 	}
 
 	// storage
-	service.storage = app.GetCertificatesStorage()
-	if service.storage == nil {
-		return nil, errServiceComponent
-	}
-
-	// key service
-	service.keys = app.GetKeysService()
+	service.storage = app.GetOrderStorage()
 	if service.storage == nil {
 		return nil, errServiceComponent
 	}
@@ -87,9 +72,9 @@ func NewService(app App) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// account services
-	service.accounts = app.GetAcctsService()
-	if service.acmeStaging == nil {
+	// http-01 challenge service
+	service.http01 = app.GetHttp01Service()
+	if service.http01 == nil {
 		return nil, errServiceComponent
 	}
 

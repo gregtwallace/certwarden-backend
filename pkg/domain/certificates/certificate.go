@@ -1,6 +1,7 @@
 package certificates
 
 import (
+	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/certificates/challenges"
 	"legocerthub-backend/pkg/domain/private_keys"
@@ -35,4 +36,24 @@ type Certificate struct {
 type newCertOptions struct {
 	AvailableKeys     []private_keys.Key      `json:"private_keys"`
 	AvailableAccounts []acme_accounts.Account `json:"acme_accounts"`
+}
+
+// NewOrderPayload creates the appropriate newOrder payload for ACME
+func (cert *Certificate) NewOrderPayload() acme.NewOrderPayload {
+	var identifiers []acme.Identifier
+
+	// subject is always required and should be first
+	// dns is the only supported type and is hardcoded
+	identifiers = append(identifiers, acme.Identifier{Type: "dns", Value: *cert.Subject})
+
+	// add alt names if they exist
+	if cert.SubjectAltNames != nil {
+		for _, name := range cert.SubjectAltNames {
+			identifiers = append(identifiers, acme.Identifier{Type: "dns", Value: name})
+		}
+	}
+
+	return acme.NewOrderPayload{
+		Identifiers: identifiers,
+	}
 }
