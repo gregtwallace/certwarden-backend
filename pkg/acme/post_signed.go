@@ -73,7 +73,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	var messageJson []byte
 	var response *http.Response
 	var bodyBytes []byte
-	var acmeError AcmeErrorResponse
+	var acmeError AcmeError
 
 	// loop to allow retry on badNonce error, capped at 3 tries
 	for i, done := 0, false; i < 3 && !done; i++ {

@@ -60,7 +60,7 @@ func (service *Service) WriteErrorJSON(w http.ResponseWriter, err error) (jsonWr
 	case Error:
 		return service.WriteJSON(w, err.Status, err, "error")
 	// ACME error repsonse (from ACME upstream server)
-	case acme.AcmeErrorResponse:
+	case acme.AcmeError:
 		errToWrite := Error{
 			Status:  err.Status,
 			Type:    err.Type,

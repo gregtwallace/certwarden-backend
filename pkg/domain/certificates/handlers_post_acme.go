@@ -39,7 +39,7 @@ func (service *Service) OrderCert(w http.ResponseWriter, r *http.Request) (err e
 	}
 
 	//send the new-account to ACME
-	var acmeResponse acme.OrderResponse
+	var acmeResponse acme.Order
 	if *cert.AcmeAccount.IsStaging {
 		acmeResponse, err = service.acmeStaging.NewOrder(cert.newOrderPayload(), key)
 	} else {

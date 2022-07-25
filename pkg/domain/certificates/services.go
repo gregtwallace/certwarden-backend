@@ -32,7 +32,7 @@ type Storage interface {
 	GetOneCertByName(name string, withAcctPem bool) (cert Certificate, err error)
 
 	PostNewCert(payload NewPayload) (id int, err error)
-	PostNewOrder(cert Certificate, response acme.OrderResponse) (newId int, err error)
+	PostNewOrder(cert Certificate, response acme.Order) (newId int, err error)
 
 	PutDetailsCert(payload DetailsUpdatePayload) (err error)
 

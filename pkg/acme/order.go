@@ -22,17 +22,17 @@ type Identifier struct {
 type IdentifierSlice []Identifier
 
 // LE response with order information
-type OrderResponse struct {
+type Order struct {
 	Status         string          `json:"status"`
 	Expires        acmeTimeString  `json:"expires"`
 	Identifiers    IdentifierSlice `json:"identifiers"`
-	Authorizations []string        `json:"authorizations"`
-	Finalize       string          `json:"finalize"`
-	Certificate    string          `json:"certificate,omitempty"`
-	Location       string          `json:"-"` // omit because it is in the header
-	// not implemented
-	// NotBefore      acmeTimeString `json:"notBefore"`
-	// NotAfter       acmeTimeString `json:"notAfter"`
+	Error          AcmeError
+	Authorizations []string       `json:"authorizations"`
+	Finalize       string         `json:"finalize"`
+	Certificate    string         `json:"certificate,omitempty"`
+	NotBefore      acmeTimeString `json:"notBefore,omitempty"`
+	NotAfter       acmeTimeString `json:"notAfter,omitempty"`
+	Location       string         `json:"-"` // omit because it is in the header
 }
 
 // dnsIdentifiers returns a slice of the value strings for a response's
@@ -50,10 +50,10 @@ func (ids *IdentifierSlice) DnsIdentifiers() []string {
 }
 
 // Account response decoder
-func unmarshalOrderResponse(bodyBytes []byte, headers http.Header) (response OrderResponse, err error) {
+func unmarshalOrderResponse(bodyBytes []byte, headers http.Header) (response Order, err error) {
 	err = json.Unmarshal(bodyBytes, &response)
 	if err != nil {
-		return OrderResponse{}, err
+		return Order{}, err
 	}
 
 	// order location (url) isn't part of the JSON response, add it from the header.
@@ -63,18 +63,35 @@ func unmarshalOrderResponse(bodyBytes []byte, headers http.Header) (response Ord
 }
 
 // NewOrder posts a secure message to the NewOrder URL of the directory
-func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey) (response OrderResponse, err error) {
+func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey) (response Order, err error) {
 
 	// post new-order
 	bodyBytes, headers, err := service.postToUrlSigned(payload, service.dir.NewOrder, accountKey)
 	if err != nil {
-		return OrderResponse{}, err
+		return Order{}, err
 	}
 
 	// unmarshal response
 	response, err = unmarshalOrderResponse(bodyBytes, headers)
 	if err != nil {
-		return OrderResponse{}, err
+		return Order{}, err
+	}
+
+	return response, nil
+}
+
+// GetOrder does a POST-as-GET to fetch the current state of the given order URL
+func (service *Service) GetOrder(orderUrl string, accountKey AccountKey) (response Order, err error) {
+	// POST-as-GET
+	bodyBytes, headers, err := service.postAsGet(orderUrl, accountKey)
+	if err != nil {
+		return Order{}, err
+	}
+
+	// unmarshal response
+	response, err = unmarshalOrderResponse(bodyBytes, headers)
+	if err != nil {
+		return Order{}, err
 	}
 
 	return response, nil

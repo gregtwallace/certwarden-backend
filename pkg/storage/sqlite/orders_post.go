@@ -8,7 +8,7 @@ import (
 
 // newOrderToDb translates the ACME new order response into the fields we want to save
 // in the database
-func newOrderRespToDb(cert certificates.Certificate, response acme.OrderResponse) orderDb {
+func newOrderRespToDb(cert certificates.Certificate, response acme.Order) orderDb {
 	var order orderDb
 
 	// prevent nil pointer
@@ -36,7 +36,7 @@ func newOrderRespToDb(cert certificates.Certificate, response acme.OrderResponse
 
 // PostNewOrder makes a new order in the db with the cert information and
 // ACME response from posting the new order to ACME
-func (store *Storage) PostNewOrder(cert certificates.Certificate, response acme.OrderResponse) (newId int, err error) {
+func (store *Storage) PostNewOrder(cert certificates.Certificate, response acme.Order) (newId int, err error) {
 	// Load response into db obj
 	orderDb := newOrderRespToDb(cert, response)
 
