@@ -118,14 +118,14 @@ func CreateAndConfigure(config Configuration) (*Application, error) {
 		return nil, err
 	}
 
-	// orders service
-	app.orders, err = orders.NewService(app)
+	// authorizations service
+	app.authorizations, err = authorizations.NewService(app)
 	if err != nil {
 		return nil, err
 	}
 
-	// authorizations service
-	app.authorizations, err = authorizations.NewService(app)
+	// orders service
+	app.orders, err = orders.NewService(app)
 	if err != nil {
 		return nil, err
 	}

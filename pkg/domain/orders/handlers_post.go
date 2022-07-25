@@ -12,7 +12,7 @@ import (
 // NewOrder sends the account information to the ACME new-order endpoint
 // which creates a new order for the certificate. If an order already exists
 // ACME may send back the existing order instead of creating a new one
-// endpoint: /api/v1/certificates/:id/order
+// endpoint: /api/v1/certificates/:id/orders
 func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err error) {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
@@ -39,7 +39,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 		return output.ErrInternal
 	}
 
-	//send the new-account to ACME
+	// send the new-order to ACME
 	var acmeResponse acme.Order
 	if *cert.AcmeAccount.IsStaging {
 		acmeResponse, err = service.acmeStaging.NewOrder(cert.NewOrderPayload(), key)
@@ -50,41 +50,28 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 		service.logger.Error(err)
 		return output.ErrInternal
 	}
+	service.logger.Debugf("new order location: %s", acmeResponse.Location)
 
-	// TODO: THIS IS TEMPORARY FOR TESTING just to confirm auths can be PaG'ed
-	for i := range acmeResponse.Authorizations {
-		var auth acme.Authorization
-		var chall acme.Challenge
-		if *cert.AcmeAccount.IsStaging {
-			auth, err = service.acmeStaging.GetAuth(acmeResponse.Authorizations[i], key)
-
-			service.http01.AddToken(auth.Challenges[0].Token, key)
-
-			chall, err = service.acmeStaging.ValidateChallenge(auth.Challenges[0].Url, key)
-
-			service.logger.Debug(chall)
-		} else {
-
-		}
-
-	}
-	// TODO: End TEMPORARY
+	// create order object from response
+	order := makeNewOrder(&cert, &acmeResponse)
 
 	// save ACME response to order storage
-	newOrderId, err := service.storage.PostNewOrder(cert, acmeResponse)
+	order.ID = new(int)
+	*order.ID, err = service.storage.PostNewOrder(order)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// TODO: Kickoff order fulfillement
+	// kickoff order fulfillement (async)
+	service.FulfillOrder(order)
 
 	// return response to client
 	response := output.JsonResponse{
 		Status: http.StatusCreated,
 		// Message: "order created", // TODO?
 		Message: acmeResponse,
-		ID:      newOrderId,
+		ID:      *order.ID,
 	}
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")

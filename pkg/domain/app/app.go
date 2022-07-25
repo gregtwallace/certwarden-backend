@@ -82,6 +82,10 @@ func (app *Application) GetAcctsService() *acme_accounts.Service {
 	return app.accounts
 }
 
+func (app *Application) GetAuthzService() *authorizations.Service {
+	return app.authorizations
+}
+
 func (app *Application) GetHttp01Service() *http01.Service {
 	return app.http01
 }

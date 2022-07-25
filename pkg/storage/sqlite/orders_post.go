@@ -2,13 +2,12 @@ package sqlite
 
 import (
 	"context"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/domain/certificates"
+	"legocerthub-backend/pkg/domain/orders"
 )
 
 // newOrderToDb translates the ACME new order response into the fields we want to save
 // in the database
-func newOrderToDb(cert certificates.Certificate, response acme.Order) orderDb {
+func newOrderToDb(newOrder orders.Order) orderDb {
 	var order orderDb
 
 	// prevent nil pointer
@@ -16,17 +15,17 @@ func newOrderToDb(cert certificates.Certificate, response acme.Order) orderDb {
 	order.privateKey = new(keyDb)
 	order.certificate = new(certificateDb)
 
-	order.acmeAccount.id = intToNullInt32(cert.AcmeAccount.ID)
-	order.privateKey.id = intToNullInt32(cert.PrivateKey.ID)
-	order.certificate.id = intToNullInt32(cert.ID)
+	order.acmeAccount.id = intToNullInt32(newOrder.Certificate.AcmeAccount.ID)
+	order.privateKey.id = intToNullInt32(newOrder.Certificate.PrivateKey.ID)
+	order.certificate.id = intToNullInt32(newOrder.Certificate.ID)
 
-	order.location = stringToNullString(&response.Location)
+	order.location = stringToNullString(&newOrder.Acme.Location)
 
-	order.status = stringToNullString(&response.Status)
-	order.expires = intToNullInt32(response.Expires.ToUnixTime())
-	order.dnsIdentifiers = sliceToCommaNullString(response.Identifiers.DnsIdentifiers())
-	order.authorizations = sliceToCommaNullString(response.Authorizations)
-	order.finalize = stringToNullString(&response.Finalize)
+	order.status = stringToNullString(&newOrder.Acme.Status)
+	order.expires = intToNullInt32(newOrder.Acme.Expires.ToUnixTime())
+	order.dnsIdentifiers = sliceToCommaNullString(newOrder.Acme.Identifiers.DnsIdentifiers())
+	order.authorizations = sliceToCommaNullString(newOrder.Acme.Authorizations)
+	order.finalize = stringToNullString(&newOrder.Acme.Finalize)
 
 	order.createdAt = timeNow()
 	order.updatedAt = order.createdAt
@@ -36,9 +35,9 @@ func newOrderToDb(cert certificates.Certificate, response acme.Order) orderDb {
 
 // PostNewOrder makes a new order in the db with the cert information and
 // ACME response from posting the new order to ACME
-func (store *Storage) PostNewOrder(cert certificates.Certificate, response acme.Order) (newId int, err error) {
+func (store *Storage) PostNewOrder(newOrder orders.Order) (newId int, err error) {
 	// Load response into db obj
-	orderDb := newOrderToDb(cert, response)
+	orderDb := newOrderToDb(newOrder)
 
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()

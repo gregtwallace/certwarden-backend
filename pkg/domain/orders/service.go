@@ -3,7 +3,7 @@ package orders
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/acme/challenges/http01"
+	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/output"
 
@@ -19,7 +19,7 @@ type App interface {
 	GetOrderStorage() Storage
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
-	GetHttp01Service() *http01.Service
+	GetAuthzService() *authorizations.Service
 }
 
 // Storage interface for storage functions
@@ -27,17 +27,17 @@ type Storage interface {
 	GetOneCertById(id int, withAcctPem bool) (cert certificates.Certificate, err error)
 
 	// orders
-	PostNewOrder(cert certificates.Certificate, response acme.Order) (newId int, err error)
+	PostNewOrder(newOrder Order) (newId int, err error)
 }
 
 // Keys service struct
 type Service struct {
-	logger      *zap.SugaredLogger
-	output      *output.Service
-	storage     Storage
-	acmeProd    *acme.Service
-	acmeStaging *acme.Service
-	http01      *http01.Service
+	logger         *zap.SugaredLogger
+	output         *output.Service
+	storage        Storage
+	acmeProd       *acme.Service
+	acmeStaging    *acme.Service
+	authorizations *authorizations.Service
 }
 
 // NewService creates a new private_key service
@@ -72,9 +72,9 @@ func NewService(app App) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// http-01 challenge service
-	service.http01 = app.GetHttp01Service()
-	if service.http01 == nil {
+	// authorization service
+	service.authorizations = app.GetAuthzService()
+	if service.authorizations == nil {
 		return nil, errServiceComponent
 	}
 

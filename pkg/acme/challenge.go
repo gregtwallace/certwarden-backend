@@ -41,3 +41,20 @@ func (service *Service) ValidateChallenge(challengeUrl string, accountKey Accoun
 
 	return response, nil
 }
+
+// GetChallenge does a POST-as-GET to fetch the current state of the given challenge URL
+func (service *Service) GetChallenge(challengeUrl string, key AccountKey) (response Challenge, err error) {
+	// POST-as-GET
+	bodyBytes, headers, err := service.postAsGet(challengeUrl, key)
+	if err != nil {
+		return Challenge{}, err
+	}
+
+	// unmarshal response
+	response, err = unmarshalChallenge(bodyBytes, headers)
+	if err != nil {
+		return Challenge{}, err
+	}
+
+	return response, nil
+}
