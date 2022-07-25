@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/challenges/http01"
+	"legocerthub-backend/pkg/acme/challenges/http01"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/private_keys"
