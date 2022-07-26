@@ -3,7 +3,7 @@ package authorizations
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/acme/challenges/http01"
+	"legocerthub-backend/pkg/challenge_providers/http01"
 
 	"go.uber.org/zap"
 )
