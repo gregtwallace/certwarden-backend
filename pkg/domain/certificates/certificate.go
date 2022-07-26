@@ -3,7 +3,7 @@ package certificates
 import (
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/domain/certificates/challenges"
+	"legocerthub-backend/pkg/domain/challenges"
 	"legocerthub-backend/pkg/domain/private_keys"
 )
 
