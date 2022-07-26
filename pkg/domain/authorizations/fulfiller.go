@@ -82,13 +82,13 @@ func (service *Service) fulfillAuth(authUrl string, challType string, key acme.A
 
 		chall, err = service.acmeStaging.ValidateChallenge(auth.Challenges[0].Url, key)
 
-		time.Sleep(30 * time.Second)
+		time.Sleep(20 * time.Second)
 
 		chall, err = service.acmeStaging.GetChallenge(auth.Challenges[0].Url, key)
 		service.logger.Debug(chall)
 
 	} else {
-
+		// TODO: Prod
 	}
 	//
 

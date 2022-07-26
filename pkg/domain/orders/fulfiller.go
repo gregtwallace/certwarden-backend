@@ -6,7 +6,7 @@ import (
 
 // FulfillOrder launches a go routine to fulfill the specified order
 func (service *Service) FulfillOrder(order Order) {
-	go func(order Order) {
+	go func() {
 		// get account key
 		key, err := order.Certificate.AcmeAccount.AccountKey()
 		if err != nil {
@@ -57,5 +57,7 @@ func (service *Service) FulfillOrder(order Order) {
 
 		// TODO: Update database with new order status
 
-	}(order)
+		service.logger.Debugf("end of order fulfiller")
+
+	}()
 }
