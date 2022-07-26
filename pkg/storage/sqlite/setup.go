@@ -160,7 +160,7 @@ func (store *Storage) createDBTables() error {
 			id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 			acme_account_id integer NOT NULL,
 			private_key_id integer,
-			certificate_id integer NOT NULL,
+			certificate_id integer,
 			acme_location text NOT NULL UNIQUE,
 			status text NOT NULL,
 			expires integer,
@@ -172,7 +172,7 @@ func (store *Storage) createDBTables() error {
 			updated_at integer NOT NULL,
 			FOREIGN KEY (acme_account_id)
 				REFERENCES acme_accounts (id)
-					ON DELETE SET NULL
+					ON DELETE CASCADE
 					ON UPDATE NO ACTION,
 			FOREIGN KEY (private_key_id)
 				REFERENCES private_keys (id)
