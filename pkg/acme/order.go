@@ -26,13 +26,13 @@ type Order struct {
 	Status         string          `json:"status"`
 	Expires        acmeTimeString  `json:"expires"`
 	Identifiers    IdentifierSlice `json:"identifiers"`
-	Error          Error
-	Authorizations []string       `json:"authorizations"`
-	Finalize       string         `json:"finalize"`
-	Certificate    string         `json:"certificate,omitempty"`
-	NotBefore      acmeTimeString `json:"notBefore,omitempty"`
-	NotAfter       acmeTimeString `json:"notAfter,omitempty"`
-	Location       string         `json:"-"` // omit because it is in the header
+	Error          *Error          `json:"error,omitempty"`
+	Authorizations []string        `json:"authorizations"`
+	Finalize       string          `json:"finalize"`
+	Certificate    string          `json:"certificate,omitempty"`
+	NotBefore      acmeTimeString  `json:"notBefore,omitempty"`
+	NotAfter       acmeTimeString  `json:"notAfter,omitempty"`
+	Location       string          `json:"-"` // omit because it is in the header
 }
 
 // dnsIdentifiers returns a slice of the value strings for a response's

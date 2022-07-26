@@ -12,6 +12,7 @@ type Challenge struct {
 	Status    string         `json:"status"`
 	Validated acmeTimeString `json:"validated,omitempty"`
 	Token     string         `json:"token"`
+	Error     *Error         `json:"error,omitempty"`
 }
 
 // Account response decoder
