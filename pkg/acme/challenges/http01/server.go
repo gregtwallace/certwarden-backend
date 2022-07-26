@@ -23,10 +23,12 @@ func (service *Service) startServer(port int) (err error) {
 	srv := &http.Server{
 		Addr:         servAddr,
 		Handler:      service.routes(),
-		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
 	}
+
+	// no need to keep these connections alive
+	srv.SetKeepAlivesEnabled(false)
 
 	// launch webserver
 	service.logger.Infof("starting http-01 challenge server on %s.", servAddr)
