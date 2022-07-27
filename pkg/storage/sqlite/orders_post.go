@@ -13,20 +13,17 @@ func newOrderToDb(newOrder orders.Order) orderDb {
 
 	// prevent nil pointer
 	order.acmeAccount = new(accountDb)
-	order.privateKey = new(keyDb)
 	order.certificate = new(certificateDb)
 
 	order.acmeAccount.id = intToNullInt32(newOrder.Certificate.AcmeAccount.ID)
-	order.privateKey.id = intToNullInt32(newOrder.Certificate.PrivateKey.ID)
 	order.certificate.id = intToNullInt32(newOrder.Certificate.ID)
 
-	order.location = stringToNullString(&newOrder.Acme.Location)
-
-	order.status = stringToNullString(&newOrder.Acme.Status)
-	order.expires = intToNullInt32(newOrder.Acme.Expires.ToUnixTime())
-	order.dnsIdentifiers = sliceToCommaNullString(newOrder.Acme.Identifiers.DnsIdentifiers())
-	order.authorizations = sliceToCommaNullString(newOrder.Acme.Authorizations)
-	order.finalize = stringToNullString(&newOrder.Acme.Finalize)
+	order.location = stringToNullString(newOrder.Location)
+	order.status = stringToNullString(newOrder.Status)
+	order.expires = intToNullInt32(newOrder.Expires)
+	order.dnsIdentifiers = sliceToCommaNullString(newOrder.DnsIdentifiers)
+	order.authorizations = sliceToCommaNullString(newOrder.Authorizations)
+	order.finalize = stringToNullString(newOrder.Finalize)
 
 	order.createdAt = timeNow()
 	order.updatedAt = order.createdAt
@@ -73,7 +70,6 @@ func (store *Storage) PostNewOrder(newOrder orders.Order) (newId int, err error)
 			acme_orders
 				(
 					acme_account_id,
-					private_key_id,
 					certificate_id,
 					acme_location,
 					status,
@@ -95,8 +91,7 @@ func (store *Storage) PostNewOrder(newOrder orders.Order) (newId int, err error)
 					$7,
 					$8,
 					$9,
-					$10,
-					$11
+					$10
 				)
 		RETURNING
 			id
@@ -104,7 +99,6 @@ func (store *Storage) PostNewOrder(newOrder orders.Order) (newId int, err error)
 
 		err = tx.QueryRowContext(ctx, query,
 			orderDb.acmeAccount.id,
-			orderDb.privateKey.id,
 			orderDb.certificate.id,
 			orderDb.location,
 			orderDb.status,
@@ -122,25 +116,19 @@ func (store *Storage) PostNewOrder(newOrder orders.Order) (newId int, err error)
 		UPDATE
 			acme_orders
 		SET
-			acme_account_id = $1,
-			private_key_id = $2,
-			certificate_id = $3,
-			status = $4,
-			expires = $5,
-			dns_identifiers = $6,
-			authorizations = $7,
-			finalize = $8,
-			updated_at = $9
+			status = $1,
+			expires = $2,
+			dns_identifiers = $3,
+			authorizations = $4,
+			finalize = $5,
+			updated_at = $6
 		WHERE
-			acme_location = $10
+			acme_location = $7
 		RETURNING
 			id
 		`
 
 		err = tx.QueryRowContext(ctx, query,
-			orderDb.acmeAccount.id,
-			orderDb.privateKey.id,
-			orderDb.certificate.id,
 			orderDb.status,
 			orderDb.expires,
 			orderDb.dnsIdentifiers,

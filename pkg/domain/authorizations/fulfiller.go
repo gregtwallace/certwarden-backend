@@ -19,7 +19,7 @@ func (service *Service) FulfillAuthz(authUrls []string, challType string, key ac
 	wgErrors := make(chan error, wgSize)
 
 	// fulfill each auth concurrently
-	// TODO: Add context to cancel everything if any auth fails / invalid
+	// TODO: Add context to cancel everything if any auth fails / invalid?
 	for i := range authUrls {
 		go func(authUrl string, challType string, key acme.AccountKey, isStaging bool) {
 			defer wg.Done()

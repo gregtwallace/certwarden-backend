@@ -159,7 +159,7 @@ func (store *Storage) createDBTables() error {
 	query = `CREATE TABLE IF NOT EXISTS acme_orders (
 			id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 			acme_account_id integer NOT NULL,
-			private_key_id integer,
+			finalized_key_id integer,
 			certificate_id integer,
 			acme_location text NOT NULL UNIQUE,
 			status text NOT NULL,
