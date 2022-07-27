@@ -7,12 +7,12 @@ import (
 
 // ACME challenge object
 type Challenge struct {
-	Type      string         `json:"type"`
-	Url       string         `json:"url"`
-	Status    string         `json:"status"`
-	Validated acmeTimeString `json:"validated,omitempty"`
-	Token     string         `json:"token"`
-	Error     *Error         `json:"error,omitempty"`
+	Type      string     `json:"type"`
+	Url       string     `json:"url"`
+	Status    string     `json:"status"`
+	Validated timeString `json:"validated,omitempty"`
+	Token     string     `json:"token"`
+	Error     *Error     `json:"error,omitempty"`
 }
 
 // Account response decoder

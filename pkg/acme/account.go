@@ -15,10 +15,10 @@ type NewAccountPayload struct {
 
 // LE response to account data post/update
 type Account struct {
-	Status    string         `json:"status"`
-	Contact   []string       `json:"contact"`
-	CreatedAt acmeTimeString `json:"createdAt"`
-	Location  *string        `json:"-"` // omit because it is in the header
+	Status    string     `json:"status"`
+	Contact   []string   `json:"contact"`
+	CreatedAt timeString `json:"createdAt"`
+	Location  *string    `json:"-"` // omit because it is in the header
 	// -- also available but not in use
 	// JsonWebKey jsonWebKey `json:"key"`
 	// Orders     string     `json:"orders"`

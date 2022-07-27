@@ -24,14 +24,14 @@ type IdentifierSlice []Identifier
 // LE response with order information
 type Order struct {
 	Status         string          `json:"status"`
-	Expires        acmeTimeString  `json:"expires"`
+	Expires        timeString      `json:"expires"`
 	Identifiers    IdentifierSlice `json:"identifiers"`
 	Error          *Error          `json:"error,omitempty"`
 	Authorizations []string        `json:"authorizations"`
 	Finalize       string          `json:"finalize"`
 	Certificate    string          `json:"certificate,omitempty"`
-	NotBefore      acmeTimeString  `json:"notBefore,omitempty"`
-	NotAfter       acmeTimeString  `json:"notAfter,omitempty"`
+	NotBefore      timeString      `json:"notBefore,omitempty"`
+	NotAfter       timeString      `json:"notAfter,omitempty"`
 	Location       string          `json:"-"` // omit because it is in the header
 }
 

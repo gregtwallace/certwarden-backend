@@ -53,11 +53,11 @@ func encodeBigInt(bigInt *big.Int, keyBitSize int) (encodedProp string) {
 // acmeTimeString is a string that has a method to convert to unix time
 // this allows convenient conversion to unix time from various acme
 // responses
-type acmeTimeString string
+type timeString string
 
 // ToUnixTime turns an acmeTimeString (acme response formatted time string) into a
 // unix time int. If nil pointer, return nil; if error, return 0.
-func (ats *acmeTimeString) ToUnixTime() (val *int) {
+func (ats *timeString) ToUnixTime() (val *int) {
 	if ats == nil {
 		return nil
 	}

@@ -7,11 +7,11 @@ import (
 
 // ACME authorization response
 type Authorization struct {
-	Identifier Identifier     `json:"identifier"` // see orders
-	Status     string         `json:"status"`
-	Expires    acmeTimeString `json:"expires"`
-	Challenges []Challenge    `json:"challenges"`
-	Wildcard   bool           `json:"wildcard,omitempty"`
+	Identifier Identifier  `json:"identifier"` // see orders
+	Status     string      `json:"status"`
+	Expires    timeString  `json:"expires"`
+	Challenges []Challenge `json:"challenges"`
+	Wildcard   bool        `json:"wildcard,omitempty"`
 }
 
 // Account response decoder
