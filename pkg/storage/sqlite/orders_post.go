@@ -9,6 +9,7 @@ import (
 // newOrderToDb translates the ACME new order response into the fields we want to save
 // in the database
 func newOrderToDb(newOrder orders.Order) orderDb {
+	// create db obj
 	var order orderDb
 
 	// prevent nil pointer
@@ -20,6 +21,7 @@ func newOrderToDb(newOrder orders.Order) orderDb {
 
 	order.location = stringToNullString(newOrder.Location)
 	order.status = stringToNullString(newOrder.Status)
+	order.err = acmeErrorToNullString(newOrder.Error)
 	order.expires = intToNullInt32(newOrder.Expires)
 	order.dnsIdentifiers = sliceToCommaNullString(newOrder.DnsIdentifiers)
 	order.authorizations = sliceToCommaNullString(newOrder.Authorizations)

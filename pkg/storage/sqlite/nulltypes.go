@@ -2,6 +2,8 @@ package sqlite
 
 import (
 	"database/sql"
+	"encoding/json"
+	"legocerthub-backend/pkg/acme"
 	"strings"
 )
 
@@ -114,6 +116,42 @@ func commaNullStringToSlice(nullString sql.NullString) []string {
 			// empty string = empty
 			return nil
 		}
+	}
+
+	return nil
+}
+
+// acmeErrorToNullString converts an acme.Error into a json string and then
+// converts that into a NullString
+func acmeErrorToNullString(acmeErr *acme.Error) (nullString sql.NullString) {
+	if acmeErr == nil {
+		nullString.Valid = false
+		return nullString
+	}
+
+	acmeErrBytes, err := json.Marshal(acmeErr)
+	if err != nil {
+		nullString.Valid = false
+		return nullString
+	}
+
+	nullString.Valid = true
+	nullString.String = string(acmeErrBytes)
+	return nullString
+}
+
+// nullStringToAcmeError converts a json NullString into an acme.Error
+// object
+func nullStringToAcmeError(nullString sql.NullString) (acmeErr *acme.Error) {
+	if nullString.Valid {
+		// if valid, unmarshal
+		acmeErr := new(acme.Error)
+		err := json.Unmarshal([]byte(nullString.String), acmeErr)
+		if err != nil {
+			// if unmarshal fails, not valid, return nil
+			return nil
+		}
+		return acmeErr
 	}
 
 	return nil

@@ -27,6 +27,7 @@ type Storage interface {
 	GetOneCertById(id int, withAcctPem bool) (cert certificates.Certificate, err error)
 
 	// orders
+	GetCertOrders(certId int) (orders []Order, err error)
 	PostNewOrder(newOrder Order) (newId int, err error)
 }
 
