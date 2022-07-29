@@ -13,7 +13,7 @@ import (
 // GetCertOrders is an http handler that returns all of the orders for a specified cert id
 func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) (err error) {
 	// convert id param to an integer
-	certIdParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	certIdParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
 	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
