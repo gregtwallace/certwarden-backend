@@ -28,7 +28,11 @@ type Storage interface {
 
 	// orders
 	GetCertOrders(certId int) (orders []Order, err error)
-	PostNewOrder(newOrder Order) (newId int, err error)
+	GetOneOrder(orderId int) (order Order, err error)
+
+	PostNewOrder(cert certificates.Certificate, order acme.Order) (newId int, err error)
+
+	UpdateOrderAcme(orderId int, order acme.Order) (err error)
 }
 
 // Keys service struct

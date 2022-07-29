@@ -29,6 +29,9 @@ var (
 	// domain
 	ErrDomainBad     = errors.New("bad domain or subject name")
 	ErrDomainMissing = errors.New("missing domain or subject")
+
+	// order
+	ErrOrderMismatch = errors.New("order cert id does not match cert")
 )
 
 // IsIdNew returns an error if the id isn't the specified new

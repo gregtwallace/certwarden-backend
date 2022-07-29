@@ -40,17 +40,18 @@ func (app *Application) Routes() http.Handler {
 
 	// certificates
 	app.makeHandle(http.MethodGet, "/api/v1/certificates", app.certificates.GetAllCerts)
-	app.makeHandle(http.MethodGet, "/api/v1/certificates/:id", app.certificates.GetOneCert)
+	app.makeHandle(http.MethodGet, "/api/v1/certificates/:certid", app.certificates.GetOneCert)
 
 	app.makeHandle(http.MethodPost, "/api/v1/certificates", app.certificates.PostNewCert)
 
-	app.makeHandle(http.MethodPut, "/api/v1/certificates/:id", app.certificates.PutDetailsCert)
+	app.makeHandle(http.MethodPut, "/api/v1/certificates/:certid", app.certificates.PutDetailsCert)
 
-	app.makeHandle(http.MethodDelete, "/api/v1/certificates/:id", app.certificates.DeleteCert)
+	app.makeHandle(http.MethodDelete, "/api/v1/certificates/:certid", app.certificates.DeleteCert)
 
 	// orders (for certificates)
-	app.makeHandle(http.MethodGet, "/api/v1/certificates/:id/orders", app.orders.GetCertOrders)
-	app.makeHandle(http.MethodPost, "/api/v1/certificates/:id/orders", app.orders.NewOrder)
+	app.makeHandle(http.MethodGet, "/api/v1/certificates/:certid/orders", app.orders.GetCertOrders)
+	app.makeHandle(http.MethodPost, "/api/v1/certificates/:certid/orders", app.orders.NewOrder)
+	app.makeHandle(http.MethodPost, "/api/v1/certificates/:certid/orders/:orderid", app.orders.FulfillExistingOrder)
 
 	// invalid route
 	app.router.NotFound = app.makeHandler(app.notFoundHandler)

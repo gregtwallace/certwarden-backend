@@ -3,42 +3,44 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"legocerthub-backend/pkg/domain/orders"
+	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/domain/certificates"
 )
 
-// newOrderToDb translates the ACME new order response into the fields we want to save
+// newOrderToDb translates the order response into the fields we want to save
 // in the database
-func newOrderToDb(newOrder orders.Order) orderDb {
+func newOrderToDb(cert certificates.Certificate, order acme.Order) orderDb {
 	// create db obj
-	var order orderDb
+	var orderDb orderDb
 
 	// prevent nil pointer
-	order.acmeAccount = new(accountDb)
-	order.certificate = new(certificateDb)
+	orderDb.acmeAccount = new(accountDb)
+	orderDb.certificate = new(certificateDb)
 
-	order.acmeAccount.id = intToNullInt32(newOrder.Certificate.AcmeAccount.ID)
-	order.certificate.id = intToNullInt32(newOrder.Certificate.ID)
+	orderDb.acmeAccount.id = intToNullInt32(cert.AcmeAccount.ID)
+	orderDb.certificate.id = intToNullInt32(cert.ID)
 
-	order.location = stringToNullString(newOrder.Location)
-	order.status = stringToNullString(newOrder.Status)
-	order.err = acmeErrorToNullString(newOrder.Error)
-	order.expires = intToNullInt32(newOrder.Expires)
-	order.dnsIdentifiers = sliceToCommaNullString(newOrder.DnsIdentifiers)
-	order.authorizations = sliceToCommaNullString(newOrder.Authorizations)
-	order.finalize = stringToNullString(newOrder.Finalize)
+	orderDb.location = stringToNullString(&order.Location)
+	orderDb.status = stringToNullString(&order.Status)
+	orderDb.err = acmeErrorToNullString(order.Error)
+	orderDb.expires = intToNullInt32(order.Expires.ToUnixTime())
+	orderDb.dnsIdentifiers = sliceToCommaNullString(order.Identifiers.DnsIdentifiers())
+	orderDb.authorizations = sliceToCommaNullString(order.Authorizations)
+	orderDb.finalize = stringToNullString(&order.Finalize)
+	orderDb.certificateUrl = stringToNullString(&order.Certificate)
 
-	order.createdAt = timeNow()
-	order.updatedAt = order.createdAt
+	orderDb.createdAt = timeNow()
+	orderDb.updatedAt = orderDb.createdAt
 
-	return order
+	return orderDb
 }
 
 // PostNewOrder makes a new order in the db with the cert information and
 // ACME response from posting the new order to ACME. If the order already exists
 // the order is updated with the newest information.
-func (store *Storage) PostNewOrder(newOrder orders.Order) (newId int, err error) {
+func (store *Storage) PostNewOrder(cert certificates.Certificate, order acme.Order) (newId int, err error) {
 	// Load response into db obj
-	orderDb := newOrderToDb(newOrder)
+	orderDb := newOrderToDb(cert, order)
 
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
@@ -79,6 +81,7 @@ func (store *Storage) PostNewOrder(newOrder orders.Order) (newId int, err error)
 					dns_identifiers,
 					authorizations,
 					finalize,
+					certificate_url,
 					created_at,
 					updated_at
 				)
@@ -93,7 +96,8 @@ func (store *Storage) PostNewOrder(newOrder orders.Order) (newId int, err error)
 					$7,
 					$8,
 					$9,
-					$10
+					$10,
+					$11
 				)
 		RETURNING
 			id
@@ -108,38 +112,18 @@ func (store *Storage) PostNewOrder(newOrder orders.Order) (newId int, err error)
 			orderDb.dnsIdentifiers,
 			orderDb.authorizations,
 			orderDb.finalize,
+			orderDb.certificateUrl,
 			orderDb.createdAt,
 			orderDb.updatedAt,
 		).Scan(&newId)
 
 	} else {
-		// else update existing record
-		query := `
-		UPDATE
-			acme_orders
-		SET
-			status = $1,
-			expires = $2,
-			dns_identifiers = $3,
-			authorizations = $4,
-			finalize = $5,
-			updated_at = $6
-		WHERE
-			acme_location = $7
-		RETURNING
-			id
-		`
-
-		err = tx.QueryRowContext(ctx, query,
-			orderDb.status,
-			orderDb.expires,
-			orderDb.dnsIdentifiers,
-			orderDb.authorizations,
-			orderDb.finalize,
-			orderDb.updatedAt,
-			orderDb.location,
-		).Scan(&newId)
-
+		// update the existing order with the new details
+		err = store.UpdateOrderAcme(newId, order)
+		if err != nil {
+			return -2, err
+		}
+		return newId, nil
 	}
 
 	if err != nil {

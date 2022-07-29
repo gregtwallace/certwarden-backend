@@ -28,7 +28,7 @@ type DetailsUpdatePayload struct {
 // PutDetailsCert is a handler that sets various details about a cert and saves
 // them to storage. These are all details that should be editable any time.
 func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (err error) {
-	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("certid")
 
 	// convert id param to an integer
 	idParam, err := strconv.Atoi(idParamStr)

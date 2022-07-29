@@ -10,7 +10,7 @@ import (
 
 // DeleteCert deletes a cert from storage
 func (service *Service) DeleteCert(w http.ResponseWriter, r *http.Request) (err error) {
-	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
 
 	// convert id param to an integer
 	id, err := strconv.Atoi(idParam)

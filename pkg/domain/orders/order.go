@@ -25,19 +25,3 @@ type Order struct {
 	CreatedAt      *int                      `json:"created_at,omitempty"`
 	UpdatedAt      *int                      `json:"updated_at,omitempty"`
 }
-
-// makeNewOrder creates an order from the specified cert and acme response
-func makeNewOrder(cert *certificates.Certificate, acmeOrder *acme.Order) (order Order) {
-	order.Certificate = cert
-
-	order.Location = &acmeOrder.Location
-	order.Status = &acmeOrder.Status
-	order.Error = acmeOrder.Error
-	order.Expires = acmeOrder.Expires.ToUnixTime()
-	order.DnsIdentifiers = acmeOrder.Identifiers.DnsIdentifiers()
-	order.Authorizations = acmeOrder.Authorizations
-	order.Finalize = &acmeOrder.Finalize
-	order.CertificateUrl = &acmeOrder.Certificate
-
-	return order
-}

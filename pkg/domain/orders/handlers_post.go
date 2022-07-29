@@ -14,17 +14,17 @@ import (
 // ACME may send back the existing order instead of creating a new one
 // endpoint: /api/v1/certificates/:id/orders
 func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err error) {
-	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	certIdStr := httprouter.ParamsFromContext(r.Context()).ByName("certid")
 
 	// convert id param to an integer
-	idParam, err := strconv.Atoi(idParamStr)
+	certId, err := strconv.Atoi(certIdStr)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
 
 	// fetch the relevant cert
-	cert, err := service.storage.GetOneCertById(idParam, true)
+	cert, err := service.storage.GetOneCertById(certId, true)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
@@ -52,26 +52,69 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 	}
 	service.logger.Debugf("new order location: %s", acmeResponse.Location)
 
-	// create order object from response
-	order := makeNewOrder(&cert, &acmeResponse)
-
 	// save ACME response to order storage
-	order.ID = new(int)
-	*order.ID, err = service.storage.PostNewOrder(order)
+	orderId, err := service.storage.PostNewOrder(cert, acmeResponse)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// kickoff order fulfillement (async)
-	service.FulfillOrder(order)
+	// kickoff order fulfillment (async)
+	service.fulfill(orderId)
 
 	// return response to client
 	response := output.JsonResponse{
 		Status: http.StatusCreated,
 		// Message: "order created", // TODO?
 		Message: acmeResponse,
-		ID:      *order.ID,
+		ID:      orderId,
+	}
+
+	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
+	}
+
+	return nil
+}
+
+// FulfillExistingOrder is a handler that attempts to fulfill an existing order (i.e.
+// move it to the 'valid' state)
+func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Request) (err error) {
+	params := httprouter.ParamsFromContext(r.Context())
+	certIdStr := params.ByName("certid")
+	orderIdStr := params.ByName("orderid")
+
+	// convert id params to integers
+	certId, err := strconv.Atoi(certIdStr)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+	orderId, err := strconv.Atoi(orderIdStr)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	/// validation
+	// ids (ensure cert and order match)
+	err = service.isIdExistingMatch(certId, orderId)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+	///
+
+	// kickoff order fulfillement (async)
+	service.fulfill(orderId)
+
+	// return response to client
+	response := output.JsonResponse{
+		Status:  http.StatusOK,
+		Message: "attempting to fulfill",
+		ID:      orderId,
 	}
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")

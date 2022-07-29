@@ -1,6 +1,8 @@
 package sqlite
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type orderDb struct {
 	id             sql.NullInt32

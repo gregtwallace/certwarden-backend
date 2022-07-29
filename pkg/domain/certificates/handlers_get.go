@@ -33,7 +33,7 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) (err
 // form of JSON written to w
 func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) (err error) {
 	// convert id param to an integer
-	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
