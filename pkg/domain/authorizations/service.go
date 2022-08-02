@@ -3,7 +3,7 @@ package authorizations
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/domain/challenges"
+	"legocerthub-backend/pkg/challenges"
 
 	"go.uber.org/zap"
 )
@@ -15,7 +15,7 @@ type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
-	GetChallengesService() *challenges.Service
+	GetDevMode() bool
 }
 
 // service struct
@@ -27,8 +27,8 @@ type Service struct {
 }
 
 // NewService creates a new service
-func NewService(app App) (*Service, error) {
-	service := new(Service)
+func NewService(app App) (service *Service, err error) {
+	service = new(Service)
 
 	// logger
 	service.logger = app.GetLogger()
@@ -46,9 +46,9 @@ func NewService(app App) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// challenge solver service
-	service.challenges = app.GetChallengesService()
-	if service.challenges == nil {
+	// challenge solver
+	service.challenges, err = challenges.NewService(app)
+	if err != nil || service.challenges == nil {
 		return nil, errServiceComponent
 	}
 

@@ -13,12 +13,12 @@ require (
 
 replace legocerthub-backend/pkg/acme => /pkg/acme
 replace legocerthub-backend/pkg/acme/nonces => /pkg/acme/nonces
-replace legocerthub-backend/pkg/challenge_providers/http01 => /pkg/challenge_providers/http01
+replace legocerthub-backend/pkg/challenges => /pkg/challenges
+replace legocerthub-backend/pkg/challenges/providers/http01 => /pkg/challenges/providers/http01
 replace legocerthub-backend/pkg/domain/acme_accounts => /pkg/domain/acme_accounts
 replace legocerthub-backend/pkg/domain/app => /pkg/domain/app
 replace legocerthub-backend/pkg/domain/authorizations => /pkg/domain/authorizations
 replace legocerthub-backend/pkg/domain/certificates => /pkg/domain/certificates
-replace legocerthub-backend/pkg/domain/challenges => /pkg/domain/challenges
 replace legocerthub-backend/pkg/domain/orders => /pkg/domain/orders
 replace legocerthub-backend/pkg/domain/private_keys => /pkg/domain/private_keys
 replace legocerthub-backend/pkg/domain/private_keys/key_crypto => /pkg/domain/private_keys/key_crypto

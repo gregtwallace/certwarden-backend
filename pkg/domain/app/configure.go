@@ -6,7 +6,6 @@ import (
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
-	"legocerthub-backend/pkg/domain/challenges"
 	"legocerthub-backend/pkg/domain/orders"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/httpclient"
@@ -97,12 +96,6 @@ func CreateAndConfigure(config Configuration) (*Application, error) {
 
 	// accounts service
 	app.accounts, err = acme_accounts.NewService(app)
-	if err != nil {
-		return nil, err
-	}
-
-	// challenge solver service
-	app.challenges, err = challenges.NewService(app)
 	if err != nil {
 		return nil, err
 	}

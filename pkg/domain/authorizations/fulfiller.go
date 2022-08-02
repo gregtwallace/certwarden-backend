@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/domain/challenges"
+	"legocerthub-backend/pkg/challenges"
 	"sync"
 	"time"
 )

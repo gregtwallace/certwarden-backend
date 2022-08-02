@@ -2,7 +2,7 @@ package certificates
 
 import (
 	"encoding/json"
-	"legocerthub-backend/pkg/domain/challenges"
+	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
