@@ -30,6 +30,11 @@ func (service *Service) isOrderRetryable(certId int, orderId int) (err error) {
 		return err
 	}
 
+	// check for nil pointers (in the event a deletion has NULLed an id)
+	if cert.ID == nil || order.Certificate == nil || order.Certificate.ID == nil {
+		return validation.ErrOrderMismatch
+	}
+
 	// check the cert id on the order matches the cert
 	if *cert.ID != *order.Certificate.ID {
 		return validation.ErrOrderMismatch
