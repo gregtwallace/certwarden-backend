@@ -3,6 +3,7 @@ package orders
 import (
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
 
@@ -100,8 +101,12 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 
 	/// validation
 	// ids (ensure cert and order match)
-	err = service.isIdExistingMatch(certId, orderId)
-	if err != nil {
+	// also confirm order isn't invalid
+	err = service.isOrderRetryable(certId, orderId)
+	if err == validation.ErrOrderInvalid {
+		service.logger.Debug(err)
+		return output.ErrOrderInvalid
+	} else if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}

@@ -16,6 +16,9 @@ var (
 
 	// validation
 	ErrValidationFailed = Error{Status: 400, Message: "request validation (param or payload) invalid"}
+
+	// order
+	ErrOrderInvalid = Error{Status: 400, Message: "order status is invalid (which cannot be recovered from)"}
 )
 
 // Error is the standardized error structure, it is the same as a regular message but also

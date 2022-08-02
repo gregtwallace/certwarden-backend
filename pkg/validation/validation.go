@@ -32,6 +32,7 @@ var (
 
 	// order
 	ErrOrderMismatch = errors.New("order cert id does not match cert")
+	ErrOrderInvalid  = errors.New("order is invalid and cannot be retried")
 )
 
 // IsIdNew returns an error if the id isn't the specified new

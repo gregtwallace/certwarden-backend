@@ -7,7 +7,7 @@ import (
 // isIdExistingMatch checks that the cert and order are both valid and in storeage
 // and then also verifies the order belongs to the cert.  Returns an error if not
 // valid, nil if valid
-func (service *Service) isIdExistingMatch(certId int, orderId int) (err error) {
+func (service *Service) isOrderRetryable(certId int, orderId int) (err error) {
 	// basic check
 	err = validation.IsIdExisting(&certId)
 	if err != nil {
@@ -33,6 +33,11 @@ func (service *Service) isIdExistingMatch(certId int, orderId int) (err error) {
 	// check the cert id on the order matches the cert
 	if *cert.ID != *order.Certificate.ID {
 		return validation.ErrOrderMismatch
+	}
+
+	// check order is in a state that can be retried
+	if *order.Status == "invalid" {
+		return validation.ErrOrderInvalid
 	}
 
 	return nil
