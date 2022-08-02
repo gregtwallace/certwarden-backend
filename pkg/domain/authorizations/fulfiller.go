@@ -43,16 +43,16 @@ func (service *Service) FulfillAuthz(authUrls []string, method challenges.Method
 }
 
 func (service *Service) fulfillAuth(authUrl string, method challenges.Method, key acme.AccountKey, isStaging bool) (err error) {
-	auth := new(acme.Authorization)
+	var auth acme.Authorization
 
 	// use loop to retry auth fulfillment as appropriate
 	// max 3 tries
 	for i := 1; i <= 3; i++ {
 		// PaG the authorization
 		if isStaging {
-			*auth, err = service.acmeStaging.GetAuth(authUrl, key)
+			auth, err = service.acmeStaging.GetAuth(authUrl, key)
 		} else {
-			*auth, err = service.acmeStaging.GetAuth(authUrl, key)
+			auth, err = service.acmeStaging.GetAuth(authUrl, key)
 		}
 		if err != nil {
 			return err
@@ -64,21 +64,24 @@ func (service *Service) fulfillAuth(authUrl string, method challenges.Method, ke
 		case "pending":
 			err = service.challenges.Solve(auth.Challenges, method, key, isStaging)
 			if err != nil {
-				return err
+				// if solve errored, break switch so loop can try again
+				// TODO: Implement exponential backoff
+				time.Sleep(time.Duration(i) * 30 * time.Second)
+				break
 			}
+			// if solve didn't error, auth is now valid
+			fallthrough
+
 		case "valid":
 			return nil
+
 		case "invalid", "deactivated", "expired", "revoked":
-			return errors.New(fmt.Sprintf("bad authorization status: %s", auth.Status))
+			return errors.New(fmt.Sprintf("bad authorization status (%s)", auth.Status))
+
 		default:
 			return errors.New("unknown authorization status")
 		}
-
-		// TODO: Implement exponential backoff (or other timing)
-		time.Sleep(3 * time.Second)
 	}
-
-	// TODO: Confirm auth is now in 'valid' state
 
 	return nil
 }

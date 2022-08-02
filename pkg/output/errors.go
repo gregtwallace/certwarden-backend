@@ -18,7 +18,8 @@ var (
 	ErrValidationFailed = Error{Status: 400, Message: "request validation (param or payload) invalid"}
 
 	// order
-	ErrOrderInvalid = Error{Status: 400, Message: "order status is invalid (which cannot be recovered from)"}
+	ErrOrderInvalid     = Error{Status: 400, Message: "order status is invalid (which cannot be recovered from)"}
+	ErrOrderCantFulfill = Error{Status: 400, Message: "failed to order from acme (it is likely this order is already currently being processed)"}
 )
 
 // Error is the standardized error structure, it is the same as a regular message but also

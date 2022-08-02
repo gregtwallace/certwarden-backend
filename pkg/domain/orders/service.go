@@ -43,6 +43,7 @@ type Service struct {
 	acmeProd       *acme.Service
 	acmeStaging    *acme.Service
 	authorizations *authorizations.Service
+	working        *working
 }
 
 // NewService creates a new private_key service
@@ -82,6 +83,9 @@ func NewService(app App) (*Service, error) {
 	if service.authorizations == nil {
 		return nil, errServiceComponent
 	}
+
+	// initialize fulfiller
+	service.working = newWorking()
 
 	return service, nil
 }
