@@ -3,10 +3,10 @@ package app
 import (
 	"fmt"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/challenge_providers/http01"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
+	"legocerthub-backend/pkg/domain/challenges"
 	"legocerthub-backend/pkg/domain/orders"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/httpclient"
@@ -24,8 +24,7 @@ const acmeProdUrl string = "https://acme-v02.api.letsencrypt.org/directory"
 const acmeStagingUrl string = "https://acme-staging-v02.api.letsencrypt.org/directory"
 
 type Configuration struct {
-	DevMode    bool
-	Http01Port int
+	DevMode bool
 }
 
 // CreateAndConfigure creates an app object with logger, storage, and all needed
@@ -92,12 +91,8 @@ func CreateAndConfigure(config Configuration) (*Application, error) {
 	close(wgErrors)
 	for err = range wgErrors {
 		if err != nil {
-			break
+			return nil, err
 		}
-	}
-
-	if err != nil {
-		return nil, err
 	}
 
 	// accounts service
@@ -106,20 +101,20 @@ func CreateAndConfigure(config Configuration) (*Application, error) {
 		return nil, err
 	}
 
-	// http-01 challenge server
-	app.http01, err = http01.NewService(app, config.Http01Port)
-	if err != nil {
-		return nil, err
-	}
-
-	// certificates service
-	app.certificates, err = certificates.NewService(app)
+	// challenge solver service
+	app.challenges, err = challenges.NewService(app)
 	if err != nil {
 		return nil, err
 	}
 
 	// authorizations service
 	app.authorizations, err = authorizations.NewService(app)
+	if err != nil {
+		return nil, err
+	}
+
+	// certificates service
+	app.certificates, err = certificates.NewService(app)
 	if err != nil {
 		return nil, err
 	}

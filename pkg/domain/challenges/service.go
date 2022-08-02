@@ -1,21 +1,21 @@
-package authorizations
+package challenges
 
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/domain/challenges"
+	"legocerthub-backend/pkg/challenge_providers/http01"
 
 	"go.uber.org/zap"
 )
 
-var errServiceComponent = errors.New("necessary authorizations service component is missing")
+var errServiceComponent = errors.New("necessary challenges service component is missing")
 
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
-	GetChallengesService() *challenges.Service
+	GetDevMode() bool
 }
 
 // service struct
@@ -23,12 +23,12 @@ type Service struct {
 	logger      *zap.SugaredLogger
 	acmeProd    *acme.Service
 	acmeStaging *acme.Service
-	challenges  *challenges.Service
+	http01      *http01.Service
 }
 
 // NewService creates a new service
-func NewService(app App) (*Service, error) {
-	service := new(Service)
+func NewService(app App) (service *Service, err error) {
+	service = new(Service)
 
 	// logger
 	service.logger = app.GetLogger()
@@ -46,10 +46,11 @@ func NewService(app App) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// challenge solver service
-	service.challenges = app.GetChallengesService()
-	if service.challenges == nil {
-		return nil, errServiceComponent
+	// http-01 challenge server
+	// TODO: Don't hardcode port
+	service.http01, err = http01.NewService(app, 4060)
+	if err != nil {
+		return nil, err
 	}
 
 	return service, nil

@@ -9,26 +9,26 @@ import (
 
 // a single certificate
 type Certificate struct {
-	ID                 *int                        `json:"id"`
-	Name               *string                     `json:"name"`
-	Description        *string                     `json:"description"`
-	PrivateKey         *private_keys.Key           `json:"private_key,omitempty"`
-	AcmeAccount        *acme_accounts.Account      `json:"acme_account,omitempty"`
-	ChallengeMethod    *challenges.ChallengeMethod `json:"challenge_method,omitempty"`
-	Subject            *string                     `json:"subject,omitempty"`
-	SubjectAltNames    []string                    `json:"subject_alts,omitempty"`
-	CommonName         *string                     `json:"common_name,omitempty"`
-	Organization       *string                     `json:"organization,omitempty"`
-	OrganizationalUnit *string                     `json:"organizational_unit,omitempty"`
-	Country            *string                     `json:"country,omitempty"`
-	State              *string                     `json:"state,omitempty"`
-	City               *string                     `json:"city,omitempty"`
-	CreatedAt          *int                        `json:"created_at,omitempty"`
-	UpdatedAt          *int                        `json:"updated_at,omitempty"`
-	ApiKey             *string                     `json:"api_key,omitempty"`
-	Pem                *string                     `json:"pem,omitempty"`
-	ValidFrom          *int                        `json:"valid_from,omitempty"`
-	ValidTo            *int                        `json:"valid_to,omitempty"`
+	ID                 *int                   `json:"id"`
+	Name               *string                `json:"name"`
+	Description        *string                `json:"description"`
+	PrivateKey         *private_keys.Key      `json:"private_key,omitempty"`
+	AcmeAccount        *acme_accounts.Account `json:"acme_account,omitempty"`
+	ChallengeMethod    *challenges.Method     `json:"challenge_method,omitempty"`
+	Subject            *string                `json:"subject,omitempty"`
+	SubjectAltNames    []string               `json:"subject_alts,omitempty"`
+	CommonName         *string                `json:"common_name,omitempty"`
+	Organization       *string                `json:"organization,omitempty"`
+	OrganizationalUnit *string                `json:"organizational_unit,omitempty"`
+	Country            *string                `json:"country,omitempty"`
+	State              *string                `json:"state,omitempty"`
+	City               *string                `json:"city,omitempty"`
+	CreatedAt          *int                   `json:"created_at,omitempty"`
+	UpdatedAt          *int                   `json:"updated_at,omitempty"`
+	ApiKey             *string                `json:"api_key,omitempty"`
+	Pem                *string                `json:"pem,omitempty"`
+	ValidFrom          *int                   `json:"valid_from,omitempty"`
+	ValidTo            *int                   `json:"valid_to,omitempty"`
 }
 
 // new account info

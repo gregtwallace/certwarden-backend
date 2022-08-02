@@ -2,10 +2,10 @@ package app
 
 import (
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/challenge_providers/http01"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
+	"legocerthub-backend/pkg/domain/challenges"
 	"legocerthub-backend/pkg/domain/orders"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/httpclient"
@@ -27,10 +27,10 @@ type Application struct {
 	acmeProd       *acme.Service
 	acmeStaging    *acme.Service
 	accounts       *acme_accounts.Service
-	http01         *http01.Service
-	certificates   *certificates.Service
-	orders         *orders.Service
+	challenges     *challenges.Service
 	authorizations *authorizations.Service
+	orders         *orders.Service
+	certificates   *certificates.Service
 }
 
 /// return various needed components
@@ -82,10 +82,10 @@ func (app *Application) GetAcctsService() *acme_accounts.Service {
 	return app.accounts
 }
 
-func (app *Application) GetAuthzService() *authorizations.Service {
-	return app.authorizations
+func (app *Application) GetChallengesService() *challenges.Service {
+	return app.challenges
 }
 
-func (app *Application) GetHttp01Service() *http01.Service {
-	return app.http01
+func (app *Application) GetAuthsService() *authorizations.Service {
+	return app.authorizations
 }

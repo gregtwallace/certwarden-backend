@@ -69,7 +69,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 		service.logger.Debug("missing challenge method value")
 		return output.ErrValidationFailed
 	}
-	_, err = challenges.ChallengeMethodByValue(*payload.ChallengeMethodValue)
+	_, err = challenges.MethodByValue(*payload.ChallengeMethodValue)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed

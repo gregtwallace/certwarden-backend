@@ -23,7 +23,6 @@ func main() {
 
 	flag.StringVar(&webCfg.host, "host", "localhost", "hostname to listen on")
 	flag.IntVar(&webCfg.port, "port", 4050, "port number for API to listen on")
-	flag.IntVar(&appCfg.Http01Port, "http01port", 4060, "port number for http01 challenge server to listen on")
 	// TODO: change default to false
 	flag.BoolVar(&appCfg.DevMode, "development", true, "run the server in development mode")
 	flag.Parse()

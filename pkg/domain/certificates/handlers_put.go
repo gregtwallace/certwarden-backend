@@ -62,7 +62,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 	}
 	// challenge method (optional)
 	if payload.ChallengeMethodValue != nil {
-		_, err = challenges.ChallengeMethodByValue(*payload.ChallengeMethodValue)
+		_, err = challenges.MethodByValue(*payload.ChallengeMethodValue)
 		if err != nil {
 			service.logger.Debug(err)
 			return output.ErrValidationFailed

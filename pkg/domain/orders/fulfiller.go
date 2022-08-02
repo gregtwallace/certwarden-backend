@@ -33,7 +33,7 @@ func (service *Service) fulfill(orderId int) {
 
 		// use loop to retry order fulfillment as appropriate
 	fulfillLoop:
-		for i := 1; i < 2; i++ {
+		for i := 1; i <= 3; i++ {
 			// PaG the order (to get most recent status)
 			if *order.Certificate.AcmeAccount.IsStaging {
 				acmeOrder, err = service.acmeStaging.GetOrder(*order.Location, key)
@@ -42,7 +42,7 @@ func (service *Service) fulfill(orderId int) {
 			}
 			if err != nil {
 				service.logger.Error(err)
-				return
+				return // done, failed
 			}
 
 			// action depends on order's current Status
@@ -52,16 +52,23 @@ func (service *Service) fulfill(orderId int) {
 			// Alternately, use a loop and after each status should be 'complete', PaG again and check new status
 
 			case "pending": // needs to be authed
-				err = service.authorizations.FulfillAuthz(acmeOrder.Authorizations, order.Certificate.ChallengeMethod.Type, key, *order.Certificate.AcmeAccount.IsStaging)
+				err = service.authorizations.FulfillAuthz(acmeOrder.Authorizations, *order.Certificate.ChallengeMethod, key, *order.Certificate.AcmeAccount.IsStaging)
+				if err != nil {
+					service.logger.Error(err)
+					return // done, failed
+				}
+
 				fallthrough
 
 			case "ready": // needs to be finalized
 				// TODO: finalize
 				// TODO: download cert and store it
+
 				fallthrough
 
 			case "valid": // can be downloaded
 				// TODO: do nothing? or redownload?
+				break fulfillLoop
 
 			case "processing":
 				// TODO: wait and try again, ACME server is doing stuff

@@ -25,7 +25,8 @@ func unmarshalChallenge(bodyBytes []byte, headers http.Header) (response Challen
 	return response, nil
 }
 
-// NewOrder posts a secure message to the NewOrder URL of the directory
+// NewOrder posts a an empty object to the challenge URL which informs ACME that the
+// challenge is ready to be validated
 func (service *Service) ValidateChallenge(challengeUrl string, accountKey AccountKey) (response Challenge, err error) {
 
 	// post challenge with {} as payload signals the challenge is ready for validation

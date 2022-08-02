@@ -19,7 +19,7 @@ type App interface {
 	GetOrderStorage() Storage
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
-	GetAuthzService() *authorizations.Service
+	GetAuthsService() *authorizations.Service
 }
 
 // Storage interface for storage functions
@@ -78,7 +78,7 @@ func NewService(app App) (*Service, error) {
 	}
 
 	// authorization service
-	service.authorizations = app.GetAuthzService()
+	service.authorizations = app.GetAuthsService()
 	if service.authorizations == nil {
 		return nil, errServiceComponent
 	}
