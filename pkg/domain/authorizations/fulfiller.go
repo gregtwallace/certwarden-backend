@@ -9,9 +9,9 @@ import (
 	"time"
 )
 
-// FulfillAuthz checks each auth for validity. It returns an error if any of the authz have a problem and
-// nil if all the authz are valid or were updated from pending to valid.
-func (service *Service) FulfillAuthz(authUrls []string, method challenges.Method, key acme.AccountKey, isStaging bool) (err error) {
+// FulfillAuths attempts to validate each of the auth URLs in the slice of URLs. It returns an error if any of,
+// the auths have a problem and nil if all the auths are now valid.
+func (service *Service) FulfillAuths(authUrls []string, method challenges.Method, key acme.AccountKey, isStaging bool) (err error) {
 	// aysnc checking the authz for validity
 	var wg sync.WaitGroup
 	wgSize := len(authUrls)
@@ -42,12 +42,14 @@ func (service *Service) FulfillAuthz(authUrls []string, method challenges.Method
 	return nil
 }
 
+// fulfillAuth attempts to validate an auth URL using the specified method
 func (service *Service) fulfillAuth(authUrl string, method challenges.Method, key acme.AccountKey, isStaging bool) (err error) {
 	var auth acme.Authorization
 
 	// use loop to retry auth fulfillment as appropriate
-	// max 3 tries
-	for i := 1; i <= 3; i++ {
+	// use i to set a max number of attempts if auth is stuck in pending
+	var i int
+	for i = 1; i <= 3; i++ {
 		// PaG the authorization
 		if isStaging {
 			auth, err = service.acmeStaging.GetAuth(authUrl, key)
@@ -58,7 +60,7 @@ func (service *Service) fulfillAuth(authUrl string, method challenges.Method, ke
 			return err
 		}
 
-		// Only proceed with negotiating auth if the auth is pending. If it is in a bad state or
+		// Only attempt to validate if auth is pending. If it is in a bad state or
 		// unknown, return error. If already valid, do nothing and return no error.
 		switch auth.Status {
 		case "pending":
@@ -83,5 +85,6 @@ func (service *Service) fulfillAuth(authUrl string, method challenges.Method, ke
 		}
 	}
 
-	return nil
+	// if loop ends and still in pending (shouldn't really be possible)
+	return errors.New(fmt.Sprintf("authorization status still pending after %d trys.", i))
 }

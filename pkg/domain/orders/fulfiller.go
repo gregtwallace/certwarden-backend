@@ -128,7 +128,7 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 			// action depends on order's current Status
 			switch acmeOrder.Status {
 			case "pending": // needs to be authed
-				err = service.authorizations.FulfillAuthz(acmeOrder.Authorizations, *order.Certificate.ChallengeMethod, key, *order.Certificate.AcmeAccount.IsStaging)
+				err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, *order.Certificate.ChallengeMethod, key, *order.Certificate.AcmeAccount.IsStaging)
 				if err != nil {
 					service.logger.Debug(err)
 					return // done, failed
