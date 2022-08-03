@@ -7,7 +7,7 @@ import (
 
 var (
 	ErrOrderAlreadyWorking   = errors.New("order is already being processed")
-	ErrWorkingFailedToRemove = errors.New("order fulfiller cannot remove non existent id")
+	ErrWorkingFailedToRemove = errors.New("order working cannot remove non existent id")
 )
 
 // working holds a list of orders being worked

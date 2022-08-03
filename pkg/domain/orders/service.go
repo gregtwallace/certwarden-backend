@@ -84,7 +84,7 @@ func NewService(app App) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// initialize fulfiller
+	// initialize working
 	service.working = newWorking()
 
 	return service, nil
