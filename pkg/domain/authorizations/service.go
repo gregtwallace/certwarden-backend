@@ -24,6 +24,7 @@ type Service struct {
 	acmeProd    *acme.Service
 	acmeStaging *acme.Service
 	challenges  *challenges.Service
+	working     *working
 }
 
 // NewService creates a new service
@@ -51,6 +52,9 @@ func NewService(app App) (service *Service, err error) {
 	if err != nil || service.challenges == nil {
 		return nil, errServiceComponent
 	}
+
+	// initialize working
+	service.working = newWorking()
 
 	return service, nil
 }

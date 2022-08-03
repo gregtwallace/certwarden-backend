@@ -46,6 +46,26 @@ func (service *Service) FulfillAuths(authUrls []string, method challenges.Method
 func (service *Service) fulfillAuth(authUrl string, method challenges.Method, key acme.AccountKey, isStaging bool) (err error) {
 	var auth acme.Authorization
 
+	// add auth to working
+	// if already exists, wait for signal channel to close (conclusion of other thread)
+	// repeat this loop in the event multiple threads are blocked on the same auth
+	for {
+		exists, signal := service.working.add(authUrl)
+		if exists {
+			<-signal
+		} else {
+			break
+		}
+	}
+
+	// defer removing auth once it has been worked
+	defer func(authUrl string, service *Service) {
+		err := service.working.remove(authUrl)
+		if err != nil {
+			service.logger.Error(err)
+		}
+	}(authUrl, service)
+
 	// use loop to retry auth fulfillment as appropriate
 	// use i to set a max number of attempts if auth is stuck in pending
 	var i int
