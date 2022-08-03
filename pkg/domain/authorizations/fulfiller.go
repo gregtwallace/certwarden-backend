@@ -44,18 +44,15 @@ func (service *Service) FulfillAuths(authUrls []string, method challenges.Method
 
 // fulfillAuth attempts to validate an auth URL using the specified method
 func (service *Service) fulfillAuth(authUrl string, method challenges.Method, key acme.AccountKey, isStaging bool) (err error) {
-	var auth acme.Authorization
-
 	// add auth to working
 	// if already exists, wait for signal channel to close (conclusion of other thread)
-	// repeat this loop in the event multiple threads are blocked on the same auth
-	for {
-		exists, signal := service.working.add(authUrl)
-		if exists {
-			<-signal
-		} else {
-			break
-		}
+	// and then return the result of the cache
+	exists, signal := service.working.add(authUrl)
+	if exists {
+		<-signal
+		// return what was in cache unless the cache error was that the auth wasn't in cache
+		// if not in cache, program will continue and try to auth
+		return service.cache.read(authUrl)
 	}
 
 	// defer removing auth once it has been worked
@@ -66,8 +63,17 @@ func (service *Service) fulfillAuth(authUrl string, method challenges.Method, ke
 		}
 	}(authUrl, service)
 
+	// work the auth and cache the result
+	err = service.authWorker(authUrl, method, key, isStaging)
+	service.cache.add(authUrl, err)
+
+	return err
+}
+
+func (service *Service) authWorker(authUrl string, method challenges.Method, key acme.AccountKey, isStaging bool) (err error) {
 	// use loop to retry auth fulfillment as appropriate
 	// use i to set a max number of attempts if auth is stuck in pending
+	var auth acme.Authorization
 	var i int
 	for i = 1; i <= 3; i++ {
 		// PaG the authorization

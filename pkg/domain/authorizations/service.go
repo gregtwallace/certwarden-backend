@@ -24,7 +24,8 @@ type Service struct {
 	acmeProd    *acme.Service
 	acmeStaging *acme.Service
 	challenges  *challenges.Service
-	working     *working
+	working     *working // tracks auths being worked
+	cache       *cache   // tracks results of auths after worked
 }
 
 // NewService creates a new service
@@ -55,6 +56,9 @@ func NewService(app App) (service *Service, err error) {
 
 	// initialize working
 	service.working = newWorking()
+
+	// initialize cache
+	service.cache = newCache()
 
 	return service, nil
 }

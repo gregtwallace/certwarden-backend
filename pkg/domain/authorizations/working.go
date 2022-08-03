@@ -2,7 +2,6 @@ package authorizations
 
 import (
 	"errors"
-	"log"
 	"sync"
 )
 
@@ -27,8 +26,8 @@ func newWorking() *working {
 	}
 }
 
-// add adds the specified order ID to the working slice (which tracks
-// orders currently being worked).
+// add adds the specified auth url to the working slice (which tracks
+// auths currently being worked).
 // Returns true if the url already exists along with a signal channel.
 // Returns false if does not already exists and creates a new signal channel, no channel
 // is returned.
@@ -53,9 +52,6 @@ func (working *working) add(newAuthUrl string) (alreadyExists bool, signal chan 
 func (working *working) remove(removeAuthUrl string) (err error) {
 	working.mu.Lock()
 	defer working.mu.Unlock()
-
-	log.Println(working.urls)
-	log.Printf("trying to remove: %s", removeAuthUrl)
 
 	// if url was not found, error
 	signal, exists := working.urls[removeAuthUrl]

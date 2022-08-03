@@ -71,18 +71,22 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 				err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, *order.Certificate.ChallengeMethod, key, *order.Certificate.AcmeAccount.IsStaging)
 				if err != nil {
 					service.logger.Debug(err)
-					return // done, failed
+					// TODO: Implement exponential backoff
+					time.Sleep(time.Duration(i) * 30 * time.Second)
+					break // break switch to try order again
 				}
 
 				fallthrough
 
 			case "ready": // needs to be finalized
 				// TODO: finalize
+				// TODO: if err break switch to try again
 
 				fallthrough
 
 			case "valid": // can be downloaded
 				// TODO: download? update related cert?
+				// TODO: if err break switch to try again
 
 				break fulfillLoop
 
