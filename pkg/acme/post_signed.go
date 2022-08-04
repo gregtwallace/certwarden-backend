@@ -56,6 +56,8 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 
 	// url
 	header.Url = url
+
+	service.logger.Debugf("unencoded acme header: %s", header)
 	/// header (end)
 
 	/// payload won't change in the loop
