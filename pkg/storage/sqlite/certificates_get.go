@@ -55,7 +55,6 @@ func (certDb *certificateDb) certDbToCert() (cert certificates.Certificate, err 
 		ChallengeMethod:    challengeMethod,
 		Subject:            nullStringToString(certDb.subject),
 		SubjectAltNames:    commaNullStringToSlice(certDb.subjectAltNames),
-		CommonName:         nullStringToString(certDb.commonName),
 		Organization:       nullStringToString(certDb.organization),
 		OrganizationalUnit: nullStringToString(certDb.organizationalUnit),
 		Country:            nullStringToString(certDb.country),
@@ -124,26 +123,26 @@ func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error
 }
 
 // GetOneCertById returns a Cert based on its unique id
-func (store *Storage) GetOneCertById(id int, withAcctPem bool) (cert certificates.Certificate, err error) {
-	return store.getOneCert(id, "", withAcctPem)
+func (store *Storage) GetOneCertById(id int, withKeyPems bool) (cert certificates.Certificate, err error) {
+	return store.getOneCert(id, "", withKeyPems)
 }
 
 // GetOneCertByName returns a Cert based on its unique name
-func (store *Storage) GetOneCertByName(name string, withAcctPem bool) (cert certificates.Certificate, err error) {
-	return store.getOneCert(-1, name, withAcctPem)
+func (store *Storage) GetOneCertByName(name string, withKeyPems bool) (cert certificates.Certificate, err error) {
+	return store.getOneCert(-1, name, withKeyPems)
 }
 
 // getOneCert returns a Cert based on either its unique id or its unique name
-func (store *Storage) getOneCert(id int, name string, withAcctPem bool) (cert certificates.Certificate, err error) {
+func (store *Storage) getOneCert(id int, name string, withKeyPems bool) (cert certificates.Certificate, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `
-	SELECT c.id, c.name, c.description, c.challenge_method, c.subject, c.subject_alts, c.csr_com_name, 
+	SELECT c.id, c.name, c.description, c.challenge_method, c.subject, c.subject_alts, 
 	c.csr_org, c.csr_country, c.csr_city, c.created_at, c.updated_at, c.api_key, c.pem, c.valid_from, c.valid_to,
 	aa.id, aa.name, aa.is_staging, aa.kid,
 	ak.id, ak.name, ak.algorithm, ak.pem,
-	pk.id, pk.name, pk.algorithm
+	pk.id, pk.name, pk.algorithm, pk.pem
 	FROM
 		certificates c
 		LEFT JOIN acme_accounts aa on (c.acme_account_id = aa.id)
@@ -168,7 +167,6 @@ func (store *Storage) getOneCert(id int, name string, withAcctPem bool) (cert ce
 		&oneCert.challengeMethodValue,
 		&oneCert.subject,
 		&oneCert.subjectAltNames,
-		&oneCert.commonName,
 		&oneCert.organization,
 		&oneCert.country,
 		&oneCert.city,
@@ -189,6 +187,7 @@ func (store *Storage) getOneCert(id int, name string, withAcctPem bool) (cert ce
 		&oneCert.privateKey.id,
 		&oneCert.privateKey.name,
 		&oneCert.privateKey.algorithmValue,
+		&oneCert.privateKey.pem,
 	)
 
 	if err != nil {
@@ -199,9 +198,10 @@ func (store *Storage) getOneCert(id int, name string, withAcctPem bool) (cert ce
 		return certificates.Certificate{}, err
 	}
 
-	// if not fetching account pem, invalidate it
-	if !withAcctPem {
+	// if not fetching pems, invalidate them
+	if !withKeyPems {
 		oneCert.acmeAccount.privateKey.pem.Valid = false
+		oneCert.privateKey.pem.Valid = false
 	}
 
 	cert, err = oneCert.certDbToCert()

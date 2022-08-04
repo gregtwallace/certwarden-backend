@@ -126,7 +126,6 @@ func (store *Storage) createDBTables() error {
 		challenge_method text NOT NULL,
 		subject text NOT NULL,
 		subject_alts text,
-		csr_com_name text,
 		csr_org text,
 		csr_ou text,
 		csr_country text,

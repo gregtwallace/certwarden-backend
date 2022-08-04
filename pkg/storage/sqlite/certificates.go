@@ -14,7 +14,6 @@ type certificateDb struct {
 	challengeMethodValue sql.NullString
 	subject              sql.NullString
 	subjectAltNames      sql.NullString // will be a comma separated list from storage
-	commonName           sql.NullString
 	organization         sql.NullString
 	organizationalUnit   sql.NullString
 	country              sql.NullString

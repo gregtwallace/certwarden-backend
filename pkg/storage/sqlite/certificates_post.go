@@ -33,7 +33,6 @@ func newCertPayloadToDb(payload certificates.NewPayload) (certDb certificateDb, 
 	certDb.subjectAltNames = sliceToCommaNullString(payload.SubjectAltNames)
 
 	// csr
-	certDb.commonName = stringToNullString(payload.CommonName)
 	certDb.organization = stringToNullString(payload.Organization)
 	certDb.organizationalUnit = stringToNullString(payload.OrganizationalUnit)
 	certDb.country = stringToNullString(payload.Country)
@@ -74,8 +73,8 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (id int, err 
 	// insert the new cert
 	query := `
 	INSERT INTO certificates (name, description, private_key_id, acme_account_id, challenge_method, subject, subject_alts, 
-		csr_com_name, csr_org, csr_ou, csr_country, csr_state, csr_city, created_at, updated_at, api_key)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		csr_org, csr_ou, csr_country, csr_state, csr_city, created_at, updated_at, api_key)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 	RETURNING id
 	`
 
@@ -87,7 +86,6 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (id int, err 
 		certDb.challengeMethodValue,
 		certDb.subject,
 		certDb.subjectAltNames,
-		certDb.commonName,
 		certDb.organization,
 		certDb.organizationalUnit,
 		certDb.country,

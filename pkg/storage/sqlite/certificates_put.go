@@ -20,7 +20,6 @@ func certDetailsPayloadToDb(payload certificates.DetailsUpdatePayload) (certific
 	certDb.description = stringToNullString(payload.Description)
 	certDb.challengeMethodValue = stringToNullString(payload.ChallengeMethodValue)
 
-	certDb.commonName = stringToNullString(payload.CommonName)
 	certDb.organization = stringToNullString(payload.Organization)
 	certDb.organizationalUnit = stringToNullString(payload.OrganizationalUnit)
 	certDb.country = stringToNullString(payload.Country)
@@ -52,22 +51,20 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 			name = case when $1 is null then name else $1 end,
 			description = case when $2 is null then description else $2 end,
 			challenge_method = case when $3 is null then challenge_method else $3 end,
-			csr_com_name = case when $4 is null then csr_com_name else $4 end,
-			csr_org = case when $5 is null then csr_org else $5 end,
-			csr_ou = case when $6 is null then csr_ou else $6 end,
-			csr_country = case when $7 is null then csr_country else $7 end,
-			csr_state = case when $8 is null then csr_state else $8 end,
-			csr_city = case when $9 is null then csr_city else $9 end,
-			updated_at = $10
+			csr_org = case when $4 is null then csr_org else $4 end,
+			csr_ou = case when $5 is null then csr_ou else $5 end,
+			csr_country = case when $6 is null then csr_country else $6 end,
+			csr_state = case when $7 is null then csr_state else $7 end,
+			csr_city = case when $8 is null then csr_city else $8 end,
+			updated_at = $9
 		WHERE
-			id = $11
+			id = $10
 		`
 
 	_, err = store.Db.ExecContext(ctx, query,
 		certDb.name,
 		certDb.description,
 		certDb.challengeMethodValue,
-		certDb.commonName,
 		certDb.organization,
 		certDb.organizationalUnit,
 		certDb.country,

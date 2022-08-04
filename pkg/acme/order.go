@@ -64,7 +64,6 @@ func unmarshalOrder(bodyBytes []byte, headers http.Header) (response Order, err 
 
 // NewOrder posts a secure message to the NewOrder URL of the directory
 func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey) (response Order, err error) {
-
 	// post new-order
 	bodyBytes, headers, err := service.postToUrlSigned(payload, service.dir.NewOrder, accountKey)
 	if err != nil {
@@ -84,6 +83,30 @@ func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey)
 func (service *Service) GetOrder(orderUrl string, accountKey AccountKey) (response Order, err error) {
 	// POST-as-GET
 	bodyBytes, headers, err := service.postAsGet(orderUrl, accountKey)
+	if err != nil {
+		return Order{}, err
+	}
+
+	// unmarshal response
+	response, err = unmarshalOrder(bodyBytes, headers)
+	if err != nil {
+		return Order{}, err
+	}
+
+	return response, nil
+}
+
+// FinalizeOrder posts the specified CSR to the specified finalize URL
+func (service *Service) FinalizeOrder(finalizeUrl string, derCsr []byte, accountKey AccountKey) (response Order, err error) {
+	// insert csr into expected json payload format
+	payload := struct {
+		Csr string `json:"csr"`
+	}{
+		Csr: encodeString(derCsr),
+	}
+
+	// post csr to finalize URL
+	bodyBytes, headers, err := service.postToUrlSigned(payload, finalizeUrl, accountKey)
 	if err != nil {
 		return Order{}, err
 	}
