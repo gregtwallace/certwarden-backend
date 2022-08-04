@@ -48,12 +48,12 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 			return // done, failed
 		}
 
+		// acmeOrder to hold the Order responses and to later update storage
 		var acmeOrder acme.Order
 
-		// use loop to retry order fulfillment as appropriate
-		// set max tries to avoid infinite loop if something anomalous occurs
+		// Use loop to retry order if "processing". Cap retries to avoid indefinite loop.
 	fulfillLoop:
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= 5; i++ {
 			// PaG the order (to get most recent status)
 			if *order.Certificate.AcmeAccount.IsStaging {
 				acmeOrder, err = service.acmeStaging.GetOrder(*order.Location, key)
@@ -68,21 +68,25 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 			// action depends on order's current Status
 			switch acmeOrder.Status {
 			case "pending": // needs to be authed
-				err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, *order.Certificate.ChallengeMethod, key, *order.Certificate.AcmeAccount.IsStaging)
+				var authStatus string
+				authStatus, err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, *order.Certificate.ChallengeMethod, key, *order.Certificate.AcmeAccount.IsStaging)
 				if err != nil {
-					service.logger.Debug(err)
-					// TODO: Implement exponential backoff
-					time.Sleep(time.Duration(i) * 30 * time.Second)
-					break // break switch to try order again
+					service.logger.Error(err)
+					return // done, failed
+				}
+				if authStatus != "valid" {
+					break // PaG order again and to get final ('invalid' Status) version to save to storage
 				}
 
+				// auths were valid, fallthrough to "ready" (which order should now be in)
 				fallthrough
 
 			case "ready": // needs to be finalized
 				// TODO: finalize
 				// TODO: if err break switch to try again
 
-				fallthrough
+				// loop around, "certificate" field isn't present until the order is valid so another PaG is needed
+				break fulfillLoop // TODO REMOVE break fulfillLoop
 
 			case "valid": // can be downloaded
 				// TODO: download? update related cert?
@@ -95,11 +99,7 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 				time.Sleep(time.Duration(i) * 30 * time.Second)
 
 			case "invalid": // break, irrecoverable
-				if acmeOrder.Error != nil {
-					service.logger.Error(acmeOrder.Error)
-				} else {
-					service.logger.Error(errors.New("order status invalid (no acme error provided)"))
-				}
+				service.logger.Debugf("order status invalid; acme error: %s", acmeOrder.Error)
 				break fulfillLoop
 
 			// Note: there is no 'expired' Status case. If the order expires it simply moves to 'invalid'
@@ -109,6 +109,19 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 				return // done, failed (don't update db since something anomalous happened)
 			}
 		}
+
+		// TODO: TEMP: REMOVE
+		// PaG the order (to get most recent status)
+		if *order.Certificate.AcmeAccount.IsStaging {
+			acmeOrder, err = service.acmeStaging.GetOrder(*order.Location, key)
+		} else {
+			acmeOrder, err = service.acmeProd.GetOrder(*order.Location, key)
+		}
+		if err != nil {
+			service.logger.Error(err)
+			return // done, failed
+		}
+		// END TODO TEMP REMOVE
 
 		// update order in storage
 		err = service.storage.UpdateOrderAcme(orderId, acmeOrder)

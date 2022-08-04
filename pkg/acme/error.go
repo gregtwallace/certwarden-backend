@@ -14,7 +14,7 @@ type Error struct {
 
 // Error() implements the error interface
 func (e Error) Error() string {
-	return fmt.Sprintf("%d: %s (%s)", e.Status, e.Type, e.Detail)
+	return fmt.Sprintf("status: %d; type: %s; detail: %s", e.Status, e.Type, e.Detail)
 }
 
 // unmarshalErrorResponse attempts to unmarshal into the error response object

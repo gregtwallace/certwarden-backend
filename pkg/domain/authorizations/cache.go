@@ -15,6 +15,7 @@ var (
 // an auth cache item with any current auth error as well as context
 // that can be canceled to cancel the outstanding ttl expirer
 type auth struct {
+	status       string
 	err          error
 	cancelExpire context.CancelFunc
 }
@@ -41,12 +42,12 @@ func newCache() *cache {
 }
 
 // add adds the specified auth URL and any current error
-func (cache *cache) add(newAuthUrl string, authErr error) {
+func (cache *cache) add(authUrl string, authStatus string, authErr error) {
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 
 	// check if exists in cache, if so, cancel the old expirer
-	oldAuth, exists := cache.auths[newAuthUrl]
+	oldAuth, exists := cache.auths[authUrl]
 	if exists {
 		oldAuth.cancelExpire()
 	}
@@ -57,15 +58,16 @@ func (cache *cache) add(newAuthUrl string, authErr error) {
 	// make new auth for cache
 	newAuth := new(auth)
 	newAuth = &auth{
+		status:       authStatus,
 		err:          authErr,
 		cancelExpire: cancel,
 	}
 
 	// spawn expirer
-	cache.newExpirer(newAuthUrl, ctx)
+	cache.newExpirer(authUrl, ctx)
 
 	// add the auth to cache (overwrite if already exists)
-	cache.auths[newAuthUrl] = newAuth
+	cache.auths[authUrl] = newAuth
 }
 
 // newExpirer starts a go routine that will expire the specified cache item
@@ -88,32 +90,32 @@ func (cache *cache) newExpirer(authUrl string, ctx context.Context) {
 }
 
 // remove removes the specified authUrl from the cache
-func (cache *cache) remove(removeAuthUrl string) (err error) {
+func (cache *cache) remove(authUrl string) (err error) {
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 
 	// if url was not found, error
-	_, exists := cache.auths[removeAuthUrl]
+	_, exists := cache.auths[authUrl]
 	if !exists {
 		return ErrCacheFailedToRemove
 	}
 
 	// remove the authUrl
-	delete(cache.auths, removeAuthUrl)
+	delete(cache.auths, authUrl)
 
 	return nil
 }
 
 // read cache auth and return the err that was received when the auth was
 // cached
-func (cache *cache) read(authUrl string) (err error) {
+func (cache *cache) read(authUrl string) (status string, err error) {
 	cache.mu.RLock()
 	defer cache.mu.RUnlock()
 
 	// if url was not found, error
 	cachedAuth, exists := cache.auths[authUrl]
 	if !exists {
-		return ErrCacheAuthDoesntExist
+		return "", ErrCacheAuthDoesntExist
 	}
-	return cachedAuth.err
+	return cachedAuth.status, cachedAuth.err
 }
