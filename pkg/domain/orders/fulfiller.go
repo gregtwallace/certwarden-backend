@@ -119,8 +119,13 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 				fallthrough
 
 			case "valid": // can be downloaded
-				// TODO: download? update related cert?
-				// TODO: if err break switch to try again
+				_, err := acmeService.DownloadCertificate(acmeOrder.Certificate, key)
+				if err != nil {
+					service.logger.Error(err)
+					return // done, failed
+				}
+
+				// TODO: Parse and store PEM (change _ to certPem)
 
 				break fulfillLoop
 
@@ -150,6 +155,7 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 
 		// TODO: Update cert (including updated timestamp)
 		// Or should Get Cert just figure out the most recent valid order and act accordingly?
+		// if acmeOrder.Status == "valid", do some stuff with the cert, pem, etc.
 
 	}(orderId, service)
 

@@ -119,3 +119,25 @@ func (service *Service) FinalizeOrder(finalizeUrl string, derCsr []byte, account
 
 	return response, nil
 }
+
+// DownloadCertificate uses POST-as-GET to download a valid certificate from the specified
+// url.
+func (service *Service) DownloadCertificate(certificateUrl string, accountKey AccountKey) (pemChain string, err error) {
+	// POST-as-GET
+	bodyBytes, _, err := service.postAsGet(certificateUrl, accountKey)
+	if err != nil {
+		return "", err
+	}
+
+	// log alternate links in debug
+	// TODO: maybe care about these at some point
+	// altLinks := []string{}
+	// for _, altLink := range headers.Values("Link") {
+	// 	if strings.HasSuffix(altLink, "rel=\"alternate\"") {
+	// 		altLinks = append(altLinks, altLink)
+	// 	}
+	// }
+	// service.logger.Debugf("alternate download links: %s", altLinks)
+
+	return string(bodyBytes), nil
+}
