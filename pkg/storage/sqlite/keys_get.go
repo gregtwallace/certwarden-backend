@@ -151,6 +151,23 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 				WHERE
 					pk.id = c.private_key_id
 			)
+			AND
+			NOT EXISTS(
+				SELECT
+					ao.certificate_id
+				FROM
+					acme_orders ao
+				WHERE 
+					status = "valid"
+					AND
+					ao.certificate_id not null
+				GROUP BY
+					ao.certificate_id
+				HAVING
+					MAX(ao.valid_to)
+					AND
+					pk.id = ao.finalized_key_id
+			)
 		ORDER BY name
 	`
 
