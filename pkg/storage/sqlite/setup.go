@@ -131,13 +131,9 @@ func (store *Storage) createDBTables() error {
 		csr_country text,
 		csr_state text,
 		csr_city text,
+		api_key text NOT NULL,
 		created_at integer NOT NULL,
 		updated_at integer NOT NULL,
-		api_key text NOT NULL,
-		pem text,
-		valid_from integer,
-		valid_to integer,
-		is_valid boolean DEFAULT 0,
 		FOREIGN KEY (private_key_id)
 			REFERENCES private_keys (id)
 				ON DELETE RESTRICT
@@ -168,13 +164,16 @@ func (store *Storage) createDBTables() error {
 			finalize text NOT NULL,
 			finalized_key_id integer,
 			certificate_url text,
+			pem text,
+			valid_from integer,
+			valid_to integer,
 			created_at integer NOT NULL,
 			updated_at integer NOT NULL,
 			FOREIGN KEY (acme_account_id)
 				REFERENCES acme_accounts (id)
 					ON DELETE CASCADE
 					ON UPDATE NO ACTION,
-			FOREIGN KEY (private_key_id)
+			FOREIGN KEY (finalized_key_id)
 				REFERENCES private_keys (id)
 					ON DELETE SET NULL
 					ON UPDATE NO ACTION,

@@ -44,6 +44,9 @@ func (orderDb *orderDb) orderDbToOrder() (order orders.Order, err error) {
 		Finalize:       nullStringToString(orderDb.finalize),
 		FinalizedKey:   finalKey,
 		CertificateUrl: nullStringToString(orderDb.certificateUrl),
+		Pem:            nullStringToString(orderDb.pem),
+		ValidFrom:      nullInt32ToInt(orderDb.validFrom),
+		ValidTo:        nullInt32ToInt(orderDb.validTo),
 		CreatedAt:      nullInt32ToInt(orderDb.createdAt),
 		UpdatedAt:      nullInt32ToInt(orderDb.updatedAt),
 	}, nil
@@ -57,7 +60,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 	query := `
 	SELECT
 		ao.id, ao.acme_location, ao.status, ao.error, ao.expires, ao.dns_identifiers, ao.authorizations, ao.finalize, 
-		ao.certificate_url, ao.created_at, ao.updated_at,
+		ao.certificate_url, ao.pem, ao.valid_from, ao.valid_to, ao.created_at, ao.updated_at,
 		pk.id, pk.name,
 		c.id, c.name
 	FROM
@@ -87,6 +90,9 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		&orderDb.authorizations,
 		&orderDb.finalize,
 		&orderDb.certificateUrl,
+		&orderDb.pem,
+		&orderDb.validFrom,
+		&orderDb.validTo,
 		&orderDb.createdAt,
 		&orderDb.updatedAt,
 		&orderDb.finalizedKey.id,
@@ -114,7 +120,7 @@ func (store *Storage) GetCertOrders(certId int) (orders []orders.Order, err erro
 	query := `
 	SELECT
 		ao.id, ao.acme_location, ao.status, ao.error, ao.expires, ao.dns_identifiers, ao.authorizations, ao.finalize, 
-		ao.certificate_url, ao.created_at, ao.updated_at,
+		ao.certificate_url, ao.valid_from, ao.valid_to, ao.created_at, ao.updated_at,
 		pk.id, pk.name
 	FROM
 		acme_orders ao
@@ -145,6 +151,8 @@ func (store *Storage) GetCertOrders(certId int) (orders []orders.Order, err erro
 			&oneOrder.authorizations,
 			&oneOrder.finalize,
 			&oneOrder.certificateUrl,
+			&oneOrder.validFrom,
+			&oneOrder.validTo,
 			&oneOrder.createdAt,
 			&oneOrder.updatedAt,
 			&oneOrder.finalizedKey.id,

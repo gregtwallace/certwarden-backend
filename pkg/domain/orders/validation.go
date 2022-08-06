@@ -41,11 +41,14 @@ func (service *Service) isOrderRetryable(certId int, orderId int) (err error) {
 	}
 
 	// check order is in a state that can be retried
-	// TODO: add 'valid' check back
-	// if *order.Status == "valid" {
-	// 	return validation.ErrOrderValid
-	// } else
-	if *order.Status == "invalid" {
+	validPem := false
+	if order.Pem != nil && *order.Pem != "" {
+		validPem = true
+	}
+
+	if *order.Status == "valid" && validPem {
+		return validation.ErrOrderValid
+	} else if *order.Status == "invalid" {
 		return validation.ErrOrderInvalid
 	}
 

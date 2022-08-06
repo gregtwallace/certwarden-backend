@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/domain/orders"
 )
 
 // acmeOrderToDb translates the acme order object to the db obj
@@ -58,6 +59,76 @@ func (store *Storage) UpdateOrderAcme(orderId int, order acme.Order) (err error)
 		orderDb.finalize,
 		orderDb.certificateUrl,
 		orderDb.updatedAt,
+		orderId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	// TODO: Handle 0 rows updated.
+
+	return nil
+}
+
+// UpdateFinalizedKey updates the specified order ID with key id
+func (store *Storage) UpdateFinalizedKey(orderId int, keyId int) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	// no checks or validation (shouldn't be needed)
+
+	// update existing record
+	query := `
+		UPDATE
+			acme_orders
+		SET
+			finalized_key_id = $1,
+			updated_at = $2
+		WHERE
+			id = $3
+		`
+
+	_, err = store.Db.ExecContext(ctx, query,
+		keyId,
+		timeNow(),
+		orderId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	// TODO: Handle 0 rows updated.
+
+	return nil
+}
+
+// UpdateOrderCert updates the specified order ID with the specified certificate data
+func (store *Storage) UpdateOrderCert(orderId int, payload orders.CertPayload) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	// no checks or validation (shouldn't be needed)
+
+	// update existing record
+	query := `
+		UPDATE
+			acme_orders
+		SET
+			pem = $1,
+			valid_from = $2,
+			valid_to = $3,
+			updated_at = $4
+		WHERE
+			id = $5
+		`
+
+	_, err = store.Db.ExecContext(ctx, query,
+		payload.Pem,
+		payload.ValidFrom,
+		payload.ValidTo,
+		timeNow(),
 		orderId,
 	)
 

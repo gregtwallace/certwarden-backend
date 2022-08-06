@@ -48,7 +48,7 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 			return // done, failed
 		}
 
-		// get account CSR
+		// make cert CSR
 		csr, err := order.Certificate.MakeCsrDer()
 		if err != nil {
 			service.logger.Error(err)
@@ -66,7 +66,7 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 			acmeService = service.acmeProd
 		}
 
-		// Use loop to retry order if "processing". Cap retries to avoid indefinite loop.
+		// Use loop to retry order. Cap retries to avoid indefinite loop.
 		maxTries := 5
 	fulfillLoop:
 		for i := 1; i <= maxTries; i++ {
@@ -86,20 +86,24 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 					service.logger.Error(err)
 					return // done, failed
 				}
+				// auth should be valid (thus making order ready)
+				// if not valid, should be invalid, loop to get updated order (also now invalid)
 				if authStatus != "valid" {
-					// Order should be invalid, get most recent Object and then break loop to save to storage
-					acmeOrder, err = acmeService.GetOrder(*order.Location, key)
-					if err != nil {
-						service.logger.Error(err)
-						return // done, failed
-					}
-					break fulfillLoop
+					break
 				}
 
 				// auths were valid, fallthrough to "ready" (which order should now be in)
 				fallthrough
 
 			case "ready": // needs to be finalized
+				// save finalized_key_id in storage
+				err = service.storage.UpdateFinalizedKey(*order.ID, *order.Certificate.PrivateKey.ID)
+				if err != nil {
+					service.logger.Error(err)
+					return // done, failed
+				}
+
+				// finalize the order
 				acmeOrder, err = acmeService.FinalizeOrder(*order.Finalize, csr, key)
 				if err != nil {
 					service.logger.Error(err)
@@ -108,10 +112,6 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 
 				// should now be valid, if not, probably processing
 				if acmeOrder.Status != "valid" {
-					// TODO: Implement exponential backoff
-					if i != maxTries {
-						time.Sleep(time.Duration(i) * 30 * time.Second)
-					}
 					break
 				}
 
@@ -119,13 +119,19 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 				fallthrough
 
 			case "valid": // can be downloaded
-				_, err := acmeService.DownloadCertificate(acmeOrder.Certificate, key)
+				// download cert pem
+				certPemChain, err := acmeService.DownloadCertificate(acmeOrder.Certificate, key)
 				if err != nil {
 					service.logger.Error(err)
 					return // done, failed
 				}
 
-				// TODO: Parse and store PEM (change _ to certPem)
+				// process pem and save to storage
+				err = service.savePemChain(*order.ID, certPemChain)
+				if err != nil {
+					service.logger.Error(err)
+					return
+				}
 
 				break fulfillLoop
 

@@ -22,6 +22,9 @@ type Order struct {
 	Finalize       *string                   `json:"finalize,omitempty"`
 	FinalizedKey   *private_keys.Key         `json:"finalized_key,omitempty"`
 	CertificateUrl *string                   `json:"certificate_url,omitempty"`
+	Pem            *string                   `json:"pem,omitempty"`
+	ValidFrom      *int                      `json:"valid_from"`
+	ValidTo        *int                      `json:"valid_to"`
 	CreatedAt      *int                      `json:"created_at,omitempty"`
 	UpdatedAt      *int                      `json:"updated_at,omitempty"`
 }

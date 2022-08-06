@@ -33,6 +33,8 @@ type Storage interface {
 	PostNewOrder(cert certificates.Certificate, order acme.Order) (newId int, err error)
 
 	UpdateOrderAcme(orderId int, order acme.Order) (err error)
+	UpdateFinalizedKey(orderId int, keyId int) (err error)
+	UpdateOrderCert(orderId int, CertPayload CertPayload) (err error)
 }
 
 // Keys service struct

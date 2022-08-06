@@ -17,6 +17,9 @@ type orderDb struct {
 	finalize       sql.NullString
 	finalizedKey   *keyDb
 	certificateUrl sql.NullString
+	pem            sql.NullString
+	validFrom      sql.NullInt32
+	validTo        sql.NullInt32
 	createdAt      sql.NullInt32
 	updatedAt      sql.NullInt32
 }

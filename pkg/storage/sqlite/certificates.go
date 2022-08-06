@@ -22,7 +22,4 @@ type certificateDb struct {
 	createdAt            sql.NullInt32
 	updatedAt            sql.NullInt32
 	apiKey               sql.NullString
-	pem                  sql.NullString
-	validFrom            sql.NullInt32
-	validTo              sql.NullInt32
 }
