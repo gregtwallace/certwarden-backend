@@ -37,6 +37,7 @@ func (orderDb *orderDb) orderDbToOrder() (order orders.Order, err error) {
 		Certificate:    cert,
 		Location:       nullStringToString(orderDb.location),
 		Status:         nullStringToString(orderDb.status),
+		KnownRevoked:   &orderDb.knownRevoked,
 		Error:          nullStringToAcmeError(orderDb.err),
 		Expires:        nullInt32ToInt(orderDb.expires),
 		DnsIdentifiers: commaNullStringToSlice(orderDb.dnsIdentifiers),
@@ -59,7 +60,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 
 	query := `
 	SELECT
-		ao.id, ao.acme_location, ao.status, ao.error, ao.expires, ao.dns_identifiers, ao.authorizations, ao.finalize, 
+		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, ao.authorizations, ao.finalize, 
 		ao.certificate_url, ao.pem, ao.valid_from, ao.valid_to, ao.created_at, ao.updated_at,
 		pk.id, pk.name,
 		c.id, c.name
@@ -84,6 +85,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		&orderDb.id,
 		&orderDb.location,
 		&orderDb.status,
+		&orderDb.knownRevoked,
 		&orderDb.err,
 		&orderDb.expires,
 		&orderDb.dnsIdentifiers,
@@ -119,7 +121,7 @@ func (store *Storage) GetCertOrders(certId int) (orders []orders.Order, err erro
 
 	query := `
 	SELECT
-		ao.id, ao.acme_location, ao.status, ao.error, ao.expires, ao.dns_identifiers, ao.authorizations, ao.finalize, 
+		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, ao.authorizations, ao.finalize, 
 		ao.certificate_url, ao.valid_from, ao.valid_to, ao.created_at, ao.updated_at,
 		pk.id, pk.name
 	FROM
@@ -145,6 +147,7 @@ func (store *Storage) GetCertOrders(certId int) (orders []orders.Order, err erro
 			&oneOrder.id,
 			&oneOrder.location,
 			&oneOrder.status,
+			&oneOrder.knownRevoked,
 			&oneOrder.err,
 			&oneOrder.expires,
 			&oneOrder.dnsIdentifiers,

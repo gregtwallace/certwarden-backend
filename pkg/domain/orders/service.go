@@ -35,6 +35,7 @@ type Storage interface {
 	UpdateOrderAcme(orderId int, order acme.Order) (err error)
 	UpdateFinalizedKey(orderId int, keyId int) (err error)
 	UpdateOrderCert(orderId int, CertPayload CertPayload) (err error)
+	RevokeOrder(orderId int) (err error)
 }
 
 // Keys service struct

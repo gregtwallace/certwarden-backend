@@ -22,6 +22,7 @@ func newOrderToDb(cert certificates.Certificate, order acme.Order) orderDb {
 
 	orderDb.location = stringToNullString(&order.Location)
 	orderDb.status = stringToNullString(&order.Status)
+	orderDb.knownRevoked = false
 	orderDb.err = acmeErrorToNullString(order.Error)
 	orderDb.expires = intToNullInt32(order.Expires.ToUnixTime())
 	orderDb.dnsIdentifiers = sliceToCommaNullString(order.Identifiers.DnsIdentifiers())
@@ -77,6 +78,7 @@ func (store *Storage) PostNewOrder(cert certificates.Certificate, order acme.Ord
 					certificate_id,
 					acme_location,
 					status,
+					known_revoked,
 					expires,
 					dns_identifiers,
 					authorizations,
@@ -97,7 +99,8 @@ func (store *Storage) PostNewOrder(cert certificates.Certificate, order acme.Ord
 					$8,
 					$9,
 					$10,
-					$11
+					$11,
+					$12
 				)
 		RETURNING
 			id
@@ -108,6 +111,7 @@ func (store *Storage) PostNewOrder(cert certificates.Certificate, order acme.Ord
 			orderDb.certificate.id,
 			orderDb.location,
 			orderDb.status,
+			orderDb.knownRevoked,
 			orderDb.expires,
 			orderDb.dnsIdentifiers,
 			orderDb.authorizations,

@@ -208,6 +208,12 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) (err
 	} else {
 		err = service.acmeProd.RevokeCertificate(*order.Pem, payload.Reason, key)
 	}
+	// if no error, or error is already revoked, update db
+	acmeErr, isAcmeErr := err.(acme.Error)
+	if err == nil || (isAcmeErr && acmeErr.Type == "urn:ietf:params:acme:error:alreadyRevoked") {
+		err = service.storage.RevokeOrder(orderId)
+	}
+	// checks err for IsStaging, or update to storage (if that condition was met)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal

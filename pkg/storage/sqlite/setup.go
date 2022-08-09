@@ -157,6 +157,7 @@ func (store *Storage) createDBTables() error {
 			certificate_id integer,
 			acme_location text NOT NULL UNIQUE,
 			status text NOT NULL,
+			known_revoked integer NOT NULL DEFAULT 0 CHECK(known_revoked IN (0,1)),
 			error text,
 			expires integer,
 			dns_identifiers text NOT NULL,

@@ -15,6 +15,7 @@ type Order struct {
 	Certificate    *certificates.Certificate `json:"certificate,omitempty"`
 	Location       *string                   `json:"location,omitempty"`
 	Status         *string                   `json:"status,omitempty"`
+	KnownRevoked   *bool                     `json:"known_revoked,omitempty"`
 	Error          *acme.Error               `json:"error,omitempty"`
 	Expires        *int                      `json:"expires,omitempty"`
 	DnsIdentifiers []string                  `json:"dns_identifiers,omitempty"`

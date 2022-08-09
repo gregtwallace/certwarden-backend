@@ -10,6 +10,7 @@ type orderDb struct {
 	certificate    *certificateDb
 	location       sql.NullString
 	status         sql.NullString
+	knownRevoked   bool
 	err            sql.NullString // stored as json object
 	expires        sql.NullInt32
 	dnsIdentifiers sql.NullString // will be a comma separated list from storage

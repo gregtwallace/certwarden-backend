@@ -80,7 +80,7 @@ func (service *Service) isOrderRevocable(certId, orderId int) (err error) {
 
 	// check order is in a state that can be revoked
 	// must be valid and not expired
-	if *order.Status == "valid" && int(time.Now().Unix()) < *order.ValidTo {
+	if *order.Status == "valid" && !*order.KnownRevoked && int(time.Now().Unix()) < *order.ValidTo {
 		return nil
 	}
 

@@ -140,3 +140,36 @@ func (store *Storage) UpdateOrderCert(orderId int, payload orders.CertPayload) (
 
 	return nil
 }
+
+// RevokeOrder updates the revoked flag in db to true (1)
+func (store *Storage) RevokeOrder(orderId int) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	// no checks or validation (shouldn't be needed)
+
+	// update existing record
+	query := `
+		UPDATE
+			acme_orders
+		SET
+			known_revoked = $1,
+			updated_at = $2
+		WHERE
+			id = $3
+		`
+
+	_, err = store.Db.ExecContext(ctx, query,
+		1, // true
+		timeNow(),
+		orderId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	// TODO: Handle 0 rows updated.
+
+	return nil
+}
