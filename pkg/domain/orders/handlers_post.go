@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"encoding/json"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/validation"
@@ -125,6 +126,97 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 	response := output.JsonResponse{
 		Status:  http.StatusOK,
 		Message: "attempting to fulfill",
+		ID:      orderId,
+	}
+
+	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
+	}
+
+	return nil
+}
+
+// revokePayload allows clients to specify the revocation reason, it is not
+// required
+type revokePayload struct {
+	Reason int `json:"reason"`
+}
+
+// RevokeOrder is a handler that will revoke an order if it is valid and not
+// past its valid_to timestamp.
+func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) (err error) {
+	params := httprouter.ParamsFromContext(r.Context())
+	certIdStr := params.ByName("certid")
+	orderIdStr := params.ByName("orderid")
+
+	// convert params to integers
+	certId, err := strconv.Atoi(certIdStr)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+	orderId, err := strconv.Atoi(orderIdStr)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// parse payload
+	var payload revokePayload
+	// decode body into payload
+	_ = json.NewDecoder(r.Body).Decode(&payload)
+	// no need to error check, default int val is 0, which is the
+	// desired value if not specified
+
+	/// validation
+	// ids (ensure cert and order match)
+	// also confirm order is revocable (valid and unexpired)
+	err = service.isOrderRevocable(certId, orderId)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+	///
+
+	// revoke cert
+	// fetch the relevant order
+	order, err := service.storage.GetOneOrder(orderId)
+	if err != nil {
+		service.logger.Error(err)
+		return // done, failed
+	}
+
+	// fetch the certificate with sensitive data and update the order object
+	*order.Certificate, err = service.storage.GetOneCertById(*order.Certificate.ID, true)
+	if err != nil {
+		service.logger.Error(err)
+		return // done, failed
+	}
+
+	// get account key
+	key, err := order.Certificate.AcmeAccount.AccountKey()
+	if err != nil {
+		service.logger.Error(err)
+		return // done, failed
+	}
+
+	// revoke the certificate with ACME
+	if *order.Certificate.AcmeAccount.IsStaging {
+		err = service.acmeStaging.RevokeCertificate(*order.Pem, payload.Reason, key)
+	} else {
+		err = service.acmeProd.RevokeCertificate(*order.Pem, payload.Reason, key)
+	}
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// return response to client
+	response := output.JsonResponse{
+		Status:  http.StatusOK,
+		Message: "certificate revoked",
 		ID:      orderId,
 	}
 

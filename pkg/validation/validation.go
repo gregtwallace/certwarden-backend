@@ -31,9 +31,10 @@ var (
 	ErrDomainMissing = errors.New("missing domain or subject")
 
 	// order
-	ErrOrderMismatch = errors.New("order cert id does not match cert")
-	ErrOrderValid    = errors.New("order is already valid")
-	ErrOrderInvalid  = errors.New("order is invalid and cannot be retried")
+	ErrOrderMismatch     = errors.New("order cert id does not match cert")
+	ErrOrderValid        = errors.New("order is already valid")
+	ErrOrderInvalid      = errors.New("order is invalid and cannot be retried")
+	ErrOrderNotRevocable = errors.New("order (cert) cannot be revoked")
 )
 
 // IsIdNew returns an error if the id isn't the specified new

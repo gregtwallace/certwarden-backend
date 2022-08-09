@@ -52,6 +52,7 @@ func (app *Application) Routes() http.Handler {
 	app.makeHandle(http.MethodGet, "/api/v1/certificates/:certid/orders", app.orders.GetCertOrders)
 	app.makeHandle(http.MethodPost, "/api/v1/certificates/:certid/orders", app.orders.NewOrder)
 	app.makeHandle(http.MethodPost, "/api/v1/certificates/:certid/orders/:orderid", app.orders.FulfillExistingOrder)
+	app.makeHandle(http.MethodPost, "/api/v1/certificates/:certid/orders/:orderid/revoke", app.orders.RevokeOrder)
 
 	// invalid route
 	app.router.NotFound = app.makeHandler(app.notFoundHandler)
