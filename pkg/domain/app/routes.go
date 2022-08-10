@@ -16,8 +16,7 @@ func (app *Application) Routes() http.Handler {
 
 	// private_keys
 	app.makeHandle(http.MethodGet, "/api/v1/privatekeys", app.keys.GetAllKeys)
-	app.makeHandle(http.MethodGet, "/api/v1/privatekeys/:privateKey", app.keys.GetOneKey)
-	app.makeHandle(http.MethodGet, "/api/v1/privatekeys/:privateKey/download", app.keys.GetKeyPemFile)
+	app.makeHandle(http.MethodGet, "/api/v1/privatekeys/:id", app.keys.GetOneKey)
 
 	app.makeHandle(http.MethodPost, "/api/v1/privatekeys", app.keys.PostNewKey)
 
@@ -54,6 +53,9 @@ func (app *Application) Routes() http.Handler {
 	app.makeHandle(http.MethodPost, "/api/v1/certificates/:certid/orders", app.orders.NewOrder)
 	app.makeHandle(http.MethodPost, "/api/v1/certificates/:certid/orders/:orderid", app.orders.FulfillExistingOrder)
 	app.makeHandle(http.MethodPost, "/api/v1/certificates/:certid/orders/:orderid/revoke", app.orders.RevokeOrder)
+
+	// download keys and certs
+	app.makeHandle(http.MethodGet, "/api/v1/download/privatekeys/:name", app.keys.GetKeyPemFile)
 
 	// invalid route
 	app.router.NotFound = app.makeHandler(app.notFoundHandler)

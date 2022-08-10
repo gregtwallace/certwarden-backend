@@ -35,8 +35,8 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) (err 
 
 // GetOneKey returns a single private key as JSON
 func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err error) {
-	// get key id and convert to int (assume id, support name later)
-	idParam := httprouter.ParamsFromContext(r.Context()).ByName("privateKey")
+	// get key id and convert to int
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
@@ -96,8 +96,8 @@ func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request)
 
 // ServeKeyPem returns the private key to the client
 func (service *Service) GetKeyPemFile(w http.ResponseWriter, r *http.Request) (err error) {
-	// get key name (assume name, support id later)
-	keyName := httprouter.ParamsFromContext(r.Context()).ByName("privateKey")
+	// get key name
+	keyName := httprouter.ParamsFromContext(r.Context()).ByName("name")
 
 	// get api key from header
 	apiKey := r.Header.Get("X-API-Key")
