@@ -44,7 +44,11 @@ func (service *Service) WriteJSON(w http.ResponseWriter, status int, data interf
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	w.Write(jsonBytes)
+
+	_, err = w.Write(jsonBytes)
+	if err != nil {
+		return "", err
+	}
 
 	return string(jsonBytes), nil
 }

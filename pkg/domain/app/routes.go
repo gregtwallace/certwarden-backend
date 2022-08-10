@@ -16,7 +16,8 @@ func (app *Application) Routes() http.Handler {
 
 	// private_keys
 	app.makeHandle(http.MethodGet, "/api/v1/privatekeys", app.keys.GetAllKeys)
-	app.makeHandle(http.MethodGet, "/api/v1/privatekeys/:id", app.keys.GetOneKey)
+	app.makeHandle(http.MethodGet, "/api/v1/privatekeys/:privateKey", app.keys.GetOneKey)
+	app.makeHandle(http.MethodGet, "/api/v1/privatekeys/:privateKey/download", app.keys.GetKeyPemFile)
 
 	app.makeHandle(http.MethodPost, "/api/v1/privatekeys", app.keys.PostNewKey)
 

@@ -4,15 +4,17 @@ import "fmt"
 
 var (
 	// generic
-	ErrNotFound = Error{Status: 404, Message: "not found"}
-	ErrInternal = Error{Status: 500, Message: "internal error"}
+	ErrNotFound     = Error{Status: 404, Message: "not found"}
+	ErrInternal     = Error{Status: 500, Message: "internal error"}
+	ErrUnauthorized = Error{Status: 401, Message: "unauthorized"}
 
 	// storage errors
 	ErrStorageGeneric = Error{Status: 500, Message: "storage error"}
 	ErrDeleteInUse    = Error{Status: 409, Message: "record in use, can't delete"}
 
-	// json
+	// write
 	ErrWriteJsonFailed = Error{Status: 500, Message: "json response write failed"}
+	ErrWritePemFailed  = Error{Status: 500, Message: "pem write failed"}
 
 	// validation
 	ErrValidationFailed = Error{Status: 400, Message: "request validation (param or payload) invalid"}
