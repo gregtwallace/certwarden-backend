@@ -24,8 +24,6 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	GetOneCertById(id int, withAcctPem bool) (cert certificates.Certificate, err error)
-
 	// orders
 	GetCertOrders(certId int) (orders []Order, err error)
 	GetOneOrder(orderId int) (order Order, err error)
@@ -36,6 +34,10 @@ type Storage interface {
 	UpdateFinalizedKey(orderId int, keyId int) (err error)
 	UpdateOrderCert(orderId int, CertPayload CertPayload) (err error)
 	RevokeOrder(orderId int) (err error)
+
+	// certs
+	GetOneCertById(id int, withAcctPem bool) (cert certificates.Certificate, err error)
+	UpdateCertUpdatedTime(certId int) (err error)
 }
 
 // Keys service struct

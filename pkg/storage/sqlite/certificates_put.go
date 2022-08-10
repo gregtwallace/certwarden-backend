@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"legocerthub-backend/pkg/domain/certificates"
+	"time"
 )
 
 // accountPayloadToDb turns the client payload into a db object
@@ -77,6 +78,33 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+// UpdateCertUpdatedTime sets the specified order's updated_at to now
+func (store *Storage) UpdateCertUpdatedTime(certId int) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		certificates
+	SET
+		updated_at = $1
+	WHERE
+		id = $2
+	`
+
+	_, err = store.Db.ExecContext(ctx, query,
+		time.Now().Unix(),
+		certId,
+	)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Handle 0 rows updated.
 
 	return nil
 }

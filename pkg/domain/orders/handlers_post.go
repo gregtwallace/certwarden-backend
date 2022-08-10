@@ -61,6 +61,12 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 		return output.ErrStorageGeneric
 	}
 
+	// update certificate timestamp
+	err = service.storage.UpdateCertUpdatedTime(certId)
+	if err != nil {
+		service.logger.Error(err)
+	}
+
 	// kickoff order fulfillment (async)
 	_ = service.orderFromAcme(orderId)
 	// if already being worked, no need to indicate that since this is a creation
@@ -217,6 +223,12 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) (err
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
+	}
+
+	// update certificate timestamp
+	err = service.storage.UpdateCertUpdatedTime(certId)
+	if err != nil {
+		service.logger.Error(err)
 	}
 
 	// return response to client

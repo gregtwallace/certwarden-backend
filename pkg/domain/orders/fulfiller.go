@@ -34,6 +34,14 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 			return // done, failed
 		}
 
+		// update certificate timestamp after fulfiller is done
+		defer func(certId int) {
+			err = service.storage.UpdateCertUpdatedTime(certId)
+			if err != nil {
+				service.logger.Error(err)
+			}
+		}(*order.Certificate.ID)
+
 		// fetch the certificate with sensitive data and update the order object
 		*order.Certificate, err = service.storage.GetOneCertById(*order.Certificate.ID, true)
 		if err != nil {
@@ -158,10 +166,6 @@ func (service *Service) orderFromAcme(orderId int) (err error) {
 		if err != nil {
 			service.logger.Error(err)
 		}
-
-		// TODO: Update cert (including updated timestamp)
-		// Or should Get Cert just figure out the most recent valid order and act accordingly?
-		// if acmeOrder.Status == "valid", do some stuff with the cert, pem, etc.
 
 	}(orderId, service)
 
