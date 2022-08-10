@@ -7,6 +7,7 @@ import (
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/storage"
+	"time"
 
 	"legocerthub-backend/pkg/domain/certificates"
 )
@@ -204,4 +205,44 @@ func (store *Storage) getOneCert(id int, name string, withKeyPems bool) (cert ce
 	}
 
 	return cert, nil
+}
+
+// GetCertPem returns the pem for the most recent valid order of the specified
+// cert
+func (store *Storage) GetCertPem(certId int) (pem string, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	query := `
+	SELECT
+		pem
+	FROM
+		acme_orders
+	WHERE 
+		status = "valid"
+		AND
+		known_revoked = 0
+		AND
+		valid_to > $1
+		AND
+		pem NOT NULL
+		AND
+		certificate_id = $2
+	GROUP BY
+		certificate_id
+	HAVING
+		MAX(valid_to)
+	`
+
+	row := store.Db.QueryRowContext(ctx, query,
+		time.Now().Unix(),
+		certId,
+	)
+
+	err = row.Scan(&pem)
+	if err != nil {
+		return "", err
+	}
+
+	return pem, nil
 }
