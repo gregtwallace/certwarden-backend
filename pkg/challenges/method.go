@@ -23,15 +23,16 @@ func ListOfMethods() []Method {
 		{
 			// serve the http record from this server
 			Value: "http-01-internal",
-			Name:  "HTTP-01 (Self Served)",
+			Name:  "HTTP (Self Served)",
 			Type:  "http-01",
 		},
-		{
-			// call external scripts to create and delete dns records
-			Value: "dns-01-script",
-			Name:  "DNS-01 (Manual)",
-			Type:  "dns-01",
-		},
+		// TODO: Implement DNS
+		// {
+		// 	// call external scripts to create and delete dns records
+		// 	Value: "dns-01-script",
+		// 	Name:  "DNS-01 (Manual)",
+		// 	Type:  "dns-01",
+		// },
 	}
 }
 

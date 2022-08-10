@@ -1,6 +1,7 @@
 package certificates
 
 import (
+	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
@@ -82,6 +83,13 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	// certificate options / info to assist client with new certificate posting
 	newCertOptions := newCertOptions{}
 
+	// available accounts
+	newCertOptions.AvailableAccounts, err = service.accounts.GetAvailableAccounts()
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+
 	// available private keys
 	newCertOptions.AvailableKeys, err = service.keys.GetAvailableKeys()
 	if err != nil {
@@ -89,12 +97,8 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 		return output.ErrStorageGeneric
 	}
 
-	// available accounts
-	newCertOptions.AvailableAccounts, err = service.accounts.GetAvailableAccounts()
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrStorageGeneric
-	}
+	// available challenge methods
+	newCertOptions.AvailableChallengeMethods = challenges.ListOfMethods()
 
 	// return response to client
 	_, err = service.output.WriteJSON(w, http.StatusOK, newCertOptions, "certificate_options")

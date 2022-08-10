@@ -30,8 +30,9 @@ type Certificate struct {
 // new account info
 // used to return info about valid options when making a new account
 type newCertOptions struct {
-	AvailableKeys     []private_keys.Key      `json:"private_keys"`
-	AvailableAccounts []acme_accounts.Account `json:"acme_accounts"`
+	AvailableKeys             []private_keys.Key      `json:"private_keys"`
+	AvailableAccounts         []acme_accounts.Account `json:"acme_accounts"`
+	AvailableChallengeMethods []challenges.Method     `json:"challenge_methods"`
 }
 
 // NewOrderPayload creates the appropriate newOrder payload for ACME
