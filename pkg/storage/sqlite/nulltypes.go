@@ -90,14 +90,14 @@ func nullStringToString(nullString sql.NullString) *string {
 
 // sliceToCommaNullString converts a slice of strings into a single string
 // separated by commas
-func sliceToCommaNullString(ss []string) sql.NullString {
+func sliceToCommaNullString(ss *[]string) sql.NullString {
 	var nullString sql.NullString
 
 	if ss == nil {
 		nullString.Valid = false
 	} else {
 		nullString.Valid = true
-		nullString.String = strings.Join(ss, ",")
+		nullString.String = strings.Join(*ss, ",")
 	}
 
 	return nullString
@@ -105,19 +105,20 @@ func sliceToCommaNullString(ss []string) sql.NullString {
 
 // commaNullStringToSlice converts a string that is a comma separated list
 // of strings into a slice of strings
-func commaNullStringToSlice(nullString sql.NullString) []string {
+func commaNullStringToSlice(nullString sql.NullString) *[]string {
 	if nullString.Valid {
 		// if the string isn't empty, parse it
 		if nullString.String != "" {
 			s := nullStringToString(nullString)
 			slice := strings.Split(*s, ",")
-			return slice
+			return &slice
 		} else {
-			// empty string = empty
-			return nil
+			// empty string = empty array
+			return &[]string{}
 		}
 	}
 
+	// null / not valid, return nil
 	return nil
 }
 

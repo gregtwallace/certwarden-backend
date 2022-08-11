@@ -11,11 +11,14 @@ func acmeOrderToDb(order acme.Order) orderDb {
 	// create db obj
 	var orderDb orderDb
 
+	// dnsIds
+	dnsIds := order.Identifiers.DnsIdentifiers()
+
 	orderDb.status = stringToNullString(&order.Status)
 	orderDb.err = acmeErrorToNullString(order.Error)
 	orderDb.expires = intToNullInt32(order.Expires.ToUnixTime())
-	orderDb.dnsIdentifiers = sliceToCommaNullString(order.Identifiers.DnsIdentifiers())
-	orderDb.authorizations = sliceToCommaNullString(order.Authorizations)
+	orderDb.dnsIdentifiers = sliceToCommaNullString(&dnsIds)
+	orderDb.authorizations = sliceToCommaNullString(&order.Authorizations)
 	orderDb.finalize = stringToNullString(&order.Finalize)
 	orderDb.certificateUrl = stringToNullString(&order.Certificate)
 

@@ -33,7 +33,7 @@ func (cert *Certificate) MakeCsrDer() (csr []byte, err error) {
 	template := x509.CertificateRequest{
 		SignatureAlgorithm: cert.PrivateKey.Algorithm.SignatureAlgorithm,
 		Subject:            subj,
-		DNSNames:           cert.SubjectAltNames,
+		DNSNames:           *cert.SubjectAltNames,
 		// unused: EmailAddresses, IPAddresses, URIs, Attributes (deprecated), ExtraExtensions
 	}
 

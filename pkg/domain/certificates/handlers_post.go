@@ -10,20 +10,20 @@ import (
 
 // NewPayload is the struct for creating a new certificate
 type NewPayload struct {
-	ID                   *int     `json:"id"`
-	Name                 *string  `json:"name"`
-	Description          *string  `json:"description"`
-	PrivateKeyID         *int     `json:"private_key_id"`
-	AcmeAccountID        *int     `json:"acme_account_id"`
-	ChallengeMethodValue *string  `json:"challenge_method_value"`
-	Subject              *string  `json:"subject,omitempty"`
-	SubjectAltNames      []string `json:"subject_alts,omitempty"`
-	CommonName           *string  `json:"common_name,omitempty"`
-	Organization         *string  `json:"organization,omitempty"`
-	OrganizationalUnit   *string  `json:"organizational_unit,omitempty"`
-	Country              *string  `json:"country,omitempty"`
-	State                *string  `json:"state,omitempty"`
-	City                 *string  `json:"city,omitempty"`
+	ID                   *int      `json:"id"`
+	Name                 *string   `json:"name"`
+	Description          *string   `json:"description"`
+	PrivateKeyID         *int      `json:"private_key_id"`
+	AcmeAccountID        *int      `json:"acme_account_id"`
+	ChallengeMethodValue *string   `json:"challenge_method_value"`
+	Subject              *string   `json:"subject,omitempty"`
+	SubjectAltNames      *[]string `json:"subject_alts,omitempty"`
+	CommonName           *string   `json:"common_name,omitempty"`
+	Organization         *string   `json:"organization,omitempty"`
+	OrganizationalUnit   *string   `json:"organizational_unit,omitempty"`
+	Country              *string   `json:"country,omitempty"`
+	State                *string   `json:"state,omitempty"`
+	City                 *string   `json:"city,omitempty"`
 }
 
 // PostNewCert creates a new certificate object in storage. No actual encryption certificate
@@ -83,7 +83,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 	// subject alts
 	// blank is okay, skip validation if not specified
 	if payload.SubjectAltNames != nil {
-		for _, altName := range payload.SubjectAltNames {
+		for _, altName := range *payload.SubjectAltNames {
 			err = validation.IsDomainValid(&altName)
 			if err != nil {
 				service.logger.Debug(err)

@@ -18,8 +18,8 @@ type Order struct {
 	KnownRevoked   *bool                     `json:"known_revoked,omitempty"`
 	Error          *acme.Error               `json:"error,omitempty"`
 	Expires        *int                      `json:"expires,omitempty"`
-	DnsIdentifiers []string                  `json:"dns_identifiers,omitempty"`
-	Authorizations []string                  `json:"authorizations,omitempty"`
+	DnsIdentifiers *[]string                 `json:"dns_identifiers,omitempty"`
+	Authorizations *[]string                 `json:"authorizations,omitempty"`
 	Finalize       *string                   `json:"finalize,omitempty"`
 	FinalizedKey   *private_keys.Key         `json:"finalized_key,omitempty"`
 	CertificateUrl *string                   `json:"certificate_url,omitempty"`

@@ -13,6 +13,9 @@ func newOrderToDb(cert certificates.Certificate, order acme.Order) orderDb {
 	// create db obj
 	var orderDb orderDb
 
+	// dnsIds
+	dnsIds := order.Identifiers.DnsIdentifiers()
+
 	// prevent nil pointer
 	orderDb.acmeAccount = new(accountDb)
 	orderDb.certificate = new(certificateDb)
@@ -25,8 +28,8 @@ func newOrderToDb(cert certificates.Certificate, order acme.Order) orderDb {
 	orderDb.knownRevoked = false
 	orderDb.err = acmeErrorToNullString(order.Error)
 	orderDb.expires = intToNullInt32(order.Expires.ToUnixTime())
-	orderDb.dnsIdentifiers = sliceToCommaNullString(order.Identifiers.DnsIdentifiers())
-	orderDb.authorizations = sliceToCommaNullString(order.Authorizations)
+	orderDb.dnsIdentifiers = sliceToCommaNullString(&dnsIds)
+	orderDb.authorizations = sliceToCommaNullString(&order.Authorizations)
 	orderDb.finalize = stringToNullString(&order.Finalize)
 	orderDb.certificateUrl = stringToNullString(&order.Certificate)
 

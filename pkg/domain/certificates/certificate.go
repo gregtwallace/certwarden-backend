@@ -16,7 +16,7 @@ type Certificate struct {
 	AcmeAccount        *acme_accounts.Account `json:"acme_account,omitempty"`
 	ChallengeMethod    *challenges.Method     `json:"challenge_method,omitempty"`
 	Subject            *string                `json:"subject,omitempty"`
-	SubjectAltNames    []string               `json:"subject_alts,omitempty"`
+	SubjectAltNames    *[]string              `json:"subject_alts,omitempty"`
 	Organization       *string                `json:"organization,omitempty"`
 	OrganizationalUnit *string                `json:"organizational_unit,omitempty"`
 	Country            *string                `json:"country,omitempty"`
@@ -45,7 +45,7 @@ func (cert *Certificate) NewOrderPayload() acme.NewOrderPayload {
 
 	// add alt names if they exist
 	if cert.SubjectAltNames != nil {
-		for _, name := range cert.SubjectAltNames {
+		for _, name := range *cert.SubjectAltNames {
 			identifiers = append(identifiers, acme.Identifier{Type: "dns", Value: name})
 		}
 	}
