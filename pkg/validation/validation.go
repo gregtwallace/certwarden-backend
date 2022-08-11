@@ -155,7 +155,7 @@ func IsDomainValid(domain *string) (err error) {
 	}
 
 	// valid regex
-	emailRegex := regexp.MustCompile(`^([A-Za-z][A-Za-z0-9-]{0,61}[A-Za-z0-9]\.)*[A-Za-z][A-Za-z0-9-]{0,61}[A-Za-z0-9]$`)
+	emailRegex := regexp.MustCompile(`^(([A-Za-z0-9][A-Za-z0-9-]{0,61}\.)*([A-Za-z0-9][A-Za-z0-9-]{0,61}\.)[A-Za-z][A-Za-z0-9-]{0,61}[A-Za-z0-9])$`)
 	isGood := emailRegex.MatchString(*domain)
 	if isGood {
 		return nil
