@@ -36,6 +36,7 @@ type Storage interface {
 
 	DeleteCert(id int) (err error)
 
+	// account
 	GetOneAccountById(id int, withPem bool) (acme_accounts.Account, error)
 }
 

@@ -19,7 +19,13 @@ func certDetailsPayloadToDb(payload certificates.DetailsUpdatePayload) (certific
 
 	certDb.name = stringToNullString(payload.Name)
 	certDb.description = stringToNullString(payload.Description)
+
+	certDb.privateKey = new(keyDb)
+	certDb.privateKey.id = intToNullInt32(payload.PrivateKeyId)
+
 	certDb.challengeMethodValue = stringToNullString(payload.ChallengeMethodValue)
+
+	certDb.subjectAltNames = sliceToCommaNullString(payload.SubjectAltNames)
 
 	certDb.organization = stringToNullString(payload.Organization)
 	certDb.organizationalUnit = stringToNullString(payload.OrganizationalUnit)
@@ -51,21 +57,25 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 		SET
 			name = case when $1 is null then name else $1 end,
 			description = case when $2 is null then description else $2 end,
-			challenge_method = case when $3 is null then challenge_method else $3 end,
-			csr_org = case when $4 is null then csr_org else $4 end,
-			csr_ou = case when $5 is null then csr_ou else $5 end,
-			csr_country = case when $6 is null then csr_country else $6 end,
-			csr_state = case when $7 is null then csr_state else $7 end,
-			csr_city = case when $8 is null then csr_city else $8 end,
-			updated_at = $9
+			private_key_id = case when $3 is null then private_key_id else $3 end,
+			challenge_method = case when $4 is null then challenge_method else $4 end,
+			subject_alts = case when $5 is null then subject_alts else $5 end,
+			csr_org = case when $6 is null then csr_org else $6 end,
+			csr_ou = case when $7 is null then csr_ou else $7 end,
+			csr_country = case when $8 is null then csr_country else $8 end,
+			csr_state = case when $9 is null then csr_state else $9 end,
+			csr_city = case when $10 is null then csr_city else $10 end,
+			updated_at = $11
 		WHERE
-			id = $10
+			id = $12
 		`
 
 	_, err = store.Db.ExecContext(ctx, query,
 		certDb.name,
 		certDb.description,
+		certDb.privateKey.id,
 		certDb.challengeMethodValue,
+		certDb.subjectAltNames,
 		certDb.organization,
 		certDb.organizationalUnit,
 		certDb.country,

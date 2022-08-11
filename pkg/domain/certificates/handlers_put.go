@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
 
@@ -13,16 +14,17 @@ import (
 // DetailsUpdatePayload is the struct for editing an existing cert. A number of
 // fields can be updated by the client on the fly (without ACME interaction).
 type DetailsUpdatePayload struct {
-	ID                   *int    `json:"id"`
-	Name                 *string `json:"name"`
-	Description          *string `json:"description"`
-	ChallengeMethodValue *string `json:"challenge_method_value"`
-	CommonName           *string `json:"common_name"`
-	Organization         *string `json:"organization"`
-	OrganizationalUnit   *string `json:"organizational_unit"`
-	Country              *string `json:"country"`
-	State                *string `json:"state"`
-	City                 *string `json:"city"`
+	ID                   *int      `json:"id"`
+	Name                 *string   `json:"name"`
+	Description          *string   `json:"description"`
+	ChallengeMethodValue *string   `json:"challenge_method_value"`
+	PrivateKeyId         *int      `json:"private_key_id"`
+	SubjectAltNames      *[]string `json:"subject_alts"`
+	Organization         *string   `json:"organization"`
+	OrganizationalUnit   *string   `json:"organizational_unit"`
+	Country              *string   `json:"country"`
+	State                *string   `json:"state"`
+	City                 *string   `json:"city"`
 }
 
 // PutDetailsCert is a handler that sets various details about a cert and saves
@@ -47,7 +49,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 
 	/// validation
 	// id
-	err = service.isIdExistingMatch(idParam, payload.ID)
+	cert, err := service.isIdExistingMatch(idParam, payload.ID)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -68,6 +70,32 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 			return output.ErrValidationFailed
 		}
 	}
+	// private key (optional)
+	if payload.PrivateKeyId != nil {
+		// check if private key is the same as it already is
+		if *payload.PrivateKeyId == *cert.PrivateKey.ID {
+			// no op
+		} else {
+			// check if available
+			err = service.keys.IsPrivateKeyAvailable(payload.PrivateKeyId)
+			if err != nil {
+				service.logger.Debug(err)
+				return output.ErrValidationFailed
+			}
+		}
+	}
+	// subject alts (optional)
+	// blank is okay, skip validation if not specified
+	if payload.SubjectAltNames != nil {
+		for _, altName := range *payload.SubjectAltNames {
+			err = validation.IsDomainValid(&altName)
+			if err != nil {
+				service.logger.Debug(err)
+				return output.ErrValidationFailed
+			}
+		}
+	}
+
 	// TODO: CSR detail validation
 	///
 
