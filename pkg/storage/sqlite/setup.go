@@ -3,11 +3,13 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"log"
+	"errors"
 	"net/url"
+	"os"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // config for DB
@@ -36,8 +38,26 @@ func OpenStorage() (*Storage, error) {
 	// append options to the Dsn
 	connString := dbDsn + "?" + dbOptions.Encode()
 
+	// check if db file exists
+	dbExists := true
+	if _, err := os.Stat(dbDsn); errors.Is(err, os.ErrNotExist) {
+		dbExists = false
+		// create db file
+		file, err := os.Create(dbDsn)
+		if err != nil {
+			return nil, err
+		}
+		file.Close()
+	}
+
+	// open db
 	store.Db, err = sql.Open("sqlite3", connString)
 	if err != nil {
+		// if db file is new, delete it on error
+		if !dbExists {
+			_ = store.Db.Close()
+			_ = os.Remove(dbDsn)
+		}
 		return nil, err
 	}
 
@@ -46,13 +66,23 @@ func OpenStorage() (*Storage, error) {
 
 	err = store.Db.PingContext(ctx)
 	if err != nil {
+		// if db file is new, delete it on error
+		if !dbExists {
+			_ = store.Db.Close()
+			_ = os.Remove(dbDsn)
+		}
 		return nil, err
 	}
 
-	// create tables in the database if they don't exist
-	err = store.createDBTables()
-	if err != nil {
-		return nil, err
+	// create tables in the database if the file is new
+	if !dbExists {
+		err = store.createDBTables()
+		if err != nil {
+			// delete new db on error setting it up
+			_ = store.Db.Close()
+			_ = os.Remove(dbDsn)
+			return nil, err
+		}
 	}
 
 	return store, nil
@@ -74,7 +104,7 @@ func (store *Storage) createDBTables() error {
 	defer cancel()
 
 	// private_keys
-	query := `CREATE TABLE IF NOT EXISTS private_keys (
+	query := `CREATE TABLE private_keys (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		name text NOT NULL UNIQUE COLLATE NOCASE,
 		description text,
@@ -87,12 +117,11 @@ func (store *Storage) createDBTables() error {
 
 	_, err := store.Db.ExecContext(ctx, query)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
 	// acme_accounts
-	query = `CREATE TABLE IF NOT EXISTS acme_accounts (
+	query = `CREATE TABLE acme_accounts (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		name text NOT NULL UNIQUE COLLATE NOCASE,
 		private_key_id integer NOT NULL UNIQUE,
@@ -112,12 +141,11 @@ func (store *Storage) createDBTables() error {
 
 	_, err = store.Db.ExecContext(ctx, query)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
 	// certificates
-	query = `CREATE TABLE IF NOT EXISTS certificates (
+	query = `CREATE TABLE certificates (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		private_key_id integer NOT NULL UNIQUE,
 		acme_account_id integer NOT NULL,
@@ -146,12 +174,11 @@ func (store *Storage) createDBTables() error {
 
 	_, err = store.Db.ExecContext(ctx, query)
 	if err != nil {
-		log.Fatal(err)
 		return err
 	}
 
 	// ACME orders
-	query = `CREATE TABLE IF NOT EXISTS acme_orders (
+	query = `CREATE TABLE acme_orders (
 			id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 			acme_account_id integer NOT NULL,
 			certificate_id integer,
@@ -186,7 +213,54 @@ func (store *Storage) createDBTables() error {
 
 	_, err = store.Db.ExecContext(ctx, query)
 	if err != nil {
-		log.Fatal(err)
+		return err
+	}
+
+	// users (for login to LeGo)
+	query = `CREATE TABLE users (
+		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+		username text NOT NULL UNIQUE,
+		password_hash NOT NULL,
+		created_at integer NOT NULL,
+		updated_at integer NOT NULL
+	)`
+
+	_, err = store.Db.ExecContext(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	// add default admin user
+	// default username and password
+	defaultUsername := "admin"
+	defaultPassword := "password"
+
+	// generate password hash
+	defaultHashedPw, err := bcrypt.GenerateFromPassword([]byte(defaultPassword), 12)
+	if err != nil {
+		return err
+	}
+
+	// insert
+	query = `
+	INSERT INTO
+		users (username, password_hash, created_at, updated_at)
+	VALUES (
+		$1,
+		$2,
+		$3,
+		$4
+	)
+	`
+
+	_, err = store.Db.ExecContext(ctx, query,
+		defaultUsername,
+		defaultHashedPw,
+		time.Now().Unix(),
+		time.Now().Unix(),
+	)
+
+	if err != nil {
 		return err
 	}
 
