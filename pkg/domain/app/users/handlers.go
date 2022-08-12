@@ -13,6 +13,12 @@ import (
 // TODO: move jwt secret
 var jwtKey = []byte("2dce505d96a53c5768052ee90f3df2055657518dad489160df9913f66042e160")
 
+// loginResponse
+type loginResponse struct {
+	output.JsonResponse
+	Jwt string `json:"jwt"`
+}
+
 // loginPayload is the payload client's send to login
 type loginPayload struct {
 	Username string `json:"username"`
@@ -63,7 +69,12 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, tokenString, "jwt")
+	response := loginResponse{}
+	response.Status = http.StatusOK
+	response.Message = "authenticated"
+	response.Jwt = tokenString
+
+	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
