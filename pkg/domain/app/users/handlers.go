@@ -52,11 +52,11 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 
 	// user and password now verified, build jwt
 	expirationTime := time.Now().Add(5 * time.Minute)
-	claims := &jwt.StandardClaims{
+	claims := &jwt.RegisteredClaims{
 		Subject:   payload.Username,
-		ExpiresAt: expirationTime.Unix(),
-		NotBefore: time.Now().Unix(),
-		IssuedAt:  time.Now().Unix(),
+		ExpiresAt: jwt.NewNumericDate(expirationTime),
+		NotBefore: jwt.NewNumericDate(time.Now()),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		// TODO: Issuer / Audiences domains
 	}
 

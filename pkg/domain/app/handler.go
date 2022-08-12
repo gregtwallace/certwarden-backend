@@ -64,7 +64,7 @@ func checkJwt(next customHandlerFunc) customHandlerFunc {
 		}
 
 		// validate token
-		claims := &jwt.StandardClaims{}
+		claims := &jwt.RegisteredClaims{}
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			return users.JwtKey, nil
 		})
