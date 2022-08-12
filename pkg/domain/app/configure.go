@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
+	"legocerthub-backend/pkg/domain/app/users"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/orders"
@@ -52,6 +53,12 @@ func CreateAndConfigure(config Configuration) (*Application, error) {
 
 	// storage
 	app.storage, err = sqlite.OpenStorage()
+	if err != nil {
+		return nil, err
+	}
+
+	// users service
+	app.users, err = users.NewService(app)
 	if err != nil {
 		return nil, err
 	}
