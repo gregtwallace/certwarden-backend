@@ -11,7 +11,7 @@ import (
 )
 
 // TODO: move jwt secret
-var jwtKey = []byte("2dce505d96a53c5768052ee90f3df2055657518dad489160df9913f66042e160")
+var JwtKey = []byte("2dce505d96a53c5768052ee90f3df2055657518dad489160df9913f66042e160")
 
 // loginResponse
 type loginResponse struct {
@@ -62,7 +62,7 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 
 	// create token and then signed token string
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(jwtKey)
+	tokenString, err := token.SignedString(JwtKey)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal

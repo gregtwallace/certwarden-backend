@@ -1,9 +1,11 @@
 package app
 
 import (
+	"legocerthub-backend/pkg/domain/app/users"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 
+	"github.com/golang-jwt/jwt/v4"
 	"go.uber.org/zap"
 )
 
@@ -45,4 +47,50 @@ func (handler handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	} else {
 		handler.logger.Debugf("%s %s: handled without error", r.Method, r.URL.Path)
 	}
+}
+
+// checkJwt is middleware that checks for a valid jwt
+func checkJwt(next customHandlerFunc) customHandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		// indicate Authorization header influenced the response
+		w.Header().Add("Vary", "Authorization")
+
+		// get token string from header
+		tokenString := r.Header.Get("Authorization")
+
+		// anonymous user
+		if tokenString == "" {
+			return output.ErrUnauthorized
+		}
+
+		// validate token
+		claims := &jwt.StandardClaims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			return users.JwtKey, nil
+		})
+		if err != nil {
+			if err == jwt.ErrSignatureInvalid {
+				return output.ErrUnauthorized
+			}
+			return output.ErrBadRequest
+		}
+
+		if !token.Valid {
+			return output.ErrUnauthorized
+		}
+
+		// if valid, execute next
+		err = next(w, r)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
+// makeSecureHandle is the same as makeHandle (makes a handle on the app's router) but it also
+// adds the checkJwt middleware
+func (app *Application) makeSecureHandle(method string, path string, handlerFunc customHandlerFunc) {
+	app.makeHandle(method, path, checkJwt(handlerFunc))
 }

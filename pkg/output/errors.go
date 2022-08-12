@@ -4,6 +4,7 @@ import "fmt"
 
 var (
 	// generic
+	ErrBadRequest   = Error{Status: 400, Message: "bad request"}
 	ErrNotFound     = Error{Status: 404, Message: "not found"}
 	ErrInternal     = Error{Status: 500, Message: "internal error"}
 	ErrUnauthorized = Error{Status: 401, Message: "unauthorized"}
