@@ -1,7 +1,7 @@
 package app
 
 import (
-	"legocerthub-backend/pkg/domain/app/users"
+	"legocerthub-backend/pkg/domain/app/auth"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 
@@ -55,7 +55,7 @@ func checkJwt(next customHandlerFunc) customHandlerFunc {
 		w.Header().Add("Vary", "Authorization")
 
 		// get token string from header
-		accessToken := users.AccessToken(r.Header.Get("Authorization"))
+		accessToken := auth.AccessToken(r.Header.Get("Authorization"))
 
 		// anonymous user
 		if accessToken == "" {

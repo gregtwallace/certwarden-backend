@@ -3,13 +3,13 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"legocerthub-backend/pkg/domain/app/users"
+	"legocerthub-backend/pkg/domain/app/auth"
 	"legocerthub-backend/pkg/storage"
 )
 
 // dbToUser converts the user db object to app object
-func (userDb *userDb) dbToUser() (user users.User) {
-	return users.User{
+func (userDb *userDb) dbToUser() (user auth.User) {
+	return auth.User{
 		ID:           userDb.id,
 		Username:     userDb.username,
 		PasswordHash: userDb.passwordHash,
@@ -20,7 +20,7 @@ func (userDb *userDb) dbToUser() (user users.User) {
 
 // GetOneUserByName returns a user from the db based on
 // username
-func (store Storage) GetOneUserByName(username string) (users.User, error) {
+func (store Storage) GetOneUserByName(username string) (auth.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
@@ -49,7 +49,7 @@ func (store Storage) GetOneUserByName(username string) (users.User, error) {
 		if err == sql.ErrNoRows {
 			err = storage.ErrNoRecord
 		}
-		return users.User{}, err
+		return auth.User{}, err
 	}
 
 	convertedUser := user.dbToUser()

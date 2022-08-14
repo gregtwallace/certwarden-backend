@@ -12,8 +12,8 @@ func (app *Application) Routes() http.Handler {
 	app.router = httprouter.New()
 
 	// app - insecure
-	app.makeHandle(http.MethodPost, "/api/v1/auth/login", app.users.Login)
-	app.makeHandle(http.MethodPost, "/api/v1/auth/refresh", app.users.Refresh)
+	app.makeHandle(http.MethodPost, "/api/v1/auth/login", app.auth.Login)
+	app.makeHandle(http.MethodPost, "/api/v1/auth/refresh", app.auth.Refresh)
 
 	// app
 	app.makeSecureHandle(http.MethodGet, "/api/status", app.statusHandler)

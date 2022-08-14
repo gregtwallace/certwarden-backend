@@ -26,7 +26,7 @@ replace legocerthub-backend/pkg/domain/acme_accounts => /pkg/domain/acme_account
 
 replace legocerthub-backend/pkg/domain/app => /pkg/domain/app
 
-replace legocerthub-backend/pkg/domain/app/users => /pkg/domain/app/users
+replace legocerthub-backend/pkg/domain/app/auth => /pkg/domain/app/auth
 
 replace legocerthub-backend/pkg/domain/authorizations => /pkg/domain/authorizations
 

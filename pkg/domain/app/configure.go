@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/domain/app/users"
+	"legocerthub-backend/pkg/domain/app/auth"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/orders"
@@ -58,7 +58,7 @@ func CreateAndConfigure(config Configuration) (*Application, error) {
 	}
 
 	// users service
-	app.users, err = users.NewService(app)
+	app.auth, err = auth.NewService(app)
 	if err != nil {
 		return nil, err
 	}

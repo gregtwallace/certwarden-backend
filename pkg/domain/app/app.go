@@ -3,7 +3,7 @@ package app
 import (
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/domain/app/users"
+	"legocerthub-backend/pkg/domain/app/auth"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/orders"
@@ -23,7 +23,7 @@ type Application struct {
 	output         *output.Service
 	router         *httprouter.Router
 	storage        *sqlite.Storage
-	users          *users.Service
+	auth           *auth.Service
 	keys           *private_keys.Service
 	acmeProd       *acme.Service
 	acmeStaging    *acme.Service
@@ -51,7 +51,7 @@ func (app *Application) GetOutputter() *output.Service {
 }
 
 // hacky workaround for storage since can't just combine into one interface
-func (app *Application) GetUsersStorage() users.Storage {
+func (app *Application) GetAuthStorage() auth.Storage {
 	return app.storage
 }
 func (app *Application) GetKeyStorage() private_keys.Storage {

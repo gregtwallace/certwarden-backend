@@ -1,4 +1,4 @@
-package users
+package auth
 
 import (
 	"legocerthub-backend/pkg/output"

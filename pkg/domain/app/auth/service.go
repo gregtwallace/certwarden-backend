@@ -1,4 +1,4 @@
-package users
+package auth
 
 import (
 	"errors"
@@ -7,13 +7,13 @@ import (
 	"go.uber.org/zap"
 )
 
-var errServiceComponent = errors.New("necessary users service component is missing")
+var errServiceComponent = errors.New("necessary auth service component is missing")
 
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
-	GetUsersStorage() Storage
+	GetAuthStorage() Storage
 }
 
 type Storage interface {
@@ -44,7 +44,7 @@ func NewService(app App) (*Service, error) {
 	}
 
 	// storage
-	service.storage = app.GetUsersStorage()
+	service.storage = app.GetAuthStorage()
 	if service.storage == nil {
 		return nil, errServiceComponent
 	}
