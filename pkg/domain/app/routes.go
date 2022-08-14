@@ -11,10 +11,12 @@ import (
 func (app *Application) Routes() http.Handler {
 	app.router = httprouter.New()
 
+	// app - insecure
+	app.makeHandle(http.MethodPost, "/api/v1/auth/login", app.users.Login)
+	app.makeHandle(http.MethodPost, "/api/v1/auth/refresh", app.users.Refresh)
+
 	// app
 	app.makeSecureHandle(http.MethodGet, "/api/status", app.statusHandler)
-
-	app.makeHandle(http.MethodPost, "/api/v1/login", app.users.Login)
 
 	// private_keys
 	app.makeSecureHandle(http.MethodGet, "/api/v1/privatekeys", app.keys.GetAllKeys)

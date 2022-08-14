@@ -4,19 +4,16 @@ import (
 	"encoding/json"
 	"legocerthub-backend/pkg/output"
 	"net/http"
-	"time"
 
-	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// TODO: move jwt secret
-var JwtKey = []byte("2dce505d96a53c5768052ee90f3df2055657518dad489160df9913f66042e160")
-
-// loginResponse
-type loginResponse struct {
+// authResponse contains the JSON response for both
+// login and refresh (refresh token is in a cookie
+// so the JSON struct doesn't change)
+type authResponse struct {
 	output.JsonResponse
-	Jwt string `json:"jwt"`
+	AccessToken AccessToken `json:"access_token"`
 }
 
 // loginPayload is the payload client's send to login
@@ -25,7 +22,9 @@ type loginPayload struct {
 	Password string `json:"password"`
 }
 
-// login allows a user to login to the API
+// Login takes the loginPayload and determines if the username is in
+// storage and if the password matches the hash. If so, an Access Token
+// is returned in JSON and a refresh token is sent in a cookie.
 func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error) {
 	var payload loginPayload
 
@@ -50,29 +49,80 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 		return output.ErrUnauthorized
 	}
 
-	// user and password now verified, build jwt
-	expirationTime := time.Now().Add(5 * time.Minute)
-	claims := &jwt.RegisteredClaims{
-		Subject:   payload.Username,
-		ExpiresAt: jwt.NewNumericDate(expirationTime),
-		NotBefore: jwt.NewNumericDate(time.Now()),
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		// TODO: Issuer / Audiences domains
+	// user and password now verified, make token pair
+	tokens, err := createTokenPair(user.Username)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
 	}
 
-	// create token and then signed token string
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(JwtKey)
+	// TODO: save session (map[username]uuid of refresh token)
+
+	// set refresh token cookie
+	refreshCookie := http.Cookie(*tokens.refreshCookie)
+	http.SetCookie(w, &refreshCookie)
+
+	// return response to client
+	response := authResponse{}
+	response.Status = http.StatusOK
+	response.Message = "authenticated"
+	response.AccessToken = tokens.accessToken
+
+	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
+	}
+
+	return nil
+}
+
+// refreshResponse contains the new AccessToken after refresh
+type refreshResponse struct {
+	output.JsonResponse
+	AccessToken AccessToken `json:"access_token"`
+}
+
+// Refresh takes the RefreshToken, confirms it is valid and from a valid session
+// and then returns a new Access Token to the client.
+func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err error) {
+	// get the refresh token cookie from request
+	cookie, err := r.Cookie(refreshCookieName)
+	if err != nil {
+		service.logger.Info(err)
+		return output.ErrUnauthorized
+	}
+
+	// validate cookie and get claims
+	refreshCookie := RefreshCookie(*cookie)
+	claims, err := refreshCookie.valid()
+	if err != nil {
+		service.logger.Info(err)
+		return err
+	}
+
+	// TODO
+	// verify Refresh Token claimed uuid is in the active list
+	// if valid and not in list, revoke all for this user
+	// use claims from .valid() method
+
+	// refresh token verified, make new Access Token
+	service.logger.Debug(claims)
+	subject, ok := claims["sub"].(string)
+	if !ok {
+		return output.ErrBadRequest
+	}
+	accessToken, err := createAccessToken(subject)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
 	}
 
 	// return response to client
-	response := loginResponse{}
+	response := authResponse{}
 	response.Status = http.StatusOK
-	response.Message = "authenticated"
-	response.Jwt = tokenString
+	response.Message = "refreshed"
+	response.AccessToken = accessToken
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {

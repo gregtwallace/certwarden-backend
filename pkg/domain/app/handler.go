@@ -5,7 +5,6 @@ import (
 	"legocerthub-backend/pkg/output"
 	"net/http"
 
-	"github.com/golang-jwt/jwt/v4"
 	"go.uber.org/zap"
 )
 
@@ -56,27 +55,17 @@ func checkJwt(next customHandlerFunc) customHandlerFunc {
 		w.Header().Add("Vary", "Authorization")
 
 		// get token string from header
-		tokenString := r.Header.Get("Authorization")
+		accessToken := users.AccessToken(r.Header.Get("Authorization"))
 
 		// anonymous user
-		if tokenString == "" {
+		if accessToken == "" {
 			return output.ErrUnauthorized
 		}
 
 		// validate token
-		claims := &jwt.RegisteredClaims{}
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			return users.JwtKey, nil
-		})
+		_, err := accessToken.Valid()
 		if err != nil {
-			if err == jwt.ErrSignatureInvalid {
-				return output.ErrUnauthorized
-			}
-			return output.ErrBadRequest
-		}
-
-		if !token.Valid {
-			return output.ErrUnauthorized
+			return err
 		}
 
 		// if valid, execute next
