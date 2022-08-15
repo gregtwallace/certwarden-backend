@@ -126,3 +126,24 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 
 	return nil
 }
+
+// Logout deletes the client cookies.
+func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err error) {
+	// TODO: do any kind of validation / checking ?
+	// TODO: remove refresh token from active list
+
+	// return response (new session) to client
+	response := authResponse{}
+	response.Status = http.StatusOK
+	response.Message = "logged out"
+	// delete session cookies (part of response)
+	deleteSessionCookies(w)
+
+	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
+	}
+
+	return nil
+}
