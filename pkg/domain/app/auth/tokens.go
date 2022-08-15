@@ -11,21 +11,16 @@ import (
 var accessJwtSecret = []byte("17842911225de55706cb6e417418c7a0d21c9ccaf1c4ec271e187b9bea951b03")
 var refreshJwtSecret = []byte("de0bce3589c282acc4e917eb1af6f85521624681e7dded2542004d26d1f5e87b")
 
+// expiration times
 const accessTokenExpiration = 5 * time.Minute
-const refreshTokenExpiration = 1 * time.Hour
+const refreshTokenExpiration = 30 * time.Minute
 
-//
-
-type AccessToken string
-type RefreshToken string
-
-type tokenPair struct {
-	accessToken   AccessToken
-	refreshCookie *RefreshCookie
-}
+// token types
+type accessToken string
+type refreshToken string
 
 // create access token
-func createAccessToken(username string) (accessToken AccessToken, err error) {
+func createAccessToken(username string) (accessToken, error) {
 	// make claims
 	claims := &jwt.RegisteredClaims{
 		Subject:   username,
@@ -42,16 +37,11 @@ func createAccessToken(username string) (accessToken AccessToken, err error) {
 		return "", err
 	}
 
-	return AccessToken(tokenString), nil
+	return accessToken(tokenString), nil
 }
 
-// create a pair of access and refresh tokens
-func createTokenPair(username string) (tokens tokenPair, err error) {
-	tokens.accessToken, err = createAccessToken(username)
-	if err != nil {
-		return tokenPair{}, err
-	}
-
+// create refresh token
+func createRefreshToken(username string) (refreshToken, error) {
 	// make refresh token
 	refreshExpiration := time.Now().Add(refreshTokenExpiration)
 	claims := &jwt.RegisteredClaims{
@@ -66,19 +56,15 @@ func createTokenPair(username string) (tokens tokenPair, err error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	refreshString, err := token.SignedString(refreshJwtSecret)
 	if err != nil {
-		return tokenPair{}, err
+		return "", err
 	}
 
-	// create refresh cookie
-	refreshToken := RefreshToken(refreshString)
-	tokens.refreshCookie = createRefreshCookie(refreshToken)
-
-	return tokens, nil
+	return refreshToken(refreshString), nil
 }
 
 // Valid (AccessToken) returns the token's claims if it is valid, otherwise
 // an error is returned if there is any issue (e.g. token not valid)
-func (tokenString *AccessToken) Valid() (claims jwt.MapClaims, err error) {
+func (tokenString *accessToken) valid() (claims jwt.MapClaims, err error) {
 	// parse and validate token
 	token, err := jwt.Parse(string(*tokenString), func(token *jwt.Token) (interface{}, error) {
 		return accessJwtSecret, nil
@@ -103,7 +89,7 @@ func (tokenString *AccessToken) Valid() (claims jwt.MapClaims, err error) {
 // Valid (RefreshToken) returns the refresh token's claims if
 // it the token is valid, otherwise an error is returned if there is any
 // issue (e.g. token not valid)
-func (tokenString *RefreshToken) valid() (claims jwt.MapClaims, err error) {
+func (tokenString *refreshToken) valid() (claims jwt.MapClaims, err error) {
 	// parse and validate token
 	token, err := jwt.Parse(string(*tokenString), func(token *jwt.Token) (interface{}, error) {
 		return refreshJwtSecret, nil

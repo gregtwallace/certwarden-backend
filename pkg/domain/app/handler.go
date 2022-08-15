@@ -51,21 +51,9 @@ func (handler handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // checkJwt is middleware that checks for a valid jwt
 func checkJwt(next customHandlerFunc) customHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		// indicate Authorization header influenced the response
-		w.Header().Add("Vary", "Authorization")
-
-		// get token string from header
-		accessToken := auth.AccessToken(r.Header.Get("Authorization"))
-
-		// anonymous user
-		if accessToken == "" {
-			return output.ErrUnauthorized
-		}
-
-		// validate token
-		_, err := accessToken.Valid()
+		err := auth.ValidAuthHeader(r.Header, w)
 		if err != nil {
-			return err
+			return output.ErrUnauthorized
 		}
 
 		// if valid, execute next

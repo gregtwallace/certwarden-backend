@@ -13,7 +13,7 @@ import (
 // so the JSON struct doesn't change)
 type authResponse struct {
 	output.JsonResponse
-	AccessToken AccessToken `json:"access_token"`
+	session
 }
 
 // loginPayload is the payload client's send to login
@@ -49,8 +49,8 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 		return output.ErrUnauthorized
 	}
 
-	// user and password now verified, make token pair
-	tokens, err := createTokenPair(user.Username)
+	// user and password now verified, make session
+	session, err := createSession(user.Username)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
@@ -58,15 +58,13 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 
 	// TODO: save session (map[username]uuid of refresh token)
 
-	// set refresh token cookie
-	refreshCookie := http.Cookie(*tokens.refreshCookie)
-	http.SetCookie(w, &refreshCookie)
-
 	// return response to client
 	response := authResponse{}
 	response.Status = http.StatusOK
 	response.Message = "authenticated"
-	response.AccessToken = tokens.accessToken
+	response.AccessToken = session.AccessToken
+	// write session cookies (part of response)
+	session.writeCookies(w)
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
@@ -88,7 +86,7 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 	}
 
 	// validate cookie and get claims
-	refreshCookie := RefreshCookie(*cookie)
+	refreshCookie := refreshCookie(*cookie)
 	claims, err := refreshCookie.valid()
 	if err != nil {
 		service.logger.Info(err)
@@ -100,22 +98,25 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 	// if valid and not in list, revoke all for this user
 	// use claims from .valid() method
 
-	// refresh token verified, make new Access Token
-	subject, ok := claims["sub"].(string)
+	// refresh token verified, make new session
+	username, ok := claims["sub"].(string)
 	if !ok {
 		return output.ErrBadRequest
 	}
-	accessToken, err := createAccessToken(subject)
+	// user and password now verified, make session
+	session, err := createSession(username)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
 	}
 
-	// return response to client
+	// return response (new session) to client
 	response := authResponse{}
 	response.Status = http.StatusOK
 	response.Message = "refreshed"
-	response.AccessToken = accessToken
+	response.session = session
+	// write session cookies (part of response)
+	session.writeCookies(w)
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
