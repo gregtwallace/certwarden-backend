@@ -77,12 +77,6 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 	return nil
 }
 
-// refreshResponse contains the new AccessToken after refresh
-type refreshResponse struct {
-	output.JsonResponse
-	AccessToken AccessToken `json:"access_token"`
-}
-
 // Refresh takes the RefreshToken, confirms it is valid and from a valid session
 // and then returns a new Access Token to the client.
 func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err error) {
@@ -107,7 +101,6 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 	// use claims from .valid() method
 
 	// refresh token verified, make new Access Token
-	service.logger.Debug(claims)
 	subject, ok := claims["sub"].(string)
 	if !ok {
 		return output.ErrBadRequest
