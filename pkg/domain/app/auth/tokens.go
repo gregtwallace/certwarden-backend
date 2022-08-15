@@ -2,7 +2,6 @@ package auth
 
 import (
 	"legocerthub-backend/pkg/output"
-	"net/http"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -15,12 +14,10 @@ var refreshJwtSecret = []byte("de0bce3589c282acc4e917eb1af6f85521624681e7dded254
 const accessTokenExpiration = 5 * time.Minute
 const refreshTokenExpiration = 1 * time.Hour
 
-const refreshCookieName = "refresh_token"
-
 //
 
 type AccessToken string
-type RefreshCookie http.Cookie
+type RefreshToken string
 
 type tokenPair struct {
 	accessToken   AccessToken
@@ -72,13 +69,9 @@ func createTokenPair(username string) (tokens tokenPair, err error) {
 		return tokenPair{}, err
 	}
 
-	// create cookie
-	tokens.refreshCookie = &RefreshCookie{
-		Name:     refreshCookieName,
-		Value:    refreshString,
-		MaxAge:   int(refreshTokenExpiration.Seconds()),
-		HttpOnly: true,
-	}
+	// create refresh cookie
+	refreshToken := RefreshToken(refreshString)
+	tokens.refreshCookie = createRefreshCookie(refreshToken)
 
 	return tokens, nil
 }
@@ -107,24 +100,16 @@ func (tokenString *AccessToken) Valid() (claims jwt.MapClaims, err error) {
 	return claims, nil
 }
 
-// Valid (RefreshCookie) returns the refresh cookie's token's claims if
+// Valid (RefreshToken) returns the refresh token's claims if
 // it the token is valid, otherwise an error is returned if there is any
 // issue (e.g. token not valid)
-func (cookie *RefreshCookie) valid() (claims jwt.MapClaims, err error) {
-	// confirm cookie name (should never trigger)
-	if cookie.Name != refreshCookieName {
-		return nil, output.ErrInternal
-	}
-
+func (tokenString *RefreshToken) valid() (claims jwt.MapClaims, err error) {
 	// parse and validate token
-	token, err := jwt.Parse(cookie.Value, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(string(*tokenString), func(token *jwt.Token) (interface{}, error) {
 		return refreshJwtSecret, nil
 	})
 	if err != nil {
-		if err == jwt.ErrSignatureInvalid {
-			return nil, output.ErrUnauthorized
-		}
-		return nil, output.ErrBadRequest
+		return nil, output.ErrUnauthorized
 	}
 
 	if !token.Valid {
