@@ -91,10 +91,7 @@ func (tokenString *AccessToken) Valid() (claims jwt.MapClaims, err error) {
 		return accessJwtSecret, nil
 	})
 	if err != nil {
-		if err == jwt.ErrSignatureInvalid || err == jwt.ErrTokenExpired {
-			return nil, output.ErrUnauthorized
-		}
-		return nil, output.ErrBadRequest
+		return nil, output.ErrUnauthorized
 	}
 
 	if !token.Valid {
