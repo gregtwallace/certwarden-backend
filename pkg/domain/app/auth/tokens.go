@@ -10,7 +10,7 @@ import (
 
 //expiration times
 const accessTokenExpiration = 2 * time.Minute
-const refreshTokenExpiration = 30 * time.Minute
+const refreshTokenExpiration = 15 * time.Minute
 
 // expiration times for testing
 // const accessTokenExpiration = 10 * time.Second
