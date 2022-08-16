@@ -5,27 +5,36 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 )
 
 // TODO: move jwt secrets
 var accessJwtSecret = []byte("17842911225de55706cb6e417418c7a0d21c9ccaf1c4ec271e187b9bea951b03")
 var refreshJwtSecret = []byte("de0bce3589c282acc4e917eb1af6f85521624681e7dded2542004d26d1f5e87b")
 
-// expiration times
-// const accessTokenExpiration = 2 * time.Minute
-// const refreshTokenExpiration = 30 * time.Minute
+//expiration times
+const accessTokenExpiration = 2 * time.Minute
+const refreshTokenExpiration = 30 * time.Minute
 
-const accessTokenExpiration = 10 * time.Second
-const refreshTokenExpiration = 30 * time.Second
+// expiration times for testing
+// const accessTokenExpiration = 10 * time.Second
+// const refreshTokenExpiration = 30 * time.Second
 
 // token types
 type accessToken string
 type refreshToken string
 
+// custom session claims (used on refresh token which tracks the session)
+type sessionClaims struct {
+	jwt.RegisteredClaims
+	SessionUUID uuid.UUID `json:"session_uuid"`
+}
+
 // jwt signature method
 var tokenSignatureMethod = jwt.SigningMethodHS256
 
-// keyFunc provides the jwt.KeyFunc
+// keyFunc provides the jwt.KeyFunc. This implementation screens for acceptable signature
+// methods
 func makeKeyFunc(secret []byte) func(*jwt.Token) (interface{}, error) {
 	return func(token *jwt.Token) (interface{}, error) {
 		// confirm signature is of proper type
@@ -39,7 +48,7 @@ func makeKeyFunc(secret []byte) func(*jwt.Token) (interface{}, error) {
 }
 
 // create access token
-func createAccessToken(username string) (accessToken, error) {
+func createAccessToken(username string) (accessToken, jwt.RegisteredClaims, error) {
 	// make claims
 	claims := &jwt.RegisteredClaims{
 		Subject:   username,
@@ -53,32 +62,35 @@ func createAccessToken(username string) (accessToken, error) {
 	token := jwt.NewWithClaims(tokenSignatureMethod, claims)
 	tokenString, err := token.SignedString(accessJwtSecret)
 	if err != nil {
-		return "", err
+		return "", jwt.RegisteredClaims{}, err
 	}
 
-	return accessToken(tokenString), nil
+	return accessToken(tokenString), *claims, nil
 }
 
 // create refresh token
-func createRefreshToken(username string) (refreshToken, error) {
+func createRefreshToken(username string) (refreshToken, sessionClaims, error) {
 	// make refresh token
 	refreshExpiration := time.Now().Add(refreshTokenExpiration)
-	claims := &jwt.RegisteredClaims{
-		Subject:   username,
-		ExpiresAt: jwt.NewNumericDate(refreshExpiration),
-		NotBefore: jwt.NewNumericDate(time.Now()),
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		// TODO: Issuer / Audiences domains
+	claims := &sessionClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   username,
+			ExpiresAt: jwt.NewNumericDate(refreshExpiration),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			// TODO: Issuer / Audiences domains
+		},
+		SessionUUID: uuid.New(),
 	}
 
 	// create token and then signed token string
 	token := jwt.NewWithClaims(tokenSignatureMethod, claims)
 	refreshString, err := token.SignedString(refreshJwtSecret)
 	if err != nil {
-		return "", err
+		return "", sessionClaims{}, err
 	}
 
-	return refreshToken(refreshString), nil
+	return refreshToken(refreshString), *claims, nil
 }
 
 // Valid (AccessToken) returns the token's claims if it is valid, otherwise
@@ -106,9 +118,9 @@ func (tokenString *accessToken) valid() (claims jwt.MapClaims, err error) {
 // Valid (RefreshToken) returns the refresh token's claims if
 // it the token is valid, otherwise an error is returned if there is any
 // issue (e.g. token not valid)
-func (tokenString *refreshToken) valid() (claims jwt.MapClaims, err error) {
+func (tokenString *refreshToken) valid() (claims *sessionClaims, err error) {
 	// parse and validate token
-	token, err := jwt.Parse(string(*tokenString), makeKeyFunc(refreshJwtSecret))
+	token, err := jwt.ParseWithClaims(string(*tokenString), &sessionClaims{}, makeKeyFunc(refreshJwtSecret))
 	if err != nil {
 		return nil, output.ErrUnauthorized
 	}
@@ -119,7 +131,7 @@ func (tokenString *refreshToken) valid() (claims jwt.MapClaims, err error) {
 
 	// map claims
 	var ok bool
-	if claims, ok = token.Claims.(jwt.MapClaims); !ok {
+	if claims, ok = token.Claims.(*sessionClaims); !ok {
 		return nil, output.ErrBadRequest
 	}
 

@@ -1,26 +1,29 @@
 package auth
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type session struct {
-	AccessToken    accessToken     `json:"access_token,omitempty"`
+	AccessToken    accessToken     `json:"access_token"`
+	Claims         sessionClaims   `json:"claims"`
 	refreshCookie  *refreshCookie  `json:"-"`
 	loggedInCookie *loggedInCookie `json:"-"` // not used on backend
 }
 
 // createSession creates all of the necessary pieces of information
 // for a session and then returns the new session
-func createSession(username string) (newSession session, err error) {
+func createSession(username string) (newSession session, claims sessionClaims, err error) {
 	// make access token
-	newSession.AccessToken, err = createAccessToken(username)
+	newSession.AccessToken, _, err = createAccessToken(username)
 	if err != nil {
-		return session{}, err
+		return session{}, sessionClaims{}, err
 	}
 
 	// refresh token / cookie
-	refreshToken, err := createRefreshToken(username)
+	refreshToken, claims, err := createRefreshToken(username)
 	if err != nil {
-		return session{}, err
+		return session{}, sessionClaims{}, err
 	}
 
 	newSession.refreshCookie = createRefreshCookie(refreshToken)
@@ -28,7 +31,7 @@ func createSession(username string) (newSession session, err error) {
 	// logged in cookie
 	newSession.loggedInCookie = createLoggedInCookie()
 
-	return newSession, nil
+	return newSession, claims, nil
 }
 
 // write cookies writes the session cookies to the specified writer
