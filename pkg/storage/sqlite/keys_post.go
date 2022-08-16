@@ -3,7 +3,7 @@ package sqlite
 import (
 	"context"
 	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/utils"
+	"legocerthub-backend/pkg/randomness"
 )
 
 // newPayloadToDb translates the new key payload to db object
@@ -30,7 +30,7 @@ func (store *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err e
 	keyDb := newKeyPayloadToDb(payload)
 
 	// generate api key
-	apiKey, err := utils.GenerateApiKey()
+	apiKey, err := randomness.GenerateApiKey()
 	keyDb.apiKey = stringToNullString(&apiKey)
 	if err != nil {
 		return -2, err

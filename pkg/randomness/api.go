@@ -1,10 +1,11 @@
-package utils
+package randomness
 
 import (
 	"crypto/rand"
 	"math/big"
 )
 
+// GenerateApiKey generates a cryptographically secure API key
 func GenerateApiKey() (string, error) {
 	const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	const length = 48

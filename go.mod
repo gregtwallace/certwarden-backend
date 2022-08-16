@@ -46,6 +46,6 @@ replace legocerthub-backend/pkg/storage => /pkg/storage
 
 replace legocerthub-backend/pkg/storage/sqlite => /pkg/storage/sqlite
 
-replace legocerthub-backend/pkg/utils => /pkg/utils
+replace legocerthub-backend/pkg/randomness => /pkg/randomness
 
 replace legocerthub-backend/pkg/validation => /pkg/validation

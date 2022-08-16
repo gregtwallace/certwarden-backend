@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"legocerthub-backend/pkg/domain/certificates"
-	"legocerthub-backend/pkg/utils"
+	"legocerthub-backend/pkg/randomness"
 )
 
 // accountPayloadToDb turns the client payload into a db object
@@ -43,7 +43,7 @@ func newCertPayloadToDb(payload certificates.NewPayload) (certDb certificateDb, 
 	certDb.createdAt = timeNow()
 	certDb.updatedAt = certDb.createdAt
 
-	apiKey, err := utils.GenerateApiKey()
+	apiKey, err := randomness.GenerateApiKey()
 	certDb.apiKey = stringToNullString(&apiKey)
 	if err != nil {
 		return certificateDb{}, err
