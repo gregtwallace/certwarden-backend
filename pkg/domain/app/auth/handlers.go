@@ -13,7 +13,7 @@ import (
 // so the JSON struct doesn't change)
 type authResponse struct {
 	output.JsonResponse
-	session
+	authorization
 }
 
 // loginPayload is the payload client's send to login
@@ -49,23 +49,28 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 		return output.ErrUnauthorized
 	}
 
-	// user and password now verified, make session
-	session, err := service.createSession(user.Username)
+	// user and password now verified, make auth
+	auth, err := service.createAuth(user.Username)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
 	}
 
-	// TODO: save session (map[username]uuid of refresh token)
+	// save auth's session in manager
+	err = service.sessionManager.new(auth.SessionClaims)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrUnauthorized
+	}
 
 	// return response to client
 	response := authResponse{}
 	response.Status = http.StatusOK
 	response.Message = "authenticated"
-	response.AccessToken = session.AccessToken
-	response.Claims = session.Claims
-	// write session cookies (part of response)
-	session.writeCookies(w)
+	response.AccessToken = auth.AccessToken
+	response.SessionClaims = auth.SessionClaims
+	// write auth cookies (part of response)
+	auth.writeCookies(w)
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
@@ -76,7 +81,7 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 	return nil
 }
 
-// Refresh takes the RefreshToken, confirms it is valid and from a valid session
+// Refresh takes the RefreshToken, confirms it is valid and from a valid auth
 // and then returns a new Access Token to the client.
 func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err error) {
 	// get the refresh token cookie from request
@@ -94,26 +99,28 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 		return err
 	}
 
-	// TODO
-	// verify Refresh Token claimed uuid is in the active list
-	// if valid and not in list, revoke all for this user
-	// use claims from .valid() method
-
-	// refresh token verified, make new session
-	session, err := service.createSession(oldClaims.Subject)
+	// refresh token verified, make new auth
+	auth, err := service.createAuth(oldClaims.Subject)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
 	}
 
-	// return response (new session) to client
+	// refresh session in manager (remove old, add new)
+	err = service.sessionManager.refresh(*oldClaims, auth.SessionClaims)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrUnauthorized
+	}
+
+	// return response (new auth) to client
 	response := authResponse{}
 	response.Status = http.StatusOK
 	response.Message = "refreshed"
-	response.AccessToken = session.AccessToken
-	response.Claims = session.Claims
-	// write session cookies (part of response)
-	session.writeCookies(w)
+	response.AccessToken = auth.AccessToken
+	response.SessionClaims = auth.SessionClaims
+	// write auth cookies (part of response)
+	auth.writeCookies(w)
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
@@ -126,15 +133,41 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 
 // Logout deletes the client cookies.
 func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err error) {
-	// TODO: do any kind of validation / checking ?
-	// TODO: remove refresh token from active list
+	// logic flow different from logout, still want succesful logout even
+	// if cookie doesn't parse or token is expired.
+	// However, if there is no cookie, don't try to remove session from
+	// manager since there are no claims to work with.
+	// get the refresh token cookie from request
+	cookie, err := r.Cookie(refreshCookieName)
+	// if cookie okay
+	if err == nil {
+		// validate cookie and get claims
+		refreshCookie := refreshCookie(*cookie)
+		oldClaims, err := refreshCookie.valid(service.refreshJwtSecret)
+		// if token okay
+		if err == nil {
+			// remove session in manager
+			err = service.sessionManager.close(*oldClaims)
+			if err != nil {
+				service.logger.Error(err)
+				// do return, there was an error with the token received
+				return output.ErrUnauthorized
+			}
+		} else {
+			service.logger.Info(err)
+			// don't return, keep working
+		}
+	} else {
+		service.logger.Debug(err)
+		// don't return, keep working
+	}
 
 	// return response (logged out)
 	response := output.JsonResponse{}
 	response.Status = http.StatusOK
 	response.Message = "logged out"
-	// delete session cookies (part of response)
-	deleteSessionCookies(w)
+	// delete auth cookies (part of response)
+	deleteAuthCookies(w)
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {

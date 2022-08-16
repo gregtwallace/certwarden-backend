@@ -4,50 +4,51 @@ import (
 	"net/http"
 )
 
-type session struct {
+type authorization struct {
 	AccessToken    accessToken     `json:"access_token"`
-	Claims         sessionClaims   `json:"claims"`
+	SessionClaims  sessionClaims   `json:"session"`
 	refreshCookie  *refreshCookie  `json:"-"`
 	loggedInCookie *loggedInCookie `json:"-"` // not used on backend
 }
 
-// createSession creates all of the necessary pieces of information
-// for a session and then returns the new session
-func (service *Service) createSession(username string) (newSession session, err error) {
+// createAuth creates all of the necessary pieces of information
+// for an auth response
+func (service *Service) createAuth(username string) (auth authorization, err error) {
 	// make access token
-	newSession.AccessToken, _, err = service.createAccessToken(username)
+	auth.AccessToken, _, err = service.createAccessToken(username)
 	if err != nil {
-		return session{}, err
+		return authorization{}, err
 	}
 
 	// refresh token / cookie
 	var refreshToken refreshToken
-	refreshToken, newSession.Claims, err = service.createRefreshToken(username)
+	refreshToken, auth.SessionClaims, err = service.createRefreshToken(username)
 	if err != nil {
-		return session{}, err
+		return authorization{}, err
 	}
 
-	newSession.refreshCookie = createRefreshCookie(refreshToken)
+	auth.refreshCookie = createRefreshCookie(refreshToken)
 
 	// logged in cookie
-	newSession.loggedInCookie = createLoggedInCookie()
+	auth.loggedInCookie = createLoggedInCookie()
 
-	return newSession, nil
+	return auth, nil
 }
 
-// write cookies writes the session cookies to the specified writer
-func (s *session) writeCookies(w http.ResponseWriter) {
+// writeCookies writes the auth's cookies to the specified ResponseWriter
+func (auth *authorization) writeCookies(w http.ResponseWriter) {
 	// write logged in cookie
-	loggedInCookie := http.Cookie(*s.loggedInCookie)
+	loggedInCookie := http.Cookie(*auth.loggedInCookie)
 	http.SetCookie(w, &loggedInCookie)
 
 	// write refresh token cookie
-	refreshCookie := http.Cookie(*s.refreshCookie)
+	refreshCookie := http.Cookie(*auth.refreshCookie)
 	http.SetCookie(w, &refreshCookie)
 }
 
-// delete cookies writes dummy cookies with max age -1 (delete now)
-func deleteSessionCookies(w http.ResponseWriter) {
+// deleteAuthCookies writes dummy cookies with max age -1 (delete now)
+// to the specified ResponseWriter
+func deleteAuthCookies(w http.ResponseWriter) {
 	// logged in cookie
 	loggedIn := createLoggedInCookie()
 	loggedIn.MaxAge = -1

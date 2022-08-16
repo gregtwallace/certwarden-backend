@@ -16,7 +16,9 @@ type SafeMap struct {
 
 // newMap creates a new SafeMap
 func NewSafeMap() *SafeMap {
-	return &SafeMap{}
+	return &SafeMap{
+		Map: make(map[string]interface{}),
+	}
 }
 
 // Read returns the data from the specified elementName. If the element

@@ -14,7 +14,7 @@ const refreshTokenExpiration = 15 * time.Minute
 
 // expiration times for testing
 // const accessTokenExpiration = 10 * time.Second
-// const refreshTokenExpiration = 30 * time.Second
+// const refreshTokenExpiration = 2 * time.Minute
 
 // token types
 type accessToken string
@@ -23,7 +23,7 @@ type refreshToken string
 // custom session claims (used on refresh token which tracks the session)
 type sessionClaims struct {
 	jwt.RegisteredClaims
-	SessionUUID uuid.UUID `json:"session_uuid"`
+	UUID uuid.UUID `json:"uuid"`
 }
 
 // jwt signature method
@@ -76,7 +76,7 @@ func (service *Service) createRefreshToken(username string) (refreshToken, sessi
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			// TODO: Issuer / Audiences domains
 		},
-		SessionUUID: uuid.New(),
+		UUID: uuid.New(),
 	}
 
 	// create token and then signed token string

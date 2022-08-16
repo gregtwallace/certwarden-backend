@@ -28,6 +28,7 @@ type Service struct {
 	storage          Storage
 	accessJwtSecret  []byte
 	refreshJwtSecret []byte
+	sessionManager   *sessionManager
 }
 
 // NewService creates a new (local LeGo) users service
@@ -65,6 +66,9 @@ func NewService(app App) (*Service, error) {
 	if err != nil {
 		return nil, errServiceComponent
 	}
+
+	// create session manager
+	service.sessionManager = newSessionManager()
 
 	return service, nil
 }
