@@ -13,15 +13,15 @@ type session struct {
 
 // createSession creates all of the necessary pieces of information
 // for a session and then returns the new session
-func createSession(username string) (newSession session, claims sessionClaims, err error) {
+func (service *Service) createSession(username string) (newSession session, claims sessionClaims, err error) {
 	// make access token
-	newSession.AccessToken, _, err = createAccessToken(username)
+	newSession.AccessToken, _, err = service.createAccessToken(username)
 	if err != nil {
 		return session{}, sessionClaims{}, err
 	}
 
 	// refresh token / cookie
-	refreshToken, claims, err := createRefreshToken(username)
+	refreshToken, claims, err := service.createRefreshToken(username)
 	if err != nil {
 		return session{}, sessionClaims{}, err
 	}

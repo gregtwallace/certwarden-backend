@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/randomness"
 
 	"go.uber.org/zap"
 )
@@ -22,14 +23,17 @@ type Storage interface {
 
 // Keys service struct
 type Service struct {
-	logger  *zap.SugaredLogger
-	output  *output.Service
-	storage Storage
+	logger           *zap.SugaredLogger
+	output           *output.Service
+	storage          Storage
+	accessJwtSecret  []byte
+	refreshJwtSecret []byte
 }
 
 // NewService creates a new (local LeGo) users service
 func NewService(app App) (*Service, error) {
 	service := new(Service)
+	var err error
 
 	// logger
 	service.logger = app.GetLogger()
@@ -46,6 +50,19 @@ func NewService(app App) (*Service, error) {
 	// storage
 	service.storage = app.GetAuthStorage()
 	if service.storage == nil {
+		return nil, errServiceComponent
+	}
+
+	// generate new secrets on every start
+	// this will auto-invalidate old keys to avoid any conflicts caused
+	// by losing the session states on restart
+	service.accessJwtSecret, err = randomness.GenerateHexSecret()
+	if err != nil {
+		return nil, errServiceComponent
+	}
+
+	service.refreshJwtSecret, err = randomness.GenerateHexSecret()
+	if err != nil {
 		return nil, errServiceComponent
 	}
 

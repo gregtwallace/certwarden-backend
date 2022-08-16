@@ -1,7 +1,6 @@
 package app
 
 import (
-	"legocerthub-backend/pkg/domain/app/auth"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 
@@ -49,9 +48,9 @@ func (handler handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // checkJwt is middleware that checks for a valid jwt
-func checkJwt(next customHandlerFunc) customHandlerFunc {
+func (app *Application) checkJwt(next customHandlerFunc) customHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		err := auth.ValidAuthHeader(r.Header, w)
+		err := app.auth.ValidAuthHeader(r.Header, w)
 		if err != nil {
 			return output.ErrUnauthorized
 		}
@@ -69,5 +68,5 @@ func checkJwt(next customHandlerFunc) customHandlerFunc {
 // makeSecureHandle is the same as makeHandle (makes a handle on the app's router) but it also
 // adds the checkJwt middleware
 func (app *Application) makeSecureHandle(method string, path string, handlerFunc customHandlerFunc) {
-	app.makeHandle(method, path, checkJwt(handlerFunc))
+	app.makeHandle(method, path, app.checkJwt(handlerFunc))
 }

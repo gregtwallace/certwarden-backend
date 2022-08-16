@@ -28,7 +28,7 @@ func createRefreshCookie(refreshToken refreshToken) *refreshCookie {
 // Valid (RefreshCookie) returns the refresh cookie's token's claims if
 // it the token is valid, otherwise an error is returned if there is any
 // issue (e.g. token not valid)
-func (cookie *refreshCookie) valid() (claims *sessionClaims, err error) {
+func (cookie *refreshCookie) valid(jwtSecret []byte) (claims *sessionClaims, err error) {
 	// confirm cookie name (should never trigger)
 	if cookie.Name != refreshCookieName {
 		return nil, output.ErrUnauthorized
@@ -36,7 +36,7 @@ func (cookie *refreshCookie) valid() (claims *sessionClaims, err error) {
 
 	// parse and validate refresh token
 	refreshToken := refreshToken(cookie.Value)
-	claims, err = refreshToken.valid()
+	claims, err = refreshToken.valid(jwtSecret)
 	if err != nil {
 		return nil, err
 	}

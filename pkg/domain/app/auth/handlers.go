@@ -50,7 +50,7 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	// user and password now verified, make session
-	session, claims, err := createSession(user.Username)
+	session, claims, err := service.createSession(user.Username)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
@@ -88,7 +88,7 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 
 	// validate cookie and get claims
 	refreshCookie := refreshCookie(*cookie)
-	oldClaims, err := refreshCookie.valid()
+	oldClaims, err := refreshCookie.valid(service.refreshJwtSecret)
 	if err != nil {
 		service.logger.Info(err)
 		return err
@@ -100,7 +100,7 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 	// use claims from .valid() method
 
 	// refresh token verified, make new session
-	session, claims, err := createSession(oldClaims.Subject)
+	session, claims, err := service.createSession(oldClaims.Subject)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal

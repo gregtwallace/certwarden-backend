@@ -8,10 +8,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// TODO: move jwt secrets
-var accessJwtSecret = []byte("17842911225de55706cb6e417418c7a0d21c9ccaf1c4ec271e187b9bea951b03")
-var refreshJwtSecret = []byte("de0bce3589c282acc4e917eb1af6f85521624681e7dded2542004d26d1f5e87b")
-
 //expiration times
 const accessTokenExpiration = 2 * time.Minute
 const refreshTokenExpiration = 30 * time.Minute
@@ -48,7 +44,7 @@ func makeKeyFunc(secret []byte) func(*jwt.Token) (interface{}, error) {
 }
 
 // create access token
-func createAccessToken(username string) (accessToken, jwt.RegisteredClaims, error) {
+func (service *Service) createAccessToken(username string) (accessToken, jwt.RegisteredClaims, error) {
 	// make claims
 	claims := &jwt.RegisteredClaims{
 		Subject:   username,
@@ -60,7 +56,7 @@ func createAccessToken(username string) (accessToken, jwt.RegisteredClaims, erro
 
 	// create token and then signed token string
 	token := jwt.NewWithClaims(tokenSignatureMethod, claims)
-	tokenString, err := token.SignedString(accessJwtSecret)
+	tokenString, err := token.SignedString(service.accessJwtSecret)
 	if err != nil {
 		return "", jwt.RegisteredClaims{}, err
 	}
@@ -69,7 +65,7 @@ func createAccessToken(username string) (accessToken, jwt.RegisteredClaims, erro
 }
 
 // create refresh token
-func createRefreshToken(username string) (refreshToken, sessionClaims, error) {
+func (service *Service) createRefreshToken(username string) (refreshToken, sessionClaims, error) {
 	// make refresh token
 	refreshExpiration := time.Now().Add(refreshTokenExpiration)
 	claims := &sessionClaims{
@@ -85,7 +81,7 @@ func createRefreshToken(username string) (refreshToken, sessionClaims, error) {
 
 	// create token and then signed token string
 	token := jwt.NewWithClaims(tokenSignatureMethod, claims)
-	refreshString, err := token.SignedString(refreshJwtSecret)
+	refreshString, err := token.SignedString(service.refreshJwtSecret)
 	if err != nil {
 		return "", sessionClaims{}, err
 	}
@@ -95,9 +91,9 @@ func createRefreshToken(username string) (refreshToken, sessionClaims, error) {
 
 // Valid (AccessToken) returns the token's claims if it is valid, otherwise
 // an error is returned if there is any issue (e.g. token not valid)
-func (tokenString *accessToken) valid() (claims jwt.MapClaims, err error) {
+func (tokenString *accessToken) valid(jwtSecret []byte) (claims jwt.MapClaims, err error) {
 	// parse and validate token
-	token, err := jwt.Parse(string(*tokenString), makeKeyFunc(accessJwtSecret))
+	token, err := jwt.Parse(string(*tokenString), makeKeyFunc(jwtSecret))
 	if err != nil {
 		return nil, output.ErrUnauthorized
 	}
@@ -118,9 +114,9 @@ func (tokenString *accessToken) valid() (claims jwt.MapClaims, err error) {
 // Valid (RefreshToken) returns the refresh token's claims if
 // it the token is valid, otherwise an error is returned if there is any
 // issue (e.g. token not valid)
-func (tokenString *refreshToken) valid() (claims *sessionClaims, err error) {
+func (tokenString *refreshToken) valid(jwtSecret []byte) (claims *sessionClaims, err error) {
 	// parse and validate token
-	token, err := jwt.ParseWithClaims(string(*tokenString), &sessionClaims{}, makeKeyFunc(refreshJwtSecret))
+	token, err := jwt.ParseWithClaims(string(*tokenString), &sessionClaims{}, makeKeyFunc(jwtSecret))
 	if err != nil {
 		return nil, output.ErrUnauthorized
 	}
