@@ -128,8 +128,8 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err erro
 	// TODO: do any kind of validation / checking ?
 	// TODO: remove refresh token from active list
 
-	// return response (new session) to client
-	response := authResponse{}
+	// return response (logged out)
+	response := output.JsonResponse{}
 	response.Status = http.StatusOK
 	response.Message = "logged out"
 	// delete session cookies (part of response)
