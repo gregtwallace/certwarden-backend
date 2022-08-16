@@ -13,17 +13,18 @@ type session struct {
 
 // createSession creates all of the necessary pieces of information
 // for a session and then returns the new session
-func (service *Service) createSession(username string) (newSession session, claims sessionClaims, err error) {
+func (service *Service) createSession(username string) (newSession session, err error) {
 	// make access token
 	newSession.AccessToken, _, err = service.createAccessToken(username)
 	if err != nil {
-		return session{}, sessionClaims{}, err
+		return session{}, err
 	}
 
 	// refresh token / cookie
-	refreshToken, claims, err := service.createRefreshToken(username)
+	var refreshToken refreshToken
+	refreshToken, newSession.Claims, err = service.createRefreshToken(username)
 	if err != nil {
-		return session{}, sessionClaims{}, err
+		return session{}, err
 	}
 
 	newSession.refreshCookie = createRefreshCookie(refreshToken)
@@ -31,7 +32,7 @@ func (service *Service) createSession(username string) (newSession session, clai
 	// logged in cookie
 	newSession.loggedInCookie = createLoggedInCookie()
 
-	return newSession, claims, nil
+	return newSession, nil
 }
 
 // write cookies writes the session cookies to the specified writer

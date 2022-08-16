@@ -50,7 +50,7 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 	}
 
 	// user and password now verified, make session
-	session, claims, err := service.createSession(user.Username)
+	session, err := service.createSession(user.Username)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
@@ -63,7 +63,7 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 	response.Status = http.StatusOK
 	response.Message = "authenticated"
 	response.AccessToken = session.AccessToken
-	response.Claims = claims
+	response.Claims = session.Claims
 	// write session cookies (part of response)
 	session.writeCookies(w)
 
@@ -100,7 +100,7 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 	// use claims from .valid() method
 
 	// refresh token verified, make new session
-	session, claims, err := service.createSession(oldClaims.Subject)
+	session, err := service.createSession(oldClaims.Subject)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
@@ -110,7 +110,8 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 	response := authResponse{}
 	response.Status = http.StatusOK
 	response.Message = "refreshed"
-	response.Claims = claims
+	response.AccessToken = session.AccessToken
+	response.Claims = session.Claims
 	// write session cookies (part of response)
 	session.writeCookies(w)
 
