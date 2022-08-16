@@ -23,6 +23,8 @@ replace legocerthub-backend/pkg/challenges => /pkg/challenges
 
 replace legocerthub-backend/pkg/challenges/providers/http01 => /pkg/challenges/providers/http01
 
+replace legocerthub-backend/pkg/datatypes => /pkg/datatypes
+
 replace legocerthub-backend/pkg/domain/acme_accounts => /pkg/domain/acme_accounts
 
 replace legocerthub-backend/pkg/domain/app => /pkg/domain/app
