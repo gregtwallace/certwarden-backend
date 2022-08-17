@@ -74,6 +74,8 @@ func NewService(app App) (*Service, error) {
 
 	// create session manager
 	service.sessionManager = newSessionManager(service.devMode)
+	// start cleaner
+	service.sessionManager.cleaner()
 
 	return service, nil
 }

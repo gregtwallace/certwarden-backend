@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"legocerthub-backend/pkg/datatypes"
+	"time"
 )
 
 var errInvalidUuid = errors.New("invalid uuid")
@@ -110,4 +111,32 @@ func (sm *sessionManager) closeSubject(subject string) {
 			delete(sm.sessions.Map, elementName)
 		}
 	}
+}
+
+// cleaner starts a goroutine that is an indefinite for loop
+// that checks for expired sessions and removes them. This is to
+// prevent the accumulation of expired sessions that were never
+// formally logged out of.
+func (sm *sessionManager) cleaner() {
+	go func() {
+		// wait time is based on expiration of sessions (refresh)
+		waitTime := 2 * refreshTokenExpiration
+		for {
+			time.Sleep(waitTime)
+
+			// lock sessions for cleaning
+			sm.sessions.Lock()
+
+			// range through all sessions
+			for elementName, session := range sm.sessions.Map {
+				if session.(sessionClaims).ExpiresAt.Unix() <= time.Now().Unix() {
+					// if expiration has passed, delete element
+					delete(sm.sessions.Map, elementName)
+				}
+			}
+
+			// done cleaning, unlock
+			sm.sessions.Unlock()
+		}
+	}()
 }
