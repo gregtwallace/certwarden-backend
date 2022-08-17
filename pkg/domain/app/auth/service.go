@@ -12,6 +12,7 @@ var errServiceComponent = errors.New("necessary auth service component is missin
 
 // App interface is for connecting to the main app
 type App interface {
+	GetDevMode() bool
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 	GetAuthStorage() Storage
@@ -23,6 +24,7 @@ type Storage interface {
 
 // Keys service struct
 type Service struct {
+	devMode          bool
 	logger           *zap.SugaredLogger
 	output           *output.Service
 	storage          Storage
@@ -35,6 +37,9 @@ type Service struct {
 func NewService(app App) (*Service, error) {
 	service := new(Service)
 	var err error
+
+	// dev mode check
+	service.devMode = app.GetDevMode()
 
 	// logger
 	service.logger = app.GetLogger()
@@ -68,7 +73,7 @@ func NewService(app App) (*Service, error) {
 	}
 
 	// create session manager
-	service.sessionManager = newSessionManager()
+	service.sessionManager = newSessionManager(service.devMode)
 
 	return service, nil
 }
