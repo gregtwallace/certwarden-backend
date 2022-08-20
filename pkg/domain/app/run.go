@@ -25,8 +25,8 @@ func RunLeGoAPI() {
 	flag.BoolVar(&appCfg.DevMode, "development", true, "run the server in development mode")
 	flag.Parse()
 
-	// configure the app
-	app, err := CreateAndConfigure(appCfg)
+	// create the app
+	app, err := Create(appCfg)
 	if err != nil {
 		log.Panicf("panic: failed to configure app: %s", err)
 	}
