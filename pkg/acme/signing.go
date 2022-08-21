@@ -57,8 +57,8 @@ func (accountKey *AccountKey) Sign(message acmeSignedMessage) (string, error) {
 			return "", err
 		}
 
-		// make signature in the format ACME expects
-		// TODO: Shouldn't need bitSize adjustment (see code in EC signature)
+		// Make signature in the format ACME expects. Padding should not be required
+		// for RSA.
 		encodedSignature := encodeString(signature)
 
 		return encodedSignature, nil
@@ -66,7 +66,8 @@ func (accountKey *AccountKey) Sign(message acmeSignedMessage) (string, error) {
 	case *ecdsa.PrivateKey:
 		// hash has to be generated based on the header.Algorithm or will error
 		var hashed []byte
-		switch privateKey.PublicKey.Params().BitSize {
+		bitSize := privateKey.PublicKey.Params().BitSize
+		switch bitSize {
 		case 256:
 			hashed256 := sha256.Sum256([]byte(toSign))
 			hashed = hashed256[:]
@@ -85,24 +86,12 @@ func (accountKey *AccountKey) Sign(message acmeSignedMessage) (string, error) {
 			return "", err
 		}
 
-		// make signature in the format ACME expects
-		signature := append(r.Bytes(), s.Bytes()...)
-		encodedSignature := encodeString(signature)
+		// ACME expects these values to be zero padded
+		rPadded := padBytes(r.Bytes(), bitSize)
+		sPadded := padBytes(s.Bytes(), bitSize)
 
-		// TODO: SHOULD NOT BE NEEDED
-		// rBytes, sBytes := r.Bytes(), s.Bytes()
-
-		// // Spec requires padding to octet length
-		// // This should never be an issue with LE, but implement the spec anyway
-		// octetLength := (bitSize + 7) >> 3
-		// // MUST include leading zeros in the output
-		// rBuf := make([]byte, octetLength-len(rBytes), octetLength)
-		// sBuf := make([]byte, octetLength-len(sBytes), octetLength)
-
-		// rBuf = append(rBuf, rBytes...)
-		// sBuf = append(sBuf, sBytes...)
-
-		// signature := encodeString(append(rBuf, sBuf...))
+		// combine the buffers and encode
+		encodedSignature := encodeString(append(rPadded, sPadded...))
 
 		return encodedSignature, nil
 
@@ -111,4 +100,19 @@ func (accountKey *AccountKey) Sign(message acmeSignedMessage) (string, error) {
 	}
 
 	return "", errors.New("acme: sign: unsupported private key type")
+}
+
+// padBytes pads data to an appropriate byte size based on the specified
+// number of bits (which generally comes from the key bit size)
+func padBytes(data []byte, bitSize int) (padded []byte) {
+	// calculate byte length (bits rounded up to nearest 8)
+	octetLength := (bitSize + 7) >> 3
+
+	// make new buffer of byte length
+	padded = make([]byte, octetLength-len(data), octetLength)
+
+	// insert the data into the padded buffer
+	padded = append(padded, data...)
+
+	return padded
 }
