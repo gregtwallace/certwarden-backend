@@ -30,7 +30,7 @@ func (app *Application) initZapLogger() {
 	// create logger
 	// default log level based on dev mode or not
 	logLevel := zapcore.InfoLevel
-	if app.devMode {
+	if *app.config.DevMode {
 		logLevel = zapcore.DebugLevel
 	}
 

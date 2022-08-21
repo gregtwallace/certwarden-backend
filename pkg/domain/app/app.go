@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/app/auth"
@@ -12,8 +11,6 @@ import (
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
-	"runtime"
-	"sync"
 
 	"github.com/julienschmidt/httprouter"
 	"go.uber.org/zap"
@@ -28,7 +25,7 @@ const acmeStagingUrl string = "https://acme-staging-v02.api.letsencrypt.org/dire
 
 // Application is the main app struct
 type Application struct {
-	devMode        bool
+	config         *config
 	logger         *zap.SugaredLogger
 	httpClient     *httpclient.Client
 	output         *output.Service
@@ -44,110 +41,6 @@ type Application struct {
 	certificates   *certificates.Service
 }
 
-// Create creates an app object with logger, storage, and all needed
-// services
-func Create(cfg config) (*Application, error) {
-	app := new(Application)
-	var err error
-
-	// logger (zap)
-	app.initZapLogger()
-
-	// is the server in development mode?
-	// this changes some basic things like: log level and connection timeouts
-	// This does NOT prevent interactions with ACME production environment!
-	app.devMode = *cfg.DevMode
-	if *cfg.DevMode {
-		app.logger.Warn("Development mode ENABLED. Key security measures DISABLED.")
-	}
-
-	// create http client
-	userAgent := fmt.Sprintf("LeGoCertHub/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
-	app.httpClient = httpclient.New(userAgent, *cfg.DevMode)
-
-	// output service
-	app.output, err = output.NewService(app)
-	if err != nil {
-		return nil, err
-	}
-
-	// storage
-	app.storage, err = sqlite.OpenStorage()
-	if err != nil {
-		return nil, err
-	}
-
-	// users service
-	app.auth, err = auth.NewService(app)
-	if err != nil {
-		return nil, err
-	}
-
-	// keys service
-	app.keys, err = private_keys.NewService(app)
-	if err != nil {
-		return nil, err
-	}
-
-	// acme services
-	// use waitgroup to expedite directory fetching
-	var wg sync.WaitGroup
-	wgSize := 2
-
-	wg.Add(wgSize)
-	wgErrors := make(chan error, wgSize)
-
-	// prod
-	go func() {
-		defer wg.Done()
-		app.acmeProd, err = acme.NewService(app, acmeProdUrl)
-		wgErrors <- err
-	}()
-
-	// staging
-	go func() {
-		defer wg.Done()
-		app.acmeStaging, err = acme.NewService(app, acmeStagingUrl)
-		wgErrors <- err
-	}()
-
-	wg.Wait()
-
-	// check for errors
-	close(wgErrors)
-	for err = range wgErrors {
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// accounts service
-	app.accounts, err = acme_accounts.NewService(app)
-	if err != nil {
-		return nil, err
-	}
-
-	// authorizations service
-	app.authorizations, err = authorizations.NewService(app)
-	if err != nil {
-		return nil, err
-	}
-
-	// certificates service
-	app.certificates, err = certificates.NewService(app)
-	if err != nil {
-		return nil, err
-	}
-
-	// orders service
-	app.orders, err = orders.NewService(app)
-	if err != nil {
-		return nil, err
-	}
-
-	return app, nil
-}
-
 // CloseStorage closes the storage connection
 func (app *Application) CloseStorage() {
 	app.storage.Close()
@@ -157,7 +50,7 @@ func (app *Application) CloseStorage() {
 
 // return various app parts which are used as needed by services
 func (app *Application) GetDevMode() bool {
-	return app.devMode
+	return *app.config.DevMode
 }
 
 func (app *Application) GetLogger() *zap.SugaredLogger {
