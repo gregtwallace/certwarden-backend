@@ -148,7 +148,7 @@ func (service *Service) GetCertPemFile(w http.ResponseWriter, r *http.Request) (
 	}
 
 	// get pem of the most recent valid order for the cert
-	pem, err := service.storage.GetCertPem(*cert.ID)
+	pem, err := service.storage.GetCertPemById(*cert.ID)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric

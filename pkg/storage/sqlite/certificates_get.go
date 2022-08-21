@@ -207,9 +207,21 @@ func (store *Storage) getOneCert(id int, name string, withKeyPems bool) (cert ce
 	return cert, nil
 }
 
+// GetCertPemById returns a the pem from the most recent valid order for the specified
+// cert id
+func (store *Storage) GetCertPemById(id int) (pem string, err error) {
+	return store.getCertPem(id, "")
+}
+
+// GetCertPemByName returns a the pem from the most recent valid order for the specified
+// cert name
+func (store *Storage) GetCertPemByName(name string) (pem string, err error) {
+	return store.getCertPem(-1, name)
+}
+
 // GetCertPem returns the pem for the most recent valid order of the specified
-// cert
-func (store *Storage) GetCertPem(certId int) (pem string, err error) {
+// cert (id or name)
+func (store *Storage) getCertPem(certId int, certName string) (pem string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
@@ -217,17 +229,22 @@ func (store *Storage) GetCertPem(certId int) (pem string, err error) {
 	SELECT
 		pem
 	FROM
-		acme_orders
+		acme_orders ao
+		LEFT JOIN certificates c on (ao.certificate_id = c.id)
 	WHERE 
-		status = "valid"
+		ao.status = "valid"
 		AND
-		known_revoked = 0
+		ao.known_revoked = 0
 		AND
-		valid_to > $1
+		ao.valid_to > $1
 		AND
-		pem NOT NULL
+		ao.pem NOT NULL
 		AND
-		certificate_id = $2
+		(
+			ao.certificate_id = $2
+			OR
+			c.name = $3
+		)
 	GROUP BY
 		certificate_id
 	HAVING
@@ -237,6 +254,7 @@ func (store *Storage) GetCertPem(certId int) (pem string, err error) {
 	row := store.Db.QueryRowContext(ctx, query,
 		time.Now().Unix(),
 		certId,
+		certName,
 	)
 
 	err = row.Scan(&pem)

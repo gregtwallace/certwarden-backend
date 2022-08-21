@@ -6,3 +6,11 @@ port: 4050
 # This should NEVER be true in production
 # Disables key SECURITY features!
 dev_mode: false
+
+# API Server's key and cert
+# These names should match the 'name' field of the desired key and cert within
+# the application.
+# If not specified (or invalid), a self-signed cert is created on each launch
+# until proper values are specified.
+private_key_name: legocerthub
+certificate_name: legocerthub

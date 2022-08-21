@@ -28,7 +28,7 @@ type Storage interface {
 	GetAllCerts() (certs []Certificate, err error)
 	GetOneCertById(id int, withAcctPem bool) (cert Certificate, err error)
 	GetOneCertByName(name string, withAcctPem bool) (cert Certificate, err error)
-	GetCertPem(certId int) (pem string, err error)
+	GetCertPemById(certId int) (pem string, err error)
 
 	PostNewCert(payload NewPayload) (id int, err error)
 

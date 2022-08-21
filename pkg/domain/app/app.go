@@ -27,6 +27,7 @@ const acmeStagingUrl string = "https://acme-staging-v02.api.letsencrypt.org/dire
 type Application struct {
 	config         *config
 	logger         *zap.SugaredLogger
+	appCert        *appCert
 	httpClient     *httpclient.Client
 	output         *output.Service
 	router         *httprouter.Router

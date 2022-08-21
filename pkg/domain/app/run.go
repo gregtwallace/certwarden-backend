@@ -37,17 +37,26 @@ func RunLeGoAPI() {
 		writeTimeout = 30 * time.Second
 	}
 
+	// make tls config
+	tlsConf, err := app.TlsConf()
+	if err != nil {
+		app.logger.Panicf("panic: tls config problem: %s", err)
+		return
+	}
+
+	// server config
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.Port),
 		Handler:      app.Routes(),
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
+		TLSConfig:    tlsConf,
 	}
 
 	// launch webserver
 	app.GetLogger().Infof("starting lego-certhub on %s:%d", *app.config.Hostname, *app.config.Port)
-	err = srv.ListenAndServe()
+	err = srv.ListenAndServeTLS("", "")
 	if err != nil {
 		app.GetLogger().Panicf("panic: failed to start http server: %s", err)
 	}
@@ -85,6 +94,12 @@ func create() (*Application, error) {
 
 	// storage
 	app.storage, err = sqlite.OpenStorage()
+	if err != nil {
+		return nil, err
+	}
+
+	// get app's tls cert
+	app.appCert, err = app.newAppCert()
 	if err != nil {
 		return nil, err
 	}
