@@ -29,10 +29,9 @@ func encodeJson(data any) (string, error) {
 // encodeInt returns the value of an int properly encoded for ACME jwk
 func encodeInt(integer int) (string, error) {
 	bytesBuf := new(bytes.Buffer)
-	var err error
 
 	// uint32 also seems to work, but uint does not
-	err = binary.Write(bytesBuf, binary.BigEndian, uint64(integer))
+	err := binary.Write(bytesBuf, binary.BigEndian, uint64(integer))
 	if err != nil {
 		return "", err
 	}

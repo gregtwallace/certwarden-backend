@@ -3,7 +3,7 @@ package acme
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -110,7 +110,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		service.logger.Debugf("acme response status code: %d", response.StatusCode)
 
 		// read body of response
-		bodyBytes, err = ioutil.ReadAll(response.Body)
+		bodyBytes, err = io.ReadAll(response.Body)
 		if err != nil {
 			return nil, nil, err
 		}

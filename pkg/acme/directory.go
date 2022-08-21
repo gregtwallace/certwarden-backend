@@ -2,7 +2,7 @@ package acme
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"reflect"
 	"time"
 )
@@ -37,7 +37,7 @@ func (service *Service) fetchAcmeDirectory() error {
 	// No nonce to save. ACME spec provides nonce on new-nonce requests
 	// and replies to POSTs only.
 
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
 	}
