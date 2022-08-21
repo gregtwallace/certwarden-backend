@@ -1,0 +1,8 @@
+# Host and Port for API Server
+hostname: "localhost"
+port: 4050
+
+# Development mode
+# This should NEVER be true in production
+# Disables key SECURITY features!
+dev_mode: false

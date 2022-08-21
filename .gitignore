@@ -1,5 +1,8 @@
 # database files
 *.db
 
+# active config file
+config.yaml
+
 # log file
 lego-certhub.log.json

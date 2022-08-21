@@ -44,27 +44,26 @@ type Application struct {
 	certificates   *certificates.Service
 }
 
-type Configuration struct {
-	DevMode bool
-}
-
 // Create creates an app object with logger, storage, and all needed
 // services
-func Create(config Configuration) (*Application, error) {
+func Create(cfg config) (*Application, error) {
 	app := new(Application)
 	var err error
-
-	// is the server in development mode?
-	// this changes some basic things like: log level and connection timeouts
-	// This does NOT prevent interactions with ACME production environment!
-	app.devMode = config.DevMode
 
 	// logger (zap)
 	app.initZapLogger()
 
+	// is the server in development mode?
+	// this changes some basic things like: log level and connection timeouts
+	// This does NOT prevent interactions with ACME production environment!
+	app.devMode = *cfg.DevMode
+	if *cfg.DevMode {
+		app.logger.Warn("Development mode ENABLED. Key security measures DISABLED.")
+	}
+
 	// create http client
 	userAgent := fmt.Sprintf("LeGoCertHub/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
-	app.httpClient = httpclient.New(userAgent, config.DevMode)
+	app.httpClient = httpclient.New(userAgent, *cfg.DevMode)
 
 	// output service
 	app.output, err = output.NewService(app)

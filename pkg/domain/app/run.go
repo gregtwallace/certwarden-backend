@@ -1,32 +1,19 @@
 package app
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
 )
 
-// http server config options
-type webConfig struct {
-	host string
-	port int
-}
-
+// RunLeGoAPI starts the application
 func RunLeGoAPI() {
-	// parse command line for config options
-	var webCfg webConfig
-	var appCfg Configuration
-
-	flag.StringVar(&webCfg.host, "host", "localhost", "hostname to listen on")
-	flag.IntVar(&webCfg.port, "port", 4050, "port number for API to listen on")
-	// TODO: change default to false
-	flag.BoolVar(&appCfg.DevMode, "development", true, "run the server in development mode")
-	flag.Parse()
+	// parse config file
+	cfg := readConfigFile()
 
 	// create the app
-	app, err := Create(appCfg)
+	app, err := Create(cfg)
 	if err != nil {
 		log.Panicf("panic: failed to configure app: %s", err)
 	}
@@ -36,13 +23,13 @@ func RunLeGoAPI() {
 	readTimeout := 5 * time.Second
 	writeTimeout := 10 * time.Second
 	// allow longer timeouts when in development
-	if appCfg.DevMode {
+	if *cfg.DevMode {
 		readTimeout = 15 * time.Second
 		writeTimeout = 30 * time.Second
 	}
 
 	srv := &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", webCfg.host, webCfg.port),
+		Addr:         fmt.Sprintf("%s:%d", *cfg.Hostname, *cfg.Port),
 		Handler:      app.Routes(),
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  readTimeout,
@@ -50,7 +37,7 @@ func RunLeGoAPI() {
 	}
 
 	// launch webserver
-	app.GetLogger().Infof("starting lego-certhub on %s:%d", webCfg.host, webCfg.port)
+	app.GetLogger().Infof("starting lego-certhub on %s:%d", *cfg.Hostname, *cfg.Port)
 	err = srv.ListenAndServe()
 	if err != nil {
 		app.GetLogger().Panicf("panic: failed to start http server: %s", err)

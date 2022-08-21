@@ -13,6 +13,7 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace legocerthub-backend/pkg/acme => /pkg/acme
