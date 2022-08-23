@@ -12,6 +12,7 @@ import (
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
+	"log"
 	"net/http"
 	"runtime"
 	"sync"
@@ -23,7 +24,7 @@ func RunLeGoAPI() {
 	// create the app
 	app, err := create()
 	if err != nil {
-		app.logger.Panicf("panic: failed to configure app: %s", err)
+		log.Panicf("failed to configure app: %s", err)
 		return
 	}
 	defer app.CloseStorage()
