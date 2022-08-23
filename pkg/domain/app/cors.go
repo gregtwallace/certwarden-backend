@@ -5,11 +5,16 @@ import (
 	"net/url"
 )
 
-var permittedHostnames = []string{"localhost", "127.0.0.1"}
+// by default, these are always allowed
+var defaultHostnames = []string{"localhost", "127.0.0.1"}
 
 func (app *Application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		allowedOrigin := "http://" + permittedHostnames[0] // default
+		// generic default origin if origin isn't found in list (will be rejected)
+		allowedOrigin := "http://" + defaultHostnames[0]
+
+		// add config hostname to approved list
+		permittedHostnames := append(defaultHostnames, *app.config.Hostname)
 
 		// allow any scheme and/or port from a permitted origin
 		url, err := url.ParseRequestURI(r.Header.Get("Origin"))
