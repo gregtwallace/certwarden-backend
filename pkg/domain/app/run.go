@@ -37,28 +37,37 @@ func RunLeGoAPI() {
 		writeTimeout = 30 * time.Second
 	}
 
-	// make tls config
-	tlsConf, err := app.TlsConf()
-	if err != nil {
-		app.logger.Panicf("panic: tls config problem: %s", err)
-		return
-	}
-
-	// server config
-	srv := &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.Port),
+	// http server config
+	httpSrv := &http.Server{
+		Addr:         fmt.Sprintf("%s:%d", "localhost", *app.config.HttpPort),
 		Handler:      app.Routes(),
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
-		TLSConfig:    tlsConf,
 	}
 
-	// launch webserver
-	app.GetLogger().Infof("starting lego-certhub on %s:%d", *app.config.Hostname, *app.config.Port)
-	err = srv.ListenAndServeTLS("", "")
-	if err != nil {
-		app.GetLogger().Panicf("panic: failed to start http server: %s", err)
+	// configure and launch https if app succesfully got a cert
+	if app.appCert != nil {
+		// make tls config
+		tlsConf, err := app.TlsConf()
+		if err != nil {
+			app.logger.Panicf("tls config problem: %s", err)
+			return
+		}
+
+		// https server config
+		httpsSrv := new(http.Server)
+		*httpsSrv = *httpSrv
+		httpsSrv.Addr = fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.HttpsPort)
+		httpsSrv.TLSConfig = tlsConf
+
+		// launch https
+		app.logger.Infof("starting lego-certhub (https) on %s", httpsSrv.Addr)
+		app.logger.Panic(httpsSrv.ListenAndServeTLS("", ""))
+	} else {
+		// if https failed, launch localhost only http server
+		app.logger.Infof("starting lego-certhub (http) on %s", httpSrv.Addr)
+		app.logger.Panic(httpSrv.ListenAndServe())
 	}
 }
 
@@ -99,9 +108,11 @@ func create() (*Application, error) {
 	}
 
 	// get app's tls cert
+	// if fails, set to nil (will disable https)
 	app.appCert, err = app.newAppCert()
 	if err != nil {
-		return nil, err
+		app.logger.Warnf("failed to configure https cert: %s", err)
+		app.appCert = nil
 	}
 
 	// users service

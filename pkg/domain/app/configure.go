@@ -13,10 +13,11 @@ const configFile = "./config.yaml"
 // config is the configuration structure for app (and subsequently services)
 type config struct {
 	Hostname        *string `yaml:"hostname"`
-	Port            *int    `yaml:"port"`
-	DevMode         *bool   `yaml:"dev_mode"`
+	HttpsPort       *int    `yaml:"https_port"`
+	HttpPort        *int    `yaml:"http_port"`
 	PrivateKeyName  *string `yaml:"private_key_name"`
 	CertificateName *string `yaml:"certificate_name"`
+	DevMode         *bool   `yaml:"dev_mode"`
 }
 
 // readConfigFile parses the config yaml file. It also sets default config
@@ -51,22 +52,26 @@ func readConfigFile() (cfg config) {
 func defaultConfig() (cfg config) {
 	cfg = config{
 		Hostname:        new(string),
-		Port:            new(int),
-		DevMode:         new(bool),
+		HttpsPort:       new(int),
+		HttpPort:        new(int),
 		PrivateKeyName:  new(string),
 		CertificateName: new(string),
+		DevMode:         new(bool),
 	}
 
-	// http server
+	// https server
 	*cfg.Hostname = "localhost"
-	*cfg.Port = 4050
+	*cfg.HttpsPort = 4055
 
-	// dev mode
-	*cfg.DevMode = false
+	// http server
+	*cfg.HttpPort = 4050
 
 	// key/cert
 	*cfg.PrivateKeyName = "legocerthub"
 	*cfg.CertificateName = "legocerthub"
+
+	// dev mode
+	*cfg.DevMode = false
 
 	return cfg
 }

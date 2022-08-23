@@ -1,15 +1,8 @@
 package app
 
 import (
-	"crypto/ecdsa"
-	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
-	"errors"
-	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
-	"math/big"
 	"sync"
 	"time"
 )
@@ -40,12 +33,7 @@ func (app *Application) newAppCert() (*appCert, error) {
 	// get cert from storage
 	sc.cert, err = app.getAppCertFromStorage()
 	if err != nil {
-		// if failed, make a temp cert
-		sc.cert, err = app.makeTempAppCert()
-		if err != nil {
-			// both failed, return error
-			return nil, err
-		}
+		return nil, err
 	}
 
 	// go routine to periodically try to refresh the cert
@@ -121,67 +109,13 @@ func (app *Application) getAppCertFromStorage() (*tls.Certificate, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	certPem, err := app.storage.GetCertPemByName(*app.config.CertificateName)
 	if err != nil {
 		return nil, err
 	}
+
 	tlsCert, err := tls.X509KeyPair([]byte(certPem), []byte(*key.Pem))
-	if err != nil {
-		return nil, err
-	}
-
-	return &tlsCert, nil
-}
-
-// makeTempAppCert generates and returns a self signed key/cert pair for the app.
-// This should only be used temporarily
-func (app *Application) makeTempAppCert() (*tls.Certificate, error) {
-	// derBytes assertion might need update if change this
-	algorithmValue := "ecdsap256"
-
-	// make key
-	keyPem, err := key_crypto.GeneratePrivateKeyPem(algorithmValue)
-	if err != nil {
-		return nil, err
-	}
-
-	key, err := key_crypto.PemStringToKey(keyPem, algorithmValue)
-	if err != nil {
-		return nil, err
-	}
-	ecKey, ok := key.(*ecdsa.PrivateKey)
-	if !ok {
-		return nil, errors.New("failed to assert key during generation")
-	}
-
-	// cert template (properties)
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			Organization: []string{"LeGo Certhub"},
-		},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(time.Hour * 24 * 180),
-		KeyUsage:              x509.KeyUsageDigitalSignature,
-		BasicConstraintsValid: true,
-	}
-
-	// make cert
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &ecKey.PublicKey, ecKey)
-	if err != nil {
-		return nil, err
-	}
-
-	// encode cert to pem
-	certPemBlock := &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: derBytes,
-	}
-
-	certPem := pem.EncodeToMemory(certPemBlock)
-
-	// make tls cert
-	tlsCert, err := tls.X509KeyPair(certPem, []byte(keyPem))
 	if err != nil {
 		return nil, err
 	}

@@ -1,11 +1,13 @@
-# Host and Port for API Server
+# Host and Port for API Server (HTTPS/TLS)
+# HTTPS will only be started if valid private_key and
+# certificate names are specified below. Otherwise
+# app is started with http for localhost only
 hostname: "localhost"
-port: 4050
+https_port: 4055
 
-# Development mode
-# This should NEVER be true in production
-# Disables key SECURITY features!
-dev_mode: false
+# Port for HTTP (insecure) API Server
+# Note: Hostname will ALWAYS be localhost for HTTP
+http_port: 4050
 
 # API Server's key and cert
 # These names should match the 'name' field of the desired key and cert within
@@ -14,3 +16,8 @@ dev_mode: false
 # until proper values are specified.
 private_key_name: legocerthub
 certificate_name: legocerthub
+
+# Development mode
+# This should NEVER be true in production
+# Disables key SECURITY features!
+dev_mode: false
