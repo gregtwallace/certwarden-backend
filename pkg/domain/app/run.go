@@ -38,12 +38,17 @@ func RunLeGoAPI() {
 	}
 
 	// http server config
-	httpSrv := &http.Server{
+	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.HttpPort),
 		Handler:      app.Routes(),
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
+	}
+
+	// launch frontend if enabled
+	if *app.config.Frontend.Enable {
+		go app.runFrontend()
 	}
 
 	// configure and launch https if app succesfully got a cert
@@ -56,18 +61,16 @@ func RunLeGoAPI() {
 		}
 
 		// https server config
-		httpsSrv := new(http.Server)
-		*httpsSrv = *httpSrv
-		httpsSrv.Addr = fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.HttpsPort)
-		httpsSrv.TLSConfig = tlsConf
+		srv.Addr = fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.HttpsPort)
+		srv.TLSConfig = tlsConf
 
 		// launch https
-		app.logger.Infof("starting lego-certhub (https) on %s", httpsSrv.Addr)
-		app.logger.Panic(httpsSrv.ListenAndServeTLS("", ""))
+		app.logger.Infof("starting lego-certhub (https) on %s", srv.Addr)
+		app.logger.Panic(srv.ListenAndServeTLS("", ""))
 	} else {
 		// if https failed, launch localhost only http server
-		app.logger.Warnf("starting insecure lego-certhub (http) on %s", httpSrv.Addr)
-		app.logger.Panic(httpSrv.ListenAndServe())
+		app.logger.Warnf("starting insecure lego-certhub (http) on %s", srv.Addr)
+		app.logger.Panic(srv.ListenAndServe())
 	}
 }
 

@@ -17,6 +17,12 @@ http_port: 4050
 private_key_name: legocerthub
 certificate_name: legocerthub
 
+# Frontend configuration (if hosting with the backend)
+frontend:
+  enabled: true
+  https_port: 3055
+  http_port: 3050
+
 # Development mode
 # This should NEVER be true in production
 # Disables key SECURITY features!

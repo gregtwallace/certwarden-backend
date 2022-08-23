@@ -6,3 +6,6 @@ config.yaml
 
 # log file
 lego-certhub.log.json
+
+# compiled frontend (this will be added later to releases)
+/frontend_build
