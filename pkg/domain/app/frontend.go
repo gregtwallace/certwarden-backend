@@ -3,10 +3,12 @@ package app
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 )
 
 const buildDir = "./frontend_build"
+const envFile = buildDir + "/env.js"
 
 // runFrontend launches a web server to host the frontend
 func (app *Application) runFrontend() {
@@ -43,12 +45,48 @@ func (app *Application) runFrontend() {
 		srv.Addr = fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.Frontend.HttpsPort)
 		srv.TLSConfig = tlsConf
 
+		// prepare frontend env file
+		err = setFrontendEnv(fmt.Sprintf("https://%s", srv.Addr))
+		if err != nil {
+			app.logger.Panicf("error setting frontend environment: %s", err)
+			return
+		}
+
 		// launch https
 		app.logger.Infof("starting lego-certhub frontend (https) on %s", srv.Addr)
 		app.logger.Panic(srv.ListenAndServeTLS("", ""))
 	} else {
 		// if https failed, launch localhost only http server
+		// prepare frontend env file
+		setFrontendEnv(fmt.Sprintf("http://%s", srv.Addr))
+
+		// launch http
 		app.logger.Warnf("starting insecure lego-certhub frontend (http) on %s", srv.Addr)
 		app.logger.Panic(srv.ListenAndServe())
 	}
+}
+
+func setFrontendEnv(apiUrl string) error {
+	// remove any old environment
+	_ = os.Remove(envFile)
+
+	// content of new environment file
+	envFileContent := `
+	window.env = {
+		API_URL: '` + apiUrl + `',
+	};
+	`
+
+	file, err := os.Create(envFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write([]byte(envFileContent))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
