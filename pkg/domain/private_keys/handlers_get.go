@@ -93,6 +93,11 @@ func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request)
 
 // ServeKeyPem returns the private key to the client
 func (service *Service) GetKeyPemFile(w http.ResponseWriter, r *http.Request) (err error) {
+	// if not running https, error
+	if !service.https && !service.devMode {
+		return output.ErrUnavailableHttp
+	}
+
 	// get key name
 	keyName := httprouter.ParamsFromContext(r.Context()).ByName("name")
 

@@ -58,6 +58,11 @@ func (app *Application) GetLogger() *zap.SugaredLogger {
 	return app.logger
 }
 
+// is the server running https or not?
+func (app *Application) IsHttps() bool {
+	return app.appCert != nil
+}
+
 func (app *Application) GetHttpClient() *httpclient.Client {
 	return app.httpClient
 }

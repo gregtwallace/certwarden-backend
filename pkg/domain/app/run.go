@@ -39,7 +39,7 @@ func RunLeGoAPI() {
 
 	// http server config
 	httpSrv := &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", "localhost", *app.config.HttpPort),
+		Addr:         fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.HttpPort),
 		Handler:      app.Routes(),
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  readTimeout,
@@ -66,7 +66,7 @@ func RunLeGoAPI() {
 		app.logger.Panic(httpsSrv.ListenAndServeTLS("", ""))
 	} else {
 		// if https failed, launch localhost only http server
-		app.logger.Infof("starting lego-certhub (http) on %s", httpSrv.Addr)
+		app.logger.Warnf("starting insecure lego-certhub (http) on %s", httpSrv.Addr)
 		app.logger.Panic(httpSrv.ListenAndServe())
 	}
 }
@@ -88,7 +88,7 @@ func create() (*Application, error) {
 	// this changes some basic things like: log level and connection timeouts
 	// This does NOT prevent interactions with ACME production environment!
 	if *app.config.DevMode {
-		app.logger.Warn("Development mode ENABLED. Key security measures DISABLED.")
+		app.logger.Error("key security measures disabled (development mode enabled)")
 	}
 
 	// create http client
@@ -111,7 +111,11 @@ func create() (*Application, error) {
 	// if fails, set to nil (will disable https)
 	app.appCert, err = app.newAppCert()
 	if err != nil {
-		app.logger.Warnf("failed to configure https cert: %s", err)
+		app.logger.Errorf("failed to configure https cert: %s", err)
+		// if not https, and not dev mode, certain functions will be blocked
+		if !*app.config.DevMode {
+			app.logger.Error("certain functionality (e.g. pem downloads via API keys) will be disabled until the server is run in https mode")
+		}
 		app.appCert = nil
 	}
 

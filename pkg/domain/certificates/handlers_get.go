@@ -113,6 +113,11 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 // GetCertPemFile returns the pem file for the most recent valid order to the client
 // TODO: implement additional options e.g. specify chain vs. just cert
 func (service *Service) GetCertPemFile(w http.ResponseWriter, r *http.Request) (err error) {
+	// if not running https, error
+	if !service.https && !service.devMode {
+		return output.ErrUnavailableHttp
+	}
+
 	// get cert name
 	certName := httprouter.ParamsFromContext(r.Context()).ByName("name")
 
