@@ -11,10 +11,11 @@ var defaultHostnames = []string{"localhost", "127.0.0.1"}
 func (app *Application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// generic default origin if origin isn't found in list (will be rejected)
-		allowedOrigin := "http://" + defaultHostnames[0]
+		allowedOrigin := "https://" + defaultHostnames[0]
 
 		// add config hostname to approved list
-		permittedHostnames := append(defaultHostnames, *app.config.Hostname)
+		permittedHostnames := []string{*app.config.Hostname}
+		permittedHostnames = append(permittedHostnames, defaultHostnames...)
 
 		// allow any scheme and/or port from a permitted origin
 		url, err := url.ParseRequestURI(r.Header.Get("Origin"))
