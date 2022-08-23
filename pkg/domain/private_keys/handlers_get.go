@@ -1,7 +1,6 @@
 package private_keys
 
 import (
-	"errors"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
@@ -11,8 +10,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 )
-
-var errBodyExists = errors.New("body is not empty")
 
 // GetAllKeys returns all of the private keys in storage as JSON
 func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) (err error) {

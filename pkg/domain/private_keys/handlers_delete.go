@@ -32,7 +32,7 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err e
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
-	if inUse == true {
+	if inUse {
 		service.logger.Warn("cannot delete, in use")
 		return output.ErrDeleteInUse
 	}
