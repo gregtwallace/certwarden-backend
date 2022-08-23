@@ -58,7 +58,7 @@ func (app *Application) runFrontend() {
 	} else {
 		// if https failed, launch localhost only http server
 		// prepare frontend env file
-		setFrontendEnv(fmt.Sprintf("https://%s:%d", *app.config.Hostname, *app.config.HttpPort))
+		setFrontendEnv(fmt.Sprintf("http://%s:%d", *app.config.Hostname, *app.config.HttpPort))
 
 		// launch http
 		app.logger.Warnf("starting insecure lego-certhub frontend (http) on %s", srv.Addr)
