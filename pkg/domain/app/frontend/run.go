@@ -24,7 +24,7 @@ func (service *Service) run() error {
 	// http server config
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", *service.hostname, *service.config.HttpPort),
-		Handler:      frontendRoutes(),
+		Handler:      service.frontendRoutes(),
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
