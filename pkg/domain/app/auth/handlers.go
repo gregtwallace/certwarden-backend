@@ -225,6 +225,13 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 
+	// TODO: Additional password complexity requirements?
+	// verify password is long enough
+	if len(payload.NewPassword) < 10 {
+		service.logger.Info("password did not meet length requirement")
+		return output.ErrValidationFailed
+	}
+
 	// generate new password hash
 	newPasswordHash, err := bcrypt.GenerateFromPassword([]byte(payload.NewPassword), BcryptCost)
 	if err != nil {
