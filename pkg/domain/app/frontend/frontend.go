@@ -1,4 +1,4 @@
-package app
+package frontend
 
 import (
 	"fmt"
@@ -11,61 +11,65 @@ const buildDir = "./frontend_build"
 const envFile = buildDir + "/env.js"
 
 // runFrontend launches a web server to host the frontend
-func (app *Application) runFrontend() {
+func (service *Service) run() error {
 	// configure webserver
 	readTimeout := 5 * time.Second
 	writeTimeout := 10 * time.Second
 	// allow longer timeouts when in development
-	if *app.config.DevMode {
+	if service.devMode {
 		readTimeout = 15 * time.Second
 		writeTimeout = 30 * time.Second
 	}
 
 	// http server config
 	srv := &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.Frontend.HttpPort),
+		Addr:         fmt.Sprintf("%s:%d", *service.hostname, *service.config.HttpPort),
+		Handler:      frontendRoutes(),
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
 	}
 
-	// make file server handle for build dir
-	http.Handle("/", http.FileServer(http.Dir(buildDir)))
-
 	// configure and launch https if app succesfully got a cert
-	if app.appCert != nil {
+	if service.httpsCert != nil {
 		// make tls config
-		tlsConf, err := app.TlsConf()
+		tlsConf, err := service.tlsConf()
 		if err != nil {
-			app.logger.Panicf("tls config problem: %s", err)
-			return
+			return err
 		}
 
 		// https server config
-		srv.Addr = fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.Frontend.HttpsPort)
+		srv.Addr = fmt.Sprintf("%s:%d", *service.hostname, *service.config.HttpsPort)
 		srv.TLSConfig = tlsConf
 
 		// prepare frontend env file
-		err = setFrontendEnv(fmt.Sprintf("https://%s:%d", *app.config.Hostname, *app.config.HttpsPort))
+		err = setFrontendEnv(fmt.Sprintf("https://%s:%d", *service.hostname, *service.apiPort))
 		if err != nil {
-			app.logger.Panicf("error setting frontend environment: %s", err)
-			return
+			return err
 		}
 
 		// launch https
-		app.logger.Infof("starting lego-certhub frontend (https) on %s", srv.Addr)
-		app.logger.Panic(srv.ListenAndServeTLS("", ""))
+		service.logger.Infof("starting lego-certhub frontend (https) on %s", srv.Addr)
+		go func() {
+			service.logger.Panic(srv.ListenAndServeTLS("", ""))
+		}()
 	} else {
 		// if https failed, launch localhost only http server
 		// prepare frontend env file
-		setFrontendEnv(fmt.Sprintf("http://%s:%d", *app.config.Hostname, *app.config.HttpPort))
+		setFrontendEnv(fmt.Sprintf("http://%s:%d", *service.hostname, *service.apiPort))
 
 		// launch http
-		app.logger.Warnf("starting insecure lego-certhub frontend (http) on %s", srv.Addr)
-		app.logger.Panic(srv.ListenAndServe())
+		service.logger.Warnf("starting insecure lego-certhub frontend (http) on %s", srv.Addr)
+		go func() {
+			service.logger.Panic(srv.ListenAndServe())
+		}()
 	}
+
+	return nil
 }
 
+// setFrontendEnv creates the env.js file in the frontend build. This is used
+// to set variables at server run time
 func setFrontendEnv(apiUrl string) error {
 	// remove any old environment
 	_ = os.Remove(envFile)

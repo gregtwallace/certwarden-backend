@@ -3,38 +3,32 @@ package app
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"sync"
+	"legocerthub-backend/pkg/datatypes"
 	"time"
 )
 
 // generate the TLS Config for the app
-func (app *Application) TlsConf() (*tls.Config, error) {
+func (app *Application) tlsConf() (*tls.Config, error) {
 	tlsConf := &tls.Config{
 		// func to return the TLS Cert from app
-		GetCertificate: app.appCert.getTlsCertFunc(),
+		GetCertificate: app.httpsCert.TlsCertFunc(),
 	}
 
 	return tlsConf, nil
 }
 
-// serverCert is a struct to hold and manage the app's tls
-// certificate
-type appCert struct {
-	cert *tls.Certificate
-	mu   sync.RWMutex
-}
-
 // newAppCert creates the application cert struct on app and
 // also starts a refresh go routine
-func (app *Application) newAppCert() (*appCert, error) {
-	sc := new(appCert)
+func (app *Application) newAppCert() (*datatypes.SafeCert, error) {
+	sc := new(datatypes.SafeCert)
 	var err error
 
-	// get cert from storage
-	sc.cert, err = app.getAppCertFromStorage()
+	// get cert from storage and set SafeCert
+	cert, err := app.getAppCertFromStorage()
 	if err != nil {
 		return nil, err
 	}
+	sc.Update(cert)
 
 	// go routine to periodically try to refresh the cert
 	go func() {
@@ -45,9 +39,7 @@ func (app *Application) newAppCert() (*appCert, error) {
 
 		for {
 			// determine time to expiration
-			sc.mu.RLock()
-			parsedCert, err = x509.ParseCertificate(sc.cert.Certificate[0])
-			sc.mu.RUnlock()
+			parsedCert, err = x509.ParseCertificate(sc.Read().Certificate[0])
 			if err != nil {
 				app.logger.Panicf("lego tls certificate error: %s", err)
 			}
@@ -76,30 +68,13 @@ func (app *Application) newAppCert() (*appCert, error) {
 				app.logger.Error("failed to update lego's certificate")
 			} else {
 				// no error, refresh cert
-				sc.refreshCert(newCert)
+				sc.Update(newCert)
 				app.logger.Info("updated lego's certificate")
 			}
 		}
 	}()
 
 	return sc, nil
-}
-
-// getTlsCertFunc returns the function to get the tls.Certificate from appCert
-func (ac *appCert) getTlsCertFunc() func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
-	return func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-		ac.mu.RLock()
-		defer ac.mu.RUnlock()
-		return ac.cert, nil
-	}
-}
-
-// refreshCert updates the certificate with the specified cert
-func (ac *appCert) refreshCert(tlsCert *tls.Certificate) {
-	ac.mu.Lock()
-	defer ac.mu.Unlock()
-
-	ac.cert = tlsCert
 }
 
 // getAppCertFromStorage returns the current key/cert pair for the app

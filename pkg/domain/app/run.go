@@ -5,6 +5,7 @@ import (
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/app/auth"
+	"legocerthub-backend/pkg/domain/app/frontend"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/orders"
@@ -41,21 +42,16 @@ func RunLeGoAPI() {
 	// http server config
 	srv := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.HttpPort),
-		Handler:      app.Routes(),
+		Handler:      app.routes(),
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
 	}
 
-	// launch frontend if enabled
-	if *app.config.Frontend.Enable {
-		go app.runFrontend()
-	}
-
 	// configure and launch https if app succesfully got a cert
-	if app.appCert != nil {
+	if app.httpsCert != nil {
 		// make tls config
-		tlsConf, err := app.TlsConf()
+		tlsConf, err := app.tlsConf()
 		if err != nil {
 			app.logger.Panicf("tls config problem: %s", err)
 			return
@@ -113,14 +109,14 @@ func create() (*Application, error) {
 
 	// get app's tls cert
 	// if fails, set to nil (will disable https)
-	app.appCert, err = app.newAppCert()
+	app.httpsCert, err = app.newAppCert()
 	if err != nil {
 		app.logger.Errorf("failed to configure https cert: %s", err)
 		// if not https, and not dev mode, certain functions will be blocked
 		if !*app.config.DevMode {
 			app.logger.Error("certain functionality (e.g. pem downloads via API keys) will be disabled until the server is run in https mode")
 		}
-		app.appCert = nil
+		app.httpsCert = nil
 	}
 
 	// users service
@@ -189,6 +185,14 @@ func create() (*Application, error) {
 	app.orders, err = orders.NewService(app)
 	if err != nil {
 		return nil, err
+	}
+
+	// launch frontend if enabled
+	if *app.config.Frontend.Enable {
+		app.frontend, err = frontend.NewService(app)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return app, nil

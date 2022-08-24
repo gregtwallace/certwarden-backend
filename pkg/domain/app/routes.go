@@ -6,9 +6,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// Routes creates the application's router and adds the routes. It also
+// routes creates the application's router and adds the routes. It also
 // inserts the CORS middleware before returning the routes
-func (app *Application) Routes() http.Handler {
+func (app *Application) routes() http.Handler {
 	app.router = httprouter.New()
 
 	// app - insecure
