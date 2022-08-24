@@ -19,7 +19,7 @@ import (
 )
 
 // application version
-const appVersion = "0.1.0"
+const appVersion = "0.2.0"
 
 // Directory URLs for Let's Encrypt
 const acmeProdUrl string = "https://acme-v02.api.letsencrypt.org/directory"
