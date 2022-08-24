@@ -177,3 +177,79 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err erro
 
 	return nil
 }
+
+// passwordChangePayload contains the expected payload fields for
+// a user changing their password
+type passwordChangePayload struct {
+	CurrentPassword    string `json:"current_password"`
+	NewPassword        string `json:"new_password"`
+	ConfirmNewPassword string `json:"confirm_new_password"`
+}
+
+// ChangePassword allows a user to change their password
+func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (err error) {
+	var payload passwordChangePayload
+
+	// This route will be unsecured in the router because the claims need to be accessed.
+	// validate jwt and get the claims (to confirm the username)
+	claims, err := service.ValidAuthHeader(r.Header, w)
+	if err != nil {
+		return output.ErrUnauthorized
+	}
+	username := claims["sub"].(string)
+
+	// decode body into payload
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		service.logger.Info(err)
+		return output.ErrUnauthorized
+	}
+
+	// fetch the password hash from storage
+	user, err := service.storage.GetOneUserByName(username)
+	if err != nil {
+		service.logger.Info(err)
+		return output.ErrUnauthorized
+	}
+
+	// confirm current password is correct
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(payload.CurrentPassword))
+	if err != nil {
+		service.logger.Info(err)
+		return output.ErrUnauthorized
+	}
+
+	// verify new password matches
+	if payload.NewPassword != payload.ConfirmNewPassword {
+		service.logger.Info("new password did not match confirm new password")
+		return output.ErrValidationFailed
+	}
+
+	// generate new password hash
+	newPasswordHash, err := bcrypt.GenerateFromPassword([]byte(payload.NewPassword), BcryptCost)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// update password in storage
+	userId, err := service.storage.UpdateUserPassword(username, string(newPasswordHash))
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+
+	// return response to client
+	response := output.JsonResponse{}
+	response.Status = http.StatusOK
+	response.Message = "password changed"
+	response.ID = userId
+
+	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
+	}
+
+	return nil
+}

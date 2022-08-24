@@ -50,7 +50,7 @@ func (handler handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // checkJwt is middleware that checks for a valid jwt
 func (app *Application) checkJwt(next customHandlerFunc) customHandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		err := app.auth.ValidAuthHeader(r.Header, w)
+		_, err := app.auth.ValidAuthHeader(r.Header, w)
 		if err != nil {
 			return output.ErrUnauthorized
 		}

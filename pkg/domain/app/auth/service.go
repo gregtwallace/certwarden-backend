@@ -10,6 +10,9 @@ import (
 
 var errServiceComponent = errors.New("necessary auth service component is missing")
 
+// constant for bcrypt cost value
+const BcryptCost = 12
+
 // App interface is for connecting to the main app
 type App interface {
 	GetDevMode() bool
@@ -20,6 +23,7 @@ type App interface {
 
 type Storage interface {
 	GetOneUserByName(username string) (User, error)
+	UpdateUserPassword(username string, newPasswordHash string) (userId int, err error)
 }
 
 // Keys service struct

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"legocerthub-backend/pkg/domain/app/auth"
 	"net/url"
 	"os"
 	"time"
@@ -27,7 +28,7 @@ type Storage struct {
 }
 
 // OpenStorage opens an existing sqlite database or creates a new one if needed.
-//   It also creates tables. It then returns Storage.
+// It also creates tables. It then returns Storage.
 func OpenStorage() (*Storage, error) {
 	store := new(Storage)
 	var err error
@@ -236,7 +237,7 @@ func (store *Storage) createDBTables() error {
 	defaultPassword := "password"
 
 	// generate password hash
-	defaultHashedPw, err := bcrypt.GenerateFromPassword([]byte(defaultPassword), 12)
+	defaultHashedPw, err := bcrypt.GenerateFromPassword([]byte(defaultPassword), auth.BcryptCost)
 	if err != nil {
 		return err
 	}
