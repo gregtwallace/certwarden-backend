@@ -40,8 +40,6 @@ func (service *Service) makeOrderWorker(id int, highPriorityJobs <-chan orderJob
 // list to indicate completion. No results are returned as results are saved directly to storage
 // as part of doing the job.
 func (service *Service) doOrderJob(job orderJob) {
-	time.Sleep(10 * time.Second)
-
 	// remove id from inProcess when goroutine is done
 	defer func(orderId int, service *Service) {
 		err := service.inProcess.remove(orderId)
