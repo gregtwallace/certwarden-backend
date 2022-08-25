@@ -14,5 +14,5 @@ func (service *Service) routes() http.Handler {
 	// acme challenge route, per rfc8555 8.3
 	router.HandlerFunc(http.MethodGet, "/.well-known/acme-challenge/:token", service.challengeHandler)
 
-	return enableCORS(router)
+	return router
 }
