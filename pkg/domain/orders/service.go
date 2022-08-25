@@ -48,7 +48,9 @@ type Service struct {
 	acmeProd       *acme.Service
 	acmeStaging    *acme.Service
 	authorizations *authorizations.Service
-	working        *working
+	inProcess      *inProcess
+	highJobs       chan orderJob
+	lowJobs        chan orderJob
 }
 
 // NewService creates a new private_key service
@@ -89,8 +91,19 @@ func NewService(app App) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// initialize working
-	service.working = newWorking()
+	// initialize inProcess (tracker)
+	service.inProcess = newInProcess()
+
+	// workers
+	// make job channels for order workers
+	service.highJobs = make(chan orderJob)
+	service.lowJobs = make(chan orderJob)
+	workerCount := 3
+
+	// make workers
+	for i := 0; i < workerCount; i++ {
+		go service.makeOrderWorker(i, service.highJobs, service.lowJobs)
+	}
 
 	return service, nil
 }
