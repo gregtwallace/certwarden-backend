@@ -200,6 +200,50 @@ func (store *Storage) GetCertOrders(certId int) (orders []orders.Order, err erro
 	return orders, nil
 }
 
+// GetNewestIncompleteCertOrderId returns the most recent incomplete order for a specified certId,
+// assuming there is one.
+func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	query := `
+	SELECT
+		id
+	FROM
+		acme_orders
+	WHERE
+		certificate_id = $1
+		AND
+		(
+			status = "pending"
+			OR
+			status = "ready"
+			OR
+			status = "processing"
+		)
+		AND
+		expires > $2
+	GROUP BY
+		certificate_id
+	HAVING
+		MAX(expires)
+	`
+
+	row := store.Db.QueryRowContext(ctx, query,
+		certId,
+		timeNow(),
+	)
+
+	err = row.Scan(
+		&orderId,
+	)
+	if err != nil {
+		return -2, err
+	}
+
+	return orderId, nil
+}
+
 // GetOneOrder fetches a specific Order by ID
 func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)

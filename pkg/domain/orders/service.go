@@ -36,6 +36,7 @@ type Storage interface {
 	RevokeOrder(orderId int) (err error)
 
 	GetAllValidCurrentOrders() (orders []Order, err error)
+	GetNewestIncompleteCertOrderId(certId int) (orderId int, err error)
 
 	// certs
 	GetOneCertById(id int, withAcctPem bool) (cert certificates.Certificate, err error)

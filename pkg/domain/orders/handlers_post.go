@@ -68,9 +68,11 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 	}
 
 	// kickoff order fulfillment (async)
-	_ = service.orderFromAcmeHigh(orderId)
-	// if already being worked, no need to indicate that since this is a creation
-	// task
+	err = service.orderFromAcme(orderId, true)
+	// log error if something strange happened
+	if err != nil {
+		service.logger.Error(err)
+	}
 
 	// return response to client
 	response := output.JsonResponse{
@@ -121,8 +123,8 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 	}
 	///
 
-	// kickoff order fulfillement (async)
-	err = service.orderFromAcmeHigh(orderId)
+	// kickoff order fulfillment (async)
+	err = service.orderFromAcme(orderId, true)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrOrderCantFulfill
