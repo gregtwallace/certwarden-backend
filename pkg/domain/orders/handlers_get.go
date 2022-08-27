@@ -49,3 +49,28 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) (e
 
 	return nil
 }
+
+// GetAllValidCurrentOrders fetches each cert's most recent valid order (essentially this
+// is a list of the certificates that are currently being hosted via API key)
+func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.Request) (err error) {
+	// get from storage
+	orders, err := service.storage.GetAllValidCurrentOrders()
+	if err != nil {
+		// special error case for no record found
+		if err == storage.ErrNoRecord {
+			service.logger.Debug(err)
+			return output.ErrNotFound
+		} else {
+			service.logger.Error(err)
+			return output.ErrStorageGeneric
+		}
+	}
+
+	// return response to client
+	_, err = service.output.WriteJSON(w, http.StatusOK, orders, "orders")
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
+	}
+	return nil
+}

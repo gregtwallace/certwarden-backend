@@ -35,6 +35,8 @@ type Storage interface {
 	UpdateOrderCert(orderId int, CertPayload CertPayload) (err error)
 	RevokeOrder(orderId int) (err error)
 
+	GetAllValidCurrentOrders() (orders []Order, err error)
+
 	// certs
 	GetOneCertById(id int, withAcctPem bool) (cert certificates.Certificate, err error)
 	UpdateCertUpdatedTime(certId int) (err error)
