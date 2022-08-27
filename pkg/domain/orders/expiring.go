@@ -6,14 +6,53 @@ import (
 	"time"
 )
 
+// background reorder config options
+// TODO: Move to customizable setting in config.yaml and frontent->settings
 // reorderTime: If less than this duration of time remaining on cert,
 // LeGo Certhub will try to obtain a newer cert.
-// TODO: Move to customizable setting in config.yaml and frontent->settings
 const reorderTime = 40 * (24 * time.Hour)
+
+// daily time to refresh
+const refreshHour = 03
+const refreshMinute = 12
+
+// backgroundCertRefresher orders expiring certs on a daily basis at a time
+// specified
+func (service *Service) backgroundCertRefresher() {
+	service.logger.Info("starting background cert refresh go routine")
+
+	go func(service *Service) {
+		// calculate next run time
+		var nextRunTime time.Time
+		// today's runtime
+		todayRunTime := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
+			refreshHour, refreshMinute, 0, 0, time.Local)
+
+		// calculate next run based on if today's runtime has passed or not
+		if todayRunTime.After(time.Now()) {
+			// if today's run hasn't passed, next run is today
+			nextRunTime = todayRunTime
+		} else {
+			// if today's time HAS passed, next run is tomorrow
+			nextRunTime = todayRunTime.Add(24 * time.Hour)
+		}
+
+		// sleep until next run
+		time.Sleep(time.Until(nextRunTime))
+
+		// run refresh
+		err := service.orderExpiringCerts()
+		if err != nil {
+			service.logger.Errorf("error ordering expiring certs: %s", err)
+		}
+	}(service)
+}
 
 // orderExpiringCerts automatically orders any certficates that are within
 // the specified expiration window.
 func (service *Service) orderExpiringCerts() (err error) {
+	service.logger.Info("ordering any expiring certificates")
+
 	// get orders relating to all currently valid cers
 	orders, err := service.storage.GetAllValidCurrentOrders()
 	if err != nil {
@@ -37,6 +76,7 @@ func (service *Service) orderExpiringCerts() (err error) {
 		}
 	}
 
+	service.logger.Info("placement of expiring certificate orders complete")
 	return nil
 }
 

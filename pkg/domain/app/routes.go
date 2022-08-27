@@ -61,9 +61,6 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodPost, "/api/v1/certificates/:certid/orders/:orderid", app.orders.FulfillExistingOrder)
 	app.makeSecureHandle(http.MethodPost, "/api/v1/certificates/:certid/orders/:orderid/revoke", app.orders.RevokeOrder)
 
-	// TODO: Remove
-	app.makeSecureHandle(http.MethodPost, "/api/v1/orders/auto", app.orders.SimulateAuto)
-
 	// download keys and certs
 	app.makeHandle(http.MethodGet, "/api/v1/download/privatekeys/:name", app.keys.GetKeyPemFile)
 	app.makeHandle(http.MethodGet, "/api/v1/download/certificates/:name", app.certificates.GetCertPemFile)

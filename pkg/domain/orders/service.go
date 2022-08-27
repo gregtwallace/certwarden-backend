@@ -108,5 +108,8 @@ func NewService(app App) (*Service, error) {
 		go service.makeOrderWorker(i, service.highJobs, service.lowJobs)
 	}
 
+	// start cert refresh goroutine
+	service.backgroundCertRefresher()
+
 	return service, nil
 }
