@@ -41,7 +41,7 @@ func (service *Service) run() error {
 		srv.TLSConfig = tlsConf
 
 		// prepare frontend env file
-		err = setFrontendEnv(fmt.Sprintf("https://%s:%d", *service.hostname, *service.apiPort))
+		err = setFrontendEnv(fmt.Sprintf("https://%s:%d", *service.hostname, *service.apiPort), service.devMode)
 		if err != nil {
 			return err
 		}
@@ -54,7 +54,7 @@ func (service *Service) run() error {
 	} else {
 		// if https failed, launch localhost only http server
 		// prepare frontend env file
-		setFrontendEnv(fmt.Sprintf("http://%s:%d", *service.hostname, *service.apiPort))
+		setFrontendEnv(fmt.Sprintf("http://%s:%d", *service.hostname, *service.apiPort), service.devMode)
 
 		// launch http
 		service.logger.Warnf("starting insecure lego-certhub frontend (http) on %s", srv.Addr)

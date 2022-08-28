@@ -1,12 +1,15 @@
 package frontend
 
-import "os"
+import (
+	"os"
+	"strconv"
+)
 
 const envFile = buildDir + "/env.js"
 
 // setFrontendEnv creates the env.js file in the frontend build. This is used
 // to set variables at server run time
-func setFrontendEnv(apiUrl string) error {
+func setFrontendEnv(apiUrl string, devMode bool) error {
 	// remove any old environment
 	_ = os.Remove(envFile)
 
@@ -14,6 +17,7 @@ func setFrontendEnv(apiUrl string) error {
 	envFileContent := `
 	window.env = {
 		API_URL: '` + apiUrl + `',
+		DEV_MODE: ` + strconv.FormatBool(devMode) + `
 	};
 	`
 
