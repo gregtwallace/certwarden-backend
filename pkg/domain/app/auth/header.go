@@ -28,7 +28,8 @@ func (service *Service) ValidAuthHeader(header http.Header, w http.ResponseWrite
 	// validate token
 	claims, err = accessToken.valid(service.accessJwtSecret)
 	if err != nil {
-		return nil, err
+		service.logger.Info(err)
+		return nil, output.ErrUnauthorized
 	}
 
 	return claims, nil

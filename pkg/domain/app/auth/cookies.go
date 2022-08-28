@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"legocerthub-backend/pkg/output"
+	"errors"
 	"net/http"
 )
 
@@ -31,7 +31,7 @@ func createRefreshCookie(refreshToken refreshToken) *refreshCookie {
 func (cookie *refreshCookie) valid(jwtSecret []byte) (claims *sessionClaims, err error) {
 	// confirm cookie name (should never trigger)
 	if cookie.Name != refreshCookieName {
-		return nil, output.ErrUnauthorized
+		return nil, errors.New("bad cookie name")
 	}
 
 	// parse and validate refresh token

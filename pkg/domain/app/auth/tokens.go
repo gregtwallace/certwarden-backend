@@ -1,14 +1,13 @@
 package auth
 
 import (
-	"legocerthub-backend/pkg/output"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 )
 
-//expiration times
+// expiration times
 const accessTokenExpiration = 2 * time.Minute
 const refreshTokenExpiration = 15 * time.Minute
 
@@ -95,17 +94,17 @@ func (tokenString *accessToken) valid(jwtSecret []byte) (claims jwt.MapClaims, e
 	// parse and validate token
 	token, err := jwt.Parse(string(*tokenString), makeKeyFunc(jwtSecret))
 	if err != nil {
-		return nil, output.ErrUnauthorized
+		return nil, err
 	}
 
 	if !token.Valid {
-		return nil, output.ErrUnauthorized
+		return nil, err
 	}
 
 	// map claims
 	var ok bool
 	if claims, ok = token.Claims.(jwt.MapClaims); !ok {
-		return nil, output.ErrBadRequest
+		return nil, err
 	}
 
 	return claims, nil
@@ -118,17 +117,17 @@ func (tokenString *refreshToken) valid(jwtSecret []byte) (claims *sessionClaims,
 	// parse and validate token
 	token, err := jwt.ParseWithClaims(string(*tokenString), &sessionClaims{}, makeKeyFunc(jwtSecret))
 	if err != nil {
-		return nil, output.ErrUnauthorized
+		return nil, err
 	}
 
 	if !token.Valid {
-		return nil, output.ErrUnauthorized
+		return nil, err
 	}
 
 	// map claims
 	var ok bool
 	if claims, ok = token.Claims.(*sessionClaims); !ok {
-		return nil, output.ErrBadRequest
+		return nil, err
 	}
 
 	return claims, nil

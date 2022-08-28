@@ -96,7 +96,7 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 	oldClaims, err := refreshCookie.valid(service.refreshJwtSecret)
 	if err != nil {
 		service.logger.Info(err)
-		return err
+		return output.ErrUnauthorized
 	}
 
 	// refresh token verified, make new auth
