@@ -54,7 +54,7 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 	}
 
 	// get the key from storage
-	key, err := service.storage.GetOneKeyById(id)
+	key, err := service.storage.GetOneKeyById(id, false)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {
@@ -114,7 +114,7 @@ func (service *Service) GetKeyPemFile(w http.ResponseWriter, r *http.Request) (e
 	}
 
 	// get the key from storage
-	key, err := service.storage.GetOneKeyByName(keyName)
+	key, err := service.storage.GetOneKeyByName(keyName, true)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {

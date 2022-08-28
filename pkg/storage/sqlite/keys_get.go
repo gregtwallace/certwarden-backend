@@ -74,23 +74,29 @@ func (store Storage) GetAllKeys() ([]private_keys.Key, error) {
 }
 
 // GetOneKeyById returns a key based on its unique id
-func (store *Storage) GetOneKeyById(id int) (private_keys.Key, error) {
-	return store.getOneKey(id, "")
+func (store *Storage) GetOneKeyById(id int, withPem bool) (private_keys.Key, error) {
+	return store.getOneKey(id, "", withPem)
 }
 
 // GetOneKeyByName returns a key based on its unique name
-func (store *Storage) GetOneKeyByName(name string) (private_keys.Key, error) {
-	return store.getOneKey(-1, name)
+func (store *Storage) GetOneKeyByName(name string, withPem bool) (private_keys.Key, error) {
+	return store.getOneKey(-1, name, withPem)
 }
 
 // dbGetOneKey returns a key from the db based on unique id or unique name
-func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
+func (store Storage) getOneKey(id int, name string, withPem bool) (private_keys.Key, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	query := `SELECT id, name, description, algorithm, pem, api_key, created_at, updated_at
-	FROM private_keys
-	WHERE id = $1 OR name = $2
+	query := `
+	SELECT
+		id, name, description, algorithm, pem, api_key, created_at, updated_at
+	FROM
+		private_keys
+	WHERE
+		id = $1
+		OR
+		name = $2
 	`
 
 	row := store.Db.QueryRowContext(ctx, query, id, name)
@@ -113,6 +119,11 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 			err = storage.ErrNoRecord
 		}
 		return private_keys.Key{}, err
+	}
+
+	// discard pem if not requested
+	if !withPem {
+		oneKeyDb.pem.Valid = false
 	}
 
 	convertedKey, err := oneKeyDb.keyDbToKey()
@@ -200,4 +211,49 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 	}
 
 	return availableKeys, nil
+}
+
+// // GetKeyPemById returns the pem for the specified key id
+// func (store *Storage) GetKeyPemById(id int) (pem string, err error) {
+// 	return store.getKeyPem(id, "")
+// }
+
+// GetKeyPemByName returns the pem for the specified key name
+func (store *Storage) GetKeyPemByName(name string) (pem string, err error) {
+	return store.getKeyPem(-1, name)
+}
+
+// dbGetOneKey returns a key from the db based on unique id or unique name
+func (store Storage) getKeyPem(id int, name string) (pem string, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	query := `
+	SELECT
+		pem
+	FROM
+		private_keys
+	WHERE
+		id = $1
+		OR
+		name = $2
+	`
+
+	// query
+	row := store.Db.QueryRowContext(ctx, query,
+		id,
+		name,
+	)
+
+	// scan
+	err = row.Scan(&pem)
+	if err != nil {
+		// if no record exists
+		if err == sql.ErrNoRows {
+			err = storage.ErrNoRecord
+		}
+		return "", err
+	}
+
+	return pem, nil
 }
