@@ -66,9 +66,6 @@ func (service *Service) solveHttp01Internal(challenge acme.Challenge, keyAuth st
 	service.http01.AddToken(challenge.Token, keyAuth)
 	defer service.http01.RemoveToken(challenge.Token)
 
-	// TODO Remove Delay - this is to artifically allow requests to stack
-	time.Sleep(10 * time.Second)
-
 	// inform ACME that the challenge is ready
 	_, err = acmeService.ValidateChallenge(challenge.Url, key)
 	if err != nil {
