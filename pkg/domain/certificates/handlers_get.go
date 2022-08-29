@@ -155,8 +155,18 @@ func (service *Service) GetCertPemFile(w http.ResponseWriter, r *http.Request) (
 	// get pem of the most recent valid order for the cert
 	pem, err := service.storage.GetCertPemById(*cert.ID)
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		// special error case for no record found
+		// of note, this indicates the cert exists but there is no
+		// valid order (cert pem) for the cert
+		// log warn instead of debug since this is indicative
+		// there may be an issue for the user to investigate
+		if err == storage.ErrNoRecord {
+			service.logger.Warn(err)
+			return output.ErrNotFound
+		} else {
+			service.logger.Error(err)
+			return output.ErrStorageGeneric
+		}
 	}
 
 	// pem cant be blank
