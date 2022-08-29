@@ -39,9 +39,20 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 	return nil
 }
 
-// notFoundHandler is called when there is not a matching route on the router
+// notFoundHandler is called when there is not a matching route on the router. If in dev,
+// return 404 so issue is clear. If in prod, return the generic 401 unauthorized to prevent
+// unauthorized parties from checking what routes exist. This is definitely overkill since
+// the software is open source.
 func (app *Application) notFoundHandler(w http.ResponseWriter, r *http.Request) (err error) {
-	_, err = app.output.WriteErrorJSON(w, output.ErrNotFound)
+	// default error 401
+	outError := output.ErrUnauthorized
+
+	// if devMode, return 404
+	if app.GetDevMode() {
+		outError = output.ErrNotFound
+	}
+
+	_, err = app.output.WriteErrorJSON(w, outError)
 	if err != nil {
 		app.logger.Error(err)
 		return output.ErrWriteJsonFailed
