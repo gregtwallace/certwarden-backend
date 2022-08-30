@@ -56,8 +56,7 @@ func (cache *cache) add(authUrl string, authStatus string, authErr error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// make new auth for cache
-	newAuth := new(auth)
-	newAuth = &auth{
+	newAuth := &auth{
 		status:       authStatus,
 		err:          authErr,
 		cancelExpire: cancel,
