@@ -1,6 +1,7 @@
 package challenges
 
 import (
+	"encoding/json"
 	"errors"
 	"legocerthub-backend/pkg/acme"
 )
@@ -15,23 +16,23 @@ type Method int
 const (
 	UnknownMethod Method = iota
 
-	Http01Internal
-	Dns01Script
+	http01Internal
+	dns01Script
 )
 
 // Define MethodDetails which contains details about the defined
 // methods.
-type MethodDetails struct {
+type challMethodDetails struct {
 	method Method             `json:"-"`
 	Value  string             `json:"value"`
 	Name   string             `json:"name"`
 	Type   acme.ChallengeType `json:"type"`
 }
 
-var methodDetails = []MethodDetails{
+var methodDetails = []challMethodDetails{
 	{
 		// serve the http record from an internal http server
-		method: Http01Internal,
+		method: http01Internal,
 		Value:  "http-01-internal",
 		Name:   "HTTP (Self Served)",
 		Type:   acme.Http01,
@@ -39,18 +40,29 @@ var methodDetails = []MethodDetails{
 	// TODO: Implement DNS
 	// {
 	// 	// call external scripts to create and delete dns records
-	// 	Method:        Dns01Script,
+	// 	Method:        dns01Script,
 	// 	Value:         "dns-01-script",
 	// 	Name:          "DNS-01 (Manual Script)",
 	// 	ChallengeType: acme.Dns01,
 	// },
 }
 
-// ListOfMethods() returns a constant list of challenge methods
-// The Value must be unique
-// TODO: write a go test to confirm uniqueness
-func ListOfMethods() []MethodDetails {
-	return methodDetails
+// Method custom JSON Marshal (turns the Method into MethodDetails for output)
+func (method *Method) MarshalJSON() (data []byte, err error) {
+	// return details marshalled
+	return json.Marshal(method.details())
+}
+
+// custom UnmarshalJSON not needed at present
+
+// ListOfMethods() returns a slice of challenge methods
+func ListOfMethods() (methods []Method) {
+	// loop through details to make slice of methods
+	for i := range methodDetails {
+		methods = append(methods, methodDetails[i].method)
+	}
+
+	return methods
 }
 
 // MethodByValue returns a challenge method based on its Value.
@@ -66,7 +78,7 @@ func MethodByValue(value string) Method {
 }
 
 // Type returns the Challenge Type for the Method.
-func (method Method) Type() acme.ChallengeType {
+func (method Method) challType() acme.ChallengeType {
 	for i := range methodDetails {
 		if method == methodDetails[i].method {
 			return methodDetails[i].Type
@@ -76,8 +88,20 @@ func (method Method) Type() acme.ChallengeType {
 	return acme.UnknownChallengeType
 }
 
+// Type returns the full details for the Method.
+func (method Method) details() challMethodDetails {
+	for i := range methodDetails {
+		if method == methodDetails[i].method {
+			return methodDetails[i]
+		}
+	}
+
+	// no details exist
+	return challMethodDetails{}
+}
+
 // validationResource creates the resource name and content that are required
 // to succesfully validate an ACME Challenge.
 func (method Method) validationResource(identifier acme.Identifier, key acme.AccountKey, token string) (name string, content string, err error) {
-	return method.Type().ValidationResource(identifier, key, token)
+	return method.challType().ValidationResource(identifier, key, token)
 }

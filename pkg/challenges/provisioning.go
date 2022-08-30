@@ -16,9 +16,9 @@ func (service *Service) Provision(identifier acme.Identifier, method Method, key
 
 	// Provision with the appropriate provider
 	switch method {
-	case Http01Internal:
+	case http01Internal:
 		err = service.challengeProviders.http01Internal.Provision(resourceName, resourceContent)
-	case Dns01Script:
+	case dns01Script:
 		// TODO: Support DNS
 		service.logger.Errorf("dns-01 unsupported (keyauth hash: %s", resourceContent)
 		return errUnsupportedMethod
@@ -39,7 +39,7 @@ func (service *Service) Provision(identifier acme.Identifier, method Method, key
 func (service *Service) Deprovision(identifier acme.Identifier, method Method, token string) (err error) {
 	// Deprovision with the appropriate provider
 	switch method {
-	case Http01Internal:
+	case http01Internal:
 		// remove from internal http server
 		service.challengeProviders.http01Internal.Deprovision(token)
 	default:
