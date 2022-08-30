@@ -14,7 +14,7 @@ var (
 // Solve accepts a slice of challenges from an authorization and solves the specific challenge
 // specified by the method. Valid or invalid status is returned.  An error is returned if can't resolve
 // a valid or invalid state.
-func (service *Service) Solve(challenges []acme.Challenge, method Method, key acme.AccountKey, isStaging bool) (status string, err error) {
+func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, method Method, key acme.AccountKey, isStaging bool) (status string, err error) {
 	var challenge acme.Challenge
 	found := false
 
@@ -29,31 +29,14 @@ func (service *Service) Solve(challenges []acme.Challenge, method Method, key ac
 		return "", errChallengeTypeNotFound
 	}
 
-	// make keyAuth for challenge solvers
-	keyAuth, err := key.KeyAuthorization(challenge.Token)
-	if err != nil {
-		return "", err
-	}
+	// provision the needed resource for validation and defer deprovisioning
+	service.Provision(identifier, method, key, challenge.Token)
+	defer service.Deprovision(identifier, method, challenge.Token)
 
-	// solve using the proper method
-	switch method.Value {
-	case "http-01-internal":
-		status, err = service.solveHttp01Internal(challenge, keyAuth, key, isStaging)
-		if err != nil {
-			return "", err
-		}
+	// Below this point is to inform ACME the challenge is ready to be validated
+	// by the server and to subsequently monitor the challenge to be moved to the
+	// valid or invalid state.
 
-	default:
-		return "", errUnsupportedMethod
-	}
-
-	return status, nil
-}
-
-// solveHttp01Internal adds the token to the http01 server, validates the http challenge, and then
-// removes the token.  An error is returned instead of status if the challenge doesn't ever reach
-// valid or invalid state (or any other error occurs)
-func (service *Service) solveHttp01Internal(challenge acme.Challenge, keyAuth string, key acme.AccountKey, isStaging bool) (status string, err error) {
 	// make pointer for the correct acme.Service (to avoid repeat of if/else)
 	var acmeService *acme.Service
 	if isStaging {
@@ -61,10 +44,6 @@ func (service *Service) solveHttp01Internal(challenge acme.Challenge, keyAuth st
 	} else {
 		acmeService = service.acmeProd
 	}
-
-	// add token to internal http server and defer removal
-	service.http01.AddToken(challenge.Token, keyAuth)
-	defer service.http01.RemoveToken(challenge.Token)
 
 	// inform ACME that the challenge is ready
 	_, err = acmeService.ValidateChallenge(challenge.Url, key)
@@ -74,7 +53,7 @@ func (service *Service) solveHttp01Internal(challenge acme.Challenge, keyAuth st
 
 	// monitor for processing to complete (max 5 tries, 20 seconds apart each)
 	for i := 1; i <= 5; i++ {
-		// sleep to allow ACME to process
+		// sleep to allow ACME time to process
 		time.Sleep(20 * time.Second)
 
 		// get challenge and check for error or final Statuses

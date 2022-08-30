@@ -1,19 +1,23 @@
 package http01
 
 // AddToken adds a token to the slice of hosted tokens
-func (service *Service) AddToken(token string, keyAuth string) {
+func (service *Service) Provision(token string, keyAuth string) (err error) {
 	// add new entry
 	service.mu.Lock()
 	defer service.mu.Unlock()
 
 	service.tokens[token] = keyAuth
+
+	return nil
 }
 
 // RemoveToken removes the specified token from the slice of
 // hosted tokens
-func (service *Service) RemoveToken(token string) {
+func (service *Service) Deprovision(token string) (err error) {
 	service.mu.Lock()
 	defer service.mu.Unlock()
 
 	delete(service.tokens, token)
+
+	return nil
 }

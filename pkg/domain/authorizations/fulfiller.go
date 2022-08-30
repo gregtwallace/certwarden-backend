@@ -127,7 +127,7 @@ func (service *Service) authWorker(authUrl string, method challenges.Method, key
 	switch auth.Status {
 	// try to solve a challenge if auth is pending
 	case "pending":
-		auth.Status, err = service.challenges.Solve(auth.Challenges, method, key, isStaging)
+		auth.Status, err = service.challenges.Solve(auth.Identifier, auth.Challenges, method, key, isStaging)
 		// return error if couldn't solve
 		if err != nil {
 			return "", err

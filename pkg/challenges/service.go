@@ -18,12 +18,18 @@ type App interface {
 	GetDevMode() bool
 }
 
+// interface for any provider service
+type providerService interface {
+	Provision(resourceName string, resourceContent string) (err error)
+	Deprovision(resourceName string) (err error)
+}
+
 // service struct
 type Service struct {
 	logger      *zap.SugaredLogger
 	acmeProd    *acme.Service
 	acmeStaging *acme.Service
-	http01      *http01.Service
+	http01      providerService
 }
 
 // NewService creates a new service
