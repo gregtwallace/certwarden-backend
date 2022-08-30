@@ -1,4 +1,4 @@
-package http01
+package http01internal
 
 import (
 	"fmt"

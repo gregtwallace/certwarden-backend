@@ -14,7 +14,7 @@ type AccountKey struct {
 
 // KeyAuthorization uses the AccountKey to create the Key Authorization for a given
 // challenge token
-func (accountKey *AccountKey) KeyAuthorization(token string) (keyAuth string, err error) {
+func (accountKey *AccountKey) keyAuthorization(token string) (keyAuth string, err error) {
 	// get jwk
 	jwk, err := accountKey.jwk()
 	if err != nil {
@@ -35,9 +35,9 @@ func (accountKey *AccountKey) KeyAuthorization(token string) (keyAuth string, er
 // KeyAuthorizationSHA256 uses the AccountKey to create the Key Authorization for a given
 // challenge token. It then computes the SHA-256 digest of the Key Authorization. Finally,
 // the base64url encoding of the digest is returned.
-func (accountKey *AccountKey) KeyAuthorizationEndodedSHA256(token string) (digest string, err error) {
+func (accountKey *AccountKey) keyAuthorizationEndodedSHA256(token string) (digest string, err error) {
 	// get the keyAuth
-	keyAuth, err := accountKey.KeyAuthorization(token)
+	keyAuth, err := accountKey.keyAuthorization(token)
 	if err != nil {
 		return "", err
 	}

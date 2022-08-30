@@ -64,9 +64,9 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 	}
 	// challenge method (optional)
 	if payload.ChallengeMethodValue != nil {
-		_, err = challenges.MethodByValue(*payload.ChallengeMethodValue)
-		if err != nil {
-			service.logger.Debug(err)
+		challMethod := challenges.MethodByValue(*payload.ChallengeMethodValue)
+		if challMethod == challenges.UnknownMethod {
+			service.logger.Debug("unknown challenge method")
 			return output.ErrValidationFailed
 		}
 	}

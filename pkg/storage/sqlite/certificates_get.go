@@ -39,10 +39,7 @@ func (certDb *certificateDb) certDbToCert() (cert certificates.Certificate, err 
 	// if there is a challenge type value, specify the challenge method
 	var challengeMethod = new(challenges.Method)
 	if certDb.challengeMethodValue.Valid {
-		*challengeMethod, err = challenges.MethodByValue(certDb.challengeMethodValue.String)
-		if err != nil {
-			return certificates.Certificate{}, err
-		}
+		*challengeMethod = challenges.MethodByValue(certDb.challengeMethodValue.String)
 	} else {
 		challengeMethod = nil
 	}

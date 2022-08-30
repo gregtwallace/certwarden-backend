@@ -3,7 +3,7 @@ package challenges
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/challenges/providers/http01"
+	"legocerthub-backend/pkg/challenges/providers/http01internal"
 
 	"go.uber.org/zap"
 )
@@ -26,10 +26,15 @@ type providerService interface {
 
 // service struct
 type Service struct {
-	logger      *zap.SugaredLogger
-	acmeProd    *acme.Service
-	acmeStaging *acme.Service
-	http01      providerService
+	logger             *zap.SugaredLogger
+	acmeProd           *acme.Service
+	acmeStaging        *acme.Service
+	challengeProviders challengeProviders
+}
+
+// service challenge providers
+type challengeProviders struct {
+	http01Internal providerService
 }
 
 // NewService creates a new service
@@ -52,9 +57,11 @@ func NewService(app App) (service *Service, err error) {
 		return nil, errServiceComponent
 	}
 
-	// http-01 challenge server
+	// challenge providers
+
+	// http-01 internal challenge server
 	// TODO: Don't hardcode port
-	service.http01, err = http01.NewService(app, 4060)
+	service.challengeProviders.http01Internal, err = http01internal.NewService(app, 4060)
 	if err != nil {
 		return nil, err
 	}

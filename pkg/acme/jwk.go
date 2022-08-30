@@ -65,6 +65,7 @@ func (jwk *jsonWebKey) encodedThumbprint() (thumbprint string, err error) {
 		return "", err
 	}
 
+	// TODO: Remove
 	log.Println(string(octets))
 
 	// calculare the hash for the JSON object
