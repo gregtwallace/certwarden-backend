@@ -21,29 +21,33 @@ const refreshMinute = 12
 func (service *Service) backgroundCertRefresher() {
 	service.logger.Info("starting background cert refresh go routine")
 
+	// go routine for refreshing
 	go func(service *Service) {
-		// calculate next run time
 		var nextRunTime time.Time
-		// today's runtime
-		todayRunTime := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
-			refreshHour, refreshMinute, 0, 0, time.Local)
 
-		// calculate next run based on if today's runtime has passed or not
-		if todayRunTime.After(time.Now()) {
-			// if today's run hasn't passed, next run is today
-			nextRunTime = todayRunTime
-		} else {
-			// if today's time HAS passed, next run is tomorrow
-			nextRunTime = todayRunTime.Add(24 * time.Hour)
-		}
+		// indefinite refresh loop
+		for {
+			// today's runtime
+			todayRunTime := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
+				refreshHour, refreshMinute, 0, 0, time.Local)
 
-		// sleep until next run
-		time.Sleep(time.Until(nextRunTime))
+			// calculate next run based on if today's runtime has passed or not
+			if todayRunTime.After(time.Now()) {
+				// if today's run hasn't passed, next run is today
+				nextRunTime = todayRunTime
+			} else {
+				// if today's time HAS passed, next run is tomorrow
+				nextRunTime = todayRunTime.Add(24 * time.Hour)
+			}
 
-		// run refresh
-		err := service.orderExpiringCerts()
-		if err != nil {
-			service.logger.Errorf("error ordering expiring certs: %s", err)
+			// sleep until next run
+			time.Sleep(time.Until(nextRunTime))
+
+			// run refresh
+			err := service.orderExpiringCerts()
+			if err != nil {
+				service.logger.Errorf("error ordering expiring certs: %s", err)
+			}
 		}
 	}(service)
 }
