@@ -63,11 +63,11 @@ func (app *Application) routes() http.Handler {
 
 	// download keys and certs
 	app.makeHandle(http.MethodGet, "/api/v1/download/privatekeys/:name", app.download.DownloadKeyViaHeader)
-	app.makeHandle(http.MethodGet, "/api/v1/download/certificates/:name", app.download.GetCertPemFile)
+	app.makeHandle(http.MethodGet, "/api/v1/download/certificates/:name", app.download.DownloadCertViaHeader)
 
 	// download keys and certs - via URL routes
 	app.makeHandle(http.MethodGet, "/api/v1/download/privatekeys/:name/:apiKey", app.download.DownloadKeyViaUrl)
-	app.makeHandle(http.MethodGet, "/api/v1/download/certificates/:name/:apiKey", app.download.GetCertPemFile)
+	app.makeHandle(http.MethodGet, "/api/v1/download/certificates/:name/:apiKey", app.download.DownloadCertViaUrl)
 
 	// invalid route
 	app.router.NotFound = app.makeHandler(app.notFoundHandler)
