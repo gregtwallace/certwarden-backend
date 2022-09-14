@@ -8,38 +8,75 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// ServeKeyPem returns the private key to the client
-func (service *Service) GetKeyPemFile(w http.ResponseWriter, r *http.Request) (err error) {
-	// if not running https, error
-	if !service.https && !service.devMode {
-		return output.ErrUnavailableHttp
-	}
-
-	// track if apiKey came from URL
-	apiKeyInUrl := false
-
+// DownloadKeyViaHeader is the handler to write a private key to the client
+// if the proper apiKey is provided via apiKey (standard method)
+func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Request) (err error) {
 	// get key name
 	params := httprouter.ParamsFromContext(r.Context())
 	keyName := params.ByName("name")
 
-	// get api key from header
+	// get apiKey from header
 	apiKey := r.Header.Get("X-API-Key")
 	// try to get from apikey header if X-API-Key was empty
 	if apiKey == "" {
 		apiKey = r.Header.Get("apikey")
 	}
-	// if apiKey is still blank (i.e. not in a proper header), check if apiKey is in the URL
-	if apiKey == "" {
-		apiKey = params.ByName("apiKey")
-		apiKeyInUrl = true
-	}
-	// if apiKey is still blank, definitely unauthorized
-	if apiKey == "" {
-		service.logger.Debug(errBlankApiKey)
-		return output.ErrUnauthorized
+
+	// fetch the key using the apiKey
+	keyPem, err := service.getKeyPem(keyName, apiKey, false)
+	if err != nil {
+		return err
 	}
 
-	service.logger.Debugf(keyName)
+	// return pem file to client
+	_, err = service.output.WritePem(w, keyPem)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWritePemFailed
+	}
+
+	return nil
+}
+
+// DownloadKeyViaUrl is the handler to write a private key to the client
+// if the proper apiKey is provided via URL (NOT recommended - only implemented
+// to support clients that can't specify the apiKey header)
+func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request) (err error) {
+	// get key name & apiKey
+	params := httprouter.ParamsFromContext(r.Context())
+	keyName := params.ByName("name")
+	apiKey := params.ByName("apiKey")
+
+	// fetch the key using the apiKey
+	keyPem, err := service.getKeyPem(keyName, apiKey, true)
+	if err != nil {
+		return err
+	}
+
+	// return pem file to client
+	_, err = service.output.WritePem(w, keyPem)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWritePemFailed
+	}
+
+	return nil
+}
+
+// getKeyPemFile returns the private key pem if the apiKey matches
+// the requested key. It also checks the apiKeyViaUrl property if
+// the client is making a request with the apiKey in the Url.
+func (service *Service) getKeyPem(keyName string, apiKey string, apiKeyViaUrl bool) (keyPam string, err error) {
+	// if not running https, error
+	if !service.https && !service.devMode {
+		return "", output.ErrUnavailableHttp
+	}
+
+	// if apiKey is blank, definitely unauthorized
+	if apiKey == "" {
+		service.logger.Debug(errBlankApiKey)
+		return "", output.ErrUnauthorized
+	}
 
 	// get the key from storage
 	key, err := service.storage.GetOneKeyByName(keyName, true)
@@ -47,31 +84,25 @@ func (service *Service) GetKeyPemFile(w http.ResponseWriter, r *http.Request) (e
 		// special error case for no record found
 		if err == storage.ErrNoRecord {
 			service.logger.Debug(err)
-			return output.ErrNotFound
+			return "", output.ErrNotFound
 		} else {
 			service.logger.Error(err)
-			return output.ErrStorageGeneric
+			return "", output.ErrStorageGeneric
 		}
 	}
 
 	// if apiKey came from URL, and key does not support this, error
-	if apiKeyInUrl && !key.ApiKeyViaUrl {
+	if apiKeyViaUrl && !key.ApiKeyViaUrl {
 		service.logger.Debug(errApiKeyFromUrlDisallowed)
-		return output.ErrUnauthorized
+		return "", output.ErrUnauthorized
 	}
 
 	// verify apikey matches private key's apiKey
 	if apiKey != *key.ApiKey {
 		service.logger.Debug(errWrongApiKey)
-		return output.ErrUnauthorized
+		return "", output.ErrUnauthorized
 	}
 
-	// return pem file to client
-	_, err = service.output.WritePem(w, *key.Pem)
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWritePemFailed
-	}
-
-	return nil
+	// return pem content
+	return *key.Pem, nil
 }
