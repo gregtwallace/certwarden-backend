@@ -1,40 +1,38 @@
-package private_keys
+package download
 
 import (
 	"errors"
+	"legocerthub-backend/pkg/domain/certificates"
+	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/output"
 
 	"go.uber.org/zap"
 )
 
-var errServiceComponent = errors.New("necessary key service component is missing")
+var errServiceComponent = errors.New("necessary download service component is missing")
 
 // App interface is for connecting to the main app
 type App interface {
 	GetDevMode() bool
 	GetLogger() *zap.SugaredLogger
+	IsHttps() bool
 	GetOutputter() *output.Service
-	GetKeyStorage() Storage
+	GetDownloadStorage() Storage
 }
 
 // Storage interface for storage functions
 type Storage interface {
-	GetAllKeys() ([]Key, error)
-	GetOneKeyById(id int, withPem bool) (Key, error)
-	GetOneKeyByName(name string, withPem bool) (Key, error)
+	GetOneKeyByName(name string, withPem bool) (private_keys.Key, error)
 
-	PostNewKey(NewPayload) (keyId int, err error)
-	PutNameDescKey(NameDescPayload) error
-	DeleteKey(int) error
-
-	GetAvailableKeys() ([]Key, error)
-	KeyInUse(id int) (inUse bool, err error)
+	GetOneCertByName(name string, withAcctPem bool) (cert certificates.Certificate, err error)
+	GetCertPemById(certId int) (pem string, err error)
 }
 
 // Keys service struct
 type Service struct {
 	devMode bool
 	logger  *zap.SugaredLogger
+	https   bool
 	output  *output.Service
 	storage Storage
 }
@@ -52,6 +50,9 @@ func NewService(app App) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
+	// running as https?
+	service.https = app.IsHttps()
+
 	// output service
 	service.output = app.GetOutputter()
 	if service.output == nil {
@@ -59,7 +60,7 @@ func NewService(app App) (*Service, error) {
 	}
 
 	// storage
-	service.storage = app.GetKeyStorage()
+	service.storage = app.GetDownloadStorage()
 	if service.storage == nil {
 		return nil, errServiceComponent
 	}

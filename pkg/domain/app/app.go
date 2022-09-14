@@ -8,6 +8,7 @@ import (
 	"legocerthub-backend/pkg/domain/app/frontend"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
+	"legocerthub-backend/pkg/domain/download"
 	"legocerthub-backend/pkg/domain/orders"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/httpclient"
@@ -42,6 +43,7 @@ type Application struct {
 	authorizations *authorizations.Service
 	orders         *orders.Service
 	certificates   *certificates.Service
+	download       *download.Service
 	frontend       *frontend.Service
 }
 
@@ -104,6 +106,9 @@ func (app *Application) GetCertificatesStorage() certificates.Storage {
 	return app.storage
 }
 func (app *Application) GetOrderStorage() orders.Storage {
+	return app.storage
+}
+func (app *Application) GetDownloadStorage() download.Storage {
 	return app.storage
 }
 

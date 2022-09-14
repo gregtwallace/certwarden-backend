@@ -8,6 +8,7 @@ import (
 	"legocerthub-backend/pkg/domain/app/frontend"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
+	"legocerthub-backend/pkg/domain/download"
 	"legocerthub-backend/pkg/domain/orders"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/httpclient"
@@ -183,6 +184,12 @@ func create() (*Application, error) {
 
 	// orders service
 	app.orders, err = orders.NewService(app)
+	if err != nil {
+		return nil, err
+	}
+
+	// download service
+	app.download, err = download.NewService(app)
 	if err != nil {
 		return nil, err
 	}

@@ -16,7 +16,6 @@ var errServiceComponent = errors.New("necessary cert service component is missin
 type App interface {
 	GetDevMode() bool
 	GetLogger() *zap.SugaredLogger
-	IsHttps() bool
 	GetOutputter() *output.Service
 	GetCertificatesStorage() Storage
 	GetKeysService() *private_keys.Service
@@ -30,7 +29,6 @@ type Storage interface {
 	GetAllCerts() (certs []Certificate, err error)
 	GetOneCertById(id int, withAcctPem bool) (cert Certificate, err error)
 	GetOneCertByName(name string, withAcctPem bool) (cert Certificate, err error)
-	GetCertPemById(certId int) (pem string, err error)
 
 	PostNewCert(payload NewPayload) (id int, err error)
 
@@ -46,7 +44,6 @@ type Storage interface {
 type Service struct {
 	devMode     bool
 	logger      *zap.SugaredLogger
-	https       bool
 	output      *output.Service
 	storage     Storage
 	keys        *private_keys.Service
@@ -67,9 +64,6 @@ func NewService(app App) (*Service, error) {
 	if service.logger == nil {
 		return nil, errServiceComponent
 	}
-
-	// running as https?
-	service.https = app.IsHttps()
 
 	// output service
 	service.output = app.GetOutputter()

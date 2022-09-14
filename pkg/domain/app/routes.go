@@ -62,8 +62,8 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodPost, "/api/v1/certificates/:certid/orders/:orderid/revoke", app.orders.RevokeOrder)
 
 	// download keys and certs
-	app.makeHandle(http.MethodGet, "/api/v1/download/privatekeys/:name", app.keys.GetKeyPemFile)
-	app.makeHandle(http.MethodGet, "/api/v1/download/certificates/:name", app.certificates.GetCertPemFile)
+	app.makeHandle(http.MethodGet, "/api/v1/download/privatekeys/:name", app.download.GetKeyPemFile)
+	app.makeHandle(http.MethodGet, "/api/v1/download/certificates/:name", app.download.GetCertPemFile)
 
 	// invalid route
 	app.router.NotFound = app.makeHandler(app.notFoundHandler)
