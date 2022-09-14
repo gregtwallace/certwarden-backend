@@ -65,6 +65,10 @@ func (app *Application) routes() http.Handler {
 	app.makeHandle(http.MethodGet, "/api/v1/download/privatekeys/:name", app.download.GetKeyPemFile)
 	app.makeHandle(http.MethodGet, "/api/v1/download/certificates/:name", app.download.GetCertPemFile)
 
+	// download keys and certs - via URL routes
+	app.makeHandle(http.MethodGet, "/api/v1/download/privatekeys/:name/:apiKey", app.download.GetKeyPemFile)
+	app.makeHandle(http.MethodGet, "/api/v1/download/certificates/:name/:apiKey", app.download.GetCertPemFile)
+
 	// invalid route
 	app.router.NotFound = app.makeHandler(app.notFoundHandler)
 

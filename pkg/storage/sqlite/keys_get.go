@@ -24,14 +24,15 @@ func (keyDb *keyDb) keyDbToKey() (private_keys.Key, error) {
 	}
 
 	return private_keys.Key{
-		ID:          nullInt32ToInt(keyDb.id),
-		Name:        nullStringToString(keyDb.name),
-		Description: nullStringToString(keyDb.description),
-		Algorithm:   algorithm,
-		Pem:         nullStringToString(keyDb.pem),
-		ApiKey:      nullStringToString(keyDb.apiKey),
-		CreatedAt:   nullInt32ToInt(keyDb.createdAt),
-		UpdatedAt:   nullInt32ToInt(keyDb.updatedAt),
+		ID:           nullInt32ToInt(keyDb.id),
+		Name:         nullStringToString(keyDb.name),
+		Description:  nullStringToString(keyDb.description),
+		Algorithm:    algorithm,
+		Pem:          nullStringToString(keyDb.pem),
+		ApiKey:       nullStringToString(keyDb.apiKey),
+		ApiKeyViaUrl: keyDb.apiKeyViaUrl,
+		CreatedAt:    nullInt32ToInt(keyDb.createdAt),
+		UpdatedAt:    nullInt32ToInt(keyDb.updatedAt),
 	}, nil
 }
 
@@ -90,7 +91,7 @@ func (store Storage) getOneKey(id int, name string, withPem bool) (private_keys.
 
 	query := `
 	SELECT
-		id, name, description, algorithm, pem, api_key, created_at, updated_at
+		id, name, description, algorithm, pem, api_key, api_key_via_url, created_at, updated_at
 	FROM
 		private_keys
 	WHERE
@@ -109,6 +110,7 @@ func (store Storage) getOneKey(id int, name string, withPem bool) (private_keys.
 		&oneKeyDb.algorithmValue,
 		&oneKeyDb.pem,
 		&oneKeyDb.apiKey,
+		&oneKeyDb.apiKeyViaUrl,
 		&oneKeyDb.createdAt,
 		&oneKeyDb.updatedAt,
 	)

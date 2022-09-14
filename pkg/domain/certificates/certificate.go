@@ -25,6 +25,7 @@ type Certificate struct {
 	CreatedAt          *int                   `json:"created_at,omitempty"`
 	UpdatedAt          *int                   `json:"updated_at,omitempty"`
 	ApiKey             *string                `json:"api_key,omitempty"`
+	ApiKeyViaUrl       bool                   `json:"api_key_via_url,omitempty"`
 }
 
 // new account info

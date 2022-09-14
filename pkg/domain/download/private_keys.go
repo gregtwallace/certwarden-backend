@@ -15,8 +15,12 @@ func (service *Service) GetKeyPemFile(w http.ResponseWriter, r *http.Request) (e
 		return output.ErrUnavailableHttp
 	}
 
+	// track if apiKey came from URL
+	apiKeyInUrl := false
+
 	// get key name
-	keyName := httprouter.ParamsFromContext(r.Context()).ByName("name")
+	params := httprouter.ParamsFromContext(r.Context())
+	keyName := params.ByName("name")
 
 	// get api key from header
 	apiKey := r.Header.Get("X-API-Key")
@@ -24,11 +28,18 @@ func (service *Service) GetKeyPemFile(w http.ResponseWriter, r *http.Request) (e
 	if apiKey == "" {
 		apiKey = r.Header.Get("apikey")
 	}
-	// if apiKey is blank, definitely not authorized
+	// if apiKey is still blank (i.e. not in a proper header), check if apiKey is in the URL
 	if apiKey == "" {
-		service.logger.Debug(err)
+		apiKey = params.ByName("apiKey")
+		apiKeyInUrl = true
+	}
+	// if apiKey is still blank, definitely unauthorized
+	if apiKey == "" {
+		service.logger.Debug(errBlankApiKey)
 		return output.ErrUnauthorized
 	}
+
+	service.logger.Debugf(keyName)
 
 	// get the key from storage
 	key, err := service.storage.GetOneKeyByName(keyName, true)
@@ -43,9 +54,15 @@ func (service *Service) GetKeyPemFile(w http.ResponseWriter, r *http.Request) (e
 		}
 	}
 
-	// verify apikey matches private key
+	// if apiKey came from URL, and key does not support this, error
+	if apiKeyInUrl && !key.ApiKeyViaUrl {
+		service.logger.Debug(errApiKeyFromUrlDisallowed)
+		return output.ErrUnauthorized
+	}
+
+	// verify apikey matches private key's apiKey
 	if apiKey != *key.ApiKey {
-		service.logger.Debug(err)
+		service.logger.Debug(errWrongApiKey)
 		return output.ErrUnauthorized
 	}
 

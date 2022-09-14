@@ -112,6 +112,7 @@ func (store *Storage) createDBTables() error {
 		algorithm text NOT NULL,
 		pem text NOT NULL UNIQUE,
 		api_key text NOT NULL,
+		api_key_via_url integer NOT NULL DEFAULT 0 CHECK(api_key_via_url IN (0,1)),
 		created_at integer NOT NULL,
 		updated_at integer NOT NULL
 	)`
@@ -161,6 +162,7 @@ func (store *Storage) createDBTables() error {
 		csr_state text,
 		csr_city text,
 		api_key text NOT NULL,
+		api_key_via_url integer NOT NULL DEFAULT 0 CHECK(api_key_via_url IN (0,1)),
 		created_at integer NOT NULL,
 		updated_at integer NOT NULL,
 		FOREIGN KEY (private_key_id)

@@ -61,6 +61,7 @@ func (certDb *certificateDb) certDbToCert() (cert certificates.Certificate, err 
 		CreatedAt:          nullInt32ToInt(certDb.createdAt),
 		UpdatedAt:          nullInt32ToInt(certDb.updatedAt),
 		ApiKey:             nullStringToString(certDb.apiKey),
+		ApiKeyViaUrl:       certDb.apiKeyViaUrl,
 	}, nil
 }
 
@@ -133,7 +134,7 @@ func (store *Storage) getOneCert(id int, name string, withKeyPems bool) (cert ce
 
 	query := `
 	SELECT c.id, c.name, c.description, c.challenge_method, c.subject, c.subject_alts, 
-	c.csr_org, c.csr_ou, c.csr_country, c.csr_city, c.created_at, c.updated_at, c.api_key, 
+	c.csr_org, c.csr_ou, c.csr_country, c.csr_city, c.created_at, c.updated_at, c.api_key, c.api_key_via_url,
 	aa.id, aa.name, aa.is_staging, aa.kid,
 	ak.id, ak.name, ak.algorithm, ak.pem,
 	pk.id, pk.name, pk.algorithm, pk.pem
@@ -168,6 +169,7 @@ func (store *Storage) getOneCert(id int, name string, withKeyPems bool) (cert ce
 		&oneCert.createdAt,
 		&oneCert.updatedAt,
 		&oneCert.apiKey,
+		&oneCert.apiKeyViaUrl,
 		&oneCert.acmeAccount.id,
 		&oneCert.acmeAccount.name,
 		&oneCert.acmeAccount.isStaging,

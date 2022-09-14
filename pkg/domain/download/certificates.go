@@ -16,8 +16,12 @@ func (service *Service) GetCertPemFile(w http.ResponseWriter, r *http.Request) (
 		return output.ErrUnavailableHttp
 	}
 
+	// track if apiKey came from URL
+	apiKeyInUrl := false
+
 	// get cert name
-	certName := httprouter.ParamsFromContext(r.Context()).ByName("name")
+	params := httprouter.ParamsFromContext(r.Context())
+	certName := params.ByName("name")
 
 	// get api key from header
 	apiKey := r.Header.Get("X-API-Key")
@@ -25,9 +29,14 @@ func (service *Service) GetCertPemFile(w http.ResponseWriter, r *http.Request) (
 	if apiKey == "" {
 		apiKey = r.Header.Get("apikey")
 	}
-	// if apiKey is blank, definitely not authorized
+	// if apiKey is still blank (i.e. not in a proper header), check if apiKey is in the URL
 	if apiKey == "" {
-		service.logger.Debug(err)
+		apiKey = params.ByName("apiKey")
+		apiKeyInUrl = true
+	}
+	// if apiKey is still blank, definitely unauthorized
+	if apiKey == "" {
+		service.logger.Debug(errBlankApiKey)
 		return output.ErrUnauthorized
 	}
 
@@ -44,9 +53,15 @@ func (service *Service) GetCertPemFile(w http.ResponseWriter, r *http.Request) (
 		}
 	}
 
+	// if apiKey came from URL, and cert does not support this, error
+	if apiKeyInUrl && !cert.ApiKeyViaUrl {
+		service.logger.Debug(errApiKeyFromUrlDisallowed)
+		return output.ErrUnauthorized
+	}
+
 	// verify apikey matches private key
 	if apiKey != *cert.ApiKey {
-		service.logger.Debug(err)
+		service.logger.Debug(errWrongApiKey)
 		return output.ErrUnauthorized
 	}
 
@@ -69,7 +84,7 @@ func (service *Service) GetCertPemFile(w http.ResponseWriter, r *http.Request) (
 
 	// pem cant be blank
 	if pem == "" {
-		service.logger.Debug(err)
+		service.logger.Debug(errNoPem)
 		return output.ErrStorageGeneric
 	}
 

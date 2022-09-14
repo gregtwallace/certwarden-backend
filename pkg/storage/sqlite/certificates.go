@@ -22,4 +22,5 @@ type certificateDb struct {
 	createdAt            sql.NullInt32
 	updatedAt            sql.NullInt32
 	apiKey               sql.NullString
+	apiKeyViaUrl         bool
 }

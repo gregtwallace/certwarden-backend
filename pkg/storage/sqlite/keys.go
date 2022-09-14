@@ -12,6 +12,7 @@ type keyDb struct {
 	algorithmValue sql.NullString
 	pem            sql.NullString
 	apiKey         sql.NullString
+	apiKeyViaUrl   bool
 	createdAt      sql.NullInt32
 	updatedAt      sql.NullInt32
 }
