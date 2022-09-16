@@ -9,9 +9,9 @@ import (
 )
 
 // DownloadCertViaHeader is the handler to write a cert to the client
-// if the proper apiKey is provided via apiKey (standard method)
+// if the proper apiKey is provided via header (standard method)
 func (service *Service) DownloadCertViaHeader(w http.ResponseWriter, r *http.Request) (err error) {
-	// get cert name
+	// get name from request
 	params := httprouter.ParamsFromContext(r.Context())
 	keyName := params.ByName("name")
 
@@ -63,11 +63,10 @@ func (service *Service) DownloadCertViaUrl(w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
-// getCertPem returns the cert pem if the apiKey matches
-// the requested key. It also checks the apiKeyViaUrl property if
-// the client is making a request with the apiKey in the Url.
-// The pem is the most pem from the most recent valid order for
-// the specified cert.
+// getCertPem returns the cert pem if the apiKey matches the requested
+// key. It also checks the apiKeyViaUrl property if the client is making
+// a request with the apiKey in the Url. The pem is from the most recent
+// valid order for the specified cert.
 // TODO: implement additional options e.g. specify chain vs. just cert
 func (service *Service) getCertPem(certName string, apiKey string, apiKeyViaUrl bool) (certPam string, err error) {
 	// if not running https, error

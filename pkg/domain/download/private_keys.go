@@ -9,7 +9,7 @@ import (
 )
 
 // DownloadKeyViaHeader is the handler to write a private key to the client
-// if the proper apiKey is provided via apiKey (standard method)
+// if the proper apiKey is provided via header (standard method)
 func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Request) (err error) {
 	// get key name
 	params := httprouter.ParamsFromContext(r.Context())
