@@ -16,7 +16,7 @@ type Key struct {
 	Algorithm    *key_crypto.Algorithm `json:"algorithm,omitempty"`
 	Pem          *string               `json:"pem,omitempty"`
 	ApiKey       *string               `json:"api_key,omitempty"`
-	ApiKeyViaUrl bool                  `json:"api_key_via_url,omitempty"`
+	ApiKeyViaUrl bool                  `json:"api_key_via_url"`
 	CreatedAt    *int                  `json:"created_at,omitempty"`
 	UpdatedAt    *int                  `json:"updated_at,omitempty"`
 }

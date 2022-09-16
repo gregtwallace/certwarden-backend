@@ -10,15 +10,16 @@ import (
 )
 
 // NameDescPayload is the struct for editing an existing key
-type NameDescPayload struct {
-	ID          *int    `json:"id"`
-	Name        *string `json:"name"`
-	Description *string `json:"description"`
+type InfoPayload struct {
+	ID           *int    `json:"id"`
+	Name         *string `json:"name"`
+	Description  *string `json:"description"`
+	ApiKeyViaUrl *bool   `json:"api_key_via_url"`
 }
 
 // PutExistingKey updates a key that already exists in storage.
 // only the name and description are allowed to be modified
-func (service *Service) PutNameDescKey(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) PutInfoKey(w http.ResponseWriter, r *http.Request) (err error) {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	// convert id param to an integer
@@ -28,7 +29,7 @@ func (service *Service) PutNameDescKey(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 
-	var payload NameDescPayload
+	var payload InfoPayload
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
@@ -52,9 +53,8 @@ func (service *Service) PutNameDescKey(w http.ResponseWriter, r *http.Request) (
 	}
 	///
 
-	// save key name and desc to storage, which also returns the key id with new
-	// name and description
-	err = service.storage.PutNameDescKey(payload)
+	// save updated key info to storage
+	err = service.storage.PutKeyInfo(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric

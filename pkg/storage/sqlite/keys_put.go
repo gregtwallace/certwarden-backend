@@ -6,8 +6,8 @@ import (
 	"legocerthub-backend/pkg/domain/private_keys"
 )
 
-// nameDescPayloadToDb translates the modify name/desc payload to a db object
-func nameDescKeyPayloadToDb(payload private_keys.NameDescPayload) (keyDb, error) {
+// keyInfoPayloadToDb translates the modify key info payload to a db object
+func keyInfoPayloadToDb(payload private_keys.InfoPayload) (keyDb, error) {
 	var dbObj keyDb
 	var err error
 
@@ -23,16 +23,18 @@ func nameDescKeyPayloadToDb(payload private_keys.NameDescPayload) (keyDb, error)
 
 	dbObj.description = stringToNullString(payload.Description)
 
+	dbObj.apiKeyViaUrl = *payload.ApiKeyViaUrl
+
 	dbObj.updatedAt = timeNow()
 
 	return dbObj, nil
 }
 
 // dbPutExistingKey sets an existing key equal to the PUT values (overwriting
-//  old values)
-func (store *Storage) PutNameDescKey(payload private_keys.NameDescPayload) (err error) {
+// old values)
+func (store *Storage) PutKeyInfo(payload private_keys.InfoPayload) (err error) {
 	// load payload fields into db struct
-	keyDb, err := nameDescKeyPayloadToDb(payload)
+	keyDb, err := keyInfoPayloadToDb(payload)
 	if err != nil {
 		return err
 	}
@@ -47,14 +49,16 @@ func (store *Storage) PutNameDescKey(payload private_keys.NameDescPayload) (err 
 	SET
 		name = case when $1 is null then name else $1 end,
 		description = case when $2 is null then description else $2 end,
-		updated_at = $3
+		api_key_via_url = case when $3 is null then description else $3 end,
+		updated_at = $4
 	WHERE
-		id = $4
+		id = $5
 	`
 
 	_, err = store.Db.ExecContext(ctx, query,
 		keyDb.name,
 		keyDb.description,
+		keyDb.apiKeyViaUrl,
 		keyDb.updatedAt,
 		keyDb.id)
 

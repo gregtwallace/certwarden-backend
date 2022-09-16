@@ -24,7 +24,7 @@ type Storage interface {
 	GetOneKeyByName(name string, withPem bool) (Key, error)
 
 	PostNewKey(NewPayload) (keyId int, err error)
-	PutNameDescKey(NameDescPayload) error
+	PutKeyInfo(InfoPayload) error
 	DeleteKey(int) error
 
 	GetAvailableKeys() ([]Key, error)
