@@ -17,6 +17,7 @@ type DetailsUpdatePayload struct {
 	ID                   *int      `json:"id"`
 	Name                 *string   `json:"name"`
 	Description          *string   `json:"description"`
+	ApiKeyViaUrl         *bool     `json:"api_key_via_url"`
 	ChallengeMethodValue *string   `json:"challenge_method_value"`
 	PrivateKeyId         *int      `json:"private_key_id"`
 	SubjectAltNames      *[]string `json:"subject_alts"`

@@ -20,6 +20,8 @@ func certDetailsPayloadToDb(payload certificates.DetailsUpdatePayload) (certific
 	certDb.name = stringToNullString(payload.Name)
 	certDb.description = stringToNullString(payload.Description)
 
+	certDb.apiKeyViaUrl = *payload.ApiKeyViaUrl
+
 	certDb.privateKey = new(keyDb)
 	certDb.privateKey.id = intToNullInt32(payload.PrivateKeyId)
 
@@ -65,9 +67,10 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 			csr_country = case when $8 is null then csr_country else $8 end,
 			csr_state = case when $9 is null then csr_state else $9 end,
 			csr_city = case when $10 is null then csr_city else $10 end,
-			updated_at = $11
+			updated_at = $11,
+			api_key_via_url = case when $12 is null then csr_city else $12 end
 		WHERE
-			id = $12
+			id = $13
 		`
 
 	_, err = store.Db.ExecContext(ctx, query,
@@ -82,6 +85,7 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 		certDb.state,
 		certDb.city,
 		certDb.updatedAt,
+		certDb.apiKeyViaUrl,
 		certDb.id,
 	)
 
