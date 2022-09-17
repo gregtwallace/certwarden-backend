@@ -1,6 +1,7 @@
 package download
 
 import (
+	"encoding/pem"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"net/http"
@@ -23,7 +24,7 @@ func (service *Service) DownloadCertViaHeader(w http.ResponseWriter, r *http.Req
 	}
 
 	// fetch the cert using the apiKey
-	certPem, err := service.getCertPem(keyName, apiKey, false)
+	certPem, _, err := service.getCertPem(keyName, apiKey, true, false)
 	if err != nil {
 		return err
 	}
@@ -48,7 +49,7 @@ func (service *Service) DownloadCertViaUrl(w http.ResponseWriter, r *http.Reques
 	apiKey := params.ByName("apiKey")
 
 	// fetch the cert using the apiKey
-	certPem, err := service.getCertPem(keyName, apiKey, true)
+	certPem, _, err := service.getCertPem(keyName, apiKey, true, true)
 	if err != nil {
 		return err
 	}
@@ -63,21 +64,20 @@ func (service *Service) DownloadCertViaUrl(w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
-// getCertPem returns the cert pem if the apiKey matches the requested
-// key. It also checks the apiKeyViaUrl property if the client is making
-// a request with the apiKey in the Url. The pem is from the most recent
-// valid order for the specified cert.
-// TODO: implement additional options e.g. specify chain vs. just cert
-func (service *Service) getCertPem(certName string, apiKey string, apiKeyViaUrl bool) (certPem string, err error) {
+// getCertPem returns the cert pem and private key name if the apiKey matches the
+// requested key. It also checks the apiKeyViaUrl property if the client is making
+// a request with the apiKey in the Url. The pem is from the most recent valid
+// order for the specified cert.
+func (service *Service) getCertPem(certName string, apiKey string, fullChain bool, apiKeyViaUrl bool) (certPem string, keyName *string, err error) {
 	// if not running https, error
 	if !service.https && !service.devMode {
-		return "", output.ErrUnavailableHttp
+		return "", nil, output.ErrUnavailableHttp
 	}
 
 	// if apiKey is blank, definitely unauthorized
 	if apiKey == "" {
 		service.logger.Debug(errBlankApiKey)
-		return "", output.ErrUnauthorized
+		return "", nil, output.ErrUnauthorized
 	}
 
 	// get the cert from storage
@@ -86,23 +86,23 @@ func (service *Service) getCertPem(certName string, apiKey string, apiKeyViaUrl 
 		// special error case for no record found
 		if err == storage.ErrNoRecord {
 			service.logger.Debug(err)
-			return "", output.ErrNotFound
+			return "", nil, output.ErrNotFound
 		} else {
 			service.logger.Error(err)
-			return "", output.ErrStorageGeneric
+			return "", nil, output.ErrStorageGeneric
 		}
 	}
 
 	// if apiKey came from URL, and cert does not support this, error
 	if apiKeyViaUrl && !cert.ApiKeyViaUrl {
 		service.logger.Debug(errApiKeyFromUrlDisallowed)
-		return "", output.ErrUnauthorized
+		return "", nil, output.ErrUnauthorized
 	}
 
 	// verify apikey matches cert
 	if apiKey != *cert.ApiKey {
 		service.logger.Debug(errWrongApiKey)
-		return "", output.ErrUnauthorized
+		return "", nil, output.ErrUnauthorized
 	}
 
 	// get pem of the most recent valid order for the cert
@@ -115,19 +115,25 @@ func (service *Service) getCertPem(certName string, apiKey string, apiKeyViaUrl 
 		// there may be an issue for the user to investigate
 		if err == storage.ErrNoRecord {
 			service.logger.Warn(err)
-			return "", output.ErrNotFound
+			return "", nil, output.ErrNotFound
 		} else {
 			service.logger.Error(err)
-			return "", output.ErrStorageGeneric
+			return "", nil, output.ErrStorageGeneric
 		}
 	}
 
 	// pem cant be blank
 	if certPem == "" {
 		service.logger.Debug(errNoPem)
-		return "", output.ErrStorageGeneric
+		return "", nil, output.ErrStorageGeneric
 	}
 
-	// return pem content
-	return certPem, nil
+	// if not fullchain, discard rest of chain
+	if !fullChain {
+		certBlock, _ := pem.Decode([]byte(certPem))
+		certPem = string(pem.EncodeToMemory(certBlock))
+	}
+
+	// return pem content and key id pointer
+	return certPem, cert.PrivateKey.Name, nil
 }

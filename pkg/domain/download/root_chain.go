@@ -72,8 +72,13 @@ func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *ht
 // The pem is from the most recent valid order for the specified cert.
 // TODO: Allow tweaking of root chain components
 func (service *Service) getCertRootChainPem(certName string, apiKey string, apiKeyViaUrl bool) (rootChainPem string, err error) {
+	// if not running https, error
+	if !service.https && !service.devMode {
+		return "", output.ErrUnavailableHttp
+	}
+
 	// fetch the full certificate chain
-	certPem, err := service.getCertPem(certName, apiKey, apiKeyViaUrl)
+	certPem, _, err := service.getCertPem(certName, apiKey, true, apiKeyViaUrl)
 	if err != nil {
 		return "", err
 	}
