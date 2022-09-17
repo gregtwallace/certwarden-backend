@@ -47,7 +47,8 @@ func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http
 	// get cert name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
 	keyName := params.ByName("name")
-	apiKey := params.ByName("apiKey")
+
+	apiKey := getApiKeyFromParams(params)
 
 	// fetch the private cert
 	certPem, err := service.getPrivateCertPem(keyName, apiKey, true)

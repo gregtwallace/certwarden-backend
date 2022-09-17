@@ -45,7 +45,8 @@ func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request
 	// get key name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
 	keyName := params.ByName("name")
-	apiKey := params.ByName("apiKey")
+
+	apiKey := getApiKeyFromParams(params)
 
 	// fetch the key using the apiKey
 	keyPem, err := service.getKeyPem(keyName, apiKey, true)

@@ -46,7 +46,8 @@ func (service *Service) DownloadCertViaUrl(w http.ResponseWriter, r *http.Reques
 	// get cert name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
 	keyName := params.ByName("name")
-	apiKey := params.ByName("apiKey")
+
+	apiKey := getApiKeyFromParams(params)
 
 	// fetch the cert using the apiKey
 	certPem, _, err := service.getCertPem(keyName, apiKey, true, true)
