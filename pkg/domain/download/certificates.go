@@ -68,7 +68,7 @@ func (service *Service) DownloadCertViaUrl(w http.ResponseWriter, r *http.Reques
 // a request with the apiKey in the Url. The pem is from the most recent
 // valid order for the specified cert.
 // TODO: implement additional options e.g. specify chain vs. just cert
-func (service *Service) getCertPem(certName string, apiKey string, apiKeyViaUrl bool) (certPam string, err error) {
+func (service *Service) getCertPem(certName string, apiKey string, apiKeyViaUrl bool) (certPem string, err error) {
 	// if not running https, error
 	if !service.https && !service.devMode {
 		return "", output.ErrUnavailableHttp
@@ -106,7 +106,7 @@ func (service *Service) getCertPem(certName string, apiKey string, apiKeyViaUrl 
 	}
 
 	// get pem of the most recent valid order for the cert
-	pem, err := service.storage.GetCertPemById(*cert.ID)
+	certPem, err = service.storage.GetCertPemById(*cert.ID)
 	if err != nil {
 		// special error case for no record found
 		// of note, this indicates the cert exists but there is no
@@ -123,11 +123,11 @@ func (service *Service) getCertPem(certName string, apiKey string, apiKeyViaUrl 
 	}
 
 	// pem cant be blank
-	if pem == "" {
+	if certPem == "" {
 		service.logger.Debug(errNoPem)
 		return "", output.ErrStorageGeneric
 	}
 
 	// return pem content
-	return pem, nil
+	return certPem, nil
 }

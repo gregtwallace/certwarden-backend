@@ -66,7 +66,7 @@ func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request
 // getKeyPemFile returns the private key pem if the apiKey matches
 // the requested key. It also checks the apiKeyViaUrl property if
 // the client is making a request with the apiKey in the Url.
-func (service *Service) getKeyPem(keyName string, apiKey string, apiKeyViaUrl bool) (keyPam string, err error) {
+func (service *Service) getKeyPem(keyName string, apiKey string, apiKeyViaUrl bool) (keyPem string, err error) {
 	// if not running https, error
 	if !service.https && !service.devMode {
 		return "", output.ErrUnavailableHttp
