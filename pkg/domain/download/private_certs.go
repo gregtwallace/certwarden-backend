@@ -2,7 +2,6 @@ package download
 
 import (
 	"legocerthub-backend/pkg/output"
-	"log"
 	"net/http"
 	"strings"
 
@@ -88,7 +87,6 @@ func (service *Service) getPrivateCertPem(certName string, apiKeysString string,
 		return "", output.ErrUnauthorized
 	}
 
-	log.Println("made it")
 	certApiKey := apiKeys[0]
 	keyApiKey := apiKeys[1]
 
