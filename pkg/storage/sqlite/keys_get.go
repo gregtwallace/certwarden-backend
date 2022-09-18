@@ -15,8 +15,8 @@ func (keyDb *keyDb) keyDbToKey() (private_keys.Key, error) {
 
 	// if there is an algorithm value, specify the algorithm
 	if keyDb.algorithmValue.Valid {
-		*algorithm, err = key_crypto.AlgorithmByValue(keyDb.algorithmValue.String)
-		if err != nil {
+		*algorithm = key_crypto.AlgorithmByValue(keyDb.algorithmValue.String)
+		if *algorithm == key_crypto.UnknownAlgorithm {
 			return private_keys.Key{}, err
 		}
 	} else {

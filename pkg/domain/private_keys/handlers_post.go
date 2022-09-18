@@ -58,7 +58,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 	if payload.AlgorithmValue != nil && *payload.AlgorithmValue != "" {
 		// must initialize to avoid invalid address
 		payload.PemContent = new(string)
-		*payload.PemContent, err = key_crypto.GeneratePrivateKeyPem(*payload.AlgorithmValue)
+		*payload.PemContent, err = key_crypto.AlgorithmByValue(*payload.AlgorithmValue).GeneratePrivateKeyPem()
 		if err != nil {
 			service.logger.Debug(err)
 			return output.ErrValidationFailed
@@ -67,7 +67,9 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 		// pem inputted - verify pem and determine algorithm
 		// must initialize to avoid invalid address
 		payload.AlgorithmValue = new(string)
-		*payload.PemContent, *payload.AlgorithmValue, err = key_crypto.ValidateKeyPem(*payload.PemContent)
+		var alg key_crypto.Algorithm
+		*payload.PemContent, alg, err = key_crypto.ValidateKeyPem(*payload.PemContent)
+		*payload.AlgorithmValue = alg.Value()
 		if err != nil {
 			service.logger.Debug(err)
 			return output.ErrValidationFailed

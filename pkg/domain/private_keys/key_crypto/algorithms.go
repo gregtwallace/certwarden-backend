@@ -3,103 +3,106 @@ package key_crypto
 import (
 	"crypto/elliptic"
 	"crypto/x509"
-	"errors"
 )
 
-var errUnsupportedAlgorithm = errors.New("unsupported algorithm")
-
-// Algorithm is a type to hold key algorithms
-type Algorithm struct {
-	Value              string                  `json:"value"`
-	Name               string                  `json:"name"`
-	SignatureAlgorithm x509.SignatureAlgorithm `json:"-"`
-	KeyType            string                  `json:"-"` // rsa or ecdsa
-	BitLen             int                     `json:"-"` // rsa
-	EllipticCurveName  string                  `json:"-"` // ecdsa
-	EllipticCurveFunc  func() elliptic.Curve   `json:"-"` // ecdsa
+// Define AlgorithmDetails which contains details about the defined Algorithms.
+type algorithmDetails struct {
+	algorithm             Algorithm
+	value                 string
+	name                  string
+	csrSignatureAlgorithm x509.SignatureAlgorithm
+	keyType               string                // rsa or ecdsa
+	bitLen                int                   // rsa
+	ellipticCurveName     string                // ecdsa
+	ellipticCurveFunc     func() elliptic.Curve // ecdsa
 }
 
-// ListOfAlgorithms() returns a constant list of supported algorithms
-// The Value must be unique
-// TODO: write a go test to confirm uniqueness
-func ListOfAlgorithms() []Algorithm {
-	return []Algorithm{
-		{
-			Value:              "rsa2048",
-			Name:               "RSA 2048-bit",
-			SignatureAlgorithm: x509.SHA256WithRSA,
-			KeyType:            "RSA",
-			BitLen:             2048,
-		},
-		{
-			Value:              "rsa3072",
-			Name:               "RSA 3072-bit",
-			SignatureAlgorithm: x509.SHA256WithRSA,
-			KeyType:            "RSA",
-			BitLen:             3072,
-		},
-		{
-			Value:              "rsa4096",
-			Name:               "RSA 4096-bit",
-			SignatureAlgorithm: x509.SHA256WithRSA,
-			KeyType:            "RSA",
-			BitLen:             4096,
-		},
-		{
-			Value:              "ecdsap256",
-			Name:               "ECDSA P-256",
-			SignatureAlgorithm: x509.ECDSAWithSHA256,
-			KeyType:            "EC",
-			EllipticCurveName:  "P-256",
-			EllipticCurveFunc:  elliptic.P256,
-		},
-		{
-			Value:              "ecdsap384",
-			Name:               "ECDSA P-384",
-			SignatureAlgorithm: x509.ECDSAWithSHA384,
-			KeyType:            "EC",
-			EllipticCurveName:  "P-384",
-			EllipticCurveFunc:  elliptic.P384,
-		},
+var keyAlgorithmDetails = []algorithmDetails{
+	{
+		algorithm:             rsa2048,
+		value:                 "rsa2048",
+		name:                  "RSA 2048-bit",
+		csrSignatureAlgorithm: x509.SHA256WithRSA,
+		keyType:               "RSA",
+		bitLen:                2048,
+	},
+	{
+		algorithm:             rsa3072,
+		value:                 "rsa3072",
+		name:                  "RSA 3072-bit",
+		csrSignatureAlgorithm: x509.SHA256WithRSA,
+		keyType:               "RSA",
+		bitLen:                3072,
+	},
+	{
+		algorithm:             rsa4096,
+		value:                 "rsa4096",
+		name:                  "RSA 4096-bit",
+		csrSignatureAlgorithm: x509.SHA256WithRSA,
+		keyType:               "RSA",
+		bitLen:                4096,
+	},
+	{
+		algorithm:             ecdsap256,
+		value:                 "ecdsap256",
+		name:                  "ECDSA P-256",
+		csrSignatureAlgorithm: x509.ECDSAWithSHA256,
+		keyType:               "EC",
+		ellipticCurveName:     "P-256",
+		ellipticCurveFunc:     elliptic.P256,
+	},
+	{
+		algorithm:             ecdsap384,
+		value:                 "ecdsap384",
+		name:                  "ECDSA P-384",
+		csrSignatureAlgorithm: x509.ECDSAWithSHA384,
+		keyType:               "EC",
+		ellipticCurveName:     "P-384",
+		ellipticCurveFunc:     elliptic.P384,
+	},
+}
+
+// ListOfAlgorithms() returns a slice of all Algorithms
+func ListOfAlgorithms() (algs []Algorithm) {
+	// loop through details to make slice of methods
+	for i := range keyAlgorithmDetails {
+		algs = append(algs, keyAlgorithmDetails[i].algorithm)
 	}
+
+	return algs
 }
 
 // AlgorithmByValue returns an algorithm based on its Value
-// Returns an error if the algorithm is not supported
-func AlgorithmByValue(value string) (Algorithm, error) {
-	allAlgs := ListOfAlgorithms()
-
-	for i := range allAlgs {
-		if value == allAlgs[i].Value {
-			return allAlgs[i], nil
+func AlgorithmByValue(value string) Algorithm {
+	for i := range keyAlgorithmDetails {
+		if value == keyAlgorithmDetails[i].value {
+			return keyAlgorithmDetails[i].algorithm
 		}
 	}
 
-	return Algorithm{}, errUnsupportedAlgorithm
+	return UnknownAlgorithm
 }
 
-// function to return algorithm value for an RSA algorithm of specified bits
-// returns string containing the value
-func rsaAlgorithmByBits(bits int) (string, error) {
-	allAlgs := ListOfAlgorithms()
-
-	for i := range allAlgs {
-		if (allAlgs[i].KeyType == "RSA") && (allAlgs[i].BitLen == bits) {
-			return allAlgs[i].Value, nil
+// rsaAlgorithmByBits returns the Algorithm corresponding to an RSA
+// key of the specified bit length.
+func rsaAlgorithmByBits(bits int) Algorithm {
+	for i := range keyAlgorithmDetails {
+		if (keyAlgorithmDetails[i].keyType == "RSA") && (keyAlgorithmDetails[i].bitLen == bits) {
+			return keyAlgorithmDetails[i].algorithm
 		}
 	}
-	return "", errUnsupportedAlgorithm
+
+	return UnknownAlgorithm
 }
 
-// function to return algorithm value for an ECDSA algorithm with specified curve name
-// returns string containing the value
-func ecdsaAlgorithmByCurve(curveName string) (string, error) {
-	allAlgs := ListOfAlgorithms()
-
-	for i := range allAlgs {
-		if (allAlgs[i].KeyType == "EC") && (allAlgs[i].EllipticCurveName == curveName) {
-			return allAlgs[i].Value, nil
+// ecdsaAlgorithmByCurve returns the Algorithm corresponding to an ECDSA
+// key that uses the specified curve canonical name
+func ecdsaAlgorithmByCurve(curveName string) Algorithm {
+	for i := range keyAlgorithmDetails {
+		if (keyAlgorithmDetails[i].keyType == "EC") && (keyAlgorithmDetails[i].ellipticCurveName == curveName) {
+			return keyAlgorithmDetails[i].algorithm
 		}
 	}
-	return "", errUnsupportedAlgorithm
+
+	return UnknownAlgorithm
 }

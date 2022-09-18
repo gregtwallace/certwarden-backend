@@ -9,26 +9,26 @@ import (
 	"encoding/pem"
 )
 
-// GeneratePrivateKeyPem generates a key in PEM format based on the
-// algorith value.  It returns an error if the algorithm is invalid
-// or it is unable to generate a key in pem format.
-func GeneratePrivateKeyPem(algorithmValue string) (string, error) {
-	algorithm, err := AlgorithmByValue(algorithmValue)
-	if err != nil {
-		return "", err
-	}
+// GeneratePrivateKeyPem generates a key in PEM format based on the algorithm.
+// It returns an error if the algorithm is invalid or is otherwise unable to
+// generate the key PEM.
+func (alg Algorithm) GeneratePrivateKeyPem() (string, error) {
+	algDetails := alg.details()
 
-	if algorithm.KeyType == "RSA" {
-		return generateRSAPrivateKeyPem(algorithm.BitLen)
-	} else if algorithm.KeyType == "EC" {
-		return generateECDSAPrivateKeyPem(algorithm.EllipticCurveFunc())
+	switch algDetails.keyType {
+	case "RSA":
+		return generateRSAPrivateKeyPem(algDetails.bitLen)
+	case "EC":
+		return generateECDSAPrivateKeyPem(algDetails.ellipticCurveFunc())
+	default:
+		// break to error return
 	}
 
 	return "", errUnsupportedAlgorithm
 }
 
-// generateRSAPrivateKeyPem generates an RSA key of specified number of bits
-// return a string consisting of the key in PKCS1/PEM format
+// generateRSAPrivateKeyPem generates an RSA key using the specified bit length
+// and returns the key in PKCS1/PEM format
 func generateRSAPrivateKeyPem(bits int) (string, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
@@ -47,8 +47,8 @@ func generateRSAPrivateKeyPem(bits int) (string, error) {
 	return string(privateKeyPem), nil
 }
 
-// generateECDSAPrivateKeyPem generates an ECDSA key of specified elliptic.Curve
-// return a string consisting of the key in PKCS1/PEM format
+// generateECDSAPrivateKeyPem generates an ECDSA key using the provided elliptic.Curve
+// and returns the key in SEC1/PEM format
 func generateECDSAPrivateKeyPem(curve elliptic.Curve) (string, error) {
 	privateKey, err := ecdsa.GenerateKey(curve, rand.Reader)
 	if err != nil {

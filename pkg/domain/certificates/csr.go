@@ -31,7 +31,7 @@ func (cert *Certificate) MakeCsrDer() (csr []byte, err error) {
 
 	// CSR template to create CSR from
 	template := x509.CertificateRequest{
-		SignatureAlgorithm: cert.PrivateKey.Algorithm.SignatureAlgorithm,
+		SignatureAlgorithm: cert.PrivateKey.Algorithm.CsrSigningAlg(),
 		Subject:            subj,
 		DNSNames:           *cert.SubjectAltNames,
 		// unused: EmailAddresses, IPAddresses, URIs, Attributes (deprecated), ExtraExtensions

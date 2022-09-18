@@ -29,7 +29,7 @@ func (key *Key) CryptoKey() (cryptoKey crypto.PrivateKey, err error) {
 	}
 
 	// generate key from pem
-	cryptoKey, err = key_crypto.PemStringToKey(*key.Pem, key.Algorithm.Value)
+	cryptoKey, err = key_crypto.PemStringToKey(*key.Pem, *key.Algorithm)
 	if err != nil {
 		return nil, err
 	}
