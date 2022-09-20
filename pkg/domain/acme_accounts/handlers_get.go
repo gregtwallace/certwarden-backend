@@ -30,7 +30,8 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) (
 }
 
 // GetOneAccount is an http handler that returns one acme account based on its unique id in the
-//  form of JSON written to w
+//
+//	form of JSON written to w
 func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (err error) {
 	// convert id param to an integer
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
@@ -77,7 +78,8 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (e
 }
 
 // GetNewAccountOptions is an http handler that returns information the client GUI needs to properly
-//  present options when the user is creating an account
+//
+//	present options when the user is creating an account
 func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Request) (err error) {
 	// account options / info to assist client with new account posting
 	newAccountOptions := newAccountOptions{}
@@ -87,7 +89,7 @@ func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Requ
 	newAccountOptions.StagingTosUrl = service.acmeStaging.TosUrl()
 
 	// available private keys
-	newAccountOptions.AvailableKeys, err = service.keys.GetAvailableKeys()
+	newAccountOptions.AvailableKeys, err = service.keys.AvailableKeys()
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
