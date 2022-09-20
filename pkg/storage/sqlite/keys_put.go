@@ -32,9 +32,9 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (err erro
 	`
 
 	_, err = store.Db.ExecContext(ctx, query,
-		stringToNullString(payload.Name),
-		stringToNullString(payload.Description),
-		boolToNullBool(payload.ApiKeyViaUrl),
+		payload.Name,
+		payload.Description,
+		payload.ApiKeyViaUrl,
 		payload.UpdatedAt,
 		*payload.ID)
 
