@@ -8,28 +8,33 @@ import (
 
 var errBadKey = errors.New("bad crypto key")
 
-// a single private key
+// Key is a single private key (summary for all keys)
 type Key struct {
-	ID           *int                  `json:"id,omitempty"`
-	Name         *string               `json:"name,omitempty"`
-	Description  *string               `json:"description,omitempty"`
-	Algorithm    *key_crypto.Algorithm `json:"algorithm,omitempty"`
-	Pem          *string               `json:"pem,omitempty"`
-	ApiKey       *string               `json:"api_key,omitempty"`
-	ApiKeyViaUrl bool                  `json:"api_key_via_url"`
-	CreatedAt    *int                  `json:"created_at,omitempty"`
-	UpdatedAt    *int                  `json:"updated_at,omitempty"`
+	ID          int                  `json:"id"`
+	Name        string               `json:"name"`
+	Description string               `json:"description"`
+	Algorithm   key_crypto.Algorithm `json:"algorithm"`
+}
+
+// KeyExtended is a single private key with all of its details
+type KeyExtended struct {
+	Key
+	Pem          string `json:"pem,omitempty"`
+	ApiKey       string `json:"api_key,omitempty"`
+	ApiKeyViaUrl bool   `json:"api_key_via_url"`
+	CreatedAt    int    `json:"created_at"`
+	UpdatedAt    int    `json:"updated_at"`
 }
 
 // CryptoKey() returns the crypto.PrivateKey for a given key object
-func (key *Key) CryptoKey() (cryptoKey crypto.PrivateKey, err error) {
+func (key *KeyExtended) CryptoKey() (cryptoKey crypto.PrivateKey, err error) {
 	// nil pointer check
-	if key == nil || key.Algorithm == nil || key.Pem == nil {
+	if key == nil || key.Algorithm == key_crypto.UnknownAlgorithm || key.Pem == "" {
 		return nil, errBadKey
 	}
 
 	// generate key from pem
-	cryptoKey, err = key_crypto.PemStringToKey(*key.Pem, *key.Algorithm)
+	cryptoKey, err = key_crypto.PemStringToKey(key.Pem, key.Algorithm)
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,7 @@ type accountDb struct {
 	id          sql.NullInt32
 	name        sql.NullString
 	description sql.NullString
-	privateKey  *keyDb
+	privateKey  *keyDbExtended
 	status      sql.NullString
 	email       sql.NullString
 	acceptedTos sql.NullBool

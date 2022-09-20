@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/randomness"
 	"legocerthub-backend/pkg/validation"
 	"net/http"
+	"time"
 )
 
 // PostPayload is a struct for posting a new key
@@ -15,6 +17,10 @@ type NewPayload struct {
 	Description    *string `json:"description"`
 	AlgorithmValue *string `json:"algorithm_value"`
 	PemContent     *string `json:"pem"`
+	ApiKey         string  `json:"-"`
+	ApiKeyViaUrl   bool    `json:"-"`
+	CreatedAt      int     `json:"-"`
+	UpdatedAt      int     `json:"-"`
 }
 
 // PostNewKey creates a new private key and saves it to storage
@@ -41,8 +47,13 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
+	// description (if none, set to blank)
+	if payload.Description == nil {
+		payload.Description = new(string)
+		*payload.Description = ""
+	}
 
-	/// key add method
+	// key add method
 	// error if no method specified
 	if (payload.AlgorithmValue == nil || *payload.AlgorithmValue == "") && (payload.PemContent == nil || *payload.PemContent == "") {
 		service.logger.Debug(validation.ErrKeyBadOption)
@@ -75,7 +86,17 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 			return output.ErrValidationFailed
 		}
 	}
-	///
+	// end key add method
+
+	// add additional details to the payload before saving
+	payload.ApiKey, err = randomness.GenerateApiKey()
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+	payload.ApiKeyViaUrl = false
+	payload.CreatedAt = int(time.Now().Unix())
+	payload.UpdatedAt = payload.CreatedAt
 
 	// save new key to storage, which also returns the new key id
 	id, err := service.storage.PostNewKey(payload)

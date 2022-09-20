@@ -11,7 +11,7 @@ import (
 func newAccountPayloadToDb(payload acme_accounts.NewPayload) (accountDb, error) {
 	var dbObj accountDb
 	// initialize to avoid nil pointer
-	dbObj.privateKey = new(keyDb)
+	dbObj.privateKey = new(keyDbExtended)
 
 	// mandatory, error if somehow does not exist
 	if payload.Name == nil {
@@ -27,7 +27,7 @@ func newAccountPayloadToDb(payload acme_accounts.NewPayload) (accountDb, error) 
 	if payload.PrivateKeyID == nil {
 		return accountDb{}, errors.New("accounts: new payload: missing private key id")
 	}
-	dbObj.privateKey.id = intToNullInt32(payload.PrivateKeyID)
+	dbObj.privateKey.id = *payload.PrivateKeyID
 
 	dbObj.isStaging = boolToNullBool(payload.IsStaging)
 

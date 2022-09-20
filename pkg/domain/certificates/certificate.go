@@ -9,23 +9,23 @@ import (
 
 // a single certificate
 type Certificate struct {
-	ID                 *int                   `json:"id"`
-	Name               *string                `json:"name"`
-	Description        *string                `json:"description"`
-	PrivateKey         *private_keys.Key      `json:"private_key,omitempty"`
-	AcmeAccount        *acme_accounts.Account `json:"acme_account,omitempty"`
-	ChallengeMethod    *challenges.Method     `json:"challenge_method,omitempty"`
-	Subject            *string                `json:"subject,omitempty"`
-	SubjectAltNames    *[]string              `json:"subject_alts,omitempty"`
-	Organization       *string                `json:"organization,omitempty"`
-	OrganizationalUnit *string                `json:"organizational_unit,omitempty"`
-	Country            *string                `json:"country,omitempty"`
-	State              *string                `json:"state,omitempty"`
-	City               *string                `json:"city,omitempty"`
-	CreatedAt          *int                   `json:"created_at,omitempty"`
-	UpdatedAt          *int                   `json:"updated_at,omitempty"`
-	ApiKey             *string                `json:"api_key,omitempty"`
-	ApiKeyViaUrl       bool                   `json:"api_key_via_url"`
+	ID                 *int                      `json:"id"`
+	Name               *string                   `json:"name"`
+	Description        *string                   `json:"description"`
+	PrivateKey         *private_keys.KeyExtended `json:"private_key,omitempty"`
+	AcmeAccount        *acme_accounts.Account    `json:"acme_account,omitempty"`
+	ChallengeMethod    *challenges.Method        `json:"challenge_method,omitempty"`
+	Subject            *string                   `json:"subject,omitempty"`
+	SubjectAltNames    *[]string                 `json:"subject_alts,omitempty"`
+	Organization       *string                   `json:"organization,omitempty"`
+	OrganizationalUnit *string                   `json:"organizational_unit,omitempty"`
+	Country            *string                   `json:"country,omitempty"`
+	State              *string                   `json:"state,omitempty"`
+	City               *string                   `json:"city,omitempty"`
+	CreatedAt          *int                      `json:"created_at,omitempty"`
+	UpdatedAt          *int                      `json:"updated_at,omitempty"`
+	ApiKey             *string                   `json:"api_key,omitempty"`
+	ApiKeyViaUrl       bool                      `json:"api_key_via_url"`
 }
 
 // new account info

@@ -5,21 +5,24 @@ import (
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
 
-// NameDescPayload is the struct for editing an existing key
-type InfoPayload struct {
+// UpdatePayload is the struct for editing an existing Key's
+// information (only certain fields are editable)
+type UpdatePayload struct {
 	ID           *int    `json:"id"`
 	Name         *string `json:"name"`
 	Description  *string `json:"description"`
 	ApiKeyViaUrl *bool   `json:"api_key_via_url"`
+	UpdatedAt    int     `json:"-"`
 }
 
-// PutExistingKey updates a key that already exists in storage.
-// only the name and description are allowed to be modified
-func (service *Service) PutInfoKey(w http.ResponseWriter, r *http.Request) (err error) {
+// PutKeyUpdate updates a Key that already exists in storage.
+// Only fields received in the payload (non-nil) are updated.
+func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (err error) {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	// convert id param to an integer
@@ -29,14 +32,14 @@ func (service *Service) PutInfoKey(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrValidationFailed
 	}
 
-	var payload InfoPayload
+	var payload UpdatePayload
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
 
-	/// validation
+	// validation
 	// id
 	err = service.isIdExistingMatch(idParam, payload.ID)
 	if err != nil {
@@ -51,10 +54,14 @@ func (service *Service) PutInfoKey(w http.ResponseWriter, r *http.Request) (err 
 			return output.ErrValidationFailed
 		}
 	}
-	///
+	// Description and ApiKeyViaUrl do not need validation
+	// end validation
+
+	// add additional details to the payload before saving
+	payload.UpdatedAt = int(time.Now().Unix())
 
 	// save updated key info to storage
-	err = service.storage.PutKeyInfo(payload)
+	err = service.storage.PutKeyUpdate(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric

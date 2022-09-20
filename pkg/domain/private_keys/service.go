@@ -20,11 +20,11 @@ type App interface {
 // Storage interface for storage functions
 type Storage interface {
 	GetAllKeys() ([]Key, error)
-	GetOneKeyById(id int, withPem bool) (Key, error)
-	GetOneKeyByName(name string, withPem bool) (Key, error)
+	GetOneKeyById(id int, withPem bool) (KeyExtended, error)
+	GetOneKeyByName(name string, withPem bool) (KeyExtended, error)
 
 	PostNewKey(NewPayload) (keyId int, err error)
-	PutKeyInfo(InfoPayload) error
+	PutKeyUpdate(UpdatePayload) error
 	DeleteKey(int) error
 
 	GetAvailableKeys() ([]Key, error)

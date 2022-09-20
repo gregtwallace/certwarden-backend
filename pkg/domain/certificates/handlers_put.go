@@ -74,7 +74,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 	// private key (optional)
 	if payload.PrivateKeyId != nil {
 		// check if private key is the same as it already is
-		if *payload.PrivateKeyId == *cert.PrivateKey.ID {
+		if *payload.PrivateKeyId == cert.PrivateKey.ID {
 			// no op
 		} else {
 			// check if available

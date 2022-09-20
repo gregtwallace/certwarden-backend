@@ -6,36 +6,12 @@ import (
 	"legocerthub-backend/pkg/domain/private_keys"
 )
 
-// keyInfoPayloadToDb translates the modify key info payload to a db object
-func keyInfoPayloadToDb(payload private_keys.InfoPayload) (keyDb, error) {
-	var dbObj keyDb
-	var err error
-
-	// payload ID should never be missing at this point, regardless error if it somehow
-	//  is to avoid nil pointer dereference
+// PutKeyUpdate updates an existing key in the db using any non-null
+// fields specified in the UpdatePayload.
+func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (err error) {
+	// ID is required
 	if payload.ID == nil {
 		err = errors.New("id missing in payload")
-		return keyDb{}, err
-	}
-	dbObj.id = intToNullInt32(payload.ID)
-
-	dbObj.name = stringToNullString(payload.Name)
-
-	dbObj.description = stringToNullString(payload.Description)
-
-	dbObj.apiKeyViaUrl = *payload.ApiKeyViaUrl
-
-	dbObj.updatedAt = timeNow()
-
-	return dbObj, nil
-}
-
-// dbPutExistingKey sets an existing key equal to the PUT values (overwriting
-// old values)
-func (store *Storage) PutKeyInfo(payload private_keys.InfoPayload) (err error) {
-	// load payload fields into db struct
-	keyDb, err := keyInfoPayloadToDb(payload)
-	if err != nil {
 		return err
 	}
 
@@ -56,11 +32,11 @@ func (store *Storage) PutKeyInfo(payload private_keys.InfoPayload) (err error) {
 	`
 
 	_, err = store.Db.ExecContext(ctx, query,
-		keyDb.name,
-		keyDb.description,
-		keyDb.apiKeyViaUrl,
-		keyDb.updatedAt,
-		keyDb.id)
+		stringToNullString(payload.Name),
+		stringToNullString(payload.Description),
+		boolToNullBool(payload.ApiKeyViaUrl),
+		payload.UpdatedAt,
+		*payload.ID)
 
 	if err != nil {
 		return err

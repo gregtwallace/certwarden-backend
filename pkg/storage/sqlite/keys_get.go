@@ -4,39 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/storage"
 )
 
-// KeyDbToKey translates the db object into the object the key service expects
-func (keyDb *keyDb) keyDbToKey() (private_keys.Key, error) {
-	var algorithm = new(key_crypto.Algorithm)
-	var err error
-
-	// if there is an algorithm value, specify the algorithm
-	if keyDb.algorithmValue.Valid {
-		*algorithm = key_crypto.AlgorithmByValue(keyDb.algorithmValue.String)
-		if *algorithm == key_crypto.UnknownAlgorithm {
-			return private_keys.Key{}, err
-		}
-	} else {
-		algorithm = nil
-	}
-
-	return private_keys.Key{
-		ID:           nullInt32ToInt(keyDb.id),
-		Name:         nullStringToString(keyDb.name),
-		Description:  nullStringToString(keyDb.description),
-		Algorithm:    algorithm,
-		Pem:          nullStringToString(keyDb.pem),
-		ApiKey:       nullStringToString(keyDb.apiKey),
-		ApiKeyViaUrl: keyDb.apiKeyViaUrl,
-		CreatedAt:    nullInt32ToInt(keyDb.createdAt),
-		UpdatedAt:    nullInt32ToInt(keyDb.updatedAt),
-	}, nil
-}
-
-// dbGetAllPrivateKeys writes information about all private keys to json
+// GetAllKeys returns a slice of all Keys in the db
 func (store Storage) GetAllKeys() ([]private_keys.Key, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
@@ -52,21 +23,18 @@ func (store Storage) GetAllKeys() ([]private_keys.Key, error) {
 
 	var allKeys []private_keys.Key
 	for rows.Next() {
-		var oneKey keyDb
+		var oneKeyDb keyDb
 		err = rows.Scan(
-			&oneKey.id,
-			&oneKey.name,
-			&oneKey.description,
-			&oneKey.algorithmValue,
+			&oneKeyDb.id,
+			&oneKeyDb.name,
+			&oneKeyDb.description,
+			&oneKeyDb.algorithmValue,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		convertedKey, err := oneKey.keyDbToKey()
-		if err != nil {
-			return nil, err
-		}
+		convertedKey := oneKeyDb.toKey()
 
 		allKeys = append(allKeys, convertedKey)
 	}
@@ -74,18 +42,18 @@ func (store Storage) GetAllKeys() ([]private_keys.Key, error) {
 	return allKeys, nil
 }
 
-// GetOneKeyById returns a key based on its unique id
-func (store *Storage) GetOneKeyById(id int, withPem bool) (private_keys.Key, error) {
+// GetOneKeyById returns a KeyExtended based on unique id
+func (store *Storage) GetOneKeyById(id int, withPem bool) (private_keys.KeyExtended, error) {
 	return store.getOneKey(id, "", withPem)
 }
 
-// GetOneKeyByName returns a key based on its unique name
-func (store *Storage) GetOneKeyByName(name string, withPem bool) (private_keys.Key, error) {
+// GetOneKeyByName returns a KeyExtended based on unique name
+func (store *Storage) GetOneKeyByName(name string, withPem bool) (private_keys.KeyExtended, error) {
 	return store.getOneKey(-1, name, withPem)
 }
 
-// dbGetOneKey returns a key from the db based on unique id or unique name
-func (store Storage) getOneKey(id int, name string, withPem bool) (private_keys.Key, error) {
+// dbGetOneKey returns a KeyExtended based on unique id or unique name
+func (store Storage) getOneKey(id int, name string, withPem bool) (private_keys.KeyExtended, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
@@ -102,7 +70,7 @@ func (store Storage) getOneKey(id int, name string, withPem bool) (private_keys.
 
 	row := store.Db.QueryRowContext(ctx, query, id, name)
 
-	var oneKeyDb keyDb
+	var oneKeyDb keyDbExtended
 	err := row.Scan(
 		&oneKeyDb.id,
 		&oneKeyDb.name,
@@ -120,20 +88,16 @@ func (store Storage) getOneKey(id int, name string, withPem bool) (private_keys.
 		if err == sql.ErrNoRows {
 			err = storage.ErrNoRecord
 		}
-		return private_keys.Key{}, err
+		return private_keys.KeyExtended{}, err
 	}
 
-	// discard pem if not requested
-	if !withPem {
-		oneKeyDb.pem.Valid = false
-	}
-
-	convertedKey, err := oneKeyDb.keyDbToKey()
+	// convert to KeyExtended
+	oneKeyExt := oneKeyDb.toKeyExtended(withPem)
 	if err != nil {
-		return private_keys.Key{}, err
+		return private_keys.KeyExtended{}, err
 	}
 
-	return convertedKey, nil
+	return oneKeyExt, nil
 }
 
 // GetAvailableKeys returns a slice of private keys that exist but are not already associated
@@ -192,24 +156,21 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 
 	var availableKeys []private_keys.Key
 	for rows.Next() {
-		var oneKey keyDb
+		var oneKeyDb keyDb
 
 		err = rows.Scan(
-			&oneKey.id,
-			&oneKey.name,
-			&oneKey.description,
-			&oneKey.algorithmValue,
+			&oneKeyDb.id,
+			&oneKeyDb.name,
+			&oneKeyDb.description,
+			&oneKeyDb.algorithmValue,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		convertedKey, err := oneKey.keyDbToKey()
-		if err != nil {
-			return nil, err
-		}
+		oneKeyExt := oneKeyDb.toKey()
 
-		availableKeys = append(availableKeys, convertedKey)
+		availableKeys = append(availableKeys, oneKeyExt)
 	}
 
 	return availableKeys, nil

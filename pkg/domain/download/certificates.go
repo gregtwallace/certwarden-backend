@@ -136,5 +136,5 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 	}
 
 	// return pem content and key id pointer
-	return certPem, cert.PrivateKey.Name, nil
+	return certPem, &cert.PrivateKey.Name, nil
 }

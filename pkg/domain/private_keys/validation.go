@@ -43,7 +43,7 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 	}
 
 	// make sure the name isn't already in use in storage
-	account, err := service.storage.GetOneKeyByName(*namePayload, false)
+	key, err := service.storage.GetOneKeyByName(*namePayload, false)
 	if err == storage.ErrNoRecord {
 		// no rows means name is not in use
 		return nil
@@ -53,7 +53,7 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 	}
 
 	// if the returned key is the key being edited, no error
-	if *account.ID == *idPayload {
+	if key.ID == *idPayload {
 		return nil
 	}
 
@@ -77,7 +77,7 @@ func (service *Service) IsPrivateKeyAvailable(keyId *int) error {
 
 	// verify specified key id is in the available list
 	for _, key := range keys {
-		if *key.ID == *keyId {
+		if key.ID == *keyId {
 			return nil
 		}
 	}

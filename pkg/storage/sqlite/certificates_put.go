@@ -22,8 +22,8 @@ func certDetailsPayloadToDb(payload certificates.DetailsUpdatePayload) (certific
 
 	certDb.apiKeyViaUrl = *payload.ApiKeyViaUrl
 
-	certDb.privateKey = new(keyDb)
-	certDb.privateKey.id = intToNullInt32(payload.PrivateKeyId)
+	certDb.privateKey = new(keyDbExtended)
+	certDb.privateKey.id = *payload.PrivateKeyId
 
 	certDb.challengeMethodValue = stringToNullString(payload.ChallengeMethodValue)
 

@@ -12,11 +12,8 @@ import (
 func (orderDb *orderDb) orderDbToOrder() (order orders.Order, err error) {
 	// convert embedded private key db
 	var finalKey = new(private_keys.Key)
-	if orderDb.finalizedKey != nil && orderDb.finalizedKey.id.Valid {
-		*finalKey, err = orderDb.finalizedKey.keyDbToKey()
-		if err != nil {
-			return orders.Order{}, err
-		}
+	if orderDb.finalizedKey != nil {
+		*finalKey = orderDb.finalizedKey.toKey()
 	} else {
 		finalKey = nil
 	}
@@ -100,7 +97,7 @@ func (store *Storage) GetAllValidCurrentOrders() (orders []orders.Order, err err
 	for rows.Next() {
 		var oneOrder orderDb
 		// initialize keyDb pointer (or nil deref)
-		oneOrder.finalizedKey = new(keyDb)
+		oneOrder.finalizedKey = new(finalizedKeyDb)
 		oneOrder.certificate = new(certificateDb)
 		oneOrder.certificate.acmeAccount = new(accountDb)
 
@@ -166,7 +163,7 @@ func (store *Storage) GetCertOrders(certId int) (orders []orders.Order, err erro
 	for rows.Next() {
 		var oneOrder orderDb
 		// initialize keyDb pointer (or nil deref)
-		oneOrder.finalizedKey = new(keyDb)
+		oneOrder.finalizedKey = new(finalizedKeyDb)
 		err = rows.Scan(
 			&oneOrder.id,
 			&oneOrder.location,
@@ -269,7 +266,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 
 	var orderDb orderDb
 	// initialize keyDb and certDb pointer (or nil deref)
-	orderDb.finalizedKey = new(keyDb)
+	orderDb.finalizedKey = new(finalizedKeyDb)
 	orderDb.certificate = new(certificateDb)
 
 	err = row.Scan(

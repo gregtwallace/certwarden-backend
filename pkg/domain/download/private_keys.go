@@ -99,11 +99,11 @@ func (service *Service) getKeyPem(keyName string, apiKey string, apiKeyViaUrl bo
 	}
 
 	// verify apikey matches private key's apiKey
-	if apiKey != *key.ApiKey {
+	if apiKey != key.ApiKey {
 		service.logger.Debug(errWrongApiKey)
 		return "", output.ErrUnauthorized
 	}
 
 	// return pem content
-	return *key.Pem, nil
+	return key.Pem, nil
 }

@@ -126,7 +126,7 @@ fulfillLoop:
 
 		case "ready": // needs to be finalized
 			// save finalized_key_id in storage
-			err = service.storage.UpdateFinalizedKey(*order.ID, *order.Certificate.PrivateKey.ID)
+			err = service.storage.UpdateFinalizedKey(*order.ID, order.Certificate.PrivateKey.ID)
 			if err != nil {
 				service.logger.Error(err)
 				return // done, failed

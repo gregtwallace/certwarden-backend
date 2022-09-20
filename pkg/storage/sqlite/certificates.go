@@ -9,7 +9,7 @@ type certificateDb struct {
 	id                   sql.NullInt32
 	name                 sql.NullString
 	description          sql.NullString
-	privateKey           *keyDb
+	privateKey           *keyDbExtended
 	acmeAccount          *accountDb
 	challengeMethodValue sql.NullString
 	subject              sql.NullString

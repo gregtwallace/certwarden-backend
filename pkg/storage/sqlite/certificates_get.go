@@ -15,9 +15,9 @@ import (
 // accountDbToAcc turns the database representation of a certificate into a Certificate
 func (certDb *certificateDb) certDbToCert() (cert certificates.Certificate, err error) {
 	// convert embedded private key db
-	var privateKey = new(private_keys.Key)
+	var privateKey = new(private_keys.KeyExtended)
 	if certDb.privateKey != nil {
-		*privateKey, err = certDb.privateKey.keyDbToKey()
+		*privateKey = certDb.privateKey.toKeyExtended(true)
 		if err != nil {
 			return certificates.Certificate{}, err
 		}
@@ -88,7 +88,7 @@ func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error
 	for rows.Next() {
 		var oneCert certificateDb
 		// initialize keyDb & accountDb pointer (or nil deref)
-		oneCert.privateKey = new(keyDb)
+		oneCert.privateKey = new(keyDbExtended)
 		oneCert.acmeAccount = new(accountDb)
 		err = rows.Scan(
 			&oneCert.id,
@@ -152,8 +152,8 @@ func (store *Storage) getOneCert(id int, name string, withKeyPems bool) (cert ce
 	var oneCert certificateDb
 	// initialize accountDb, accountDb's keyDb, and keyDb pointer (or nil deref)
 	oneCert.acmeAccount = new(accountDb)
-	oneCert.acmeAccount.privateKey = new(keyDb)
-	oneCert.privateKey = new(keyDb)
+	oneCert.acmeAccount.privateKey = new(keyDbExtended)
+	oneCert.privateKey = new(keyDbExtended)
 
 	err = row.Scan(
 		&oneCert.id,
@@ -194,8 +194,8 @@ func (store *Storage) getOneCert(id int, name string, withKeyPems bool) (cert ce
 
 	// if not fetching pems, invalidate them
 	if !withKeyPems {
-		oneCert.acmeAccount.privateKey.pem.Valid = false
-		oneCert.privateKey.pem.Valid = false
+		oneCert.acmeAccount.privateKey.pem = ""
+		oneCert.privateKey.pem = ""
 	}
 
 	cert, err = oneCert.certDbToCert()

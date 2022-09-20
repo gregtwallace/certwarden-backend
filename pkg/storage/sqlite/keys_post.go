@@ -3,46 +3,36 @@ package sqlite
 import (
 	"context"
 	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/randomness"
 )
 
-// newPayloadToDb translates the new key payload to db object
-func newKeyPayloadToDb(payload private_keys.NewPayload) keyDb {
-	var dbObj keyDb
+// newKeyToDb translates a KeyExtended into a db object for storage
+func newKeyToDb(newKey private_keys.NewPayload) keyDbExtended {
+	var dbObj keyDbExtended
 
-	dbObj.name = stringToNullString(payload.Name)
-
-	dbObj.description = stringToNullString(payload.Description)
-
-	dbObj.algorithmValue = stringToNullString(payload.AlgorithmValue)
-
-	dbObj.pem = stringToNullString(payload.PemContent)
-
-	dbObj.createdAt = timeNow()
-	dbObj.updatedAt = dbObj.createdAt
+	dbObj.name = *newKey.Name
+	dbObj.description = *newKey.Description
+	dbObj.algorithmValue = *newKey.AlgorithmValue
+	dbObj.pem = *newKey.PemContent
+	dbObj.apiKey = newKey.ApiKey
+	dbObj.apiKeyViaUrl = newKey.ApiKeyViaUrl
+	dbObj.createdAt = newKey.CreatedAt
+	dbObj.updatedAt = newKey.UpdatedAt
 
 	return dbObj
 }
 
-// dbPostNewKey creates a new key based on what was POSTed
+// PostNewKey saves the KeyExtended to the db as a new key
 func (store *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err error) {
 	// load payload fields into db struct
-	keyDb := newKeyPayloadToDb(payload)
-
-	// generate api key
-	apiKey, err := randomness.GenerateApiKey()
-	keyDb.apiKey = stringToNullString(&apiKey)
-	if err != nil {
-		return -2, err
-	}
+	keyDb := newKeyToDb(payload)
 
 	// database action
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `
-	INSERT INTO private_keys (name, description, algorithm, pem, api_key, created_at, updated_at)
-	VALUES ($1, $2, $3, $4, $5, $6, $7)
+	INSERT INTO private_keys (name, description, algorithm, pem, api_key, api_key_via_url, created_at, updated_at)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	RETURNING id
 	`
 
@@ -53,6 +43,7 @@ func (store *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err e
 		keyDb.algorithmValue,
 		keyDb.pem,
 		keyDb.apiKey,
+		keyDb.apiKeyViaUrl,
 		keyDb.createdAt,
 		keyDb.updatedAt,
 	).Scan(&id)

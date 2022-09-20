@@ -10,12 +10,12 @@ import (
 
 // accountDbToAcc turns the database representation of an Account into an Account
 func (accountDb *accountDb) accountDbToAcc() (acme_accounts.Account, error) {
-	var privateKey = new(private_keys.Key)
+	var privateKey = new(private_keys.KeyExtended)
 	var err error
 
 	// convert embedded private key db
 	if accountDb.privateKey != nil {
-		*privateKey, err = accountDb.privateKey.keyDbToKey()
+		*privateKey = accountDb.privateKey.toKeyExtended(true)
 		if err != nil {
 			return acme_accounts.Account{}, err
 		}
@@ -60,7 +60,7 @@ func (store *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 	for rows.Next() {
 		var oneAccount accountDb
 		// initialize keyDb pointer (or nil deref)
-		oneAccount.privateKey = new(keyDb)
+		oneAccount.privateKey = new(keyDbExtended)
 		err = rows.Scan(
 			&oneAccount.id,
 			&oneAccount.name,
@@ -114,7 +114,7 @@ func (store *Storage) getOneAccount(id int, name string, withPem bool) (acme_acc
 
 	var oneAccount accountDb
 	// initialize keyDb pointer (or nil deref)
-	oneAccount.privateKey = new(keyDb)
+	oneAccount.privateKey = new(keyDbExtended)
 
 	err := row.Scan(
 		&oneAccount.id,
@@ -141,9 +141,9 @@ func (store *Storage) getOneAccount(id int, name string, withPem bool) (acme_acc
 		return acme_accounts.Account{}, err
 	}
 
-	// if not fetching pem, invalidate it
+	// if not fetching pem, remove it
 	if !withPem {
-		oneAccount.privateKey.pem.Valid = false
+		oneAccount.privateKey.pem = ""
 	}
 
 	convertedAccount, err := oneAccount.accountDbToAcc()
