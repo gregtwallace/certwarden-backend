@@ -78,8 +78,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 			// no op
 		} else {
 			// check if available
-			err = service.keys.IsPrivateKeyAvailable(payload.PrivateKeyId)
-			if err != nil {
+			if !service.keys.KeyAvailable(*payload.PrivateKeyId) {
 				service.logger.Debug(err)
 				return output.ErrValidationFailed
 			}

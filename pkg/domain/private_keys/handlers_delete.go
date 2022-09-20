@@ -20,8 +20,7 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err e
 	}
 
 	// verify key exists
-	err = service.isIdExisting(id)
-	if err != nil {
+	if !service.idExists(id) {
 		service.logger.Debug(err)
 		return output.ErrNotFound
 	}

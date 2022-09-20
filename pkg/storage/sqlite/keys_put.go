@@ -2,19 +2,12 @@ package sqlite
 
 import (
 	"context"
-	"errors"
 	"legocerthub-backend/pkg/domain/private_keys"
 )
 
 // PutKeyUpdate updates an existing key in the db using any non-null
 // fields specified in the UpdatePayload.
 func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (err error) {
-	// ID is required
-	if payload.ID == nil {
-		err = errors.New("id missing in payload")
-		return err
-	}
-
 	// database action
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
@@ -36,7 +29,7 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (err erro
 		payload.Description,
 		payload.ApiKeyViaUrl,
 		payload.UpdatedAt,
-		*payload.ID)
+		payload.ID)
 
 	if err != nil {
 		return err

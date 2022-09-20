@@ -12,7 +12,6 @@ import (
 
 // PostPayload is a struct for posting a new key
 type NewPayload struct {
-	ID             *int    `json:"id"`
 	Name           *string `json:"name"`
 	Description    *string `json:"description"`
 	AlgorithmValue *string `json:"algorithm_value"`
@@ -35,15 +34,8 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	/// do validation
-	// id
-	err = validation.IsIdNew(payload.ID)
-	if err != nil {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
-	}
-	// name
-	err = service.isNameValid(payload.ID, payload.Name)
-	if err != nil {
+	// name (missing or invalid)
+	if payload.Name == nil || !service.nameValid(*payload.Name, nil) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}

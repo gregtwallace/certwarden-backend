@@ -86,26 +86,21 @@ func IsIdExistingMatch(idParam int, idPayload *int) error {
 	return nil
 }
 
-// IsNameValid returns an error if not valid, nil if valid
-// to be valid: must only contain symbols - _ . ~ letters and numbers
-// name is also not allowed to be blank (len <= 0)
-func IsNameValid(namePayload *string) error {
-	// error if not specified
-	if namePayload == nil {
-		return ErrNameMissing
-	}
-
-	regex, err := regexp.Compile("[^-_.~A-z0-9]|[\\^]")
+// NameValid true if the specified name is acceptable. To be valid
+// the name must only contain symbols - _ . ~ letters and numbers,
+// and name cannot be blank (len <= 0)
+func NameValid(name string) bool {
+	regex, err := regexp.Compile(`[^-_.~A-z0-9]|[\^]`)
 	if err != nil {
 		// should never happen
-		return err
+		return false
 	}
 
-	invalid := regex.Match([]byte(*namePayload))
-	if invalid || len(*namePayload) <= 0 {
-		return ErrNameBad
+	invalid := regex.Match([]byte(name))
+	if invalid || len(name) <= 0 {
+		return false
 	}
-	return nil
+	return true
 }
 
 // IsEmailValid returns an error if not valid, nil if valid

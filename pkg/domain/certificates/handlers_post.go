@@ -53,8 +53,8 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 		return output.ErrValidationFailed
 	}
 	// private key
-	err = service.keys.IsPrivateKeyAvailable(payload.PrivateKeyID)
-	if err != nil {
+	// TODO: Possible null deref
+	if !service.keys.KeyAvailable(*payload.PrivateKeyID) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}

@@ -91,7 +91,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	}
 
 	// available private keys
-	newCertOptions.AvailableKeys, err = service.keys.GetAvailableKeys()
+	newCertOptions.AvailableKeys, err = service.keys.AvailableKeys()
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric

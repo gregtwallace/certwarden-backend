@@ -5,82 +5,66 @@ import (
 	"legocerthub-backend/pkg/validation"
 )
 
-// isIdExisting returns an error if not valid (ie the key does not exist)
-func (service *Service) isIdExisting(id int) (err error) {
-	// check id exists in storage
-	_, err = service.storage.GetOneKeyById(id, false)
-	if err != nil {
-		return err
-	}
+// idExists returns true if the specified keyId exists in storage
+func (service *Service) idExists(keyId int) bool {
+	// fetch key id from storage, if fails it doesn't exist
+	_, err := service.storage.GetOneKeyById(keyId, false)
 
-	return nil
+	// true if no error
+	return err == nil
 }
 
-// IsIdExistingMatch returns an error if not valid, nil if valid
-// we'll generally assume the id is valid if >= 0
-func (service *Service) isIdExistingMatch(idParam int, idPayload *int) error {
-	// basic check
-	err := validation.IsIdExistingMatch(idParam, idPayload)
-	if err != nil {
-		return err
-	}
-
-	// check id exists
-	err = service.isIdExisting(*idPayload)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// isNameValid returns an error if not valid, nil if valid
-func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
-	// basic check
-	err := validation.IsNameValid(namePayload)
-	if err != nil {
-		return err
+// nameValid returns true if the specified key name is acceptable and
+// false if it is not. This check includes validating specified
+// characters and also confirms the name is not already in use by another
+// key. If an id is specified, the name will also be accepted if the name
+// is already in use by the specified id.
+func (service *Service) nameValid(name string, idPayload *int) bool {
+	// basic character/length check
+	if !validation.NameValid(name) {
+		return false
 	}
 
 	// make sure the name isn't already in use in storage
-	key, err := service.storage.GetOneKeyByName(*namePayload, false)
+	key, err := service.storage.GetOneKeyByName(name, false)
 	if err == storage.ErrNoRecord {
 		// no rows means name is not in use
-		return nil
+		return true
 	} else if err != nil {
-		// any other error, return the error
-		return err
+		// any other error
+		return false
 	}
 
-	// if the returned key is the key being edited, no error
-	if key.ID == *idPayload {
-		return nil
+	// if the returned key is the key being edited, name is ok
+	if idPayload != nil && key.ID == *idPayload {
+		return true
 	}
 
-	return validation.ErrNameInUse
+	return false
 }
 
 // GetAvailableKeys returns a list of all available keys; storage should
 // return keys that exist but are not already in use by an account or a
 // certificate
-func (service *Service) GetAvailableKeys() (keys []Key, err error) {
+func (service *Service) AvailableKeys() (keys []Key, err error) {
 	return service.storage.GetAvailableKeys()
 }
 
-// IsPrivateKeyValid returns an error if the key is not valid and available
-func (service *Service) IsPrivateKeyAvailable(keyId *int) error {
+// KeyAvailable returns true if the specified keyId is available for
+// use (i.e. not already in use by an account or a certificate)
+func (service *Service) KeyAvailable(keyId int) bool {
 	// get available keys list
-	keys, err := service.GetAvailableKeys()
+	keys, err := service.AvailableKeys()
 	if err != nil {
-		return err
+		return false
 	}
 
 	// verify specified key id is in the available list
-	for _, key := range keys {
-		if key.ID == *keyId {
-			return nil
+	for i := range keys {
+		if keys[i].ID == keyId {
+			return true
 		}
 	}
 
-	return validation.ErrKeyBad
+	return false
 }

@@ -37,9 +37,8 @@ func (service *Service) isIdExistingMatch(idParam int, idPayload *int) (cert Cer
 // isNameValid returns an error if not valid, nil if valid
 func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 	// basic check
-	err := validation.IsNameValid(namePayload)
-	if err != nil {
-		return err
+	if !validation.NameValid(*namePayload) {
+		return validation.ErrNameBad
 	}
 
 	// make sure the name isn't already in use in storage
