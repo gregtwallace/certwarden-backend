@@ -54,7 +54,7 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 	}
 
 	// get the key from storage
-	key, err := service.storage.GetOneKeyById(id, false)
+	key, err := service.storage.GetOneKeyById(id)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {

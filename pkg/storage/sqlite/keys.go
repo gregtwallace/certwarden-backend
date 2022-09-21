@@ -38,24 +38,16 @@ type keyDbExtended struct {
 }
 
 // toKeyExtended maps the database key info to the private_keys
-// ExtendedKey object. if includePem is false, the pem will be
-// omitted from the KeyExtended object.
-func (key keyDbExtended) toKeyExtended(includePem bool) private_keys.KeyExtended {
-	keyExt := private_keys.KeyExtended{}
-
-	// translate the regular Key fields
-	keyExt.Key = key.toKey()
-
-	// translate the extended fields
-	// include sensitive info?
-	if includePem {
-		keyExt.Pem = key.pem
+// ExtendedKey object.
+func (key keyDbExtended) toKeyExtended() private_keys.KeyExtended {
+	return private_keys.KeyExtended{
+		// regular Key fields
+		Key: key.toKey(),
+		// Extended fields
+		Pem:          key.pem,
+		ApiKey:       key.apiKey,
+		ApiKeyViaUrl: key.apiKeyViaUrl,
+		CreatedAt:    key.createdAt,
+		UpdatedAt:    key.updatedAt,
 	}
-
-	keyExt.ApiKey = key.apiKey
-	keyExt.ApiKeyViaUrl = key.apiKeyViaUrl
-	keyExt.CreatedAt = key.createdAt
-	keyExt.UpdatedAt = key.updatedAt
-
-	return keyExt
 }

@@ -43,17 +43,17 @@ func (store Storage) GetAllKeys() ([]private_keys.Key, error) {
 }
 
 // GetOneKeyById returns a KeyExtended based on unique id
-func (store *Storage) GetOneKeyById(id int, withPem bool) (private_keys.KeyExtended, error) {
-	return store.getOneKey(id, "", withPem)
+func (store *Storage) GetOneKeyById(id int) (private_keys.KeyExtended, error) {
+	return store.getOneKey(id, "")
 }
 
 // GetOneKeyByName returns a KeyExtended based on unique name
 func (store *Storage) GetOneKeyByName(name string, withPem bool) (private_keys.KeyExtended, error) {
-	return store.getOneKey(-1, name, withPem)
+	return store.getOneKey(-1, name)
 }
 
 // dbGetOneKey returns a KeyExtended based on unique id or unique name
-func (store Storage) getOneKey(id int, name string, withPem bool) (private_keys.KeyExtended, error) {
+func (store Storage) getOneKey(id int, name string) (private_keys.KeyExtended, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
@@ -92,7 +92,7 @@ func (store Storage) getOneKey(id int, name string, withPem bool) (private_keys.
 	}
 
 	// convert to KeyExtended
-	oneKeyExt := oneKeyDb.toKeyExtended(withPem)
+	oneKeyExt := oneKeyDb.toKeyExtended()
 	if err != nil {
 		return private_keys.KeyExtended{}, err
 	}

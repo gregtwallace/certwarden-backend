@@ -15,7 +15,7 @@ func (accountDb *accountDb) accountDbToAcc() (acme_accounts.Account, error) {
 
 	// convert embedded private key db
 	if accountDb.privateKey != nil {
-		*privateKey = accountDb.privateKey.toKeyExtended(true)
+		*privateKey = accountDb.privateKey.toKeyExtended()
 		if err != nil {
 			return acme_accounts.Account{}, err
 		}

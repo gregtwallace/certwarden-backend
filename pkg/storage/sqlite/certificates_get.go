@@ -17,7 +17,7 @@ func (certDb *certificateDb) certDbToCert() (cert certificates.Certificate, err 
 	// convert embedded private key db
 	var privateKey = new(private_keys.KeyExtended)
 	if certDb.privateKey != nil {
-		*privateKey = certDb.privateKey.toKeyExtended(true)
+		*privateKey = certDb.privateKey.toKeyExtended()
 		if err != nil {
 			return certificates.Certificate{}, err
 		}

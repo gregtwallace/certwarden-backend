@@ -8,7 +8,7 @@ import (
 // idExists returns true if the specified keyId exists in storage
 func (service *Service) idExists(keyId int) bool {
 	// fetch key id from storage, if fails it doesn't exist
-	_, err := service.storage.GetOneKeyById(keyId, false)
+	_, err := service.storage.GetOneKeyById(keyId)
 
 	// true if no error
 	return err == nil

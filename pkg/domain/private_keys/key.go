@@ -19,7 +19,7 @@ type Key struct {
 // KeyExtended is a single private key with all of its details
 type KeyExtended struct {
 	Key
-	Pem          string `json:"pem,omitempty"`
+	Pem          string `json:"-"`
 	ApiKey       string `json:"api_key,omitempty"`
 	ApiKeyViaUrl bool   `json:"api_key_via_url"`
 	CreatedAt    int    `json:"created_at"`
