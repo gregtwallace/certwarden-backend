@@ -19,14 +19,14 @@ func (service *Service) idExists(keyId int) bool {
 // characters and also confirms the name is not already in use by another
 // key. If an id is specified, the name will also be accepted if the name
 // is already in use by the specified id.
-func (service *Service) nameValid(name string, idPayload *int) bool {
+func (service *Service) nameValid(keyName string, keyId *int) bool {
 	// basic character/length check
-	if !validation.NameValid(name) {
+	if !validation.NameValid(keyName) {
 		return false
 	}
 
 	// make sure the name isn't already in use in storage
-	key, err := service.storage.GetOneKeyByName(name, false)
+	key, err := service.storage.GetOneKeyByName(keyName, false)
 	if err == storage.ErrNoRecord {
 		// no rows means name is not in use
 		return true
@@ -36,7 +36,7 @@ func (service *Service) nameValid(name string, idPayload *int) bool {
 	}
 
 	// if the returned key is the key being edited, name is ok
-	if idPayload != nil && key.ID == *idPayload {
+	if keyId != nil && key.ID == *keyId {
 		return true
 	}
 
