@@ -19,23 +19,19 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) (e
 		return output.ErrValidationFailed
 	}
 
+	// validation
 	// verify account exists
-	err = service.isIdExisting(id)
-	if err != nil {
+	if !service.idExists(id) {
 		service.logger.Debug(err)
 		return output.ErrNotFound
 	}
 
-	// confirm account is not in use
-	inUse, err := service.storage.AccountInUse(id)
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrStorageGeneric
-	}
-	if inUse {
-		service.logger.Warn("cannot delete, in use")
+	// do not allow delete if there are any certs using the account
+	if service.storage.AccountHasCerts(id) {
+		service.logger.Warn("cannot delete account (in use)")
 		return output.ErrDeleteInUse
 	}
+	// end validation
 
 	// delete from storage
 	err = service.storage.DeleteAccount(id)

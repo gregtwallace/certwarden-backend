@@ -1,10 +1,11 @@
 package acme_accounts
 
 import (
-	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -22,37 +23,40 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 
+	// validation (only need to confirm account exists and has a key)
 	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam, true)
+	account, err := service.storage.GetOneAccountById(idParam)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// no need to validate, can try to register any account
-	// that has a cryptokey
-
 	// get crypto key
-	key, err := account.PrivateKey.CryptoKey()
+	key, err := key_crypto.PemStringToKey(account.AccountKey.Pem, account.AccountKey.Algorithm)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
 	}
+	// end validation
 
 	// send the new-account to ACME
-	var acmeResponse acme.Account
-	if *account.IsStaging {
-		acmeResponse, err = service.acmeStaging.NewAccount(account.newAccountPayload(), key)
+	var acmeAccount AcmeAccount
+	if account.IsStaging {
+		acmeAccount.Account, err = service.acmeStaging.NewAccount(account.newAccountPayload(), key)
 	} else {
-		acmeResponse, err = service.acmeProd.NewAccount(account.newAccountPayload(), key)
+		acmeAccount.Account, err = service.acmeProd.NewAccount(account.newAccountPayload(), key)
 	}
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
 	}
 
+	// add additional details to the acmeAccount before saving
+	acmeAccount.ID = idParam
+	acmeAccount.UpdatedAt = int(time.Now().Unix())
+
 	// save ACME response to account
-	err = service.storage.PutLEAccountResponse(idParam, acmeResponse)
+	err = service.storage.PutAcmeAccountResponse(acmeAccount)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
@@ -88,37 +92,52 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrValidationFailed
 	}
 
+	// validation
 	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam, true)
+	account, err := service.storage.GetOneAccountById(idParam)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// no need to validate, can try to deactivate any account
-	// that has an accountKey
-
-	// get AccountKey
-	accountKey, err := account.AccountKey()
+	// get acme AccountKey
+	acmeAccountKey, err := account.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
 	}
+
+	// if kid is blank, can't deactivate
+	if acmeAccountKey.Kid == "" {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// status must be 'valid' to deactivate
+	if account.Status != "valid" {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+	// end validation
 
 	// send the new-account to ACME
-	var acmeResponse acme.Account
-	if *account.IsStaging {
-		acmeResponse, err = service.acmeStaging.DeactivateAccount(accountKey)
+	var acmeAccount AcmeAccount
+	if account.IsStaging {
+		acmeAccount.Account, err = service.acmeStaging.DeactivateAccount(acmeAccountKey)
 	} else {
-		acmeResponse, err = service.acmeProd.DeactivateAccount(accountKey)
+		acmeAccount.Account, err = service.acmeProd.DeactivateAccount(acmeAccountKey)
 	}
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
 	}
 
+	// add additional details to the acmeAccount before saving
+	acmeAccount.ID = idParam
+	acmeAccount.UpdatedAt = int(time.Now().Unix())
+
 	// save ACME response to account
-	err = service.storage.PutLEAccountResponse(idParam, acmeResponse)
+	err = service.storage.PutAcmeAccountResponse(acmeAccount)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric

@@ -26,12 +26,9 @@ func (certDb *certificateDb) certDbToCert() (cert certificates.Certificate, err 
 	}
 
 	// convert embedded account db
-	var acmeAccount = new(acme_accounts.Account)
+	var acmeAccount = new(acme_accounts.AccountExtended)
 	if certDb.acmeAccount != nil {
-		*acmeAccount, err = certDb.acmeAccount.accountDbToAcc()
-		if err != nil {
-			return certificates.Certificate{}, err
-		}
+		*acmeAccount = certDb.acmeAccount.toAccountExtended()
 	} else {
 		acmeAccount = nil
 	}
@@ -89,7 +86,7 @@ func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error
 		var oneCert certificateDb
 		// initialize keyDb & accountDb pointer (or nil deref)
 		oneCert.privateKey = new(keyDbExtended)
-		oneCert.acmeAccount = new(accountDb)
+		oneCert.acmeAccount = new(accountDbExtended)
 		err = rows.Scan(
 			&oneCert.id,
 			&oneCert.name,
@@ -151,8 +148,7 @@ func (store *Storage) getOneCert(id int, name string, withKeyPems bool) (cert ce
 
 	var oneCert certificateDb
 	// initialize accountDb, accountDb's keyDb, and keyDb pointer (or nil deref)
-	oneCert.acmeAccount = new(accountDb)
-	oneCert.acmeAccount.privateKey = new(keyDbExtended)
+	oneCert.acmeAccount = new(accountDbExtended)
 	oneCert.privateKey = new(keyDbExtended)
 
 	err = row.Scan(
@@ -174,10 +170,10 @@ func (store *Storage) getOneCert(id int, name string, withKeyPems bool) (cert ce
 		&oneCert.acmeAccount.name,
 		&oneCert.acmeAccount.isStaging,
 		&oneCert.acmeAccount.kid,
-		&oneCert.acmeAccount.privateKey.id,
-		&oneCert.acmeAccount.privateKey.name,
-		&oneCert.acmeAccount.privateKey.algorithmValue,
-		&oneCert.acmeAccount.privateKey.pem,
+		&oneCert.acmeAccount.accountKeyDb.id,
+		&oneCert.acmeAccount.accountKeyDb.name,
+		&oneCert.acmeAccount.accountKeyDb.algorithmValue,
+		&oneCert.acmeAccount.accountKeyDb.pem,
 		&oneCert.privateKey.id,
 		&oneCert.privateKey.name,
 		&oneCert.privateKey.algorithmValue,
@@ -194,7 +190,7 @@ func (store *Storage) getOneCert(id int, name string, withKeyPems bool) (cert ce
 
 	// if not fetching pems, invalidate them
 	if !withKeyPems {
-		oneCert.acmeAccount.privateKey.pem = ""
+		oneCert.acmeAccount.accountKeyDb.pem = ""
 		oneCert.privateKey.pem = ""
 	}
 

@@ -7,15 +7,17 @@ import (
 	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
 
 // NameDescPayload is the struct for editing an existing account name and desc
 type NameDescPayload struct {
-	ID          *int    `json:"id"`
+	ID          int     `json:"-"`
 	Name        *string `json:"name"`
 	Description *string `json:"description"`
+	UpdatedAt   int     `json:"-"`
 }
 
 // PutNameDescAccount is a handler that sets the name and description of an account
@@ -38,22 +40,23 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 		return output.ErrValidationFailed
 	}
 
-	/// validation
+	// validation
 	// id
-	err = service.isIdExistingMatch(idParam, payload.ID)
-	if err != nil {
+	if !service.idExists(idParam) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
+
 	// name (optional)
-	if payload.Name != nil {
-		err = service.isNameValid(payload.ID, payload.Name)
-		if err != nil {
-			service.logger.Debug(err)
-			return output.ErrValidationFailed
-		}
+	if payload.Name != nil && !service.nameValid(*payload.Name, &idParam) {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
 	}
-	///
+	// end validation
+
+	// add additional details to the payload before saving
+	payload.ID = idParam
+	payload.UpdatedAt = int(time.Now().Unix())
 
 	// save account name and desc to storage, which also returns the account id with new
 	// name and description
@@ -81,7 +84,6 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 
 // ChangeEmailPayload is the struct for updating an account's email address
 type ChangeEmailPayload struct {
-	ID    *int    `json:"id"`
 	Email *string `json:"email"`
 }
 
@@ -105,30 +107,29 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 		return output.ErrValidationFailed
 	}
 
-	/// validation
+	// validation
 	// id
-	err = service.isIdExistingMatch(idParam, payload.ID)
-	if err != nil {
+	if !service.idExists(idParam) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
+
 	// email (update cannot be to blank)
-	err = validation.IsEmailValid(payload.Email)
-	if err != nil {
+	if payload.Email == nil || !validation.EmailValid(*payload.Email) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
-	///
+	// end validation
 
 	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam, true)
+	account, err := service.storage.GetOneAccountById(idParam)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
 	// get AccountKey
-	accountKey, err := account.AccountKey()
+	acmeAccountKey, err := account.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
@@ -140,19 +141,23 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 	}
 
 	// send the email update to ACME
-	var acmeResponse acme.Account
-	if *account.IsStaging {
-		acmeResponse, err = service.acmeStaging.UpdateAccount(acmePayload, accountKey)
+	var acmeAccount AcmeAccount
+	if account.IsStaging {
+		acmeAccount.Account, err = service.acmeStaging.UpdateAccount(acmePayload, acmeAccountKey)
 	} else {
-		acmeResponse, err = service.acmeProd.UpdateAccount(acmePayload, accountKey)
+		acmeAccount.Account, err = service.acmeProd.UpdateAccount(acmePayload, acmeAccountKey)
 	}
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
 	}
 
+	// add additional details to the payload before saving
+	acmeAccount.ID = idParam
+	acmeAccount.UpdatedAt = int(time.Now().Unix())
+
 	// save ACME response to account
-	err = service.storage.PutLEAccountResponse(idParam, acmeResponse)
+	err = service.storage.PutAcmeAccountResponse(acmeAccount)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric

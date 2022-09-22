@@ -99,7 +99,7 @@ func (store *Storage) GetAllValidCurrentOrders() (orders []orders.Order, err err
 		// initialize keyDb pointer (or nil deref)
 		oneOrder.finalizedKey = new(finalizedKeyDb)
 		oneOrder.certificate = new(certificateDb)
-		oneOrder.certificate.acmeAccount = new(accountDb)
+		oneOrder.certificate.acmeAccount = new(accountDbExtended)
 
 		err = rows.Scan(
 			&oneOrder.id,

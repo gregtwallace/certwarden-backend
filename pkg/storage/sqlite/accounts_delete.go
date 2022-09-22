@@ -3,45 +3,31 @@ package sqlite
 import (
 	"context"
 	"legocerthub-backend/pkg/storage"
+	"log"
 )
 
-// AccountInUse returns a bool if the specified account is in use, it returns
-// an error if the account does not exist (or any other error)
-func (store *Storage) AccountInUse(id int) (inUse bool, err error) {
+// AccountHasCerts returns true if the specified accountId matches
+// any of the certificates in the db
+func (store *Storage) AccountHasCerts(accountId int) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	// check account exists
-	// if scan in succeeds, account exists
+	// don't check account exists, business logic in app should do this
+
+	// check account id is not in use in certificates
 	query := `
-	SELECT id
-	FROM acme_accounts
-	WHERE id = $1
-	`
-
-	row := store.Db.QueryRowContext(ctx, query, id)
-	temp := -2
-	row.Scan(&temp)
-	if temp == -2 {
-		return false, storage.ErrNoRecord
-	}
-
-	// check not in use in certs
-	// if scan in succeeds, record exists in certificates
-	query = `
 	SELECT id
 	FROM certificates
 	WHERE acme_account_id = $1
 	`
 
-	row = store.Db.QueryRowContext(ctx, query, id)
-	temp = -2
-	row.Scan(&temp)
-	if temp != -2 {
-		return true, nil
-	}
+	row := store.Db.QueryRowContext(ctx, query, accountId)
+	temp := -2
 
-	return false, nil
+	err := row.Scan(&temp)
+	log.Println(err)
+	// error means no certs for the account (includes error no rows)
+	return err == nil
 }
 
 // DeleteAccount deletes an account from the database

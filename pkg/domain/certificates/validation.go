@@ -58,3 +58,22 @@ func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
 
 	return validation.ErrNameInUse
 }
+
+// IsAcmeAccountValid returns an error if the account does not exist or does not have
+// a status == valid, and accepted_tos == true
+func (service *Service) IsAcmeAccountValid(accountId *int) error {
+	// get available accounts list
+	accounts, err := service.accounts.GetAvailableAccounts()
+	if err != nil {
+		return err
+	}
+
+	// verify specified account id is available
+	for _, account := range accounts {
+		if account.ID == *accountId {
+			return nil
+		}
+	}
+
+	return validation.ErrKeyBad
+}

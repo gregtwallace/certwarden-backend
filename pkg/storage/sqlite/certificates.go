@@ -10,7 +10,7 @@ type certificateDb struct {
 	name                 sql.NullString
 	description          sql.NullString
 	privateKey           *keyDbExtended
-	acmeAccount          *accountDb
+	acmeAccount          *accountDbExtended
 	challengeMethodValue sql.NullString
 	subject              sql.NullString
 	subjectAltNames      sql.NullString // will be a comma separated list from storage

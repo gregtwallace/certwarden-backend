@@ -35,7 +35,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 	// no need to validate, can try to order any cert in storage
 
 	// get account key
-	key, err := cert.AcmeAccount.AccountKey()
+	key, err := cert.AcmeAccount.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
@@ -43,7 +43,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 
 	// send the new-order to ACME
 	var acmeResponse acme.Order
-	if *cert.AcmeAccount.IsStaging {
+	if cert.AcmeAccount.IsStaging {
 		acmeResponse, err = service.acmeStaging.NewOrder(cert.NewOrderPayload(), key)
 	} else {
 		acmeResponse, err = service.acmeProd.NewOrder(cert.NewOrderPayload(), key)
@@ -204,14 +204,14 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) (err
 	}
 
 	// get account key
-	key, err := order.Certificate.AcmeAccount.AccountKey()
+	key, err := order.Certificate.AcmeAccount.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed
 	}
 
 	// revoke the certificate with ACME
-	if *order.Certificate.AcmeAccount.IsStaging {
+	if order.Certificate.AcmeAccount.IsStaging {
 		err = service.acmeStaging.RevokeCertificate(*order.Pem, payload.Reason, key)
 	} else {
 		err = service.acmeProd.RevokeCertificate(*order.Pem, payload.Reason, key)

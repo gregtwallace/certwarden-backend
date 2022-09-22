@@ -71,7 +71,7 @@ func (service *Service) doOrderJob(job orderJob) {
 	}
 
 	// get account key
-	key, err := order.Certificate.AcmeAccount.AccountKey()
+	key, err := order.Certificate.AcmeAccount.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed
@@ -89,7 +89,7 @@ func (service *Service) doOrderJob(job orderJob) {
 
 	// acmeService to avoid repeated isStaging logic
 	var acmeService *acme.Service
-	if *order.Certificate.AcmeAccount.IsStaging {
+	if order.Certificate.AcmeAccount.IsStaging {
 		acmeService = service.acmeStaging
 	} else {
 		acmeService = service.acmeProd
@@ -110,7 +110,7 @@ fulfillLoop:
 		switch acmeOrder.Status {
 		case "pending": // needs to be authed
 			var authStatus string
-			authStatus, err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, *order.Certificate.ChallengeMethod, key, *order.Certificate.AcmeAccount.IsStaging)
+			authStatus, err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, *order.Certificate.ChallengeMethod, key, order.Certificate.AcmeAccount.IsStaging)
 			if err != nil {
 				service.logger.Error(err)
 				return // done, failed

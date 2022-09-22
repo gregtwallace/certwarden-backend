@@ -59,7 +59,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 		return output.ErrValidationFailed
 	}
 	// acme account
-	err = service.accounts.IsAcmeAccountValid(payload.AcmeAccountID)
+	err = service.IsAcmeAccountValid(payload.AcmeAccountID)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed

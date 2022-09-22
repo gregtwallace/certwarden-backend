@@ -24,18 +24,18 @@ type App interface {
 // Storage interface for storage functions
 type Storage interface {
 	GetAllAccounts() ([]Account, error)
-	GetOneAccountById(id int, withPem bool) (Account, error)
-	GetOneAccountByName(name string, withPem bool) (Account, error)
+	GetOneAccountById(id int) (AccountExtended, error)
+	GetOneAccountByName(name string) (AccountExtended, error)
 
 	PostNewAccount(NewPayload) (id int, err error)
 
 	PutNameDescAccount(NameDescPayload) error
-	PutLEAccountResponse(id int, response acme.Account) error
+	PutAcmeAccountResponse(response AcmeAccount) error
 
 	DeleteAccount(int) error
 
 	GetAvailableAccounts() (accts []Account, err error)
-	AccountInUse(id int) (inUse bool, err error)
+	AccountHasCerts(accountId int) (inUse bool)
 }
 
 // Accounts service struct

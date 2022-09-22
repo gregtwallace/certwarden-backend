@@ -5,19 +5,25 @@ import (
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/validation"
 	"net/http"
+	"time"
 )
 
-// NewPayload is the struct for creating a new account
+// NewPayload is the payload struct for creating a new account
 type NewPayload struct {
-	ID           *int    `json:"id"`
 	Name         *string `json:"name"`
 	Description  *string `json:"description"`
-	Email        *string `json:"email"`
 	PrivateKeyID *int    `json:"private_key_id"`
+	Status       string  `json:"-"`
+	Email        *string `json:"email"`
 	IsStaging    *bool   `json:"is_staging"`
 	AcceptedTos  *bool   `json:"accepted_tos"`
+	CreatedAt    int     `json:"-"`
+	UpdatedAt    int     `json:"-"`
+	Kid          string  `json:"-"`
 }
 
+// PostNewAccount is the handler to save a new account to storage. No ACME
+// actions (e.g. registration) are taken.
 func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (err error) {
 	var payload NewPayload
 
@@ -28,37 +34,52 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 
-	/// do validation
-	// id
-	err = validation.IsIdNew(payload.ID)
-	if err != nil {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
-	}
+	// validation
 	// name
-	err = service.isNameValid(payload.ID, payload.Name)
-	if err != nil {
+	if payload.Name == nil || !service.nameValid(*payload.Name, nil) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
-	// email
-	err = validation.IsEmailValidOrBlank(payload.Email)
-	if err != nil {
+
+	// description (blank if not specified)
+	if payload.Description == nil {
+		payload.Description = new(string)
+		*payload.Description = ""
+	}
+
+	// email (make blank if not specified)
+	if payload.Email == nil {
+		payload.Email = new(string)
+		*payload.Email = ""
+	} else if !validation.EmailValidOrBlank(*payload.Email) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
+
+	// is staging (assume staging if not specified)
+	if payload.IsStaging == nil {
+		payload.IsStaging = new(bool)
+		*payload.IsStaging = true
+	}
+
 	// TOS must be accepted
-	if !*payload.AcceptedTos {
+	if payload.AcceptedTos == nil || !*payload.AcceptedTos {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
-	// private key
-	// TODO: Possible null deref
-	if !service.keys.KeyAvailable(*payload.PrivateKeyID) {
+
+	// private key (make last since most intense op)
+	if payload.PrivateKeyID == nil || !service.keys.KeyAvailable(*payload.PrivateKeyID) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
-	///
+	// end validation
+
+	// add additional details to the payload before saving
+	payload.Status = "unknown"
+	payload.CreatedAt = int(time.Now().Unix())
+	payload.UpdatedAt = payload.CreatedAt
+	payload.Kid = ""
 
 	// Save new account details to storage.
 	// No ACME actions are performed.

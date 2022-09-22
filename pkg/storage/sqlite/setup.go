@@ -127,14 +127,14 @@ func (store *Storage) createDBTables() error {
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		name text NOT NULL UNIQUE COLLATE NOCASE,
 		private_key_id integer NOT NULL UNIQUE,
-		description text,
-		status text NOT NULL DEFAULT 'Unknown',
+		description text NOT NULL,
+		status text NOT NULL DEFAULT 'unknown',
 		email text NOT NULL,
-		accepted_tos boolean DEFAULT 0,
-		is_staging boolean DEFAULT 0,
+		accepted_tos boolean NOT NULL DEFAULT 0,
+		is_staging boolean NOT NULL DEFAULT 0,
 		created_at integer NOT NULL,
 		updated_at integer NOT NULL,
-		kid text UNIQUE,
+		kid text NOT NULL,
 		FOREIGN KEY (private_key_id)
 			REFERENCES private_keys (id)
 				ON DELETE RESTRICT

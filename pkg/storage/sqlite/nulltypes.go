@@ -10,32 +10,6 @@ import (
 // Funcs to transform payload types into null types (for db obj)
 // as well as null type to regular type
 
-// boolToNullBool converts a *bool to a NullBool
-func boolToNullBool(b *bool) sql.NullBool {
-	var nullBool sql.NullBool
-
-	if b == nil {
-		nullBool.Valid = false
-	} else {
-		nullBool.Valid = true
-		nullBool.Bool = *b
-	}
-
-	return nullBool
-}
-
-// nullBoolToBool converts the nullbool to a bool pointer
-func nullBoolToBool(nullBool sql.NullBool) *bool {
-	if nullBool.Valid {
-		b := new(bool)
-		*b = nullBool.Bool
-
-		return b
-	}
-
-	return nil
-}
-
 // intToNullInt32 converts an *int to a NullInt32
 func intToNullInt32(i *int) sql.NullInt32 {
 	var nullInt32 sql.NullInt32

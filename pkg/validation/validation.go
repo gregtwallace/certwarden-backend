@@ -103,39 +103,25 @@ func NameValid(name string) bool {
 	return true
 }
 
-// IsEmailValid returns an error if not valid, nil if valid
-// blank is not permissible
-func IsEmailValid(emailPayload *string) error {
-	// nil check, error
-	if emailPayload == nil {
-		return ErrEmailMissing
-	}
-
+// EmailValid returns true if the string contains a
+// validly formatted email address
+func EmailValid(email string) bool {
 	// valid email regex
 	emailRegex := regexp.MustCompile(`^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,4}$`)
-	isGood := emailRegex.MatchString(*emailPayload)
-	if isGood {
-		return nil
-	}
 
-	return ErrEmailBad
+	return emailRegex.MatchString(email)
 }
 
-// IsEmailValidOrBlank returns an error if not valid, nil if valid
-// to be valid: must be either blank or an email address format
-func IsEmailValidOrBlank(emailPayload *string) (err error) {
-	// Check if email is valid (regex check)
-	err = IsEmailValid(emailPayload)
-	if err != nil {
-		// blank is permissible
-		if *emailPayload == "" {
-			return nil
-		}
-
-		return err
+// EmailValidOrBlank returns true if the email is blank or
+// contains a valid email format
+func EmailValidOrBlank(email string) bool {
+	// blank check
+	if email == "" {
+		return true
 	}
 
-	return ErrEmailBad
+	// regex check
+	return EmailValid(email)
 }
 
 // IsDomainValid returns an error if not valid, nil if valid

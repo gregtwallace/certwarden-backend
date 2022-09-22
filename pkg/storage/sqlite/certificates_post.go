@@ -22,12 +22,12 @@ func newCertPayloadToDb(payload certificates.NewPayload) (certDb certificateDb, 
 
 	// initialize to avoid nil pointer
 	certDb.privateKey = new(keyDbExtended)
-	certDb.acmeAccount = new(accountDb)
+	certDb.acmeAccount = new(accountDbExtended)
 
 	certDb.name = stringToNullString(payload.Name)
 	certDb.description = stringToNullString(payload.Description)
 	certDb.privateKey.id = *payload.PrivateKeyID
-	certDb.acmeAccount.id = intToNullInt32(payload.AcmeAccountID)
+	certDb.acmeAccount.id = *payload.AcmeAccountID
 	certDb.challengeMethodValue = stringToNullString(payload.ChallengeMethodValue)
 	certDb.subject = stringToNullString(payload.Subject)
 	certDb.subjectAltNames = sliceToCommaNullString(payload.SubjectAltNames)

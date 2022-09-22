@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"errors"
+	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 )
 
 var errSubjectMissing = errors.New("certificate csr subject missing (required)")
@@ -38,7 +39,7 @@ func (cert *Certificate) MakeCsrDer() (csr []byte, err error) {
 	}
 
 	// cert's private key for signing
-	certKey, err := cert.PrivateKey.CryptoKey()
+	certKey, err := key_crypto.PemStringToKey(cert.PrivateKey.Pem, cert.PrivateKey.Algorithm)
 	if err != nil {
 		return nil, err
 	}

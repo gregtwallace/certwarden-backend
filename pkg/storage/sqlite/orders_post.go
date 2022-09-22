@@ -20,7 +20,7 @@ func newOrderToDb(cert certificates.Certificate, order acme.Order) orderDb {
 	orderDb.acmeAccount = new(accountDb)
 	orderDb.certificate = new(certificateDb)
 
-	orderDb.acmeAccount.id = intToNullInt32(cert.AcmeAccount.ID)
+	orderDb.acmeAccount.id = cert.AcmeAccount.ID
 	orderDb.certificate.id = intToNullInt32(cert.ID)
 
 	orderDb.location = stringToNullString(&order.Location)

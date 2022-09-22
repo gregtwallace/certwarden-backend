@@ -117,14 +117,14 @@ func (service *Service) refreshCert(certId int) (err error) {
 	}
 
 	// get account key
-	key, err := cert.AcmeAccount.AccountKey()
+	key, err := cert.AcmeAccount.AcmeAccountKey()
 	if err != nil {
 		return err
 	}
 
 	// send the new-order to ACME
 	var acmeResponse acme.Order
-	if *cert.AcmeAccount.IsStaging {
+	if cert.AcmeAccount.IsStaging {
 		acmeResponse, err = service.acmeStaging.NewOrder(cert.NewOrderPayload(), key)
 	} else {
 		acmeResponse, err = service.acmeProd.NewOrder(cert.NewOrderPayload(), key)

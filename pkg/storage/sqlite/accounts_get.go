@@ -4,39 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/storage"
 )
-
-// accountDbToAcc turns the database representation of an Account into an Account
-func (accountDb *accountDb) accountDbToAcc() (acme_accounts.Account, error) {
-	var privateKey = new(private_keys.KeyExtended)
-	var err error
-
-	// convert embedded private key db
-	if accountDb.privateKey != nil {
-		*privateKey = accountDb.privateKey.toKeyExtended()
-		if err != nil {
-			return acme_accounts.Account{}, err
-		}
-	} else {
-		privateKey = nil
-	}
-
-	return acme_accounts.Account{
-		ID:          nullInt32ToInt(accountDb.id),
-		Name:        nullStringToString(accountDb.name),
-		Description: nullStringToString(accountDb.description),
-		PrivateKey:  privateKey,
-		Status:      nullStringToString(accountDb.status),
-		Email:       nullStringToString(accountDb.email),
-		AcceptedTos: nullBoolToBool(accountDb.acceptedTos),
-		IsStaging:   nullBoolToBool(accountDb.isStaging),
-		CreatedAt:   nullInt32ToInt(accountDb.createdAt),
-		UpdatedAt:   nullInt32ToInt(accountDb.updatedAt),
-		Kid:         nullStringToString(accountDb.kid),
-	}, nil
-}
 
 // GetAllAccounts returns a slice of all of the Accounts in the database
 func (store *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
@@ -59,14 +28,12 @@ func (store *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 	var allAccounts []acme_accounts.Account
 	for rows.Next() {
 		var oneAccount accountDb
-		// initialize keyDb pointer (or nil deref)
-		oneAccount.privateKey = new(keyDbExtended)
 		err = rows.Scan(
 			&oneAccount.id,
 			&oneAccount.name,
 			&oneAccount.description,
-			&oneAccount.privateKey.id,
-			&oneAccount.privateKey.name,
+			&oneAccount.accountKeyDb.id,
+			&oneAccount.accountKeyDb.name,
 			&oneAccount.status,
 			&oneAccount.email,
 			&oneAccount.isStaging,
@@ -76,10 +43,8 @@ func (store *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 			return nil, err
 		}
 
-		convertedAccount, err := oneAccount.accountDbToAcc()
-		if err != nil {
-			return nil, err
-		}
+		// convert to Account
+		convertedAccount := oneAccount.toAccount()
 
 		allAccounts = append(allAccounts, convertedAccount)
 	}
@@ -88,17 +53,17 @@ func (store *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 }
 
 // GetOneAccountById returns an Account based on its unique id
-func (store *Storage) GetOneAccountById(id int, withPem bool) (acme_accounts.Account, error) {
-	return store.getOneAccount(id, "", withPem)
+func (store *Storage) GetOneAccountById(id int) (acme_accounts.AccountExtended, error) {
+	return store.getOneAccount(id, "")
 }
 
 // GetOneAccountByName returns an Account based on its unique name
-func (store *Storage) GetOneAccountByName(name string, withPem bool) (acme_accounts.Account, error) {
-	return store.getOneAccount(-1, name, withPem)
+func (store *Storage) GetOneAccountByName(name string) (acme_accounts.AccountExtended, error) {
+	return store.getOneAccount(-1, name)
 }
 
 // getOneAccount returns an Account based on either its unique id or its unique name
-func (store *Storage) getOneAccount(id int, name string, withPem bool) (acme_accounts.Account, error) {
+func (store *Storage) getOneAccount(id int, name string) (acme_accounts.AccountExtended, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
@@ -112,18 +77,16 @@ func (store *Storage) getOneAccount(id int, name string, withPem bool) (acme_acc
 
 	row := store.Db.QueryRowContext(ctx, query, id, name)
 
-	var oneAccount accountDb
-	// initialize keyDb pointer (or nil deref)
-	oneAccount.privateKey = new(keyDbExtended)
+	var oneAccount accountDbExtended
 
 	err := row.Scan(
 		&oneAccount.id,
 		&oneAccount.name,
 		&oneAccount.description,
-		&oneAccount.privateKey.id,
-		&oneAccount.privateKey.name,
-		&oneAccount.privateKey.algorithmValue,
-		&oneAccount.privateKey.pem,
+		&oneAccount.accountKeyDb.id,
+		&oneAccount.accountKeyDb.name,
+		&oneAccount.accountKeyDb.algorithmValue,
+		&oneAccount.accountKeyDb.pem,
 		&oneAccount.status,
 		&oneAccount.email,
 		&oneAccount.isStaging,
@@ -138,67 +101,11 @@ func (store *Storage) getOneAccount(id int, name string, withPem bool) (acme_acc
 		if err == sql.ErrNoRows {
 			err = storage.ErrNoRecord
 		}
-		return acme_accounts.Account{}, err
+		return acme_accounts.AccountExtended{}, err
 	}
 
-	// if not fetching pem, remove it
-	if !withPem {
-		oneAccount.privateKey.pem = ""
-	}
-
-	convertedAccount, err := oneAccount.accountDbToAcc()
-	if err != nil {
-		return acme_accounts.Account{}, err
-	}
-
-	return convertedAccount, nil
+	return oneAccount.toAccountExtended(), nil
 }
-
-// func (store *Storage) GetAccountPem(id int) (string, error) {
-// 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
-// 	defer cancel()
-
-// 	query := `SELECT pk.pem
-// 	FROM
-// 		acme_accounts aa
-// 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
-// 	WHERE
-// 		aa.id = $1
-// 	`
-
-// 	row := store.Db.QueryRowContext(ctx, query, id)
-// 	var pem sql.NullString
-// 	err := row.Scan(&pem)
-
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return pem.String, nil
-// }
-
-// func (store *Storage) GetAccountKid(id int) (string, error) {
-// 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
-// 	defer cancel()
-
-// 	query := `
-// 		SELECT kid
-// 		FROM
-// 		  acme_accounts
-// 		WHERE
-// 			id = $1
-// 	`
-
-// 	row := store.Db.QueryRowContext(ctx, query, id)
-// 	var kid sql.NullString
-// 	err := row.Scan(&kid)
-
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return kid.String, nil
-// }
 
 // GetAvailableAccounts returns a slice of Accounts that exist and have a valid status
 func (store *Storage) GetAvailableAccounts() (accts []acme_accounts.Account, err error) {
@@ -206,9 +113,12 @@ func (store *Storage) GetAvailableAccounts() (accts []acme_accounts.Account, err
 	defer cancel()
 
 	query := `
-		SELECT aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging
+		SELECT
+			aa.id, aa.name, aa.description, pk.id, pk.name,
+			aa.status, aa.email, aa.is_staging, aa.accepted_tos
 		FROM
 			acme_accounts aa
+			LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
 		WHERE
 			aa.status = "valid" AND
 			aa.accepted_tos = true
@@ -222,25 +132,25 @@ func (store *Storage) GetAvailableAccounts() (accts []acme_accounts.Account, err
 	defer rows.Close()
 
 	for rows.Next() {
-		var oneAcct accountDb
+		var oneAccount accountDb
 
 		err = rows.Scan(
-			&oneAcct.id,
-			&oneAcct.name,
-			&oneAcct.description,
-			&oneAcct.status,
-			&oneAcct.email,
-			&oneAcct.acceptedTos,
-			&oneAcct.isStaging,
+			&oneAccount.id,
+			&oneAccount.name,
+			&oneAccount.description,
+			&oneAccount.accountKeyDb.id,
+			&oneAccount.accountKeyDb.name,
+			&oneAccount.status,
+			&oneAccount.email,
+			&oneAccount.isStaging,
+			&oneAccount.acceptedTos,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		acct, err := oneAcct.accountDbToAcc()
-		if err != nil {
-			return nil, err
-		}
+		// convert to Account
+		acct := oneAccount.toAccount()
 
 		accts = append(accts, acct)
 	}
