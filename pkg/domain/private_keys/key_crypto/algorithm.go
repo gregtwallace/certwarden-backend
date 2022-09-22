@@ -24,7 +24,7 @@ const (
 
 // Algorithm custom JSON Marshal (turns the Algorithm into exportable AlgorithmDetails
 // for output)
-func (alg *Algorithm) MarshalJSON() (data []byte, err error) {
+func (alg Algorithm) MarshalJSON() (data []byte, err error) {
 	// get alg details
 	details := alg.details()
 
