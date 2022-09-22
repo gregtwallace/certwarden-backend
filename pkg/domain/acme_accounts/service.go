@@ -34,7 +34,6 @@ type Storage interface {
 
 	DeleteAccount(int) error
 
-	GetAvailableAccounts() (accts []Account, err error)
 	AccountHasCerts(accountId int) (inUse bool)
 }
 

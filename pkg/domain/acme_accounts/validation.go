@@ -40,8 +40,24 @@ func (service *Service) nameValid(accountName string, accountId *int) bool {
 	return false
 }
 
-// GetAvailableAccounts returns a list of accounts that have status == valid and have also
-// accepted the ToS (which is probably redundant)
+// GetAvailableAccounts returns a list of accounts that have status == valid
+// and have also accepted the ToS (which is probably redundant)
 func (service *Service) GetAvailableAccounts() ([]Account, error) {
-	return service.storage.GetAvailableAccounts()
+	accounts, err := service.storage.GetAllAccounts()
+	if err != nil {
+		return nil, err
+	}
+
+	// rewrite accounts in place with only valid accounts
+	newIndex := 0
+	for i := range accounts {
+		if accounts[i].Status == "valid" && accounts[i].AcceptedTos {
+			accounts[newIndex] = accounts[i]
+			newIndex++
+		}
+	}
+	// truncate accounts
+	accounts = accounts[:newIndex]
+
+	return accounts, nil
 }
