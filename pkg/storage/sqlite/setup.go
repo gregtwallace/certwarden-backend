@@ -108,7 +108,7 @@ func (store *Storage) createDBTables() error {
 	query := `CREATE TABLE private_keys (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		name text NOT NULL UNIQUE COLLATE NOCASE,
-		description text,
+		description text NOT NULL,
 		algorithm text NOT NULL,
 		pem text NOT NULL UNIQUE,
 		api_key text NOT NULL,
