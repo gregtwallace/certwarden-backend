@@ -5,8 +5,8 @@ import (
 	"legocerthub-backend/pkg/validation"
 )
 
-// isIdExisting returns an error if not valid, nil if valid
-func (service *Service) idExists(id int) bool {
+// idValid returns true if the specified accountId exists in storage
+func (service *Service) idValid(id int) bool {
 	_, err := service.storage.GetOneAccountById(id)
 	return err == nil
 }

@@ -42,7 +42,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 
 	// validation
 	// id
-	if !service.idExists(idParam) {
+	if !service.idValid(idParam) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
@@ -109,7 +109,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 
 	// validation
 	// id
-	if !service.idExists(idParam) {
+	if !service.idValid(idParam) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}

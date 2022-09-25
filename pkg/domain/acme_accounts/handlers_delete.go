@@ -21,7 +21,7 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) (e
 
 	// validation
 	// verify account exists
-	if !service.idExists(id) {
+	if !service.idValid(id) {
 		service.logger.Debug(err)
 		return output.ErrNotFound
 	}
