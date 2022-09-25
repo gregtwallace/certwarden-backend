@@ -41,7 +41,7 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (er
 
 	// validation
 	// id
-	if !service.idExists(idParam) {
+	if !service.idValid(idParam) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}

@@ -5,12 +5,12 @@ import (
 	"legocerthub-backend/pkg/validation"
 )
 
-// idExists returns true if the specified keyId exists in storage
-func (service *Service) idExists(keyId int) bool {
+// idValid returns true if the specified keyId exists in storage
+func (service *Service) idValid(keyId int) bool {
 	// fetch key id from storage, if fails it doesn't exist
 	_, err := service.storage.GetOneKeyById(keyId)
 
-	// true if no error
+	// true if no error (i.e. key was found)
 	return err == nil
 }
 
