@@ -80,7 +80,7 @@ func (service *Service) getKeyPem(keyName string, apiKey string, apiKeyViaUrl bo
 	}
 
 	// get the key from storage
-	key, err := service.storage.GetOneKeyByName(keyName, true)
+	key, err := service.storage.GetOneKeyByName(keyName)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {

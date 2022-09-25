@@ -48,7 +48,7 @@ func (store *Storage) GetOneKeyById(id int) (private_keys.KeyExtended, error) {
 }
 
 // GetOneKeyByName returns a KeyExtended based on unique name
-func (store *Storage) GetOneKeyByName(name string, withPem bool) (private_keys.KeyExtended, error) {
+func (store *Storage) GetOneKeyByName(name string) (private_keys.KeyExtended, error) {
 	return store.getOneKey(-1, name)
 }
 
