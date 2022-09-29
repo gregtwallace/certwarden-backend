@@ -25,13 +25,6 @@ type UpdatePayload struct {
 func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (err error) {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
-	// convert id param to an integer
-	idParam, err := strconv.Atoi(idParamStr)
-	if err != nil {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
-	}
-
 	var payload UpdatePayload
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
@@ -39,14 +32,21 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (er
 		return output.ErrValidationFailed
 	}
 
+	// convert id param to an integer and add to payload
+	payload.ID, err = strconv.Atoi(idParamStr)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
 	// validation
 	// id
-	if !service.idValid(idParam) {
+	if !service.idValid(payload.ID) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
 	// name (optional - check if not nil)
-	if payload.Name != nil && !service.nameValid(*payload.Name, &idParam) {
+	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
@@ -54,7 +54,6 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (er
 	// end validation
 
 	// add additional details to the payload before saving
-	payload.ID = idParam
 	payload.UpdatedAt = int(time.Now().Unix())
 
 	// save updated key info to storage
@@ -68,7 +67,7 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (er
 	response := output.JsonResponse{
 		Status:  http.StatusOK,
 		Message: "updated",
-		ID:      idParam,
+		ID:      payload.ID,
 	}
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
