@@ -42,9 +42,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 	// description (if none, set to blank)
 	if payload.Description == nil {
 		payload.Description = new(string)
-		*payload.Description = ""
 	}
-
 	// key add method
 	// error if no method specified
 	if (payload.AlgorithmValue == nil || *payload.AlgorithmValue == "") && (payload.PemContent == nil || *payload.PemContent == "") {
