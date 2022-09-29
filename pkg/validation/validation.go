@@ -107,7 +107,11 @@ func NameValid(name string) bool {
 // validly formatted email address
 func EmailValid(email string) bool {
 	// valid email regex
-	emailRegex := regexp.MustCompile(`^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,4}$`)
+	emailRegex, err := regexp.Compile(`^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,4}$`)
+	if err != nil {
+		// should never happen
+		return false
+	}
 
 	return emailRegex.MatchString(email)
 }
