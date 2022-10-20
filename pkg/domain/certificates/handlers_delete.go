@@ -20,8 +20,7 @@ func (service *Service) DeleteCert(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// verify cert exists
-	_, err = service.isIdExisting(id)
-	if err != nil {
+	if !service.idValid(id) {
 		service.logger.Debug(err)
 		return output.ErrNotFound
 	}

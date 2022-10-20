@@ -18,10 +18,10 @@ func newOrderToDb(cert certificates.Certificate, order acme.Order) orderDb {
 
 	// prevent nil pointer
 	orderDb.acmeAccount = new(accountDb)
-	orderDb.certificate = new(certificateDb)
+	orderDb.certificate = new(certificateExtendedDb)
 
-	orderDb.acmeAccount.id = cert.AcmeAccount.ID
-	orderDb.certificate.id = intToNullInt32(cert.ID)
+	orderDb.acmeAccount.id = cert.CertificateAccount.ID
+	orderDb.certificate.id = cert.ID
 
 	orderDb.location = stringToNullString(&order.Location)
 	orderDb.status = stringToNullString(&order.Status)

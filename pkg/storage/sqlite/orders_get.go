@@ -19,15 +19,16 @@ func (orderDb *orderDb) orderDbToOrder() (order orders.Order, err error) {
 	}
 
 	// convert embedded cert db
-	var cert = new(certificates.Certificate)
-	if orderDb.certificate != nil && orderDb.certificate.id.Valid {
-		*cert, err = orderDb.certificate.certDbToCert()
-		if err != nil {
-			return orders.Order{}, err
-		}
+	var cert = new(certificates.CertificateExtended)
+	if orderDb.certificate != nil {
+		*cert = orderDb.certificate.toCertificateExtended()
 	} else {
 		cert = nil
 	}
+
+	// temp until orders reworked
+	dnsIdents := commaJoinedStrings(orderDb.dnsIdentifiers.String).toSlice()
+	auths := commaJoinedStrings(orderDb.authorizations.String).toSlice()
 
 	return orders.Order{
 		// omit account, not needed
@@ -38,8 +39,8 @@ func (orderDb *orderDb) orderDbToOrder() (order orders.Order, err error) {
 		KnownRevoked:   &orderDb.knownRevoked,
 		Error:          nullStringToAcmeError(orderDb.err),
 		Expires:        nullInt32ToInt(orderDb.expires),
-		DnsIdentifiers: commaNullStringToSlice(orderDb.dnsIdentifiers),
-		Authorizations: commaNullStringToSlice(orderDb.authorizations),
+		DnsIdentifiers: &dnsIdents,
+		Authorizations: &auths,
 		Finalize:       nullStringToString(orderDb.finalize),
 		FinalizedKey:   finalKey,
 		CertificateUrl: nullStringToString(orderDb.certificateUrl),
@@ -98,8 +99,7 @@ func (store *Storage) GetAllValidCurrentOrders() (orders []orders.Order, err err
 		var oneOrder orderDb
 		// initialize keyDb pointer (or nil deref)
 		oneOrder.finalizedKey = new(finalizedKeyDb)
-		oneOrder.certificate = new(certificateDb)
-		oneOrder.certificate.acmeAccount = new(accountDbExtended)
+		oneOrder.certificate = new(certificateExtendedDb)
 
 		err = rows.Scan(
 			&oneOrder.id,
@@ -116,9 +116,9 @@ func (store *Storage) GetAllValidCurrentOrders() (orders []orders.Order, err err
 			&oneOrder.certificate.id,
 			&oneOrder.certificate.name,
 			&oneOrder.certificate.subject,
-			&oneOrder.certificate.acmeAccount.id,
-			&oneOrder.certificate.acmeAccount.name,
-			&oneOrder.certificate.acmeAccount.isStaging,
+			&oneOrder.certificate.certificateAccountDb.id,
+			&oneOrder.certificate.certificateAccountDb.name,
+			&oneOrder.certificate.certificateAccountDb.isStaging,
 		)
 		if err != nil {
 			return nil, err
@@ -267,7 +267,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 	var orderDb orderDb
 	// initialize keyDb and certDb pointer (or nil deref)
 	orderDb.finalizedKey = new(finalizedKeyDb)
-	orderDb.certificate = new(certificateDb)
+	orderDb.certificate = new(certificateExtendedDb)
 
 	err = row.Scan(
 		&orderDb.id,

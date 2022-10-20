@@ -42,19 +42,25 @@ type AccountKeyExtended struct {
 	Pem       string               `json:"-"`
 }
 
-// AcmeAccountKey() returns the ACME acme.AccountKey which is a combination
-// of the crypto.PrivateKey and Kid
-func (account *AccountExtended) AcmeAccountKey() (acmeAccountKey acme.AccountKey, err error) {
+// AcmeAccountKey creates an ACME AccountKey based on the pem, algorithm,
+// and kid provided
+func AcmeAccountKey(pem string, algo key_crypto.Algorithm, kid string) (acmeAccountKey acme.AccountKey, err error) {
 	// generate key from account key pem
-	acmeAccountKey.Key, err = key_crypto.PemStringToKey(account.AccountKey.Pem, account.AccountKey.Algorithm)
+	acmeAccountKey.Key, err = key_crypto.PemStringToKey(pem, algo)
 	if err != nil {
 		return acme.AccountKey{}, err
 	}
 
 	// set Kid from account
-	acmeAccountKey.Kid = account.Kid
+	acmeAccountKey.Kid = kid
 
 	return acmeAccountKey, nil
+}
+
+// acmeAccountKey() provides a method to create an ACME AccountKey
+// for the AccountExtended
+func (account *AccountExtended) AcmeAccountKey() (acmeKey acme.AccountKey, err error) {
+	return AcmeAccountKey(account.AccountKey.Pem, account.AccountKey.Algorithm, account.Kid)
 }
 
 // newAccountPayload() generates the payload for ACME to post to the

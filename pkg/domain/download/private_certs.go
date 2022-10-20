@@ -97,13 +97,8 @@ func (service *Service) getPrivateCertPem(certName string, apiKeysString string,
 		return "", err
 	}
 
-	// if key name is nil (key deleted), error
-	if keyName == nil {
-		return "", output.ErrStorageGeneric
-	}
-
 	// fetch the matching private key
-	keyPem, err := service.getKeyPem(*keyName, keyApiKey, apiKeyViaUrl)
+	keyPem, err := service.getKeyPem(keyName, keyApiKey, apiKeyViaUrl)
 	if err != nil {
 		return "", err
 	}

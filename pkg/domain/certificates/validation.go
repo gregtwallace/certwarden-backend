@@ -5,75 +5,76 @@ import (
 	"legocerthub-backend/pkg/validation"
 )
 
-// isIdExisting returns an error if not valid. Cert is returned if
-// valid
-func (service *Service) isIdExisting(id int) (cert Certificate, err error) {
-	cert, err = service.storage.GetOneCertById(id, false)
-	if err != nil {
-		return Certificate{}, err
-	}
+// idValid returns if the specified certId exists in storage
+func (service *Service) idValid(certId int) bool {
+	// fetch cert id from storage, if fails it doesn't exist
+	_, err := service.storage.GetOneCertById(certId)
 
-	return cert, nil
+	// true if no error, no error if succesfully retrieved
+	return err == nil
 }
 
-// isIdExisting returns an error if not valid. Cert is returned if
-// valid
-func (service *Service) isIdExistingMatch(idParam int, idPayload *int) (cert Certificate, err error) {
+// nameValid returns if a name is valid (meets char requirements
+// and is not in use in storage OR is in use by the specified certId)
+func (service *Service) nameValid(certName string, certId *int) bool {
 	// basic check
-	err = validation.IsIdExistingMatch(idParam, idPayload)
-	if err != nil {
-		return Certificate{}, err
-	}
-
-	// check id exists in storage
-	cert, err = service.isIdExisting(idParam)
-	if err != nil {
-		return Certificate{}, err
-	}
-
-	return cert, nil
-}
-
-// isNameValid returns an error if not valid, nil if valid
-func (service *Service) isNameValid(idPayload *int, namePayload *string) error {
-	// basic check
-	if !validation.NameValid(*namePayload) {
-		return validation.ErrNameBad
+	if !validation.NameValid(certName) {
+		return false
 	}
 
 	// make sure the name isn't already in use in storage
-	account, err := service.storage.GetOneCertByName(*namePayload, false)
+	cert, err := service.storage.GetOneCertByName(certName)
 	if err == storage.ErrNoRecord {
 		// no rows means name is not in use
-		return nil
+		return true
 	} else if err != nil {
-		// any other error, return the error
-		return err
+		// any other error, invalid
+		return false
 	}
 
 	// if the returned account is the account being edited, no error
-	if *account.ID == *idPayload {
-		return nil
+	if certId != nil && cert.ID == *certId {
+		return true
 	}
 
-	return validation.ErrNameInUse
+	return false
 }
 
-// IsAcmeAccountValid returns an error if the account does not exist or does not have
-// a status == valid, and accepted_tos == true
-func (service *Service) IsAcmeAccountValid(accountId *int) error {
-	// get available accounts list
-	accounts, err := service.accounts.GetAvailableAccounts()
-	if err != nil {
-		return err
+// privateKeyIdValid returns true if the specified keyId is available
+// for use by a certificate. If a certId is specified, this func will
+// also return true if the keyId is the current keyId of the cert specified
+// by the certId
+func (service *Service) privateKeyIdValid(keyId int, certId *int) bool {
+	if service.keys.KeyAvailable(keyId) {
+		return true
 	}
 
-	// verify specified account id is available
-	for _, account := range accounts {
-		if account.ID == *accountId {
-			return nil
+	// if there is a certId, check if the keyId is already assigned
+	// to the cert
+	if certId != nil {
+		cert, err := service.storage.GetOneCertById(*certId)
+		if err != nil {
+			return false
+		}
+
+		// if id matches, valid
+		if cert.CertificateKey.ID == *certId {
+			return true
+		}
+
+	}
+
+	return false
+}
+
+// subjectAltsValid validates each domain contained in the slice
+// of subject alt domain names
+func subjectAltsValid(alts []string) bool {
+	for _, altName := range alts {
+		if !validation.DomainValid(altName) {
+			return false
 		}
 	}
 
-	return validation.ErrKeyBad
+	return true
 }

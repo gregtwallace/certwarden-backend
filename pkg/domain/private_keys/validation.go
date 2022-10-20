@@ -10,7 +10,7 @@ func (service *Service) idValid(keyId int) bool {
 	// fetch key id from storage, if fails it doesn't exist
 	_, err := service.storage.GetOneKeyById(keyId)
 
-	// true if no error (i.e. key was found)
+	// true if no error, no error if succesfully retrieved
 	return err == nil
 }
 

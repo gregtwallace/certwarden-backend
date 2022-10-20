@@ -26,7 +26,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 	}
 
 	// fetch the relevant cert
-	cert, err := service.storage.GetOneCertById(certId, true)
+	cert, err := service.storage.GetOneCertById(certId)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
@@ -35,7 +35,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 	// no need to validate, can try to order any cert in storage
 
 	// get account key
-	key, err := cert.AcmeAccount.AcmeAccountKey()
+	key, err := cert.CertificateAccount.AcmeAccountKey(service.storage)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
@@ -43,7 +43,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 
 	// send the new-order to ACME
 	var acmeResponse acme.Order
-	if cert.AcmeAccount.IsStaging {
+	if cert.CertificateAccount.IsStaging {
 		acmeResponse, err = service.acmeStaging.NewOrder(cert.NewOrderPayload(), key)
 	} else {
 		acmeResponse, err = service.acmeProd.NewOrder(cert.NewOrderPayload(), key)
@@ -55,7 +55,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 	service.logger.Debugf("new order location: %s", acmeResponse.Location)
 
 	// save ACME response to order storage
-	orderId, err := service.storage.PostNewOrder(cert, acmeResponse)
+	orderId, err := service.storage.PostNewOrder(cert.Certificate, acmeResponse)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
@@ -197,21 +197,21 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) (err
 	}
 
 	// fetch the certificate with sensitive data and update the order object
-	*order.Certificate, err = service.storage.GetOneCertById(*order.Certificate.ID, true)
+	*order.Certificate, err = service.storage.GetOneCertById(order.Certificate.ID)
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed
 	}
 
 	// get account key
-	key, err := order.Certificate.AcmeAccount.AcmeAccountKey()
+	key, err := order.Certificate.CertificateAccount.AcmeAccountKey(service.storage)
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed
 	}
 
 	// revoke the certificate with ACME
-	if order.Certificate.AcmeAccount.IsStaging {
+	if order.Certificate.CertificateAccount.IsStaging {
 		err = service.acmeStaging.RevokeCertificate(*order.Pem, payload.Reason, key)
 	} else {
 		err = service.acmeProd.RevokeCertificate(*order.Pem, payload.Reason, key)

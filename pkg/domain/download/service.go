@@ -24,7 +24,7 @@ type App interface {
 type Storage interface {
 	GetOneKeyByName(name string) (private_keys.KeyExtended, error)
 
-	GetOneCertByName(name string, withAcctPem bool) (cert certificates.Certificate, err error)
+	GetOneCertByName(name string) (cert certificates.CertificateExtended, err error)
 	GetCertPemById(certId int) (pem string, err error)
 }
 

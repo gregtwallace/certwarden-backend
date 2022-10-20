@@ -20,7 +20,7 @@ func (service *Service) isCertOrderMatch(certId int, orderId int) (order Order, 
 	}
 
 	// check that cert exists in storage
-	cert, err := service.storage.GetOneCertById(certId, false)
+	cert, err := service.storage.GetOneCertById(certId)
 	if err != nil {
 		return Order{}, err
 	}
@@ -31,13 +31,8 @@ func (service *Service) isCertOrderMatch(certId int, orderId int) (order Order, 
 		return Order{}, err
 	}
 
-	// check for nil pointers (in the event a deletion has NULLed an id)
-	if cert.ID == nil || order.Certificate == nil || order.Certificate.ID == nil {
-		return Order{}, validation.ErrOrderMismatch
-	}
-
 	// check the cert id on the order matches the cert
-	if *cert.ID != *order.Certificate.ID {
+	if cert.ID != order.Certificate.ID {
 		return Order{}, validation.ErrOrderMismatch
 	}
 

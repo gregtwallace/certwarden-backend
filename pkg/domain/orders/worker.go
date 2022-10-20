@@ -61,17 +61,17 @@ func (service *Service) doOrderJob(job orderJob) {
 		if err != nil {
 			service.logger.Error(err)
 		}
-	}(*order.Certificate.ID)
+	}(order.Certificate.ID)
 
 	// fetch the certificate with sensitive data and update the order object
-	*order.Certificate, err = service.storage.GetOneCertById(*order.Certificate.ID, true)
+	*order.Certificate, err = service.storage.GetOneCertById(order.Certificate.ID)
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed
 	}
 
 	// get account key
-	key, err := order.Certificate.AcmeAccount.AcmeAccountKey()
+	key, err := order.Certificate.CertificateAccount.AcmeAccountKey(service.storage)
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed
@@ -89,7 +89,7 @@ func (service *Service) doOrderJob(job orderJob) {
 
 	// acmeService to avoid repeated isStaging logic
 	var acmeService *acme.Service
-	if order.Certificate.AcmeAccount.IsStaging {
+	if order.Certificate.CertificateAccount.IsStaging {
 		acmeService = service.acmeStaging
 	} else {
 		acmeService = service.acmeProd
@@ -110,7 +110,7 @@ fulfillLoop:
 		switch acmeOrder.Status {
 		case "pending": // needs to be authed
 			var authStatus string
-			authStatus, err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, *order.Certificate.ChallengeMethod, key, order.Certificate.AcmeAccount.IsStaging)
+			authStatus, err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, order.Certificate.ChallengeMethod, key, order.Certificate.CertificateAccount.IsStaging)
 			if err != nil {
 				service.logger.Error(err)
 				return // done, failed
@@ -126,7 +126,7 @@ fulfillLoop:
 
 		case "ready": // needs to be finalized
 			// save finalized_key_id in storage
-			err = service.storage.UpdateFinalizedKey(*order.ID, order.Certificate.PrivateKey.ID)
+			err = service.storage.UpdateFinalizedKey(*order.ID, order.Certificate.CertificateKey.ID)
 			if err != nil {
 				service.logger.Error(err)
 				return // done, failed

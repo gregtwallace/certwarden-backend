@@ -128,23 +128,18 @@ func EmailValidOrBlank(email string) bool {
 	return EmailValid(email)
 }
 
-// IsDomainValid returns an error if not valid, nil if valid
-// to be valid, regex is based off of:
+// DomainValid returns true if the string is a validly formatted
+// domain name
 // https://tools.ietf.org/id/draft-liman-tld-names-00.html
 // this is likely more inclusive than ACME server will permit
 // TODO(?): restrict this further
-func IsDomainValid(domain *string) (err error) {
-	// nil check, error
-	if domain == nil {
-		return ErrDomainMissing
-	}
-
+func DomainValid(domain string) bool {
 	// valid regex
-	emailRegex := regexp.MustCompile(`^(([A-Za-z0-9][A-Za-z0-9-]{0,61}\.)*([A-Za-z0-9][A-Za-z0-9-]{0,61}\.)[A-Za-z][A-Za-z0-9-]{0,61}[A-Za-z0-9])$`)
-	isGood := emailRegex.MatchString(*domain)
-	if isGood {
-		return nil
+	emailRegex, err := regexp.Compile(`^(([A-Za-z0-9][A-Za-z0-9-]{0,61}\.)*([A-Za-z0-9][A-Za-z0-9-]{0,61}\.)[A-Za-z][A-Za-z0-9-]{0,61}[A-Za-z0-9])$`)
+	if err != nil {
+		// should never happen
+		return false
 	}
 
-	return ErrDomainBad
+	return emailRegex.MatchString(domain)
 }

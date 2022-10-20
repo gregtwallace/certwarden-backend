@@ -70,10 +70,10 @@ func (service *Service) orderExpiringCerts() (err error) {
 		// if less than reorderTime, order a new one
 		if time.Until(expUnix) < reorderTime {
 			// refresh
-			err = service.refreshCert(*orders[i].Certificate.ID)
+			err = service.refreshCert(orders[i].Certificate.ID)
 			if err != nil {
 				// log error, but keep going through remaining range
-				service.logger.Errorf("failed to refresh cert (%d): %s", *orders[i].Certificate.ID, err)
+				service.logger.Errorf("failed to refresh cert (%d): %s", orders[i].Certificate.ID, err)
 			}
 			// sleep a little so slew of new orders doesn't hit ACME all at once
 			time.Sleep(15 * time.Second)
@@ -111,20 +111,20 @@ func (service *Service) refreshCert(certId int) (err error) {
 	service.logger.Debugf("refreshing cert (%d): placing new order", certId)
 
 	// fetch the relevant cert
-	cert, err := service.storage.GetOneCertById(certId, true)
+	cert, err := service.storage.GetOneCertById(certId)
 	if err != nil {
 		return err
 	}
 
 	// get account key
-	key, err := cert.AcmeAccount.AcmeAccountKey()
+	key, err := cert.CertificateAccount.AcmeAccountKey(service.storage)
 	if err != nil {
 		return err
 	}
 
 	// send the new-order to ACME
 	var acmeResponse acme.Order
-	if cert.AcmeAccount.IsStaging {
+	if cert.CertificateAccount.IsStaging {
 		acmeResponse, err = service.acmeStaging.NewOrder(cert.NewOrderPayload(), key)
 	} else {
 		acmeResponse, err = service.acmeProd.NewOrder(cert.NewOrderPayload(), key)
@@ -135,7 +135,7 @@ func (service *Service) refreshCert(certId int) (err error) {
 	service.logger.Debugf("new order location: %s", acmeResponse.Location)
 
 	// save ACME response to order storage
-	newOrderId, err := service.storage.PostNewOrder(cert, acmeResponse)
+	newOrderId, err := service.storage.PostNewOrder(cert.Certificate, acmeResponse)
 	if err != nil {
 		return err
 	}

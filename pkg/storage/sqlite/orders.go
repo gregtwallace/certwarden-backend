@@ -8,7 +8,7 @@ import (
 type orderDb struct {
 	id             sql.NullInt32
 	acmeAccount    *accountDb
-	certificate    *certificateDb
+	certificate    *certificateExtendedDb
 	location       sql.NullString
 	status         sql.NullString
 	knownRevoked   bool

@@ -68,46 +68,47 @@ func (service *Service) DownloadCertViaUrl(w http.ResponseWriter, r *http.Reques
 // getCertPem returns the cert pem and private key name if the apiKey matches the
 // requested key. It also checks the apiKeyViaUrl property if the client is making
 // a request with the apiKey in the Url. The pem is from the most recent valid
-// order for the specified cert.
-func (service *Service) getCertPem(certName string, apiKey string, fullChain bool, apiKeyViaUrl bool) (certPem string, keyName *string, err error) {
+// order for the specified cert. The keyName is the name of the key that corresponds
+// to that order.
+func (service *Service) getCertPem(certName string, apiKey string, fullChain bool, apiKeyViaUrl bool) (certPem string, keyName string, err error) {
 	// if not running https, error
 	if !service.https && !service.devMode {
-		return "", nil, output.ErrUnavailableHttp
+		return "", "", output.ErrUnavailableHttp
 	}
 
 	// if apiKey is blank, definitely unauthorized
 	if apiKey == "" {
 		service.logger.Debug(errBlankApiKey)
-		return "", nil, output.ErrUnauthorized
+		return "", "", output.ErrUnauthorized
 	}
 
 	// get the cert from storage
-	cert, err := service.storage.GetOneCertByName(certName, false)
+	cert, err := service.storage.GetOneCertByName(certName)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {
 			service.logger.Debug(err)
-			return "", nil, output.ErrNotFound
+			return "", "", output.ErrNotFound
 		} else {
 			service.logger.Error(err)
-			return "", nil, output.ErrStorageGeneric
+			return "", "", output.ErrStorageGeneric
 		}
 	}
 
 	// if apiKey came from URL, and cert does not support this, error
 	if apiKeyViaUrl && !cert.ApiKeyViaUrl {
 		service.logger.Debug(errApiKeyFromUrlDisallowed)
-		return "", nil, output.ErrUnauthorized
+		return "", "", output.ErrUnauthorized
 	}
 
 	// verify apikey matches cert
-	if apiKey != *cert.ApiKey {
+	if apiKey != cert.ApiKey {
 		service.logger.Debug(errWrongApiKey)
-		return "", nil, output.ErrUnauthorized
+		return "", "", output.ErrUnauthorized
 	}
 
 	// get pem of the most recent valid order for the cert
-	certPem, err = service.storage.GetCertPemById(*cert.ID)
+	certPem, err = service.storage.GetCertPemById(cert.ID)
 	if err != nil {
 		// special error case for no record found
 		// of note, this indicates the cert exists but there is no
@@ -116,17 +117,17 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 		// there may be an issue for the user to investigate
 		if err == storage.ErrNoRecord {
 			service.logger.Warn(err)
-			return "", nil, output.ErrNotFound
+			return "", "", output.ErrNotFound
 		} else {
 			service.logger.Error(err)
-			return "", nil, output.ErrStorageGeneric
+			return "", "", output.ErrStorageGeneric
 		}
 	}
 
 	// pem cant be blank
 	if certPem == "" {
 		service.logger.Debug(errNoPem)
-		return "", nil, output.ErrStorageGeneric
+		return "", "", output.ErrStorageGeneric
 	}
 
 	// if not fullchain, discard rest of chain
@@ -135,6 +136,6 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 		certPem = string(pem.EncodeToMemory(certBlock))
 	}
 
-	// return pem content and key id pointer
-	return certPem, &cert.PrivateKey.Name, nil
+	// return pem content and key name
+	return certPem, cert.CertificateKey.Name, nil
 }

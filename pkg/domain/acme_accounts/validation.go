@@ -40,9 +40,9 @@ func (service *Service) nameValid(accountName string, accountId *int) bool {
 	return false
 }
 
-// GetAvailableAccounts returns a list of accounts that have status == valid
+// GetUsableAccounts returns a list of accounts that have status == valid
 // and have also accepted the ToS (which is probably redundant)
-func (service *Service) GetAvailableAccounts() ([]Account, error) {
+func (service *Service) GetUsableAccounts() ([]Account, error) {
 	accounts, err := service.storage.GetAllAccounts()
 	if err != nil {
 		return nil, err
@@ -60,4 +60,23 @@ func (service *Service) GetAvailableAccounts() ([]Account, error) {
 	accounts = accounts[:newIndex]
 
 	return accounts, nil
+}
+
+// AccountUsable returns true if the specified account exists
+// in storage and it is in the UsableAccounts list
+func (service *Service) AccountUsable(accountId int) bool {
+	// get usable accounts list
+	accounts, err := service.GetUsableAccounts()
+	if err != nil {
+		return false
+	}
+
+	// verify specified account id is usable
+	for _, account := range accounts {
+		if account.ID == accountId {
+			return true
+		}
+	}
+
+	return false
 }

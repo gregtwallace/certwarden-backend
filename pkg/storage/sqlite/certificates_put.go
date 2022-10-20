@@ -2,53 +2,13 @@ package sqlite
 
 import (
 	"context"
-	"errors"
 	"legocerthub-backend/pkg/domain/certificates"
 	"time"
 )
 
-// accountPayloadToDb turns the client payload into a db object
-func certDetailsPayloadToDb(payload certificates.DetailsUpdatePayload) (certificateDb, error) {
-	var certDb certificateDb
-
-	// mandatory, error if somehow does not exist
-	if payload.ID == nil {
-		return certificateDb{}, errors.New("missing id")
-	}
-	certDb.id = intToNullInt32(payload.ID)
-
-	certDb.name = stringToNullString(payload.Name)
-	certDb.description = stringToNullString(payload.Description)
-
-	certDb.apiKeyViaUrl = *payload.ApiKeyViaUrl
-
-	certDb.privateKey = new(keyDbExtended)
-	certDb.privateKey.id = *payload.PrivateKeyId
-
-	certDb.challengeMethodValue = stringToNullString(payload.ChallengeMethodValue)
-
-	certDb.subjectAltNames = sliceToCommaNullString(payload.SubjectAltNames)
-
-	certDb.organization = stringToNullString(payload.Organization)
-	certDb.organizationalUnit = stringToNullString(payload.OrganizationalUnit)
-	certDb.country = stringToNullString(payload.Country)
-	certDb.state = stringToNullString(payload.State)
-	certDb.city = stringToNullString(payload.City)
-
-	certDb.updatedAt = timeNow()
-
-	return certDb, nil
-}
-
 // PutDetailsCert saves details about the cert that can be updated at any time. It only updates
 // the details which are provided
 func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) (err error) {
-	// Load payload into db obj
-	certDb, err := certDetailsPayloadToDb(payload)
-	if err != nil {
-		return err
-	}
-
 	// database update
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
@@ -67,26 +27,26 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 			csr_country = case when $8 is null then csr_country else $8 end,
 			csr_state = case when $9 is null then csr_state else $9 end,
 			csr_city = case when $10 is null then csr_city else $10 end,
-			updated_at = $11,
-			api_key_via_url = case when $12 is null then csr_city else $12 end
+			api_key_via_url = case when $12 is null then csr_city else $12 end,
+			updated_at = $11
 		WHERE
 			id = $13
 		`
 
 	_, err = store.Db.ExecContext(ctx, query,
-		certDb.name,
-		certDb.description,
-		certDb.privateKey.id,
-		certDb.challengeMethodValue,
-		certDb.subjectAltNames,
-		certDb.organization,
-		certDb.organizationalUnit,
-		certDb.country,
-		certDb.state,
-		certDb.city,
-		certDb.updatedAt,
-		certDb.apiKeyViaUrl,
-		certDb.id,
+		payload.Name,
+		payload.Description,
+		payload.PrivateKeyId,
+		payload.ChallengeMethodValue,
+		makeCommaJoinedString(payload.SubjectAltNames),
+		payload.Organization,
+		payload.OrganizationalUnit,
+		payload.Country,
+		payload.State,
+		payload.City,
+		payload.ApiKeyViaUrl,
+		payload.UpdatedAt,
+		payload.ID,
 	)
 
 	if err != nil {

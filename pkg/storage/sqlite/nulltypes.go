@@ -77,25 +77,6 @@ func sliceToCommaNullString(ss *[]string) sql.NullString {
 	return nullString
 }
 
-// commaNullStringToSlice converts a string that is a comma separated list
-// of strings into a slice of strings
-func commaNullStringToSlice(nullString sql.NullString) *[]string {
-	if nullString.Valid {
-		// if the string isn't empty, parse it
-		if nullString.String != "" {
-			s := nullStringToString(nullString)
-			slice := strings.Split(*s, ",")
-			return &slice
-		} else {
-			// empty string = empty array
-			return &[]string{}
-		}
-	}
-
-	// null / not valid, return nil
-	return nil
-}
-
 // acmeErrorToNullString converts an acme.Error into a json string and then
 // converts that into a NullString
 func acmeErrorToNullString(acmeErr *acme.Error) (nullString sql.NullString) {

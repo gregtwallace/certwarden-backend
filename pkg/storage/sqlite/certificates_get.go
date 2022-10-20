@@ -3,77 +3,27 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"legocerthub-backend/pkg/challenges"
-	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/storage"
 	"time"
 
 	"legocerthub-backend/pkg/domain/certificates"
 )
 
-// accountDbToAcc turns the database representation of a certificate into a Certificate
-func (certDb *certificateDb) certDbToCert() (cert certificates.Certificate, err error) {
-	// convert embedded private key db
-	var privateKey = new(private_keys.KeyExtended)
-	if certDb.privateKey != nil {
-		*privateKey = certDb.privateKey.toKeyExtended()
-		if err != nil {
-			return certificates.Certificate{}, err
-		}
-	} else {
-		privateKey = nil
-	}
-
-	// convert embedded account db
-	var acmeAccount = new(acme_accounts.AccountExtended)
-	if certDb.acmeAccount != nil {
-		*acmeAccount = certDb.acmeAccount.toAccountExtended()
-	} else {
-		acmeAccount = nil
-	}
-
-	// if there is a challenge type value, specify the challenge method
-	var challengeMethod = new(challenges.Method)
-	if certDb.challengeMethodValue.Valid {
-		*challengeMethod = challenges.MethodByValue(certDb.challengeMethodValue.String)
-	} else {
-		challengeMethod = nil
-	}
-
-	return certificates.Certificate{
-		ID:                 nullInt32ToInt(certDb.id),
-		Name:               nullStringToString(certDb.name),
-		Description:        nullStringToString(certDb.description),
-		PrivateKey:         privateKey,
-		AcmeAccount:        acmeAccount,
-		ChallengeMethod:    challengeMethod,
-		Subject:            nullStringToString(certDb.subject),
-		SubjectAltNames:    commaNullStringToSlice(certDb.subjectAltNames),
-		Organization:       nullStringToString(certDb.organization),
-		OrganizationalUnit: nullStringToString(certDb.organizationalUnit),
-		Country:            nullStringToString(certDb.country),
-		State:              nullStringToString(certDb.state),
-		City:               nullStringToString(certDb.city),
-		CreatedAt:          nullInt32ToInt(certDb.createdAt),
-		UpdatedAt:          nullInt32ToInt(certDb.updatedAt),
-		ApiKey:             nullStringToString(certDb.apiKey),
-		ApiKeyViaUrl:       certDb.apiKeyViaUrl,
-	}, nil
-}
-
 func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `
-	SELECT c.id, c.name, c.subject, c.subject_alts, c.description, pk.id, pk.name,
-	aa.id, aa.name, aa.is_staging
+	SELECT 
+		c.id, c.name, c.description, c.subject, c.subject_alts, 
+		pk.id, pk.name,
+		aa.id, aa.name, aa.is_staging
 	FROM
 		certificates c
 		LEFT JOIN private_keys pk on (c.private_key_id = pk.id)
 		LEFT JOIN acme_accounts aa on (c.acme_account_id = aa.id)
-	ORDER BY c.name
+	ORDER BY
+		c.name
 	`
 
 	rows, err := store.Db.QueryContext(ctx, query)
@@ -84,100 +34,88 @@ func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error
 
 	for rows.Next() {
 		var oneCert certificateDb
-		// initialize keyDb & accountDb pointer (or nil deref)
-		oneCert.privateKey = new(keyDbExtended)
-		oneCert.acmeAccount = new(accountDbExtended)
+
 		err = rows.Scan(
 			&oneCert.id,
 			&oneCert.name,
+			&oneCert.description,
 			&oneCert.subject,
 			&oneCert.subjectAltNames,
-			&oneCert.description,
-			&oneCert.privateKey.id,
-			&oneCert.privateKey.name,
-			&oneCert.acmeAccount.id,
-			&oneCert.acmeAccount.name,
-			&oneCert.acmeAccount.isStaging,
+			&oneCert.certificateKeyDb.id,
+			&oneCert.certificateKeyDb.name,
+			&oneCert.certificateAccountDb.id,
+			&oneCert.certificateAccountDb.name,
+			&oneCert.certificateAccountDb.isStaging,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		convertedCert, err := oneCert.certDbToCert()
-		if err != nil {
-			return nil, err
-		}
-
-		certs = append(certs, convertedCert)
+		// convert and append
+		certs = append(certs, oneCert.toCertificate())
 	}
 
 	return certs, nil
 }
 
 // GetOneCertById returns a Cert based on its unique id
-func (store *Storage) GetOneCertById(id int, withKeyPems bool) (cert certificates.Certificate, err error) {
-	return store.getOneCert(id, "", withKeyPems)
+func (store *Storage) GetOneCertById(id int) (cert certificates.CertificateExtended, err error) {
+	return store.getOneCert(id, "")
 }
 
 // GetOneCertByName returns a Cert based on its unique name
-func (store *Storage) GetOneCertByName(name string, withKeyPems bool) (cert certificates.Certificate, err error) {
-	return store.getOneCert(-1, name, withKeyPems)
+func (store *Storage) GetOneCertByName(name string) (cert certificates.CertificateExtended, err error) {
+	return store.getOneCert(-1, name)
 }
 
 // getOneCert returns a Cert based on either its unique id or its unique name
-func (store *Storage) getOneCert(id int, name string, withKeyPems bool) (cert certificates.Certificate, err error) {
+func (store *Storage) getOneCert(id int, name string) (cert certificates.CertificateExtended, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `
-	SELECT c.id, c.name, c.description, c.challenge_method, c.subject, c.subject_alts, 
-	c.csr_org, c.csr_ou, c.csr_country, c.csr_city, c.created_at, c.updated_at, c.api_key, c.api_key_via_url,
-	aa.id, aa.name, aa.is_staging, aa.kid,
-	ak.id, ak.name, ak.algorithm, ak.pem,
-	pk.id, pk.name, pk.algorithm, pk.pem
+	SELECT
+		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
+		c.api_key, c.api_key_via_url,
+		pk.id, pk.name, pk.algorithm, pk.pem,
+		aa.id, aa.name, aa.is_staging
 	FROM
 		certificates c
-		LEFT JOIN acme_accounts aa on (c.acme_account_id = aa.id)
-		LEFT JOIN private_keys ak on (aa.private_key_id = ak.id)
 		LEFT JOIN private_keys pk on (c.private_key_id = pk.id)
-	WHERE c.id = $1 OR c.name = $2
+		LEFT JOIN acme_accounts aa on (c.acme_account_id = aa.id)
+	WHERE 
+		c.id = $1 OR c.name = $2
 	ORDER BY c.name
 	`
 
 	row := store.Db.QueryRowContext(ctx, query, id, name)
 
-	var oneCert certificateDb
-	// initialize accountDb, accountDb's keyDb, and keyDb pointer (or nil deref)
-	oneCert.acmeAccount = new(accountDbExtended)
-	oneCert.privateKey = new(keyDbExtended)
+	var oneCert certificateExtendedDb
 
 	err = row.Scan(
 		&oneCert.id,
 		&oneCert.name,
 		&oneCert.description,
-		&oneCert.challengeMethodValue,
 		&oneCert.subject,
 		&oneCert.subjectAltNames,
+		&oneCert.challengeMethodValue,
 		&oneCert.organization,
 		&oneCert.organizationalUnit,
 		&oneCert.country,
+		&oneCert.state,
 		&oneCert.city,
 		&oneCert.createdAt,
 		&oneCert.updatedAt,
 		&oneCert.apiKey,
 		&oneCert.apiKeyViaUrl,
-		&oneCert.acmeAccount.id,
-		&oneCert.acmeAccount.name,
-		&oneCert.acmeAccount.isStaging,
-		&oneCert.acmeAccount.kid,
-		&oneCert.acmeAccount.accountKeyDb.id,
-		&oneCert.acmeAccount.accountKeyDb.name,
-		&oneCert.acmeAccount.accountKeyDb.algorithmValue,
-		&oneCert.acmeAccount.accountKeyDb.pem,
-		&oneCert.privateKey.id,
-		&oneCert.privateKey.name,
-		&oneCert.privateKey.algorithmValue,
-		&oneCert.privateKey.pem,
+		&oneCert.certificateKeyDb.id,
+		&oneCert.certificateKeyDb.name,
+		&oneCert.certificateKeyDb.algorithmValue,
+		&oneCert.certificateKeyDb.pem,
+		&oneCert.certificateAccountDb.id,
+		&oneCert.certificateAccountDb.name,
+		&oneCert.certificateAccountDb.isStaging,
 	)
 
 	if err != nil {
@@ -185,21 +123,11 @@ func (store *Storage) getOneCert(id int, name string, withKeyPems bool) (cert ce
 		if err == sql.ErrNoRows {
 			err = storage.ErrNoRecord
 		}
-		return certificates.Certificate{}, err
+		return certificates.CertificateExtended{}, err
 	}
 
-	// if not fetching pems, invalidate them
-	if !withKeyPems {
-		oneCert.acmeAccount.accountKeyDb.pem = ""
-		oneCert.privateKey.pem = ""
-	}
-
-	cert, err = oneCert.certDbToCert()
-	if err != nil {
-		return certificates.Certificate{}, err
-	}
-
-	return cert, nil
+	// convert and return
+	return oneCert.toCertificateExtended(), nil
 }
 
 // GetCertPemById returns a the pem from the most recent valid order for the specified

@@ -3,6 +3,7 @@ package orders
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/output"
@@ -39,8 +40,11 @@ type Storage interface {
 	GetNewestIncompleteCertOrderId(certId int) (orderId int, err error)
 
 	// certs
-	GetOneCertById(id int, withAcctPem bool) (cert certificates.Certificate, err error)
+	GetOneCertById(id int) (cert certificates.CertificateExtended, err error)
 	UpdateCertUpdatedTime(certId int) (err error)
+
+	// temp
+	GetOneAccountById(id int) (acme_accounts.AccountExtended, error)
 }
 
 // Keys service struct
