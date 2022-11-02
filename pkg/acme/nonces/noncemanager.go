@@ -2,6 +2,7 @@ package nonces
 
 import (
 	"errors"
+	"io"
 	"legocerthub-backend/pkg/httpclient"
 )
 
@@ -35,6 +36,11 @@ func (manager *Manager) fetchNonce() (nonce string, err error) {
 		return "", err
 	}
 	defer response.Body.Close()
+
+	// read entire body (to keep single tls connection open and avoid redundant cert
+	// log messages) see: https://stackoverflow.com/questions/17948827/reusing-http-connections-in-go
+	// for explanation
+	_, _ = io.Copy(io.Discard, response.Body)
 
 	// make sure the nonce isn't blank
 	nonce = response.Header.Get("Replay-Nonce")
