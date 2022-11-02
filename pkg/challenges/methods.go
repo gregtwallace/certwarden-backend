@@ -17,7 +17,7 @@ var methodDetails = []challMethodDetails{
 		method:        http01Internal,
 		value:         "http-01-internal",
 		name:          "HTTP (Self Served)",
-		challengeType: acme.Http01,
+		challengeType: acme.ChallengeTypeHttp01,
 	},
 	// TODO: Implement DNS
 	// {

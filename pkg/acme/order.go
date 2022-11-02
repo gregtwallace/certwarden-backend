@@ -13,9 +13,18 @@ type NewOrderPayload struct {
 
 // ACME identifier object
 type Identifier struct {
-	Type  string `json:"type"`
-	Value string `json:"value"`
+	Type  identifierType `json:"type"`
+	Value string         `json:"value"`
 }
+
+// Define ACME identifier types (per RFC 8555 9.7.7)
+type identifierType string
+
+const (
+	UnknownIdentifierType identifierType = ""
+
+	identifierTypeDns = "dns"
+)
 
 // a slice of identifiers
 // allows writing a method for an array of them
@@ -41,7 +50,7 @@ func (ids *IdentifierSlice) DnsIdentifiers() []string {
 	var s []string
 
 	for _, id := range *ids {
-		if id.Type == "dns" {
+		if id.Type == identifierTypeDns {
 			s = append(s, id.Value)
 		}
 	}
