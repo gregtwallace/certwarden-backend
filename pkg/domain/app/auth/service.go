@@ -16,6 +16,7 @@ const BcryptCost = 12
 // App interface is for connecting to the main app
 type App interface {
 	GetDevMode() bool
+	IsHttps() bool
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 	GetAuthStorage() Storage
@@ -30,6 +31,7 @@ type Storage interface {
 type Service struct {
 	devMode          bool
 	logger           *zap.SugaredLogger
+	https            bool
 	output           *output.Service
 	storage          Storage
 	accessJwtSecret  []byte
@@ -50,6 +52,9 @@ func NewService(app App) (*Service, error) {
 	if service.logger == nil {
 		return nil, errServiceComponent
 	}
+
+	// running as https?
+	service.https = app.IsHttps()
 
 	// output service
 	service.output = app.GetOutputter()

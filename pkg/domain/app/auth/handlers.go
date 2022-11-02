@@ -188,6 +188,11 @@ type passwordChangePayload struct {
 
 // ChangePassword allows a user to change their password
 func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (err error) {
+	// if not running https, error
+	if !service.https && !service.devMode {
+		return output.ErrUnavailableHttp
+	}
+
 	var payload passwordChangePayload
 
 	// This route will be unsecured in the router because the claims need to be accessed.
