@@ -47,11 +47,17 @@ type keyDetailedResponse struct {
 	// exclude PEM
 }
 
-func (key Key) detailedResponse() keyDetailedResponse {
+func (key Key) detailedResponse(withSensitive bool) keyDetailedResponse {
+	// option to redact sensitive info
+	apiKey := key.ApiKey
+	if !withSensitive {
+		apiKey = "[redacted]"
+	}
+
 	return keyDetailedResponse{
 		KeySummaryResponse: key.SummaryResponse(),
 
-		ApiKey:       key.ApiKey,
+		ApiKey:       apiKey,
 		ApiKeyViaUrl: key.ApiKeyViaUrl,
 		CreatedAt:    key.CreatedAt,
 		UpdatedAt:    key.UpdatedAt,

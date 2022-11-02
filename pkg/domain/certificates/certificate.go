@@ -86,7 +86,13 @@ type certificateDetailedResponse struct {
 	ApiKeyViaUrl       bool              `json:"api_key_via_url"`
 }
 
-func (cert Certificate) detailedResponse() certificateDetailedResponse {
+func (cert Certificate) detailedResponse(withSensitive bool) certificateDetailedResponse {
+	// option to redact sensitive info
+	apiKey := cert.ApiKey
+	if !withSensitive {
+		apiKey = "[redacted]"
+	}
+
 	return certificateDetailedResponse{
 		certificateSummaryResponse: cert.summaryResponse(),
 		ChallengeMethod:            cert.ChallengeMethod,
@@ -97,7 +103,7 @@ func (cert Certificate) detailedResponse() certificateDetailedResponse {
 		City:                       cert.City,
 		CreatedAt:                  cert.CreatedAt,
 		UpdatedAt:                  cert.UpdatedAt,
-		ApiKey:                     cert.ApiKey,
+		ApiKey:                     apiKey,
 		ApiKeyViaUrl:               cert.ApiKeyViaUrl,
 	}
 }

@@ -72,7 +72,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, cert.detailedResponse(), "certificate")
+	_, err = service.output.WriteJSON(w, http.StatusOK, cert.detailedResponse(service.https || service.devMode), "certificate")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

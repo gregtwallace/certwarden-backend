@@ -71,7 +71,7 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, key.detailedResponse(), "private_key")
+	_, err = service.output.WriteJSON(w, http.StatusOK, key.detailedResponse(service.https || service.devMode), "private_key")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
