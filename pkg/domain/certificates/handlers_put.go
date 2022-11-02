@@ -72,7 +72,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 	// subject alts (optional)
-	if payload.SubjectAltNames != nil && subjectAltsValid(payload.SubjectAltNames) {
+	if payload.SubjectAltNames != nil && !subjectAltsValid(payload.SubjectAltNames) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}

@@ -19,8 +19,14 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) (
 		return output.ErrStorageGeneric
 	}
 
+	// make keysResponse (for json output)
+	var acctsResponse []AccountSummaryResponse
+	for i := range accounts {
+		acctsResponse = append(acctsResponse, accounts[i].SummaryResponse())
+	}
+
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, accounts, "acme_accounts")
+	_, err = service.output.WriteJSON(w, http.StatusOK, acctsResponse, "acme_accounts")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
@@ -30,8 +36,7 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) (
 }
 
 // GetOneAccount is an http handler that returns one acme account based on its unique id in the
-//
-//	form of JSON written to w
+// form of JSON written to w
 func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (err error) {
 	// convert id param to an integer
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
@@ -42,14 +47,12 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (e
 	}
 
 	// if id is new, provide some info
-	err = validation.IsIdNew(&id)
-	if err == nil {
+	if validation.IsIdNew(id) {
 		return service.GetNewAccountOptions(w, r)
 	}
 
 	// if id < 0 & not new, it is definitely not valid
-	err = validation.IsIdExisting(&id)
-	if err != nil {
+	if !validation.IsIdExisting(id) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
@@ -68,7 +71,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (e
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, account, "acme_account")
+	_, err = service.output.WriteJSON(w, http.StatusOK, account.detailedResponse(), "acme_account")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
@@ -78,8 +81,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (e
 }
 
 // GetNewAccountOptions is an http handler that returns information the client GUI needs to properly
-//
-//	present options when the user is creating an account
+// present options when the user is creating an account
 func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Request) (err error) {
 	// account options / info to assist client with new account posting
 	newAccountOptions := newAccountOptions{}
@@ -89,10 +91,14 @@ func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Requ
 	newAccountOptions.StagingTosUrl = service.acmeStaging.TosUrl()
 
 	// available private keys
-	newAccountOptions.AvailableKeys, err = service.keys.AvailableKeys()
+	keys, err := service.keys.AvailableKeys()
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
+	}
+
+	for i := range keys {
+		newAccountOptions.AvailableKeys = append(newAccountOptions.AvailableKeys, keys[i].SummaryResponse())
 	}
 
 	// return response to client

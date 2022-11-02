@@ -24,8 +24,8 @@ type App interface {
 // Storage interface for storage functions
 type Storage interface {
 	GetAllAccounts() ([]Account, error)
-	GetOneAccountById(id int) (AccountExtended, error)
-	GetOneAccountByName(name string) (AccountExtended, error)
+	GetOneAccountById(id int) (Account, error)
+	GetOneAccountByName(name string) (Account, error)
 
 	PostNewAccount(NewPayload) (id int, err error)
 

@@ -2,7 +2,6 @@ package orders
 
 import (
 	"database/sql"
-	"legocerthub-backend/pkg/acme"
 	"time"
 )
 
@@ -110,46 +109,10 @@ func (service *Service) refreshCert(certId int) (err error) {
 	// if there was no existing incomplete order, place a new order
 	service.logger.Debugf("refreshing cert (%d): placing new order", certId)
 
-	// fetch the relevant cert
-	cert, err := service.storage.GetOneCertById(certId)
+	// place order and kickoff low-priority fulfillment
+	_, err = service.placeNewOrderAndFulfill(certId, false)
 	if err != nil {
 		return err
-	}
-
-	// get account key
-	key, err := cert.CertificateAccount.AcmeAccountKey(service.storage)
-	if err != nil {
-		return err
-	}
-
-	// send the new-order to ACME
-	var acmeResponse acme.Order
-	if cert.CertificateAccount.IsStaging {
-		acmeResponse, err = service.acmeStaging.NewOrder(cert.NewOrderPayload(), key)
-	} else {
-		acmeResponse, err = service.acmeProd.NewOrder(cert.NewOrderPayload(), key)
-	}
-	if err != nil {
-		return err
-	}
-	service.logger.Debugf("new order location: %s", acmeResponse.Location)
-
-	// save ACME response to order storage
-	newOrderId, err := service.storage.PostNewOrder(cert.Certificate, acmeResponse)
-	if err != nil {
-		return err
-	}
-
-	// update certificate timestamp
-	err = service.storage.UpdateCertUpdatedTime(certId)
-	if err != nil {
-		service.logger.Error(err)
-	}
-
-	// kickoff order fulfillment (low priority) (async)
-	err = service.orderFromAcme(newOrderId, false)
-	if err != nil {
-		service.logger.Error(err)
 	}
 
 	return nil

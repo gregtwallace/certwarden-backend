@@ -57,8 +57,8 @@ func (service *Service) privateKeyIdValid(keyId int, certId *int) bool {
 			return false
 		}
 
-		// if id matches, valid
-		if cert.CertificateKey.ID == *certId {
+		// if certificate's key id matches keyId, valid
+		if cert.CertificateKey.ID == keyId {
 			return true
 		}
 

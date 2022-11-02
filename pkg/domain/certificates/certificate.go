@@ -5,71 +5,101 @@ import (
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 )
 
-// Certificate is a single certificate (summary)
+// Certificate is a single certificate with all of its fields
 type Certificate struct {
-	ID                 int                `json:"id"`
-	Name               string             `json:"name"`
-	Description        string             `json:"description"`
-	CertificateKey     CertificateKey     `json:"private_key"`
-	CertificateAccount CertificateAccount `json:"acme_account"`
-	Subject            string             `json:"subject"`
-	SubjectAltNames    []string           `json:"subject_alts"`
+	ID                 int
+	Name               string
+	Description        string
+	CertificateKey     private_keys.Key
+	CertificateAccount acme_accounts.Account
+	Subject            string
+	SubjectAltNames    []string
+	ChallengeMethod    challenges.Method
+	Organization       string
+	OrganizationalUnit string
+	Country            string
+	State              string
+	City               string
+	CreatedAt          int
+	UpdatedAt          int
+	ApiKey             string
+	ApiKeyViaUrl       bool
 }
 
-type CertificateKey struct {
+// certificateSummaryResponse is a JSON response containing only
+// fields desired for the summary
+type certificateSummaryResponse struct {
+	ID                 int                               `json:"id"`
+	Name               string                            `json:"name"`
+	Description        string                            `json:"description"`
+	CertificateKey     certificateKeySummaryResponse     `json:"private_key"`
+	CertificateAccount certificateAccountSummaryResponse `json:"acme_account"`
+	Subject            string                            `json:"subject"`
+	SubjectAltNames    []string                          `json:"subject_alts"`
+}
+
+type certificateKeySummaryResponse struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
-type CertificateAccount struct {
+type certificateAccountSummaryResponse struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	IsStaging bool   `json:"is_staging"`
 }
 
-// temp workaround until further refactor
-type acctStore interface {
-	GetOneAccountById(id int) (acme_accounts.AccountExtended, error)
-}
-
-func (certAcct CertificateAccount) AcmeAccountKey(store acctStore) (acmeKey acme.AccountKey, err error) {
-	extendedAcct, err := store.GetOneAccountById(certAcct.ID)
-	if err != nil {
-		return acme.AccountKey{}, err
+func (cert Certificate) summaryResponse() certificateSummaryResponse {
+	return certificateSummaryResponse{
+		ID:          cert.ID,
+		Name:        cert.Name,
+		Description: cert.Description,
+		CertificateKey: certificateKeySummaryResponse{
+			ID:   cert.CertificateKey.ID,
+			Name: cert.CertificateKey.Name,
+		},
+		CertificateAccount: certificateAccountSummaryResponse{
+			ID:        cert.CertificateAccount.ID,
+			Name:      cert.CertificateAccount.Name,
+			IsStaging: cert.CertificateAccount.IsStaging,
+		},
+		Subject:         cert.Subject,
+		SubjectAltNames: cert.SubjectAltNames,
 	}
+}
 
-	acmeKey, err = extendedAcct.AcmeAccountKey()
-	if err != nil {
-		return acme.AccountKey{}, err
+// certificateDetailedResponse is a JSON response containing all
+// fields that can be returned as JSON
+type certificateDetailedResponse struct {
+	certificateSummaryResponse
+	ChallengeMethod    challenges.Method `json:"challenge_method"`
+	Organization       string            `json:"organization"`
+	OrganizationalUnit string            `json:"organizational_unit"`
+	Country            string            `json:"country"`
+	State              string            `json:"state"`
+	City               string            `json:"city"`
+	CreatedAt          int               `json:"created_at"`
+	UpdatedAt          int               `json:"updated_at"`
+	ApiKey             string            `json:"api_key"`
+	ApiKeyViaUrl       bool              `json:"api_key_via_url"`
+}
+
+func (cert Certificate) detailedResponse() certificateDetailedResponse {
+	return certificateDetailedResponse{
+		certificateSummaryResponse: cert.summaryResponse(),
+		ChallengeMethod:            cert.ChallengeMethod,
+		Organization:               cert.Organization,
+		OrganizationalUnit:         cert.OrganizationalUnit,
+		Country:                    cert.Country,
+		State:                      cert.State,
+		City:                       cert.City,
+		CreatedAt:                  cert.CreatedAt,
+		UpdatedAt:                  cert.UpdatedAt,
+		ApiKey:                     cert.ApiKey,
+		ApiKeyViaUrl:               cert.ApiKeyViaUrl,
 	}
-
-	return acmeKey, nil
-}
-
-// CertificateExtended is a single certificate with all of the
-// pertinent details
-type CertificateExtended struct {
-	Certificate
-	CertificateKey     CertificateKeyExtended `json:"private_key"`
-	ChallengeMethod    challenges.Method      `json:"challenge_method"`
-	Organization       string                 `json:"organization"`
-	OrganizationalUnit string                 `json:"organizational_unit"`
-	Country            string                 `json:"country"`
-	State              string                 `json:"state"`
-	City               string                 `json:"city"`
-	CreatedAt          int                    `json:"created_at"`
-	UpdatedAt          int                    `json:"updated_at"`
-	ApiKey             string                 `json:"api_key"`
-	ApiKeyViaUrl       bool                   `json:"api_key_via_url"`
-}
-
-type CertificateKeyExtended struct {
-	CertificateKey
-	Algorithm key_crypto.Algorithm `json:"-"`
-	Pem       string               `json:"-"`
 }
 
 // NewOrderPayload creates the appropriate newOrder payload for ACME
@@ -95,7 +125,7 @@ func (cert *Certificate) NewOrderPayload() acme.NewOrderPayload {
 // new account info
 // used to return info about valid options when making a new account
 type newCertOptions struct {
-	AvailableKeys             []private_keys.Key      `json:"private_keys"`
-	UsableAccounts            []acme_accounts.Account `json:"acme_accounts"`
-	AvailableChallengeMethods []challenges.Method     `json:"challenge_methods"`
+	AvailableKeys             []private_keys.KeySummaryResponse      `json:"private_keys"`
+	UsableAccounts            []acme_accounts.AccountSummaryResponse `json:"acme_accounts"`
+	AvailableChallengeMethods []challenges.Method                    `json:"challenge_methods"`
 }

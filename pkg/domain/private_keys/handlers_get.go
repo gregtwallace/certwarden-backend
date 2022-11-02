@@ -20,8 +20,14 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrStorageGeneric
 	}
 
+	// make keysResponse (for json output)
+	var keysResponse []KeySummaryResponse
+	for i := range keys {
+		keysResponse = append(keysResponse, keys[i].SummaryResponse())
+	}
+
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, keys, "private_keys")
+	_, err = service.output.WriteJSON(w, http.StatusOK, keysResponse, "private_keys")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
@@ -41,14 +47,12 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 	}
 
 	// if id is new, provide some info
-	err = validation.IsIdNew(&id)
-	if err == nil {
+	if validation.IsIdNew(id) {
 		return service.GetNewKeyOptions(w, r)
 	}
 
 	// if id < 0 & not new, it is definitely not valid
-	err = validation.IsIdExisting(&id)
-	if err != nil {
+	if !validation.IsIdExisting(id) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
@@ -67,7 +71,7 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, key, "private_key")
+	_, err = service.output.WriteJSON(w, http.StatusOK, key.detailedResponse(), "private_key")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

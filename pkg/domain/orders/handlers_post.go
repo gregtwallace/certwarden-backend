@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
 
@@ -25,60 +24,16 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 		return output.ErrValidationFailed
 	}
 
-	// fetch the relevant cert
-	cert, err := service.storage.GetOneCertById(certId)
+	// place order and kickoff high-priority fulfillment
+	orderId, err := service.placeNewOrderAndFulfill(certId, true)
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrStorageGeneric
-	}
-
-	// no need to validate, can try to order any cert in storage
-
-	// get account key
-	key, err := cert.CertificateAccount.AcmeAccountKey(service.storage)
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrInternal
-	}
-
-	// send the new-order to ACME
-	var acmeResponse acme.Order
-	if cert.CertificateAccount.IsStaging {
-		acmeResponse, err = service.acmeStaging.NewOrder(cert.NewOrderPayload(), key)
-	} else {
-		acmeResponse, err = service.acmeProd.NewOrder(cert.NewOrderPayload(), key)
-	}
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrInternal
-	}
-	service.logger.Debugf("new order location: %s", acmeResponse.Location)
-
-	// save ACME response to order storage
-	orderId, err := service.storage.PostNewOrder(cert.Certificate, acmeResponse)
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrStorageGeneric
-	}
-
-	// update certificate timestamp
-	err = service.storage.UpdateCertUpdatedTime(certId)
-	if err != nil {
-		service.logger.Error(err)
-	}
-
-	// kickoff order fulfillment (async)
-	err = service.orderFromAcme(orderId, true)
-	// log error if something strange happened
-	if err != nil {
-		service.logger.Error(err)
+		return err
 	}
 
 	// return response to client
 	response := output.JsonResponse{
-		Status: http.StatusCreated,
-		// Message: "order created", // TODO?
-		Message: acmeResponse,
+		Status:  http.StatusCreated,
+		Message: "order created", // TODO?
 		ID:      orderId,
 	}
 
@@ -113,11 +68,7 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 	/// validation
 	// ids (ensure cert and order match)
 	// also confirm order isn't invalid
-	err = service.isOrderRetryable(certId, orderId)
-	if err == validation.ErrOrderInvalid {
-		service.logger.Debug(err)
-		return output.ErrOrderInvalid
-	} else if err != nil {
+	if !service.isOrderRetryable(certId, orderId) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
@@ -178,15 +129,14 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) (err
 	// no need to error check, default int val is 0, which is the
 	// desired value if not specified
 
-	/// validation
+	// validation
 	// ids (ensure cert and order match)
 	// also confirm order is revocable (valid and unexpired)
-	err = service.isOrderRevocable(certId, orderId)
-	if err != nil {
+	if !service.isOrderRevocable(certId, orderId) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
-	///
+	// end validation
 
 	// revoke cert
 	// fetch the relevant order
@@ -197,14 +147,14 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) (err
 	}
 
 	// fetch the certificate with sensitive data and update the order object
-	*order.Certificate, err = service.storage.GetOneCertById(order.Certificate.ID)
+	order.Certificate, err = service.storage.GetOneCertById(order.Certificate.ID)
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed
 	}
 
 	// get account key
-	key, err := order.Certificate.CertificateAccount.AcmeAccountKey(service.storage)
+	key, err := order.Certificate.CertificateAccount.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed

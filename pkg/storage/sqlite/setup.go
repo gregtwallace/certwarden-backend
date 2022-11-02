@@ -152,15 +152,15 @@ func (store *Storage) createDBTables() error {
 		private_key_id integer NOT NULL UNIQUE,
 		acme_account_id integer NOT NULL,
 		name text NOT NULL UNIQUE COLLATE NOCASE,
-		description text,
+		description text NOT NULL,
 		challenge_method text NOT NULL,
 		subject text NOT NULL,
-		subject_alts text,
-		csr_org text,
-		csr_ou text,
-		csr_country text,
-		csr_state text,
-		csr_city text,
+		subject_alts text NOT NULL,
+		csr_org text NOT NULL,
+		csr_ou text NOT NULL,
+		csr_country text NOT NULL,
+		csr_state text NOT NULL,
+		csr_city text NOT NULL,
 		api_key text NOT NULL,
 		api_key_via_url integer NOT NULL DEFAULT 0 CHECK(api_key_via_url IN (0,1)),
 		created_at integer NOT NULL,
@@ -184,7 +184,7 @@ func (store *Storage) createDBTables() error {
 	query = `CREATE TABLE acme_orders (
 			id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 			acme_account_id integer NOT NULL,
-			certificate_id integer,
+			certificate_id integer NOT NULL,
 			acme_location text NOT NULL UNIQUE,
 			status text NOT NULL,
 			known_revoked integer NOT NULL DEFAULT 0 CHECK(known_revoked IN (0,1)),
@@ -210,7 +210,7 @@ func (store *Storage) createDBTables() error {
 					ON UPDATE NO ACTION,
 			FOREIGN KEY (certificate_id)
 				REFERENCES certificates (id)
-					ON DELETE SET NULL
+					ON DELETE CASCADE
 					ON UPDATE NO ACTION
 		)`
 

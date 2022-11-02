@@ -15,13 +15,23 @@ func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error
 
 	query := `
 	SELECT 
-		c.id, c.name, c.description, c.subject, c.subject_alts, 
-		pk.id, pk.name,
-		aa.id, aa.name, aa.is_staging
+		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
+		c.api_key, c.api_key_via_url,
+		
+		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_via_url,
+		pk.created_at, pk.updated_at,
+
+		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
+		aa.created_at, aa.updated_at, aa.kid,
+
+		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_via_url,
+		ak.created_at, ak.updated_at
 	FROM
 		certificates c
 		LEFT JOIN private_keys pk on (c.private_key_id = pk.id)
 		LEFT JOIN acme_accounts aa on (c.acme_account_id = aa.id)
+		LEFT JOIN private_keys ak on (aa.private_key_id = ak.id)
 	ORDER BY
 		c.name
 	`
@@ -41,11 +51,47 @@ func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error
 			&oneCert.description,
 			&oneCert.subject,
 			&oneCert.subjectAltNames,
+			&oneCert.challengeMethodValue,
+			&oneCert.organization,
+			&oneCert.organizationalUnit,
+			&oneCert.country,
+			&oneCert.state,
+			&oneCert.city,
+			&oneCert.createdAt,
+			&oneCert.updatedAt,
+			&oneCert.apiKey,
+			&oneCert.apiKeyViaUrl,
+
 			&oneCert.certificateKeyDb.id,
 			&oneCert.certificateKeyDb.name,
+			&oneCert.certificateKeyDb.description,
+			&oneCert.certificateKeyDb.algorithmValue,
+			&oneCert.certificateKeyDb.pem,
+			&oneCert.certificateKeyDb.apiKey,
+			&oneCert.certificateKeyDb.apiKeyViaUrl,
+			&oneCert.certificateKeyDb.createdAt,
+			&oneCert.certificateKeyDb.updatedAt,
+
 			&oneCert.certificateAccountDb.id,
 			&oneCert.certificateAccountDb.name,
+			&oneCert.certificateAccountDb.description,
+			&oneCert.certificateAccountDb.status,
+			&oneCert.certificateAccountDb.email,
+			&oneCert.certificateAccountDb.acceptedTos,
 			&oneCert.certificateAccountDb.isStaging,
+			&oneCert.certificateAccountDb.createdAt,
+			&oneCert.certificateAccountDb.updatedAt,
+			&oneCert.certificateAccountDb.kid,
+
+			&oneCert.certificateAccountDb.accountKeyDb.id,
+			&oneCert.certificateAccountDb.accountKeyDb.name,
+			&oneCert.certificateAccountDb.accountKeyDb.description,
+			&oneCert.certificateAccountDb.accountKeyDb.algorithmValue,
+			&oneCert.certificateAccountDb.accountKeyDb.pem,
+			&oneCert.certificateAccountDb.accountKeyDb.apiKey,
+			&oneCert.certificateAccountDb.accountKeyDb.apiKeyViaUrl,
+			&oneCert.certificateAccountDb.accountKeyDb.createdAt,
+			&oneCert.certificateAccountDb.accountKeyDb.updatedAt,
 		)
 		if err != nil {
 			return nil, err
@@ -59,17 +105,17 @@ func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error
 }
 
 // GetOneCertById returns a Cert based on its unique id
-func (store *Storage) GetOneCertById(id int) (cert certificates.CertificateExtended, err error) {
+func (store *Storage) GetOneCertById(id int) (cert certificates.Certificate, err error) {
 	return store.getOneCert(id, "")
 }
 
 // GetOneCertByName returns a Cert based on its unique name
-func (store *Storage) GetOneCertByName(name string) (cert certificates.CertificateExtended, err error) {
+func (store *Storage) GetOneCertByName(name string) (cert certificates.Certificate, err error) {
 	return store.getOneCert(-1, name)
 }
 
 // getOneCert returns a Cert based on either its unique id or its unique name
-func (store *Storage) getOneCert(id int, name string) (cert certificates.CertificateExtended, err error) {
+func (store *Storage) getOneCert(id int, name string) (cert certificates.Certificate, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
@@ -78,12 +124,20 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_via_url,
-		pk.id, pk.name, pk.algorithm, pk.pem,
-		aa.id, aa.name, aa.is_staging
+		
+		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_via_url,
+		pk.created_at, pk.updated_at,
+
+		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
+		aa.created_at, aa.updated_at, aa.kid,
+
+		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_via_url,
+		ak.created_at, ak.updated_at
 	FROM
 		certificates c
 		LEFT JOIN private_keys pk on (c.private_key_id = pk.id)
 		LEFT JOIN acme_accounts aa on (c.acme_account_id = aa.id)
+		LEFT JOIN private_keys ak on (aa.private_key_id = ak.id)
 	WHERE 
 		c.id = $1 OR c.name = $2
 	ORDER BY c.name
@@ -91,7 +145,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 
 	row := store.Db.QueryRowContext(ctx, query, id, name)
 
-	var oneCert certificateExtendedDb
+	var oneCert certificateDb
 
 	err = row.Scan(
 		&oneCert.id,
@@ -109,13 +163,37 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		&oneCert.updatedAt,
 		&oneCert.apiKey,
 		&oneCert.apiKeyViaUrl,
+
 		&oneCert.certificateKeyDb.id,
 		&oneCert.certificateKeyDb.name,
+		&oneCert.certificateKeyDb.description,
 		&oneCert.certificateKeyDb.algorithmValue,
 		&oneCert.certificateKeyDb.pem,
+		&oneCert.certificateKeyDb.apiKey,
+		&oneCert.certificateKeyDb.apiKeyViaUrl,
+		&oneCert.certificateKeyDb.createdAt,
+		&oneCert.certificateKeyDb.updatedAt,
+
 		&oneCert.certificateAccountDb.id,
 		&oneCert.certificateAccountDb.name,
+		&oneCert.certificateAccountDb.description,
+		&oneCert.certificateAccountDb.status,
+		&oneCert.certificateAccountDb.email,
+		&oneCert.certificateAccountDb.acceptedTos,
 		&oneCert.certificateAccountDb.isStaging,
+		&oneCert.certificateAccountDb.createdAt,
+		&oneCert.certificateAccountDb.updatedAt,
+		&oneCert.certificateAccountDb.kid,
+
+		&oneCert.certificateAccountDb.accountKeyDb.id,
+		&oneCert.certificateAccountDb.accountKeyDb.name,
+		&oneCert.certificateAccountDb.accountKeyDb.description,
+		&oneCert.certificateAccountDb.accountKeyDb.algorithmValue,
+		&oneCert.certificateAccountDb.accountKeyDb.pem,
+		&oneCert.certificateAccountDb.accountKeyDb.apiKey,
+		&oneCert.certificateAccountDb.accountKeyDb.apiKeyViaUrl,
+		&oneCert.certificateAccountDb.accountKeyDb.createdAt,
+		&oneCert.certificateAccountDb.accountKeyDb.updatedAt,
 	)
 
 	if err != nil {
@@ -123,11 +201,11 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		if err == sql.ErrNoRows {
 			err = storage.ErrNoRecord
 		}
-		return certificates.CertificateExtended{}, err
+		return certificates.Certificate{}, err
 	}
 
 	// convert and return
-	return oneCert.toCertificateExtended(), nil
+	return oneCert.toCertificate(), nil
 }
 
 // GetCertPemById returns a the pem from the most recent valid order for the specified

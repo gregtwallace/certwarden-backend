@@ -21,8 +21,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) (e
 	}
 
 	// if id < 0 it is definitely not valid
-	err = validation.IsIdExisting(&certId)
-	if err != nil {
+	if !validation.IsIdExisting(certId) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
@@ -40,8 +39,14 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) (e
 		}
 	}
 
+	// response
+	var response []orderSummaryResponse
+	for i := range orders {
+		response = append(response, orders[i].summaryResponse())
+	}
+
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, orders, "orders")
+	_, err = service.output.WriteJSON(w, http.StatusOK, response, "orders")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
@@ -66,8 +71,14 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 		}
 	}
 
+	// response
+	var response []orderSummaryResponse
+	for i := range orders {
+		response = append(response, orders[i].summaryResponse())
+	}
+
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, orders, "orders")
+	_, err = service.output.WriteJSON(w, http.StatusOK, response, "orders")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

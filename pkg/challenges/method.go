@@ -21,7 +21,7 @@ const (
 )
 
 // Method custom JSON Marshal (turns the Method into MethodDetails for output)
-func (method *Method) MarshalJSON() (data []byte, err error) {
+func (method Method) MarshalJSON() (data []byte, err error) {
 	// get method details
 	details := method.details()
 

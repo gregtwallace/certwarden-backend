@@ -13,15 +13,21 @@ import (
 
 // GetAllCertificates fetches all certs from storage and outputs them as JSON
 func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) (err error) {
-	// get keys from storage
-	keys, err := service.storage.GetAllCerts()
+	// get certs from storage
+	certs, err := service.storage.GetAllCerts()
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
+	// make response (for json output)
+	var response []certificateSummaryResponse
+	for i := range certs {
+		response = append(response, certs[i].summaryResponse())
+	}
+
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, keys, "certificates")
+	_, err = service.output.WriteJSON(w, http.StatusOK, response, "certificates")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
@@ -42,14 +48,12 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// if id is new, provide some info
-	err = validation.IsIdNew(&id)
-	if err == nil {
+	if validation.IsIdNew(id) {
 		return service.GetNewCertOptions(w, r)
 	}
 
 	// if id < 0 & not new, it is definitely not valid
-	err = validation.IsIdExisting(&id)
-	if err != nil {
+	if !validation.IsIdExisting(id) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
@@ -68,7 +72,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, cert, "certificate")
+	_, err = service.output.WriteJSON(w, http.StatusOK, cert.detailedResponse(), "certificate")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
@@ -84,17 +88,25 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	newCertOptions := newCertOptions{}
 
 	// available accounts
-	newCertOptions.UsableAccounts, err = service.accounts.GetUsableAccounts()
+	accounts, err := service.accounts.GetUsableAccounts()
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
+	for i := range accounts {
+		newCertOptions.UsableAccounts = append(newCertOptions.UsableAccounts, accounts[i].SummaryResponse())
+	}
+
 	// available private keys
-	newCertOptions.AvailableKeys, err = service.keys.AvailableKeys()
+	keys, err := service.keys.AvailableKeys()
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
+	}
+
+	for i := range keys {
+		newCertOptions.AvailableKeys = append(newCertOptions.AvailableKeys, keys[i].SummaryResponse())
 	}
 
 	// available challenge methods

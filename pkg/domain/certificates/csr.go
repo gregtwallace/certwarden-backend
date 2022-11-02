@@ -8,7 +8,7 @@ import (
 )
 
 // MakeCsrDer generates the CSR bytes for ACME to POST To a Finalize URL
-func (cert *CertificateExtended) MakeCsrDer() (csr []byte, err error) {
+func (cert *Certificate) MakeCsrDer() (csr []byte, err error) {
 	// create Subject
 	subj := pkix.Name{
 		CommonName:         cert.Subject,

@@ -5,79 +5,63 @@ import (
 	"time"
 )
 
-// isCertOrderMatch confirms the order and cert are both valid and that
-// the order belongs to the specified cert. It also returns the order
-// in case additional validation is needed.
-func (service *Service) isCertOrderMatch(certId int, orderId int) (order Order, err error) {
+// isCertOrderMatch returns true if the order and cert are both valid and the order
+// belongs to the specified cert. It also returns the order if valid.
+func (service *Service) isCertOrderMatch(certId int, orderId int) (bool, Order) {
 	// basic check
-	err = validation.IsIdExisting(&certId)
-	if err != nil {
-		return Order{}, err
+	if !validation.IsIdExisting(certId) {
+		return false, Order{}
 	}
-	err = validation.IsIdExisting(&orderId)
-	if err != nil {
-		return Order{}, err
+	if !validation.IsIdExisting(orderId) {
+		return false, Order{}
 	}
 
 	// check that cert exists in storage
 	cert, err := service.storage.GetOneCertById(certId)
 	if err != nil {
-		return Order{}, err
+		return false, Order{}
 	}
 
 	// check that order exists in storage
-	order, err = service.storage.GetOneOrder(orderId)
+	order, err := service.storage.GetOneOrder(orderId)
 	if err != nil {
-		return Order{}, err
+		return false, Order{}
 	}
 
 	// check the cert id on the order matches the cert
 	if cert.ID != order.Certificate.ID {
-		return Order{}, validation.ErrOrderMismatch
+		return false, Order{}
 	}
 
-	return order, nil
+	return true, order
 }
 
-// isOrderRetryable checks that the cert and order are both valid and in storage
-// and then also verifies the order belongs to the cert.  Returns an error if not
-// valid, nil if valid
-func (service *Service) isOrderRetryable(certId int, orderId int) (err error) {
-	order, err := service.isCertOrderMatch(certId, orderId)
-	if err != nil {
-		return err
+// isOrderRetryable returns true if the cert and order are both valid and in storage,
+// the order belongs to the cert, and the order is in a state that can be retried.
+func (service *Service) isOrderRetryable(certId int, orderId int) bool {
+	match, order := service.isCertOrderMatch(certId, orderId)
+	if !match {
+		return false
 	}
 
 	// check order is in a state that can be retried
-	// if pem is missing, allow proceeding so pem can be acquired
-	// by order fulfiller
-	validPem := false
-	if order.Pem != nil && *order.Pem != "" {
-		validPem = true
-	}
-
-	if *order.Status == "valid" && validPem {
-		return validation.ErrOrderValid
-	} else if *order.Status == "invalid" {
-		return validation.ErrOrderInvalid
-	}
-
-	return nil
+	return !(order.Status == "valid" || order.Status == "invalid")
 }
 
 // isOrderRevocable verifies order belongs to cert and confirms the order
 // is in a state that can be revoked ('valid' and 'valid_to' < current time)
-func (service *Service) isOrderRevocable(certId, orderId int) (err error) {
-	order, err := service.isCertOrderMatch(certId, orderId)
-	if err != nil {
-		return err
+func (service *Service) isOrderRevocable(certId, orderId int) bool {
+	match, order := service.isCertOrderMatch(certId, orderId)
+	if !match {
+		return false
 	}
 
 	// check order is in a state that can be revoked
-	// must be valid and not expired
-	if *order.Status == "valid" && !*order.KnownRevoked && int(time.Now().Unix()) < *order.ValidTo {
-		return nil
+	// nil check
+	if order.ValidTo == nil {
+		return false
 	}
 
-	return validation.ErrOrderNotRevocable
+	// must be valid and not expired
+	return (order.Status == "valid" && !order.KnownRevoked && int(time.Now().Unix()) < *order.ValidTo)
 }

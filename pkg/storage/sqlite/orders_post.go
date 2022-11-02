@@ -3,49 +3,12 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/domain/certificates"
+	"legocerthub-backend/pkg/domain/orders"
 )
 
-// newOrderToDb translates the order response into the fields we want to save
-// in the database
-func newOrderToDb(cert certificates.Certificate, order acme.Order) orderDb {
-	// create db obj
-	var orderDb orderDb
-
-	// dnsIds
-	dnsIds := order.Identifiers.DnsIdentifiers()
-
-	// prevent nil pointer
-	orderDb.acmeAccount = new(accountDb)
-	orderDb.certificate = new(certificateExtendedDb)
-
-	orderDb.acmeAccount.id = cert.CertificateAccount.ID
-	orderDb.certificate.id = cert.ID
-
-	orderDb.location = stringToNullString(&order.Location)
-	orderDb.status = stringToNullString(&order.Status)
-	orderDb.knownRevoked = false
-	orderDb.err = acmeErrorToNullString(order.Error)
-	orderDb.expires = intToNullInt32(order.Expires.ToUnixTime())
-	orderDb.dnsIdentifiers = sliceToCommaNullString(&dnsIds)
-	orderDb.authorizations = sliceToCommaNullString(&order.Authorizations)
-	orderDb.finalize = stringToNullString(&order.Finalize)
-	orderDb.certificateUrl = stringToNullString(&order.Certificate)
-
-	orderDb.createdAt = timeNow()
-	orderDb.updatedAt = orderDb.createdAt
-
-	return orderDb
-}
-
-// PostNewOrder makes a new order in the db with the cert information and
-// ACME response from posting the new order to ACME. If the order already exists
-// the order is updated with the newest information.
-func (store *Storage) PostNewOrder(cert certificates.Certificate, order acme.Order) (newId int, err error) {
-	// Load response into db obj
-	orderDb := newOrderToDb(cert, order)
-
+// PostNewOrder makes a new order in the db. An error is returned if the order
+// location already exists (or any other error)
+func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId int, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
@@ -58,84 +21,75 @@ func (store *Storage) PostNewOrder(cert certificates.Certificate, order acme.Ord
 
 	// check if the order already exists
 	query := `
-	SELECT id
+	SELECT
+		id
 	FROM
 		acme_orders
 	WHERE
 		acme_location = $1
 	`
 
-	row := tx.QueryRowContext(ctx, query, orderDb.location)
+	row := tx.QueryRowContext(ctx, query, payload.Location)
 	err = row.Scan(&newId)
-	if err != nil && err != sql.ErrNoRows {
+
+	// if err == nil, record was found. return the existingId and a corresponding error
+	if err == nil {
+		return newId, orders.ErrOrderExists
+	} else if err != sql.ErrNoRows {
+		// any other error, except no rows (because that indicates this order is truly new to db)
 		return -2, err
 	}
 
-	// if doesn't exist (i.e. it is new), insert
-	if err == sql.ErrNoRows {
-		query := `
-		INSERT INTO
-			acme_orders
-				(
-					acme_account_id,
-					certificate_id,
-					acme_location,
-					status,
-					known_revoked,
-					expires,
-					dns_identifiers,
-					authorizations,
-					finalize,
-					certificate_url,
-					created_at,
-					updated_at
-				)
-		VALUES
-				(
-					$1,
-					$2,
-					$3,
-					$4,
-					$5,
-					$6,
-					$7,
-					$8,
-					$9,
-					$10,
-					$11,
-					$12
-				)
-		RETURNING
-			id
-		`
+	query = `
+	INSERT INTO
+		acme_orders
+			(
+				certificate_id,
+				acme_account_id,
+				status,
+				known_revoked,
+				expires,
+				dns_identifiers,
+				error,
+				authorizations,
+				finalize,
+				acme_location,
+				created_at,
+				updated_at
+			)
+	VALUES
+			(
+				$1,
+				$2,
+				$3,
+				$4,
+				$5,
+				$6,
+				$7,
+				$8,
+				$9,
+				$10,
+				$11,
+				$12
+			)
+	RETURNING
+		id
+	`
 
-		err = tx.QueryRowContext(ctx, query,
-			orderDb.acmeAccount.id,
-			orderDb.certificate.id,
-			orderDb.location,
-			orderDb.status,
-			orderDb.knownRevoked,
-			orderDb.expires,
-			orderDb.dnsIdentifiers,
-			orderDb.authorizations,
-			orderDb.finalize,
-			orderDb.certificateUrl,
-			orderDb.createdAt,
-			orderDb.updatedAt,
-		).Scan(&newId)
-
-	} else {
-		// update the existing order with the new details
-		err = store.UpdateOrderAcme(newId, order)
-		if err != nil {
-			return -2, err
-		}
-		return newId, nil
-	}
-
-	if err != nil {
-		return -2, err
-	}
+	err = tx.QueryRowContext(ctx, query,
+		payload.CertId,
+		payload.AccountId,
+		payload.Status,
+		payload.KnownRevoked,
+		payload.Expires,
+		makeCommaJoinedString(payload.DnsIds),
+		payload.Error,
+		makeCommaJoinedString(payload.Authorizations),
+		payload.Finalize,
+		payload.Location,
+		payload.CreatedAt,
+		payload.UpdatedAt,
+	).Scan(&newId)
 
 	err = tx.Commit()
 	if err != nil {

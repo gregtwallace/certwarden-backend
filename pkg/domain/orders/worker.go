@@ -64,14 +64,14 @@ func (service *Service) doOrderJob(job orderJob) {
 	}(order.Certificate.ID)
 
 	// fetch the certificate with sensitive data and update the order object
-	*order.Certificate, err = service.storage.GetOneCertById(order.Certificate.ID)
+	order.Certificate, err = service.storage.GetOneCertById(order.Certificate.ID)
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed
 	}
 
 	// get account key
-	key, err := order.Certificate.CertificateAccount.AcmeAccountKey(service.storage)
+	key, err := order.Certificate.CertificateAccount.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed
@@ -100,7 +100,7 @@ func (service *Service) doOrderJob(job orderJob) {
 fulfillLoop:
 	for i := 1; i <= maxTries; i++ {
 		// Get the order (for most recent Order object and Status)
-		acmeOrder, err = acmeService.GetOrder(*order.Location, key)
+		acmeOrder, err = acmeService.GetOrder(order.Location, key)
 		if err != nil {
 			service.logger.Error(err)
 			return // done, failed
@@ -126,14 +126,14 @@ fulfillLoop:
 
 		case "ready": // needs to be finalized
 			// save finalized_key_id in storage
-			err = service.storage.UpdateFinalizedKey(*order.ID, order.Certificate.CertificateKey.ID)
+			err = service.storage.UpdateFinalizedKey(order.ID, order.Certificate.CertificateKey.ID)
 			if err != nil {
 				service.logger.Error(err)
 				return // done, failed
 			}
 
 			// finalize the order
-			acmeOrder, err = acmeService.FinalizeOrder(*order.Finalize, csr, key)
+			acmeOrder, err = acmeService.FinalizeOrder(order.Finalize, csr, key)
 			if err != nil {
 				service.logger.Error(err)
 				return // done, failed
@@ -149,20 +149,25 @@ fulfillLoop:
 
 		case "valid": // can be downloaded
 			// download cert pem
-			certPemChain, err := acmeService.DownloadCertificate(acmeOrder.Certificate, key)
-			if err != nil {
-				service.logger.Error(err)
-				return // done, failed
+			// nil check (make sure there is a cert URL)
+			if acmeOrder.Certificate != nil {
+				certPemChain, err := acmeService.DownloadCertificate(*acmeOrder.Certificate, key)
+				if err != nil {
+					service.logger.Error(err)
+					return // done, failed
+				}
+
+				// process pem and save to storage
+				err = service.savePemChain(order.ID, certPemChain)
+				if err != nil {
+					service.logger.Error(err)
+					return
+				}
+
+				break fulfillLoop
 			}
 
-			// process pem and save to storage
-			err = service.savePemChain(*order.ID, certPemChain)
-			if err != nil {
-				service.logger.Error(err)
-				return
-			}
-
-			break fulfillLoop
+			// if cert url is missing (nil), loop again (which will refresh order info)
 
 		case "processing":
 			// TODO: Implement exponential backoff
@@ -183,7 +188,7 @@ fulfillLoop:
 	}
 
 	// update order in storage
-	err = service.storage.UpdateOrderAcme(job.orderId, acmeOrder)
+	err = service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(job.orderId, acmeOrder))
 	if err != nil {
 		service.logger.Error(err)
 	}

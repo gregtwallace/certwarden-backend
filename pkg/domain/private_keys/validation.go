@@ -46,6 +46,7 @@ func (service *Service) nameValid(keyName string, keyId *int) bool {
 // GetAvailableKeys returns a list of all available keys; storage should
 // return keys that exist but are not already in use by an account or a
 // certificate
+// TODO: Maybe move business logic here instead of in storage
 func (service *Service) AvailableKeys() (keys []Key, err error) {
 	return service.storage.GetAvailableKeys()
 }

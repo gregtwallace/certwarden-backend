@@ -3,7 +3,6 @@ package orders
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/output"
@@ -29,9 +28,9 @@ type Storage interface {
 	GetCertOrders(certId int) (orders []Order, err error)
 	GetOneOrder(orderId int) (order Order, err error)
 
-	PostNewOrder(cert certificates.Certificate, order acme.Order) (newId int, err error)
+	PostNewOrder(payload NewOrderAcmePayload) (newId int, err error)
 
-	UpdateOrderAcme(orderId int, order acme.Order) (err error)
+	PutOrderAcme(payload UpdateAcmeOrderPayload) (err error)
 	UpdateFinalizedKey(orderId int, keyId int) (err error)
 	UpdateOrderCert(orderId int, CertPayload CertPayload) (err error)
 	RevokeOrder(orderId int) (err error)
@@ -40,11 +39,8 @@ type Storage interface {
 	GetNewestIncompleteCertOrderId(certId int) (orderId int, err error)
 
 	// certs
-	GetOneCertById(id int) (cert certificates.CertificateExtended, err error)
+	GetOneCertById(id int) (cert certificates.Certificate, err error)
 	UpdateCertUpdatedTime(certId int) (err error)
-
-	// temp
-	GetOneAccountById(id int) (acme_accounts.AccountExtended, error)
 }
 
 // Keys service struct

@@ -12,8 +12,14 @@ func (store Storage) GetAllKeys() ([]private_keys.Key, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	query := `SELECT id, name, description, algorithm
-	FROM private_keys ORDER BY name`
+	query := `
+	SELECT
+		id, name, description, algorithm, pem, api_key, api_key_via_url, created_at, updated_at
+	FROM
+		private_keys
+	ORDER BY
+		name
+	`
 
 	rows, err := store.Db.QueryContext(ctx, query)
 	if err != nil {
@@ -29,6 +35,11 @@ func (store Storage) GetAllKeys() ([]private_keys.Key, error) {
 			&oneKeyDb.name,
 			&oneKeyDb.description,
 			&oneKeyDb.algorithmValue,
+			&oneKeyDb.pem,
+			&oneKeyDb.apiKey,
+			&oneKeyDb.apiKeyViaUrl,
+			&oneKeyDb.createdAt,
+			&oneKeyDb.updatedAt,
 		)
 		if err != nil {
 			return nil, err
@@ -43,17 +54,17 @@ func (store Storage) GetAllKeys() ([]private_keys.Key, error) {
 }
 
 // GetOneKeyById returns a KeyExtended based on unique id
-func (store *Storage) GetOneKeyById(id int) (private_keys.KeyExtended, error) {
+func (store *Storage) GetOneKeyById(id int) (private_keys.Key, error) {
 	return store.getOneKey(id, "")
 }
 
 // GetOneKeyByName returns a KeyExtended based on unique name
-func (store *Storage) GetOneKeyByName(name string) (private_keys.KeyExtended, error) {
+func (store *Storage) GetOneKeyByName(name string) (private_keys.Key, error) {
 	return store.getOneKey(-1, name)
 }
 
 // dbGetOneKey returns a KeyExtended based on unique id or unique name
-func (store Storage) getOneKey(id int, name string) (private_keys.KeyExtended, error) {
+func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
@@ -70,7 +81,7 @@ func (store Storage) getOneKey(id int, name string) (private_keys.KeyExtended, e
 
 	row := store.Db.QueryRowContext(ctx, query, id, name)
 
-	var oneKeyDb keyDbExtended
+	var oneKeyDb keyDb
 	err := row.Scan(
 		&oneKeyDb.id,
 		&oneKeyDb.name,
@@ -88,13 +99,13 @@ func (store Storage) getOneKey(id int, name string) (private_keys.KeyExtended, e
 		if err == sql.ErrNoRows {
 			err = storage.ErrNoRecord
 		}
-		return private_keys.KeyExtended{}, err
+		return private_keys.Key{}, err
 	}
 
 	// convert to KeyExtended
-	oneKeyExt := oneKeyDb.toKeyExtended()
+	oneKeyExt := oneKeyDb.toKey()
 	if err != nil {
-		return private_keys.KeyExtended{}, err
+		return private_keys.Key{}, err
 	}
 
 	return oneKeyExt, nil
@@ -107,7 +118,9 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 	defer cancel()
 
 	query := `
-		SELECT pk.id, pk.name, pk.description, pk.algorithm
+		SELECT
+			pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_via_url,
+			pk.created_at, pk.updated_at
 		FROM
 		  private_keys pk
 		WHERE
@@ -163,6 +176,11 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 			&oneKeyDb.name,
 			&oneKeyDb.description,
 			&oneKeyDb.algorithmValue,
+			&oneKeyDb.pem,
+			&oneKeyDb.apiKey,
+			&oneKeyDb.apiKeyViaUrl,
+			&oneKeyDb.createdAt,
+			&oneKeyDb.updatedAt,
 		)
 		if err != nil {
 			return nil, err

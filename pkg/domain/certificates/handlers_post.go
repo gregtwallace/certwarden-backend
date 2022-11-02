@@ -75,7 +75,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 	}
 	// subject alts
 	// blank is okay, skip validation if not specified
-	if payload.SubjectAltNames != nil && subjectAltsValid(payload.SubjectAltNames) {
+	if payload.SubjectAltNames != nil && !subjectAltsValid(payload.SubjectAltNames) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}

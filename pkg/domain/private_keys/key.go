@@ -1,29 +1,71 @@
 package private_keys
 
 import (
+	"crypto"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 )
 
-// Key is a single private key (summary for all keys)
+// Key is a single private key with all data
 type Key struct {
+	ID           int
+	Name         string
+	Description  string
+	Algorithm    key_crypto.Algorithm
+	Pem          string
+	ApiKey       string
+	ApiKeyViaUrl bool
+	CreatedAt    int
+	UpdatedAt    int
+}
+
+// keySummaryResponse is a JSON response containing only
+// fields desired for the summary
+type KeySummaryResponse struct {
 	ID          int                  `json:"id"`
 	Name        string               `json:"name"`
 	Description string               `json:"description"`
 	Algorithm   key_crypto.Algorithm `json:"algorithm"`
 }
 
-// KeyExtended is a single private key with all of its details
-type KeyExtended struct {
-	Key
-	Pem          string `json:"-"`
+func (key Key) SummaryResponse() KeySummaryResponse {
+	return KeySummaryResponse{
+		ID:          key.ID,
+		Name:        key.Name,
+		Description: key.Description,
+		Algorithm:   key.Algorithm,
+	}
+}
+
+// keyDetailedResponse is a JSON response containing all
+// fields that can be returned as JSON
+type keyDetailedResponse struct {
+	KeySummaryResponse
 	ApiKey       string `json:"api_key,omitempty"`
 	ApiKeyViaUrl bool   `json:"api_key_via_url"`
 	CreatedAt    int    `json:"created_at"`
 	UpdatedAt    int    `json:"updated_at"`
+	// exclude PEM
+}
+
+func (key Key) detailedResponse() keyDetailedResponse {
+	return keyDetailedResponse{
+		KeySummaryResponse: key.SummaryResponse(),
+
+		ApiKey:       key.ApiKey,
+		ApiKeyViaUrl: key.ApiKeyViaUrl,
+		CreatedAt:    key.CreatedAt,
+		UpdatedAt:    key.UpdatedAt,
+	}
 }
 
 // new private key options
 // used to return info about valid options when making a new key
 type newKeyOptions struct {
 	KeyAlgorithms []key_crypto.Algorithm `json:"key_algorithms"`
+}
+
+// CryptoPrivateKey() provides a crypto.PrivateKey for the Key
+// for the Account
+func (key *Key) CryptoPrivateKey() (cryptoKey crypto.PrivateKey, err error) {
+	return (key_crypto.PemStringToKey(key.Pem, key.Algorithm))
 }

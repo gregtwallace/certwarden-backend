@@ -6,61 +6,99 @@ import (
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 )
 
-// Account is a single ACME account (summary)
+// Account is a single ACME account
 type Account struct {
-	ID          int        `json:"id"`
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
-	AccountKey  AccountKey `json:"private_key"`
-	Status      string     `json:"status"`
-	Email       string     `json:"email"`
-	AcceptedTos bool       `json:"accepted_tos"`
-	IsStaging   bool       `json:"is_staging"`
+	ID          int
+	Name        string
+	Description string
+	AccountKey  private_keys.Key
+	Status      string
+	Email       string
+	AcceptedTos bool
+	IsStaging   bool
+	CreatedAt   int
+	UpdatedAt   int
+	Kid         string
 }
 
-// AccountKey is a modified Private Key that only holds fields the
-// account will use
-type AccountKey struct {
+// AccountSummaryResponse is a JSON response containing only
+// fields desired for the summary
+type AccountSummaryResponse struct {
+	ID          int                       `json:"id"`
+	Name        string                    `json:"name"`
+	Description string                    `json:"description"`
+	AccountKey  AccountKeySummaryResponse `json:"private_key"`
+	Status      string                    `json:"status"`
+	Email       string                    `json:"email"`
+	AcceptedTos bool                      `json:"accepted_tos"`
+	IsStaging   bool                      `json:"is_staging"`
+}
+
+type AccountKeySummaryResponse struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
-// AccountExtended is a single ACME account with all of its details
-type AccountExtended struct {
-	Account
-	AccountKey AccountKeyExtended `json:"private_key"`
-	CreatedAt  int                `json:"created_at"`
-	UpdatedAt  int                `json:"updated_at"`
-	Kid        string             `json:"kid"`
+func (acct Account) SummaryResponse() AccountSummaryResponse {
+	return AccountSummaryResponse{
+		ID:          acct.ID,
+		Name:        acct.Name,
+		Description: acct.Description,
+		AccountKey: AccountKeySummaryResponse{
+			ID:   acct.AccountKey.ID,
+			Name: acct.AccountKey.Name,
+		},
+		Status:      acct.Status,
+		Email:       acct.Email,
+		AcceptedTos: acct.AcceptedTos,
+		IsStaging:   acct.IsStaging,
+	}
 }
 
-// AccountKeyExtended is a modified Private Key that only holds fields
-// the extended account will use
-type AccountKeyExtended struct {
-	AccountKey
+// accountDetailedResponse is a JSON response containing all
+// fields that can be returned as JSON
+type accountDetailedResponse struct {
+	AccountSummaryResponse
+	AccountKey accountKeyDetailedResponse `json:"private_key"`
+	CreatedAt  int                        `json:"created_at"`
+	UpdatedAt  int                        `json:"updated_at"`
+	Kid        string                     `json:"kid"`
+}
+
+type accountKeyDetailedResponse struct {
+	AccountKeySummaryResponse
 	Algorithm key_crypto.Algorithm `json:"algorithm"`
-	Pem       string               `json:"-"`
 }
 
-// AcmeAccountKey creates an ACME AccountKey based on the pem, algorithm,
-// and kid provided
-func AcmeAccountKey(pem string, algo key_crypto.Algorithm, kid string) (acmeAccountKey acme.AccountKey, err error) {
-	// generate key from account key pem
-	acmeAccountKey.Key, err = key_crypto.PemStringToKey(pem, algo)
+func (acct Account) detailedResponse() accountDetailedResponse {
+	return accountDetailedResponse{
+		AccountSummaryResponse: acct.SummaryResponse(),
+		AccountKey: accountKeyDetailedResponse{
+			AccountKeySummaryResponse: AccountKeySummaryResponse{
+				ID:   acct.AccountKey.ID,
+				Name: acct.AccountKey.Name,
+			},
+			Algorithm: acct.AccountKey.Algorithm,
+		},
+		CreatedAt: acct.CreatedAt,
+		UpdatedAt: acct.UpdatedAt,
+		Kid:       acct.Kid,
+	}
+}
+
+// AcmeAccountKey() provides a method to create an ACME AccountKey
+// for the Account
+func (account *Account) AcmeAccountKey() (acmeAcctKey acme.AccountKey, err error) {
+	// get crypto key from the account's key
+	acmeAcctKey.Key, err = account.AccountKey.CryptoPrivateKey()
 	if err != nil {
 		return acme.AccountKey{}, err
 	}
 
 	// set Kid from account
-	acmeAccountKey.Kid = kid
+	acmeAcctKey.Kid = account.Kid
 
-	return acmeAccountKey, nil
-}
-
-// acmeAccountKey() provides a method to create an ACME AccountKey
-// for the AccountExtended
-func (account *AccountExtended) AcmeAccountKey() (acmeKey acme.AccountKey, err error) {
-	return AcmeAccountKey(account.AccountKey.Pem, account.AccountKey.Algorithm, account.Kid)
+	return acmeAcctKey, nil
 }
 
 // newAccountPayload() generates the payload for ACME to post to the
@@ -75,7 +113,7 @@ func (account *Account) newAccountPayload() acme.NewAccountPayload {
 // new account info
 // used to return info about valid options when making a new account
 type newAccountOptions struct {
-	TosUrl        string             `json:"tos_url"`
-	StagingTosUrl string             `json:"staging_tos_url"`
-	AvailableKeys []private_keys.Key `json:"private_keys"`
+	TosUrl        string                            `json:"tos_url"`
+	StagingTosUrl string                            `json:"staging_tos_url"`
+	AvailableKeys []private_keys.KeySummaryResponse `json:"private_keys"`
 }

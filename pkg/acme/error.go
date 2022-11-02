@@ -31,3 +31,36 @@ func unmarshalErrorResponse(bodyBytes []byte) (response Error, err error) {
 	// if we did get an error response from ACME
 	return response, nil
 }
+
+// MarshalledString returns a JSON object as a string. This is useful to
+// store an ACME error in storage (e.g. a database string)
+func (e *Error) MarshalledString() (*string, error) {
+	if e == nil {
+		return nil, nil
+	}
+
+	errBytes, err := json.Marshal(*e)
+	if err != nil {
+		return nil, err
+	}
+
+	s := new(string)
+	*s = string(errBytes)
+
+	return s, nil
+}
+
+// NewAcmeError converts a json acme.Error object into an acme.Error
+func NewAcmeError(acmeErrorJson *string) (e *Error) {
+	if acmeErrorJson == nil {
+		return nil
+	}
+
+	err := json.Unmarshal([]byte(*acmeErrorJson), e)
+	if err != nil {
+		// if unmarshal fails, return nil
+		return nil
+	}
+
+	return e
+}
