@@ -38,6 +38,7 @@ func (app *Application) routes() http.Handler {
 
 	app.makeSecureHandle(http.MethodPut, "/api/v1/acmeaccounts/:id", app.accounts.PutNameDescAccount)
 	app.makeSecureHandle(http.MethodPut, "/api/v1/acmeaccounts/:id/email", app.accounts.ChangeEmail)
+	app.makeSecureHandle(http.MethodPut, "/api/v1/acmeaccounts/:id/key-change", app.accounts.RolloverKey)
 
 	app.makeSecureHandle(http.MethodPost, "/api/v1/acmeaccounts/:id/new-account", app.accounts.NewAcmeAccount)
 	app.makeSecureHandle(http.MethodPost, "/api/v1/acmeaccounts/:id/deactivate", app.accounts.Deactivate)

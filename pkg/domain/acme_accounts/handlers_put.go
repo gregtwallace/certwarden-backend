@@ -178,3 +178,107 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 
 	return nil
 }
+
+// RolloverKeyPayload is used to change an account's private key
+type RolloverKeyPayload struct {
+	ID           int  `json:"-"`
+	PrivateKeyID *int `json:"private_key_id"`
+	UpdatedAt    int  `json:"-"`
+}
+
+// RolloverKey changes the private key used for an account
+func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) (err error) {
+	// decode payload
+	var payload RolloverKeyPayload
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// convert id param to an integer
+	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	payload.ID, err = strconv.Atoi(idParamStr)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// validation
+	// id
+	if !service.idValid(payload.ID) {
+		service.logger.Debug("invalid payload account id")
+		return output.ErrValidationFailed
+	}
+
+	// new private key
+	if payload.PrivateKeyID == nil || !service.keys.KeyAvailable(*payload.PrivateKeyID) {
+		service.logger.Debug("invalid private key specified for account key rollover")
+		return output.ErrValidationFailed
+	}
+	// end validation
+
+	// fetch the relevant account
+	account, err := service.storage.GetOneAccountById(payload.ID)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+
+	// get AccountKey
+	oldAcmeAccountKey, err := account.AcmeAccountKey()
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// fetch new private key
+	newKey, err := service.storage.GetOneKeyById(*payload.PrivateKeyID)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+
+	// get crypto key from the new key
+	newCryptoKey, err := newKey.CryptoPrivateKey()
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// send the rollover to ACME
+	if account.IsStaging {
+		_, err = service.acmeStaging.RolloverAccountKey(newCryptoKey, oldAcmeAccountKey)
+	} else {
+		_, err = service.acmeProd.RolloverAccountKey(newCryptoKey, oldAcmeAccountKey)
+	}
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// add additional details to the payload before saving
+	payload.UpdatedAt = int(time.Now().Unix())
+
+	// update private key id in db
+	err = service.storage.PutNewAccountKey(payload)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+
+	// return response to client
+	response := output.JsonResponse{
+		Status:  http.StatusOK,
+		Message: "key rolled over",
+		ID:      payload.ID,
+	}
+
+	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
+	}
+
+	return nil
+}

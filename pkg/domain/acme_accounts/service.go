@@ -31,10 +31,13 @@ type Storage interface {
 
 	PutNameDescAccount(NameDescPayload) error
 	PutAcmeAccountResponse(response AcmeAccount) error
+	PutNewAccountKey(payload RolloverKeyPayload) error
 
 	DeleteAccount(int) error
 
 	AccountHasCerts(accountId int) (inUse bool)
+
+	GetOneKeyById(id int) (private_keys.Key, error)
 }
 
 // Accounts service struct

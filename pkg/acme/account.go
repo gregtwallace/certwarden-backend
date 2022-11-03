@@ -60,9 +60,9 @@ func (response *Account) Email() string {
 func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.PrivateKey) (response Account, err error) {
 	// Create ACME accountKey
 	// Register account should never use kid, it must always use JWK
-	var accountKey AccountKey
-	accountKey.Key = privateKey
-	accountKey.Kid = "" // no-op, just a reminder
+	accountKey := AccountKey{
+		Key: privateKey,
+	}
 
 	// post new-account
 	bodyBytes, headers, err := service.postToUrlSigned(payload, service.dir.NewAccount, accountKey)
@@ -116,6 +116,90 @@ func (service *Service) DeactivateAccount(accountKey AccountKey) (response Accou
 
 	// post account update
 	bodyBytes, headers, err := service.postToUrlSigned(payload, accountKey.Kid, accountKey)
+	if err != nil {
+		return Account{}, err
+	}
+
+	// unmarshal response
+	response, err = unmarshalAccount(bodyBytes, headers)
+	if err != nil {
+		return Account{}, err
+	}
+
+	return response, nil
+}
+
+// RolloverAccountKey rolls over the specified account's key to the newKey. This essentially
+// retires the old key from the account and substitutes the new key in its place.
+func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountKey AccountKey) (response Account, err error) {
+	// build payload
+	payload := acmeSignedMessage{}
+
+	// Create ACME accountKey for new key, never use kid always use JWK
+	newKeyAccountKey := AccountKey{
+		Key: newKey,
+	}
+
+	// inner (payload's) header
+	var innerHeader protectedHeader
+
+	// new key's alg
+	innerHeader.Algorithm, err = newKeyAccountKey.signingAlg()
+	if err != nil {
+		return Account{}, err
+	}
+
+	// new key's jwk
+	innerHeader.JsonWebKey, err = newKeyAccountKey.jwk()
+	if err != nil {
+		return Account{}, err
+	}
+
+	// omit kid
+	// omit nonce
+
+	// url
+	innerHeader.Url = service.dir.KeyChange
+
+	// encode and add to payload
+	payload.ProtectedHeader, err = encodeJson(innerHeader)
+	if err != nil {
+		return Account{}, err
+	}
+	// end inner (payload's) header
+
+	// inner (payload's) payload
+	// old key's jwk
+	oldJwk, err := oldAccountKey.jwk()
+	if err != nil {
+		return Account{}, err
+	}
+
+	// build inner payload
+	innerPayload := struct {
+		AccountUrl string     `json:"account"`
+		OldKeyJwk  jsonWebKey `json:"oldKey"`
+	}{
+		AccountUrl: oldAccountKey.Kid,
+		OldKeyJwk:  *oldJwk,
+	}
+
+	// encode and add to payload
+	payload.Payload, err = encodeJson(innerPayload)
+	if err != nil {
+		return Account{}, err
+	}
+	// end inner (payload's) payload
+
+	// inner (payload's) signature
+	payload.Signature, err = newKeyAccountKey.Sign(payload)
+	if err != nil {
+		return Account{}, err
+	}
+	// end inner (payload's) signature
+
+	// post key change
+	bodyBytes, headers, err := service.postToUrlSigned(payload, service.dir.KeyChange, oldAccountKey)
 	if err != nil {
 		return Account{}, err
 	}

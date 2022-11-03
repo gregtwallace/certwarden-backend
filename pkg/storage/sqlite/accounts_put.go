@@ -37,7 +37,7 @@ func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) 
 	return nil
 }
 
-// PutLEAccountResponse populates an account with data that is returned by LE when
+// PutAcmeAccountResponse populates an account with data that is returned by LE when
 // an account is POSTed to
 func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccount) error {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
@@ -61,6 +61,34 @@ func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccount) 
 		payload.CreatedAt.ToUnixTime(),
 		payload.UpdatedAt,
 		payload.Location,
+		payload.ID,
+	)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Handle 0 rows updated.
+	return nil
+}
+
+// PutNewAccountKey updates the specified account to the new key id
+func (store *Storage) PutNewAccountKey(payload acme_accounts.RolloverKeyPayload) error {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		acme_accounts
+	SET
+		private_key_id = $1,
+		updated_at = $2
+	WHERE
+		id = $3
+	`
+
+	_, err := store.Db.ExecContext(ctx, query,
+		payload.PrivateKeyID,
+		payload.UpdatedAt,
 		payload.ID,
 	)
 	if err != nil {

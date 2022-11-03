@@ -19,7 +19,7 @@ type protectedHeader struct {
 	Algorithm  string      `json:"alg"`
 	JsonWebKey *jsonWebKey `json:"jwk,omitempty"`
 	KeyId      string      `json:"kid,omitempty"`
-	Nonce      string      `json:"nonce"`
+	Nonce      string      `json:"nonce,omitempty"`
 	Url        string      `json:"url"`
 }
 
