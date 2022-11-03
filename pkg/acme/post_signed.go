@@ -29,7 +29,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	// message is what will ultimately be posted to ACME
 	var message acmeSignedMessage
 
-	/// build most of the header (pieces that won't change in the loop)
+	// build most of the header (pieces that won't change in the loop)
 	var header protectedHeader
 
 	// alg
@@ -45,6 +45,9 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		header.KeyId = accountKey.Kid
 	} else {
 		header.JsonWebKey, err = accountKey.jwk()
+		if err != nil {
+			return nil, nil, err
+		}
 		header.KeyId = ""
 	}
 
@@ -58,9 +61,9 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	header.Url = url
 
 	service.logger.Debugf("unencoded acme header: %s", header)
-	/// header (end)
+	// header (end)
 
-	/// payload won't change in the loop
+	// payload won't change in the loop
 	// if payload is empty, don't encode it
 	if payload == "" {
 		message.Payload = ""
@@ -71,7 +74,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		}
 	}
 
-	/// post
+	// post
 	var messageJson []byte
 	var response *http.Response
 	var bodyBytes []byte
