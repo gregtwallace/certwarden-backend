@@ -82,8 +82,10 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
-// ChangeEmailPayload is the struct for updating an account's email address
-type ChangeEmailPayload struct {
+// changeEmailPayload is the struct for updating an account's email address
+// do not export and do not add id/updatedAt fields since this does not get
+// sent to storage
+type changeEmailPayload struct {
 	Email *string `json:"email"`
 }
 
@@ -100,7 +102,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 	}
 
 	// decode payload
-	var payload ChangeEmailPayload
+	var payload changeEmailPayload
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
