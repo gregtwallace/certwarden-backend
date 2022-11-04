@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"os"
@@ -18,10 +19,18 @@ func (app *Application) setFrontendEnv() error {
 	// remove any old environment
 	_ = os.Remove(frontendEnvFile)
 
+	// API URL
+	var apiUrl string
+	if app.IsHttps() {
+		apiUrl = fmt.Sprintf("https://%s:%d", *app.config.Hostname, *app.config.HttpsPort)
+	} else {
+		apiUrl = fmt.Sprintf("http://%s:%d", *app.config.Hostname, *app.config.HttpPort)
+	}
+
 	// content of new environment file
 	envFileContent := `
 	window.env = {
-		API_URL: '` + *app.config.Hostname + `',
+		API_URL: '` + apiUrl + `',
 		DEV_MODE: ` + strconv.FormatBool(*app.config.DevMode) + `
 	};
 	`
