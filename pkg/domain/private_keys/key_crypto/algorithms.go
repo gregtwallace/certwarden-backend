@@ -8,7 +8,7 @@ import (
 // Define AlgorithmDetails which contains details about the defined Algorithms.
 type algorithmDetails struct {
 	algorithm             Algorithm
-	value                 string
+	storageValue          string
 	name                  string
 	csrSignatureAlgorithm x509.SignatureAlgorithm
 	keyType               string                // rsa or ecdsa
@@ -20,7 +20,7 @@ type algorithmDetails struct {
 var keyAlgorithmDetails = []algorithmDetails{
 	{
 		algorithm:             rsa2048,
-		value:                 "rsa2048",
+		storageValue:          "rsa2048",
 		name:                  "RSA 2048-bit",
 		csrSignatureAlgorithm: x509.SHA256WithRSA,
 		keyType:               "RSA",
@@ -28,7 +28,7 @@ var keyAlgorithmDetails = []algorithmDetails{
 	},
 	{
 		algorithm:             rsa3072,
-		value:                 "rsa3072",
+		storageValue:          "rsa3072",
 		name:                  "RSA 3072-bit",
 		csrSignatureAlgorithm: x509.SHA256WithRSA,
 		keyType:               "RSA",
@@ -36,7 +36,7 @@ var keyAlgorithmDetails = []algorithmDetails{
 	},
 	{
 		algorithm:             rsa4096,
-		value:                 "rsa4096",
+		storageValue:          "rsa4096",
 		name:                  "RSA 4096-bit",
 		csrSignatureAlgorithm: x509.SHA256WithRSA,
 		keyType:               "RSA",
@@ -44,7 +44,7 @@ var keyAlgorithmDetails = []algorithmDetails{
 	},
 	{
 		algorithm:             ecdsap256,
-		value:                 "ecdsap256",
+		storageValue:          "ecdsap256",
 		name:                  "ECDSA P-256",
 		csrSignatureAlgorithm: x509.ECDSAWithSHA256,
 		keyType:               "EC",
@@ -53,7 +53,7 @@ var keyAlgorithmDetails = []algorithmDetails{
 	},
 	{
 		algorithm:             ecdsap384,
-		value:                 "ecdsap384",
+		storageValue:          "ecdsap384",
 		name:                  "ECDSA P-384",
 		csrSignatureAlgorithm: x509.ECDSAWithSHA384,
 		keyType:               "EC",
@@ -73,9 +73,9 @@ func ListOfAlgorithms() (algs []Algorithm) {
 }
 
 // AlgorithmByValue returns an algorithm based on its Value
-func AlgorithmByValue(value string) Algorithm {
+func AlgorithmByStorageValue(value string) Algorithm {
 	for i := range keyAlgorithmDetails {
-		if value == keyAlgorithmDetails[i].value {
+		if value == keyAlgorithmDetails[i].storageValue {
 			return keyAlgorithmDetails[i].algorithm
 		}
 	}

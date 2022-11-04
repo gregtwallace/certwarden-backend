@@ -6,7 +6,7 @@ import "legocerthub-backend/pkg/acme"
 // methods.
 type challMethodDetails struct {
 	method        Method
-	value         string
+	storageValue  string
 	name          string
 	challengeType acme.ChallengeType
 }
@@ -15,7 +15,7 @@ var methodDetails = []challMethodDetails{
 	{
 		// serve the http record from an internal http server
 		method:        http01Internal,
-		value:         "http-01-internal",
+		storageValue:  "http-01-internal",
 		name:          "HTTP (Self Served)",
 		challengeType: acme.ChallengeTypeHttp01,
 	},
@@ -41,9 +41,9 @@ func ListOfMethods() (methods []Method) {
 
 // MethodByValue returns a challenge method based on its Value.
 // If a method isn't found, UnknownMethod is returned.
-func MethodByValue(value string) Method {
+func MethodByStorageValue(value string) Method {
 	for i := range methodDetails {
-		if value == methodDetails[i].value {
+		if value == methodDetails[i].storageValue {
 			return methodDetails[i].method
 		}
 	}

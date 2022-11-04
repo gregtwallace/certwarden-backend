@@ -30,11 +30,11 @@ func (alg Algorithm) MarshalJSON() (data []byte, err error) {
 
 	// put the exportable details into an exportable struct
 	output := struct {
-		Value string `json:"value"`
-		Name  string `json:"name"`
+		StorageValue string `json:"value"`
+		Name         string `json:"name"`
 	}{
-		Value: details.value,
-		Name:  details.name,
+		StorageValue: details.storageValue,
+		Name:         details.name,
 	}
 
 	// return details marshalled
@@ -60,7 +60,7 @@ func (alg Algorithm) CsrSigningAlg() x509.SignatureAlgorithm {
 	return alg.details().csrSignatureAlgorithm
 }
 
-// Value returns the value of the Algorithm
-func (alg Algorithm) Value() string {
-	return alg.details().value
+// StorageValue returns the storage value of the Algorithm
+func (alg Algorithm) StorageValue() string {
+	return alg.details().storageValue
 }

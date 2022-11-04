@@ -27,11 +27,11 @@ func (method Method) MarshalJSON() (data []byte, err error) {
 
 	// put the exportable details into an exportable struct
 	output := struct {
-		Value         string             `json:"value"`
+		StorageValue  string             `json:"value"`
 		Name          string             `json:"name"`
 		ChallengeType acme.ChallengeType `json:"type"`
 	}{
-		Value:         details.value,
+		StorageValue:  details.storageValue,
 		Name:          details.name,
 		ChallengeType: details.challengeType,
 	}

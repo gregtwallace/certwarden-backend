@@ -64,7 +64,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 		return output.ErrValidationFailed
 	}
 	// challenge method
-	if payload.ChallengeMethodValue == nil || challenges.MethodByValue(*payload.ChallengeMethodValue) == challenges.UnknownMethod {
+	if payload.ChallengeMethodValue == nil || challenges.MethodByStorageValue(*payload.ChallengeMethodValue) == challenges.UnknownMethod {
 		service.logger.Debug("unknown challenge method")
 		return output.ErrValidationFailed
 	}

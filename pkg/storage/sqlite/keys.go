@@ -26,7 +26,7 @@ func (key keyDb) toKey() private_keys.Key {
 		ID:           key.id,
 		Name:         key.name,
 		Description:  key.description,
-		Algorithm:    key_crypto.AlgorithmByValue(key.algorithmValue),
+		Algorithm:    key_crypto.AlgorithmByStorageValue(key.algorithmValue),
 		Pem:          key.pem,
 		ApiKey:       key.apiKey,
 		ApiKeyViaUrl: key.apiKeyViaUrl,
