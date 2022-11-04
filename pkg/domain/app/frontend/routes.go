@@ -40,8 +40,9 @@ func (service *Service) frontendRoutes() http.Handler {
 						return
 					}
 
-					// if doesn't exist, modify r to return root (index)
-					r.URL.Path = "/"
+					// if doesn't exist, redirect to root (index)
+					http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+					return
 				}
 			}
 
