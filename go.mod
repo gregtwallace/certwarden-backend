@@ -32,8 +32,6 @@ replace legocerthub-backend/pkg/domain/app => /pkg/domain/app
 
 replace legocerthub-backend/pkg/domain/app/auth => /pkg/domain/app/auth
 
-replace legocerthub-backend/pkg/domain/app/frontend => /pkg/domain/app/frontend
-
 replace legocerthub-backend/pkg/domain/authorizations => /pkg/domain/authorizations
 
 replace legocerthub-backend/pkg/domain/certificates => /pkg/domain/certificates

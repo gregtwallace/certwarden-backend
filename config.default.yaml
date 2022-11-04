@@ -9,6 +9,9 @@ hostname: "localhost"
 https_port: 4055
 http_port: 4050
 
+# Should the server also host the frontend?
+serve_frontend: true
+
 # API Server's key and cert
 # These names should match the 'name' field of the desired key and cert within
 # the application.
@@ -16,12 +19,6 @@ http_port: 4050
 # until proper values are specified.
 private_key_name: legocerthub
 certificate_name: legocerthub
-
-# Frontend configuration (if hosting with the backend)
-frontend:
-  enabled: true
-  https_port: 3055
-  http_port: 3050
 
 # Development mode
 # This should NEVER be true in production

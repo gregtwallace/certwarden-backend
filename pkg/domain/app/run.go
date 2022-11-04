@@ -5,7 +5,6 @@ import (
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/app/auth"
-	"legocerthub-backend/pkg/domain/app/frontend"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/download"
@@ -192,14 +191,6 @@ func create() (*Application, error) {
 	app.download, err = download.NewService(app)
 	if err != nil {
 		return nil, err
-	}
-
-	// launch frontend if enabled
-	if *app.config.Frontend.Enable {
-		app.frontend, err = frontend.NewService(app)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	return app, nil

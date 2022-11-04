@@ -75,6 +75,16 @@ func (app *Application) routes() http.Handler {
 	app.makeHandle(http.MethodGet, "/api/v1/download/privatecerts/:name/*apiKey", app.download.DownloadPrivateCertViaUrl)
 	app.makeHandle(http.MethodGet, "/api/v1/download/certrootchains/:name/*apiKey", app.download.DownloadCertRootChainViaUrl)
 
+	// frontend (if enabled)
+	if *app.config.ServeFrontend {
+		// configure environment file
+		app.setFrontendEnv()
+		// redirect root to frontend app
+		app.makeHandle(http.MethodGet, "/", redirectToFrontendHandler)
+		// add file server route for frontend
+		app.makeHandle(http.MethodGet, frontendUrlPath+"/*anything", app.frontendHandler)
+	}
+
 	// invalid route
 	app.router.NotFound = app.makeHandler(app.notFoundHandler)
 

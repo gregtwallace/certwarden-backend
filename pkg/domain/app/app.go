@@ -5,7 +5,6 @@ import (
 	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/app/auth"
-	"legocerthub-backend/pkg/domain/app/frontend"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/download"
@@ -44,7 +43,6 @@ type Application struct {
 	orders         *orders.Service
 	certificates   *certificates.Service
 	download       *download.Service
-	frontend       *frontend.Service
 }
 
 // CloseStorage closes the storage connection
@@ -66,22 +64,6 @@ func (app *Application) GetLogger() *zap.SugaredLogger {
 // is the server running https or not?
 func (app *Application) IsHttps() bool {
 	return app.httpsCert != nil
-}
-func (app *Application) GetHttpsCert() *datatypes.SafeCert {
-	return app.httpsCert
-}
-func (app *Application) GetFrontendConfig() frontend.Config {
-	return app.config.Frontend
-}
-func (app *Application) GetHostname() *string {
-	return app.config.Hostname
-}
-func (app *Application) GetApiPort() *int {
-	if app.httpsCert != nil {
-		return app.config.HttpsPort
-	}
-
-	return app.config.HttpPort
 }
 
 func (app *Application) GetHttpClient() *httpclient.Client {

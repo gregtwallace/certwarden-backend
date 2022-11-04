@@ -1,7 +1,6 @@
 package app
 
 import (
-	"legocerthub-backend/pkg/domain/app/frontend"
 	"log"
 	"os"
 
@@ -13,13 +12,13 @@ const configFile = "./config.yaml"
 
 // config is the configuration structure for app (and subsequently services)
 type config struct {
-	Hostname        *string         `yaml:"hostname"`
-	HttpsPort       *int            `yaml:"https_port"`
-	HttpPort        *int            `yaml:"http_port"`
-	PrivateKeyName  *string         `yaml:"private_key_name"`
-	CertificateName *string         `yaml:"certificate_name"`
-	Frontend        frontend.Config `yaml:"frontend"`
-	DevMode         *bool           `yaml:"dev_mode"`
+	Hostname        *string `yaml:"hostname"`
+	ServeFrontend   *bool   `yaml:"serve_frontend"`
+	HttpsPort       *int    `yaml:"https_port"`
+	HttpPort        *int    `yaml:"http_port"`
+	PrivateKeyName  *string `yaml:"private_key_name"`
+	CertificateName *string `yaml:"certificate_name"`
+	DevMode         *bool   `yaml:"dev_mode"`
 }
 
 // readConfigFile parses the config yaml file. It also sets default config
@@ -54,6 +53,7 @@ func readConfigFile() (cfg config) {
 func defaultConfig() (cfg config) {
 	cfg = config{
 		Hostname:        new(string),
+		ServeFrontend:   new(bool),
 		HttpsPort:       new(int),
 		HttpPort:        new(int),
 		PrivateKeyName:  new(string),
@@ -61,27 +61,15 @@ func defaultConfig() (cfg config) {
 		DevMode:         new(bool),
 	}
 
-	cfg.Frontend = frontend.Config{
-		Enable:    new(bool),
-		HttpsPort: new(int),
-		HttpPort:  new(int),
-	}
-
-	// https server
+	// http/s server
 	*cfg.Hostname = "localhost"
+	*cfg.ServeFrontend = true
 	*cfg.HttpsPort = 4055
-
-	// http server
 	*cfg.HttpPort = 4050
 
 	// key/cert
 	*cfg.PrivateKeyName = "legocerthub"
 	*cfg.CertificateName = "legocerthub"
-
-	// frontend config
-	*cfg.Frontend.Enable = true
-	*cfg.Frontend.HttpsPort = 3055
-	*cfg.Frontend.HttpPort = 3050
 
 	// dev mode
 	*cfg.DevMode = false
