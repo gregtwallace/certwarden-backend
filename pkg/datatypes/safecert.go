@@ -12,12 +12,9 @@ type SafeCert struct {
 }
 
 // TlsCertFunc returns the function to get the tls.Certificate from SafeCert
-func (ac *SafeCert) TlsCertFunc() func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+func (sc *SafeCert) TlsCertFunc() func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 	return func(clientHello *tls.ClientHelloInfo) (*tls.Certificate, error) {
-		ac.RLock()
-		defer ac.RUnlock()
-
-		return ac.cert, nil
+		return sc.Read(), nil
 	}
 }
 
@@ -30,9 +27,9 @@ func (sc *SafeCert) Read() *tls.Certificate {
 }
 
 // Update updates the certificate with the specified cert
-func (ac *SafeCert) Update(tlsCert *tls.Certificate) {
-	ac.Lock()
-	defer ac.Unlock()
+func (sc *SafeCert) Update(tlsCert *tls.Certificate) {
+	sc.Lock()
+	defer sc.Unlock()
 
-	ac.cert = tlsCert
+	sc.cert = tlsCert
 }
