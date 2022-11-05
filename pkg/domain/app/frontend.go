@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"legocerthub-backend/pkg/output"
 	"net/http"
 	"os"
 	"strconv"
@@ -11,7 +10,7 @@ import (
 
 const frontendBuildDir = "./frontend_build"
 const frontendEnvFile = frontendBuildDir + "/env.js"
-const frontendUrlPath = "/app"
+const frontendUrlPath = "/app" // corresponds to react 'homepage'
 
 // setFrontendEnv creates the env.js file in the frontend build. This is used
 // to set variables at server run time
@@ -59,31 +58,23 @@ func (app *Application) frontendHandler(w http.ResponseWriter, r *http.Request) 
 	r.URL.Path = strings.TrimPrefix(r.URL.Path, frontendUrlPath)
 	r.URL.RawPath = strings.TrimPrefix(r.URL.RawPath, frontendUrlPath)
 
-	// only potentially modify non '/' requests that dont contain a period in
+	// to handle React Router, redirect any non-existent paths to the index
+	// page which will then handle Route
+
+	// only potentially modify non '/' requests that don't contain a period in
 	// the final segment (i.e. only modify requests for paths, specific file
-	// names should still be able to 404)
+	// names should not be re-written)
 	pathParts := strings.Split(r.URL.Path, "/")
 	lastPart := pathParts[len(pathParts)-1]
-	// check path is not / AND last part of the path does NOT contain a period (i.e. not a file)
-	if r.URL.Path != "/" && !strings.Contains(lastPart, ".") {
-		// check if request (as-is) exists
-		fullPath := frontendBuildDir + r.URL.Path
 
-		_, err := os.Stat(fullPath)
-		if err != nil {
-			// confirm error is file doesn't exist
-			if !os.IsNotExist(err) {
-				// if some other error, log it and return 404
-				app.logger.Errorf("error serving frontend: %s", err)
-				return output.ErrNotFound
-			}
-
-			// if path doesn't exist, redirect to frontend root (index)
-			r.URL.Path = "/"
-		}
+	// if the request is not for a specific file, modify the request
+	// to return root and React Router will handle the Route (path)
+	if !strings.Contains(lastPart, ".") {
+		r.URL.Path = "/"
+		r.URL.RawPath = "/"
 	}
 
-	// exists - serve trimmed prefix request from file server
+	// serve request from file server
 	fs.ServeHTTP(w, r)
 
 	return nil
