@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -18,19 +17,11 @@ func (app *Application) setFrontendEnv() error {
 	// remove any old environment
 	_ = os.Remove(frontendEnvFile)
 
-	// API URL
-	var apiUrl string
-	if app.IsHttps() {
-		apiUrl = fmt.Sprintf("https://%s:%d", *app.config.Hostname, *app.config.HttpsPort)
-	} else {
-		apiUrl = fmt.Sprintf("http://%s:%d", *app.config.Hostname, *app.config.HttpPort)
-	}
-
 	// content of new environment file
 	envFileContent := `
 	window.env = {
 		BASE_PATH_NAME: '` + frontendUrlPath + `',
-		API_URL: '` + apiUrl + `',
+		API_URL: '` + app.ApiUrl() + `',
 		DEV_MODE: ` + strconv.FormatBool(*app.config.DevMode) + `
 	};
 	`

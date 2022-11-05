@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/domain/acme_accounts"
@@ -114,4 +115,27 @@ func (app *Application) GetAcctsService() *acme_accounts.Service {
 
 func (app *Application) GetAuthsService() *authorizations.Service {
 	return app.authorizations
+}
+
+// ApiUrl returns the full API URL for the API, including /api
+func (app *Application) ApiUrl() string {
+	if app.IsHttps() {
+		return fmt.Sprintf("https://%s:%d/api", *app.config.Hostname, *app.config.HttpsPort)
+	} else {
+		return fmt.Sprintf("http://%s:%d/api", *app.config.Hostname, *app.config.HttpPort)
+	}
+}
+
+// FrontendUrl returns the full URL for the frontend app. If the frontend
+// is not being hosted, an empty string is returned.
+func (app *Application) FrontendUrl() string {
+	if !*app.config.ServeFrontend {
+		return ""
+	}
+
+	if app.IsHttps() {
+		return fmt.Sprintf("https://%s:%d%s", *app.config.Hostname, *app.config.HttpsPort, frontendUrlPath)
+	} else {
+		return fmt.Sprintf("http://%s:%d%s", *app.config.Hostname, *app.config.HttpPort, frontendUrlPath)
+	}
 }
