@@ -79,8 +79,7 @@ func (app *Application) frontendHandler(w http.ResponseWriter, r *http.Request) 
 			}
 
 			// if path doesn't exist, redirect to frontend root (index)
-			redirectToFrontendHandler(w, r)
-			return nil
+			r.URL.Path = "/"
 		}
 	}
 
