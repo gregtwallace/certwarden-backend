@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -77,10 +78,21 @@ func (app *Application) routes() http.Handler {
 
 	// frontend (if enabled)
 	if *app.config.ServeFrontend {
+		// log availability
+		var frontendUrl string
+		if app.IsHttps() {
+			frontendUrl = fmt.Sprintf("https://%s:%d%s", *app.config.Hostname, *app.config.HttpsPort, frontendUrlPath)
+		} else {
+			frontendUrl = fmt.Sprintf("http://%s:%d%s", *app.config.Hostname, *app.config.HttpPort, frontendUrlPath)
+		}
+		app.logger.Infof("frontend hosting enabled and available at: %s", frontendUrl)
+
 		// configure environment file
 		app.setFrontendEnv()
+
 		// redirect root to frontend app
 		app.makeHandle(http.MethodGet, "/", redirectToFrontendHandler)
+
 		// add file server route for frontend
 		app.makeHandle(http.MethodGet, frontendUrlPath+"/*anything", app.frontendHandler)
 	}

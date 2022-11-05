@@ -30,6 +30,7 @@ func (app *Application) setFrontendEnv() error {
 	// content of new environment file
 	envFileContent := `
 	window.env = {
+		BASE_PATH_NAME: '` + frontendUrlPath + `',
 		API_URL: '` + apiUrl + `',
 		DEV_MODE: ` + strconv.FormatBool(*app.config.DevMode) + `
 	};
@@ -56,6 +57,7 @@ func (app *Application) frontendHandler(w http.ResponseWriter, r *http.Request) 
 
 	// remove the frontend URL root path
 	r.URL.Path = strings.TrimPrefix(r.URL.Path, frontendUrlPath)
+	r.URL.RawPath = strings.TrimPrefix(r.URL.RawPath, frontendUrlPath)
 
 	// only potentially modify non '/' requests that dont contain a period in
 	// the final segment (i.e. only modify requests for paths, specific file
@@ -82,11 +84,10 @@ func (app *Application) frontendHandler(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	// exists - serve request from file server
+	// exists - serve trimmed prefix request from file server
 	fs.ServeHTTP(w, r)
 
 	return nil
-
 }
 
 // redirectToFrontendHandler redirects to the root of the frontend
