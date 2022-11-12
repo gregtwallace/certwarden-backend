@@ -70,13 +70,13 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 	}
 	// subject
 	if payload.Subject == nil || !validation.DomainValid(*payload.Subject) {
-		service.logger.Debug(err)
+		service.logger.Debug(ErrDomainBad)
 		return output.ErrValidationFailed
 	}
 	// subject alts
 	// blank is okay, skip validation if not specified
 	if payload.SubjectAltNames != nil && !subjectAltsValid(payload.SubjectAltNames) {
-		service.logger.Debug(err)
+		service.logger.Debug(ErrDomainBad)
 		return output.ErrValidationFailed
 	}
 	// CSR

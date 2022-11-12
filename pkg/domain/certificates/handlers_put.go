@@ -72,7 +72,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 	}
 	// subject alts (optional)
 	if payload.SubjectAltNames != nil && !subjectAltsValid(payload.SubjectAltNames) {
-		service.logger.Debug(err)
+		service.logger.Debug(ErrDomainBad)
 		return output.ErrValidationFailed
 	}
 	// TODO: Do any validation of CSR components?
