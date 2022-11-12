@@ -47,7 +47,7 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (er
 	}
 	// name (optional - check if not nil)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
-		service.logger.Debug(err)
+		service.logger.Debug(ErrNameBad)
 		return output.ErrValidationFailed
 	}
 	// Description and ApiKeyViaUrl do not need validation

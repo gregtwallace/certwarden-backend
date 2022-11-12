@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	ErrIdBad = errors.New("key id is invalid")
+	ErrIdBad   = errors.New("key id is invalid")
+	ErrNameBad = errors.New("private key name is not valid")
 )
 
 // getKey returns the Key for the specified id or an

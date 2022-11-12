@@ -6,11 +6,6 @@ import (
 )
 
 var (
-	// name
-	ErrNameBad     = errors.New("bad name")
-	ErrNameMissing = errors.New("missing name")
-	ErrNameInUse   = errors.New("name already in use")
-
 	// email
 	ErrEmailBad     = errors.New("bad email")
 	ErrEmailMissing = errors.New("missing email")
@@ -29,23 +24,6 @@ var (
 	ErrOrderInvalid      = errors.New("order is invalid and cannot be retried")
 	ErrOrderNotRevocable = errors.New("order (cert) cannot be revoked")
 )
-
-// NameValid true if the specified name is acceptable. To be valid
-// the name must only contain symbols - _ . ~ letters and numbers,
-// and name cannot be blank (len <= 0)
-func NameValid(name string) bool {
-	regex, err := regexp.Compile(`[^-_.~A-z0-9]|[\^]`)
-	if err != nil {
-		// should never happen
-		return false
-	}
-
-	invalid := regex.Match([]byte(name))
-	if invalid || len(name) <= 0 {
-		return false
-	}
-	return true
-}
 
 // EmailValid returns true if the string contains a
 // validly formatted email address

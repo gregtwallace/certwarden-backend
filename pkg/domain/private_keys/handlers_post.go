@@ -36,7 +36,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 	// do validation
 	// name (missing or invalid)
 	if payload.Name == nil || !service.nameValid(*payload.Name, nil) {
-		service.logger.Debug(err)
+		service.logger.Debug(ErrNameBad)
 		return output.ErrValidationFailed
 	}
 	// description (if none, set to blank)

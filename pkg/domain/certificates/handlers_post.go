@@ -46,7 +46,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 	// validation
 	// name
 	if payload.Name == nil || !service.nameValid(*payload.Name, nil) {
-		service.logger.Debug(err)
+		service.logger.Debug(ErrNameBad)
 		return output.ErrValidationFailed
 	}
 	// description (if none, set to blank)

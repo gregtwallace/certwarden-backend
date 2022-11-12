@@ -37,7 +37,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (
 	// validation
 	// name
 	if payload.Name == nil || !service.nameValid(*payload.Name, nil) {
-		service.logger.Debug(err)
+		service.logger.Debug(ErrNameBad)
 		return output.ErrValidationFailed
 	}
 

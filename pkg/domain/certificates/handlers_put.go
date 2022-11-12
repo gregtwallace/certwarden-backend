@@ -56,7 +56,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 	}
 	// name (optional)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
-		service.logger.Debug(err)
+		service.logger.Debug(ErrNameBad)
 		return output.ErrValidationFailed
 	}
 	// description - no validation

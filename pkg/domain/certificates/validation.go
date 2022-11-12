@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	ErrIdBad = errors.New("certificate id is invalid")
+	ErrIdBad   = errors.New("certificate id is invalid")
+	ErrNameBad = errors.New("certificate name is not valid")
 )
 
 // GetCertificate returns the Certificate for the specified id.

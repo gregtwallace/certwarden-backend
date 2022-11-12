@@ -48,7 +48,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 
 	// name (optional)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
-		service.logger.Debug(err)
+		service.logger.Debug(ErrNameBad)
 		return output.ErrValidationFailed
 	}
 	// end validation
