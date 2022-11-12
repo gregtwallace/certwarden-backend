@@ -1,13 +1,6 @@
 package validation
 
-import "errors"
-
 const newId = -1
-
-var (
-	ErrIdBad      = errors.New("bad id")
-	ErrIdMismatch = errors.New("id mismatch")
-)
 
 // IsIdNew returns true if the id is the new id value
 func IsIdNew(id int) bool {

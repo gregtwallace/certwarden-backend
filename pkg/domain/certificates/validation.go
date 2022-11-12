@@ -1,16 +1,21 @@
 package certificates
 
 import (
+	"errors"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
+)
+
+var (
+	ErrIdBad = errors.New("certificate id is invalid")
 )
 
 // GetCertificate returns the Certificate for the specified id.
 func (service *Service) GetCertificate(id int) (Certificate, error) {
 	// if id is not in valid range, it is definitely not valid
 	if !validation.IsIdExistingValidRange(id) {
-		service.logger.Debug(validation.ErrIdBad)
+		service.logger.Debug(ErrIdBad)
 		return Certificate{}, output.ErrValidationFailed
 	}
 

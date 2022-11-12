@@ -1,16 +1,21 @@
 package acme_accounts
 
 import (
+	"errors"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
+)
+
+var (
+	ErrIdBad = errors.New("account id is invalid")
 )
 
 // getAccount returns the Account for the specified account id.
 func (service *Service) getAccount(id int) (Account, error) {
 	// if id is not in valid range, it is definitely not valid
 	if !validation.IsIdExistingValidRange(id) {
-		service.logger.Debug(validation.ErrIdBad)
+		service.logger.Debug(ErrIdBad)
 		return Account{}, output.ErrValidationFailed
 	}
 

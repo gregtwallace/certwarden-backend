@@ -1,9 +1,14 @@
 package private_keys
 
 import (
+	"errors"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
+)
+
+var (
+	ErrIdBad = errors.New("key id is invalid")
 )
 
 // getKey returns the Key for the specified id or an
@@ -11,7 +16,7 @@ import (
 func (service *Service) getKey(id int) (Key, error) {
 	// basic check
 	if !validation.IsIdExistingValidRange(id) {
-		service.logger.Debug(validation.ErrIdBad)
+		service.logger.Debug(ErrIdBad)
 		return Key{}, output.ErrValidationFailed
 	}
 

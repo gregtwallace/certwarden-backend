@@ -9,6 +9,10 @@ import (
 )
 
 var (
+	ErrCertIdBad  = errors.New("certificate id is invalid")
+	ErrOrderIdBad = errors.New("order id is invalid")
+	ErrIdMismatch = errors.New("order id does not match cert")
+
 	ErrOrderRetryFinal      = errors.New("can't retry an order that is in a final state (valid or invalid)")
 	ErrOrderRevokeBadReason = errors.New("bad revocation reason code")
 )
@@ -19,11 +23,11 @@ var (
 func (service *Service) getOrder(certId int, orderId int) (Order, error) {
 	// basic check
 	if !validation.IsIdExistingValidRange(certId) {
-		service.logger.Debug(validation.ErrIdBad)
+		service.logger.Debug(ErrCertIdBad)
 		return Order{}, output.ErrValidationFailed
 	}
 	if !validation.IsIdExistingValidRange(orderId) {
-		service.logger.Debug(validation.ErrIdBad)
+		service.logger.Debug(ErrOrderIdBad)
 		return Order{}, output.ErrValidationFailed
 	}
 
@@ -42,7 +46,7 @@ func (service *Service) getOrder(certId int, orderId int) (Order, error) {
 
 	// check the cert id on the order matches the cert
 	if certId != order.Certificate.ID {
-		service.logger.Debug(validation.ErrIdMismatch)
+		service.logger.Debug(ErrIdMismatch)
 		return Order{}, output.ErrValidationFailed
 	}
 
