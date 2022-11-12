@@ -10,11 +10,5 @@ func IsIdNew(id int) bool {
 // IsIdExistingValidRange returns true if the id is greater than or equal
 // to 0 and is not the newId.
 func IsIdExistingValidRange(id int) bool {
-	// check if id is the new id or
-	// check if id is not >= 0
-	if id == newId || !(id >= 0) {
-		return false
-	}
-
-	return true
+	return id != newId && id >= 0
 }
