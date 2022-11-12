@@ -9,12 +9,6 @@ var (
 	// domain
 	ErrDomainBad     = errors.New("bad domain or subject name")
 	ErrDomainMissing = errors.New("missing domain or subject")
-
-	// order
-	ErrOrderMismatch     = errors.New("order cert id does not match cert")
-	ErrOrderValid        = errors.New("order is already valid")
-	ErrOrderInvalid      = errors.New("order is invalid and cannot be retried")
-	ErrOrderNotRevocable = errors.New("order (cert) cannot be revoked")
 )
 
 // DomainValid returns true if the string is a validly formatted
