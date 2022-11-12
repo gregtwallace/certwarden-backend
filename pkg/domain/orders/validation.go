@@ -92,7 +92,7 @@ func (service *Service) getOrderForRevocation(certId, orderId int) (Order, error
 // is not valid (see: rfc5280 section-5.3.1)
 func (service *Service) validRevocationReason(reasonCode int) error {
 	// valid codes are 0 through 10 inclusive, except 7
-	if !(reasonCode < 0 || reasonCode == 7 || reasonCode > 10) {
+	if reasonCode < 0 || reasonCode == 7 || reasonCode > 10 {
 		service.logger.Debug(ErrOrderRevokeBadReason)
 		return output.ErrValidationFailed
 	}
