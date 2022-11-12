@@ -9,6 +9,10 @@ hostname: "localhost"
 https_port: 4055
 http_port: 4050
 
+# Server logging level (valid levels are: debug, info, warn, error, dpanic,
+# panic, and fatal)
+log_level: "info"
+
 # Should the server also host the frontend?
 serve_frontend: true
 
