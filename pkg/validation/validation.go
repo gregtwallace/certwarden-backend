@@ -10,10 +10,6 @@ var (
 	ErrEmailBad     = errors.New("bad email")
 	ErrEmailMissing = errors.New("missing email")
 
-	// key
-	ErrKeyBadOption = errors.New("invalid key option")
-	ErrKeyBad       = errors.New("bad private key")
-
 	// domain
 	ErrDomainBad     = errors.New("bad domain or subject name")
 	ErrDomainMissing = errors.New("missing domain or subject")

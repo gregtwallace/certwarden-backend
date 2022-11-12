@@ -5,7 +5,6 @@ import (
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/randomness"
-	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"time"
 )
@@ -46,12 +45,12 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 	// key add method
 	// error if no method specified
 	if (payload.AlgorithmValue == nil || *payload.AlgorithmValue == "") && (payload.PemContent == nil || *payload.PemContent == "") {
-		service.logger.Debug(validation.ErrKeyBadOption)
+		service.logger.Debug(ErrKeyOptionNone)
 		return output.ErrValidationFailed
 	}
 	// error if more than one method specified
 	if (payload.AlgorithmValue != nil && *payload.AlgorithmValue != "") && (payload.PemContent != nil && *payload.PemContent != "") {
-		service.logger.Debug(validation.ErrKeyBadOption)
+		service.logger.Debug(ErrKeyOptionMultiple)
 		return output.ErrValidationFailed
 	}
 	// generate or verify the key

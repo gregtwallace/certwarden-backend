@@ -10,6 +10,9 @@ import (
 var (
 	ErrIdBad   = errors.New("key id is invalid")
 	ErrNameBad = errors.New("private key name is not valid")
+
+	ErrKeyOptionNone     = errors.New("no key option method specified")
+	ErrKeyOptionMultiple = errors.New("multiple key option methods specified")
 )
 
 // getKey returns the Key for the specified id or an
