@@ -98,6 +98,9 @@ fulfillLoop:
 		if err != nil {
 			// if ACME returned 404, the order object is now invalid
 			// assume the ACME server deleted it and update accordingly
+			// see: RFC8555 7.4 ("If the client fails to complete the required
+			// actions before the "expires" time, then the server SHOULD change the
+			// status of the order to "invalid" and MAY delete the order resource.")
 			if acmeErr, ok := err.(acme.Error); ok && acmeErr.Status == http.StatusNotFound {
 				service.storage.PutOrderInvalid(job.orderId)
 			}
