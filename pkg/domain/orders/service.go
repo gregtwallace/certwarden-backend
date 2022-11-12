@@ -32,6 +32,7 @@ type Storage interface {
 	PostNewOrder(payload NewOrderAcmePayload) (newId int, err error)
 
 	PutOrderAcme(payload UpdateAcmeOrderPayload) (err error)
+	PutOrderInvalid(orderId int) (err error)
 	UpdateFinalizedKey(orderId int, keyId int) (err error)
 	UpdateOrderCert(orderId int, CertPayload CertPayload) (err error)
 	RevokeOrder(orderId int) (err error)

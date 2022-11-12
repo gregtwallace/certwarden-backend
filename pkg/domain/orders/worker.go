@@ -3,6 +3,7 @@ package orders
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
+	"net/http"
 	"time"
 )
 
@@ -95,6 +96,11 @@ fulfillLoop:
 		// Get the order (for most recent Order object and Status)
 		acmeOrder, err = acmeService.GetOrder(order.Location, key)
 		if err != nil {
+			// if ACME returned 404, the order object is now invalid
+			// assume the ACME server deleted it and update accordingly
+			if acmeErr, ok := err.(acme.Error); ok && acmeErr.Status == http.StatusNotFound {
+				service.storage.PutOrderInvalid(job.orderId)
+			}
 			service.logger.Error(err)
 			return // done, failed
 		}

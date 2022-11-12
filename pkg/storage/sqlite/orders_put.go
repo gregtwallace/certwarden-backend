@@ -49,6 +49,35 @@ func (store *Storage) PutOrderAcme(payload orders.UpdateAcmeOrderPayload) (err e
 	return nil
 }
 
+// PutOrderInvalid updates the specified order ID to the status of 'invalid'.
+func (store *Storage) PutOrderInvalid(orderId int) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	// update existing record
+	query := `
+		UPDATE
+			acme_orders
+		SET
+			status = $1
+		WHERE
+			id = $2
+		`
+
+	_, err = store.Db.ExecContext(ctx, query,
+		"invalid",
+		orderId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	// TODO: Handle 0 rows updated.
+
+	return nil
+}
+
 // UpdateFinalizedKey updates the specified order ID with key id
 func (store *Storage) UpdateFinalizedKey(orderId int, keyId int) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
