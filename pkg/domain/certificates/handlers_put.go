@@ -32,8 +32,6 @@ type DetailsUpdatePayload struct {
 // PutDetailsCert is a handler that sets various details about a cert and saves
 // them to storage. These are all details that should be editable any time.
 func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (err error) {
-	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("certid")
-
 	// payload decoding
 	var payload DetailsUpdatePayload
 	err = json.NewDecoder(r.Body).Decode(&payload)
@@ -42,8 +40,9 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 
-	// convert id param to an integer
-	payload.ID, err = strconv.Atoi(idParamStr)
+	// get id from param
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
+	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -51,9 +50,9 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 
 	// validation
 	// id
-	if !service.idValid(payload.ID) {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
+	_, err = service.GetCertificate(payload.ID)
+	if err != nil {
+		return err
 	}
 	// name (optional)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {

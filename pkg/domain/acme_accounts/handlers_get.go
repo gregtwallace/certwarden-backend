@@ -2,7 +2,6 @@ package acme_accounts
 
 import (
 	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
@@ -38,7 +37,7 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) (
 // GetOneAccount is an http handler that returns one acme account based on its unique id in the
 // form of JSON written to w
 func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (err error) {
-	// convert id param to an integer
+	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -51,23 +50,10 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (e
 		return service.GetNewAccountOptions(w, r)
 	}
 
-	// if id < 0 & not new, it is definitely not valid
-	if !validation.IsIdExisting(id) {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
-	}
-
 	// get from storage
-	account, err := service.storage.GetOneAccountById(id)
+	account, err := service.getAccount(id)
 	if err != nil {
-		// special error case for no record found
-		if err == storage.ErrNoRecord {
-			service.logger.Debug(err)
-			return output.ErrNotFound
-		} else {
-			service.logger.Error(err)
-			return output.ErrStorageGeneric
-		}
+		return err
 	}
 
 	// return response to client

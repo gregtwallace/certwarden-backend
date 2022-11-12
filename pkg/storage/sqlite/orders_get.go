@@ -159,8 +159,8 @@ func (store *Storage) GetAllValidCurrentOrders() (orders []orders.Order, err err
 	return orders, nil
 }
 
-// GetCertOrders fetches all of the orders for a specified certificate ID
-func (store *Storage) GetCertOrders(certId int) (orders []orders.Order, err error) {
+// GetOrdersByCert fetches all of the orders for a specified certificate ID
+func (store *Storage) GetOrdersByCert(certId int) (orders []orders.Order, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 

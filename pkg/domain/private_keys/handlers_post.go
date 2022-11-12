@@ -33,7 +33,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrValidationFailed
 	}
 
-	/// do validation
+	// do validation
 	// name (missing or invalid)
 	if payload.Name == nil || !service.nameValid(*payload.Name, nil) {
 		service.logger.Debug(err)
@@ -77,6 +77,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 		}
 	}
 	// end key add method
+	// end validation
 
 	// add additional details to the payload before saving
 	payload.ApiKey, err = randomness.GenerateApiKey()

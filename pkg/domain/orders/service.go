@@ -19,14 +19,15 @@ type App interface {
 	GetOrderStorage() Storage
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
+	GetCertificatesService() *certificates.Service
 	GetAuthsService() *authorizations.Service
 }
 
 // Storage interface for storage functions
 type Storage interface {
 	// orders
-	GetCertOrders(certId int) (orders []Order, err error)
 	GetOneOrder(orderId int) (order Order, err error)
+	GetOrdersByCert(certId int) (orders []Order, err error)
 
 	PostNewOrder(payload NewOrderAcmePayload) (newId int, err error)
 
@@ -39,7 +40,6 @@ type Storage interface {
 	GetNewestIncompleteCertOrderId(certId int) (orderId int, err error)
 
 	// certs
-	GetOneCertById(id int) (cert certificates.Certificate, err error)
 	UpdateCertUpdatedTime(certId int) (err error)
 }
 
@@ -50,6 +50,7 @@ type Service struct {
 	storage        Storage
 	acmeProd       *acme.Service
 	acmeStaging    *acme.Service
+	certificates   *certificates.Service
 	authorizations *authorizations.Service
 	inProcess      *inProcess
 	highJobs       chan orderJob
@@ -85,6 +86,12 @@ func NewService(app App) (*Service, error) {
 	}
 	service.acmeStaging = app.GetAcmeStagingService()
 	if service.acmeStaging == nil {
+		return nil, errServiceComponent
+	}
+
+	// certificates
+	service.certificates = app.GetCertificatesService()
+	if service.certificates == nil {
 		return nil, errServiceComponent
 	}
 

@@ -5,13 +5,7 @@ import (
 	"regexp"
 )
 
-const newId = -1
-
 var (
-	// id
-	ErrIdMissing  = errors.New("missing id")
-	ErrIdMismatch = errors.New("id param and payload mismatch")
-
 	// name
 	ErrNameBad     = errors.New("bad name")
 	ErrNameMissing = errors.New("missing name")
@@ -35,23 +29,6 @@ var (
 	ErrOrderInvalid      = errors.New("order is invalid and cannot be retried")
 	ErrOrderNotRevocable = errors.New("order (cert) cannot be revoked")
 )
-
-// IsIdNew returns true if the id is the specified new id value
-func IsIdNew(id int) bool {
-	return id == newId
-}
-
-// IsIdExisting returns true if the id is greater than or equal to 0 and is
-// not the newId.  This is the first building block for id validation. Others
-// include matching param to payload, and doing storage queries.
-func IsIdExisting(idPayload int) bool {
-	// check that the id is not the new id
-	if idPayload == newId {
-		return false
-	}
-
-	return idPayload >= 0
-}
 
 // NameValid true if the specified name is acceptable. To be valid
 // the name must only contain symbols - _ . ~ letters and numbers,

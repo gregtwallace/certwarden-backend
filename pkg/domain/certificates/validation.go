@@ -1,17 +1,33 @@
 package certificates
 
 import (
+	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
 )
 
-// idValid returns if the specified certId exists in storage
-func (service *Service) idValid(certId int) bool {
-	// fetch cert id from storage, if fails it doesn't exist
-	_, err := service.storage.GetOneCertById(certId)
+// GetCertificate returns the Certificate for the specified id.
+func (service *Service) GetCertificate(id int) (Certificate, error) {
+	// if id is not in valid range, it is definitely not valid
+	if !validation.IsIdExistingValidRange(id) {
+		service.logger.Debug(validation.ErrIdBad)
+		return Certificate{}, output.ErrValidationFailed
+	}
 
-	// true if no error, no error if succesfully retrieved
-	return err == nil
+	// get from storage
+	account, err := service.storage.GetOneCertById(id)
+	if err != nil {
+		// special error case for no record found
+		if err == storage.ErrNoRecord {
+			service.logger.Debug(err)
+			return Certificate{}, output.ErrNotFound
+		} else {
+			service.logger.Error(err)
+			return Certificate{}, output.ErrStorageGeneric
+		}
+	}
+
+	return account, nil
 }
 
 // nameValid returns if a name is valid (meets char requirements

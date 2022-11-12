@@ -3,7 +3,6 @@ package orders
 import (
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
-	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
 
@@ -20,14 +19,14 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) (e
 		return output.ErrValidationFailed
 	}
 
-	// if id < 0 it is definitely not valid
-	if !validation.IsIdExisting(certId) {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
+	// validate certificate ID
+	_, err = service.certificates.GetCertificate(certId)
+	if err != nil {
+		return err
 	}
 
-	// get from storage
-	orders, err := service.storage.GetCertOrders(certId)
+	// get orders from storage
+	orders, err := service.storage.GetOrdersByCert(certId)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {

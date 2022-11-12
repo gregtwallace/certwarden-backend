@@ -63,13 +63,6 @@ func (service *Service) doOrderJob(job orderJob) {
 		}
 	}(order.Certificate.ID)
 
-	// fetch the certificate with sensitive data and update the order object
-	order.Certificate, err = service.storage.GetOneCertById(order.Certificate.ID)
-	if err != nil {
-		service.logger.Error(err)
-		return // done, failed
-	}
-
 	// get account key
 	key, err := order.Certificate.CertificateAccount.AcmeAccountKey()
 	if err != nil {

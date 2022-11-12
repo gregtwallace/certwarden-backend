@@ -1,67 +1,101 @@
 package orders
 
 import (
+	"errors"
+	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
 	"time"
 )
 
-// isCertOrderMatch returns true if the order and cert are both valid and the order
-// belongs to the specified cert. It also returns the order if valid.
-func (service *Service) isCertOrderMatch(certId int, orderId int) (bool, Order) {
+var (
+	ErrOrderRetryFinal      = errors.New("can't retry an order that is in a final state (valid or invalid)")
+	ErrOrderRevokeBadReason = errors.New("bad revocation reason code")
+)
+
+// getOrder returns the Order specified by the ids, so long as the Order belongs
+// to the Certificate.  An error is returned if the order doesn't exist or if the
+// order does not belong to the cert.
+func (service *Service) getOrder(certId int, orderId int) (Order, error) {
 	// basic check
-	if !validation.IsIdExisting(certId) {
-		return false, Order{}
+	if !validation.IsIdExistingValidRange(certId) {
+		service.logger.Debug(validation.ErrIdBad)
+		return Order{}, output.ErrValidationFailed
 	}
-	if !validation.IsIdExisting(orderId) {
-		return false, Order{}
-	}
-
-	// check that cert exists in storage
-	cert, err := service.storage.GetOneCertById(certId)
-	if err != nil {
-		return false, Order{}
+	if !validation.IsIdExistingValidRange(orderId) {
+		service.logger.Debug(validation.ErrIdBad)
+		return Order{}, output.ErrValidationFailed
 	}
 
-	// check that order exists in storage
+	// get order from storage
 	order, err := service.storage.GetOneOrder(orderId)
 	if err != nil {
-		return false, Order{}
+		// special error case for no record found
+		if err == storage.ErrNoRecord {
+			service.logger.Debug(err)
+			return Order{}, output.ErrNotFound
+		} else {
+			service.logger.Error(err)
+			return Order{}, output.ErrStorageGeneric
+		}
 	}
 
 	// check the cert id on the order matches the cert
-	if cert.ID != order.Certificate.ID {
-		return false, Order{}
+	if certId != order.Certificate.ID {
+		service.logger.Debug(validation.ErrIdMismatch)
+		return Order{}, output.ErrValidationFailed
 	}
 
-	return true, order
+	return order, nil
 }
 
-// isOrderRetryable returns true if the cert and order are both valid and in storage,
-// the order belongs to the cert, and the order is in a state that can be retried.
-func (service *Service) isOrderRetryable(certId int, orderId int) bool {
-	match, order := service.isCertOrderMatch(certId, orderId)
-	if !match {
-		return false
+// isOrderRetryable returns an error if the order is not valid, the order doesn't
+// belong to the specified cert, or the order is not in a state that can be retried.
+func (service *Service) isOrderRetryable(certId int, orderId int) error {
+	order, err := service.getOrder(certId, orderId)
+	if err != nil {
+		return err
 	}
 
-	// check order is in a state that can be retried
-	return !(order.Status == "valid" || order.Status == "invalid")
+	// check if order is in a final state (can't retry)
+	if order.Status == "valid" || order.Status == "invalid" {
+		service.logger.Debug(ErrOrderRetryFinal)
+		return output.ErrValidationFailed
+	}
+
+	return nil
 }
 
 // isOrderRevocable verifies order belongs to cert and confirms the order
 // is in a state that can be revoked ('valid' and 'valid_to' < current time)
-func (service *Service) isOrderRevocable(certId, orderId int) bool {
-	match, order := service.isCertOrderMatch(certId, orderId)
-	if !match {
-		return false
+func (service *Service) getOrderForRevocation(certId, orderId int) (Order, error) {
+	order, err := service.getOrder(certId, orderId)
+	if err != nil {
+		return Order{}, err
 	}
 
 	// check order is in a state that can be revoked
 	// nil check
 	if order.ValidTo == nil {
-		return false
+		return Order{}, output.ErrValidationFailed
 	}
 
-	// must be valid and not expired
-	return (order.Status == "valid" && !order.KnownRevoked && int(time.Now().Unix()) < *order.ValidTo)
+	// confirm order is valid, not already revoked, and not expired (time)
+	if !(order.Status == "valid" && !order.KnownRevoked && int(time.Now().Unix()) < *order.ValidTo) {
+		return Order{}, output.ErrValidationFailed
+	}
+
+	return order, nil
+}
+
+// validRevocationReason returns an error if the specified reasonCode
+// is not valid (see: rfc5280 section-5.3.1)
+func (service *Service) validRevocationReason(reasonCode int) error {
+	// valid codes are 0 through 10 inclusive, except 7
+	if !(reasonCode < 0 || reasonCode == 7 || reasonCode > 10) {
+		service.logger.Debug(ErrOrderRevokeBadReason)
+		return output.ErrValidationFailed
+	}
+
+	return nil
 }

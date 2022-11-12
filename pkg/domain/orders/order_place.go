@@ -4,18 +4,16 @@ import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
-	"log"
 )
 
+// placeNewOrderAndFulfill creates a new ACME order for the specified Certificate ID,
+// and prioritizes the order as specified. It returns the new orderId.
 func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (orderId int, err error) {
-	// fetch the relevant cert
-	cert, err := service.storage.GetOneCertById(certId)
+	// get cert
+	cert, err := service.certificates.GetCertificate(certId)
 	if err != nil {
-		service.logger.Error(err)
-		return -2, output.ErrStorageGeneric
+		return -2, err
 	}
-
-	// no need to validate, can try to order any cert in storage
 
 	// get account key
 	key, err := cert.CertificateAccount.AcmeAccountKey()
@@ -53,12 +51,12 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		service.logger.Error(err)
 		return -2, output.ErrStorageGeneric
 	}
-	log.Println(err)
 
 	// update certificate timestamp
-	err = service.storage.UpdateCertUpdatedTime(certId)
+	err = service.storage.UpdateCertUpdatedTime(cert.ID)
 	if err != nil {
 		service.logger.Error(err)
+		// no return
 	}
 
 	// kickoff order fulfillment (async)
@@ -66,6 +64,7 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 	// log error if something strange happened
 	if err != nil {
 		service.logger.Error(err)
+		// no return
 	}
 
 	return orderId, nil

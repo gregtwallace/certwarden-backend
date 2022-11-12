@@ -23,8 +23,7 @@ type UpdatePayload struct {
 // PutKeyUpdate updates a Key that already exists in storage.
 // Only fields received in the payload (non-nil) are updated.
 func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (err error) {
-	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
-
+	// parse payload
 	var payload UpdatePayload
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
@@ -32,8 +31,9 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (er
 		return output.ErrValidationFailed
 	}
 
-	// convert id param to an integer and add to payload
-	payload.ID, err = strconv.Atoi(idParamStr)
+	// get id param
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -41,9 +41,9 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (er
 
 	// validation
 	// id
-	if !service.idValid(payload.ID) {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
+	_, err = service.getKey(payload.ID)
+	if err != nil {
+		return err
 	}
 	// name (optional - check if not nil)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {

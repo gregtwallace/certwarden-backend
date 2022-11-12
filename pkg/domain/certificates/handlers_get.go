@@ -3,7 +3,6 @@ package certificates
 import (
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
@@ -39,7 +38,7 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) (err
 // GetOneCert is an http handler that returns one Certificate based on its unique id in the
 // form of JSON written to w
 func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) (err error) {
-	// convert id param to an integer
+	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -52,23 +51,10 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) (err 
 		return service.GetNewCertOptions(w, r)
 	}
 
-	// if id < 0 & not new, it is definitely not valid
-	if !validation.IsIdExisting(id) {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
-	}
-
 	// get from storage
-	cert, err := service.storage.GetOneCertById(id)
+	cert, err := service.GetCertificate(id)
 	if err != nil {
-		// special error case for no record found
-		if err == storage.ErrNoRecord {
-			service.logger.Debug(err)
-			return output.ErrNotFound
-		} else {
-			service.logger.Error(err)
-			return output.ErrStorageGeneric
-		}
+		return err
 	}
 
 	// return response to client

@@ -3,7 +3,6 @@ package private_keys
 import (
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
@@ -38,7 +37,7 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) (err 
 
 // GetOneKey returns a single private key as JSON
 func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err error) {
-	// get key id and convert to int
+	// params
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
@@ -51,23 +50,10 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 		return service.GetNewKeyOptions(w, r)
 	}
 
-	// if id < 0 & not new, it is definitely not valid
-	if !validation.IsIdExisting(id) {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
-	}
-
-	// get the key from storage
-	key, err := service.storage.GetOneKeyById(id)
+	// get the key from storage (and validate id)
+	key, err := service.getKey(id)
 	if err != nil {
-		// special error case for no record found
-		if err == storage.ErrNoRecord {
-			service.logger.Debug(err)
-			return output.ErrNotFound
-		} else {
-			service.logger.Error(err)
-			return output.ErrStorageGeneric
-		}
+		return err
 	}
 
 	// return response to client

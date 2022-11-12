@@ -1,14 +1,33 @@
 package acme_accounts
 
 import (
+	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
 )
 
-// idValid returns true if the specified accountId exists in storage
-func (service *Service) idValid(id int) bool {
-	_, err := service.storage.GetOneAccountById(id)
-	return err == nil
+// getAccount returns the Account for the specified account id.
+func (service *Service) getAccount(id int) (Account, error) {
+	// if id is not in valid range, it is definitely not valid
+	if !validation.IsIdExistingValidRange(id) {
+		service.logger.Debug(validation.ErrIdBad)
+		return Account{}, output.ErrValidationFailed
+	}
+
+	// get from storage
+	account, err := service.storage.GetOneAccountById(id)
+	if err != nil {
+		// special error case for no record found
+		if err == storage.ErrNoRecord {
+			service.logger.Debug(err)
+			return Account{}, output.ErrNotFound
+		} else {
+			service.logger.Error(err)
+			return Account{}, output.ErrStorageGeneric
+		}
+	}
+
+	return account, nil
 }
 
 // nameValid returns true if the specified account name is acceptable and

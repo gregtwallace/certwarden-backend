@@ -10,19 +10,18 @@ import (
 
 // DeleteKey deletes a private key from storage
 func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err error) {
+	// get params
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
-
-	// convert id param to an integer
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
 
-	// verify key exists
-	if !service.idValid(id) {
-		service.logger.Debug(err)
-		return output.ErrNotFound
+	// validate key exists
+	_, err = service.getKey(id)
+	if err != nil {
+		return err
 	}
 
 	// confirm key is not in use
@@ -35,6 +34,7 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err e
 		service.logger.Warn("cannot delete, in use")
 		return output.ErrDeleteInUse
 	}
+	// end validation
 
 	// delete from storage
 	err = service.storage.DeleteKey(id)

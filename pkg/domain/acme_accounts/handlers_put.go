@@ -23,15 +23,6 @@ type NameDescPayload struct {
 // PutNameDescAccount is a handler that sets the name and description of an account
 // within storage
 func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Request) (err error) {
-	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
-
-	// convert id param to an integer
-	idParam, err := strconv.Atoi(idParamStr)
-	if err != nil {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
-	}
-
 	// payload decoding
 	var payload NameDescPayload
 	err = json.NewDecoder(r.Body).Decode(&payload)
@@ -40,22 +31,29 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 		return output.ErrValidationFailed
 	}
 
-	// validation
-	// id
-	if !service.idValid(idParam) {
+	// get id from param
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	payload.ID, err = strconv.Atoi(idParam)
+	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
 
+	// validation
+	// id
+	_, err = service.getAccount(payload.ID)
+	if err != nil {
+		return err
+	}
+
 	// name (optional)
-	if payload.Name != nil && !service.nameValid(*payload.Name, &idParam) {
+	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
 	// end validation
 
 	// add additional details to the payload before saving
-	payload.ID = idParam
 	payload.UpdatedAt = int(time.Now().Unix())
 
 	// save account name and desc to storage, which also returns the account id with new
@@ -70,7 +68,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	response := output.JsonResponse{
 		Status:  http.StatusOK,
 		Message: "updated",
-		ID:      idParam,
+		ID:      payload.ID,
 	}
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
@@ -92,10 +90,9 @@ type changeEmailPayload struct {
 // ChangeEmail() is a handler that updates an ACME account with the specified
 // email address and saves the updated address to storage
 func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err error) {
-	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
-
-	// convert id param to an integer
-	idParam, err := strconv.Atoi(idParamStr)
+	// get id from param
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -111,9 +108,9 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 
 	// validation
 	// id
-	if !service.idValid(idParam) {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
+	account, err := service.getAccount(id)
+	if err != nil {
+		return err
 	}
 
 	// email (update cannot be to blank)
@@ -122,13 +119,6 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 		return output.ErrValidationFailed
 	}
 	// end validation
-
-	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam)
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrStorageGeneric
-	}
 
 	// get AccountKey
 	acmeAccountKey, err := account.AcmeAccountKey()
@@ -155,7 +145,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 	}
 
 	// add additional details to the payload before saving
-	acmeAccount.ID = idParam
+	acmeAccount.ID = id
 	acmeAccount.UpdatedAt = int(time.Now().Unix())
 
 	// save ACME response to account
@@ -169,7 +159,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 	response := output.JsonResponse{
 		Status:  http.StatusOK,
 		Message: "updated",
-		ID:      idParam,
+		ID:      id,
 	}
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
@@ -198,9 +188,9 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) (err
 		return output.ErrValidationFailed
 	}
 
-	// convert id param to an integer
-	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
-	payload.ID, err = strconv.Atoi(idParamStr)
+	// get id from param
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -208,9 +198,9 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) (err
 
 	// validation
 	// id
-	if !service.idValid(payload.ID) {
-		service.logger.Debug("invalid payload account id")
-		return output.ErrValidationFailed
+	account, err := service.getAccount(payload.ID)
+	if err != nil {
+		return err
 	}
 
 	// new private key
@@ -219,13 +209,6 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) (err
 		return output.ErrValidationFailed
 	}
 	// end validation
-
-	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(payload.ID)
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrStorageGeneric
-	}
 
 	// get AccountKey
 	oldAcmeAccountKey, err := account.AcmeAccountKey()

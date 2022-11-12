@@ -10,9 +10,8 @@ import (
 
 // DeleteAccount deletes an acme account from storage
 func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) (err error) {
+	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
-
-	// convert id param to an integer
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
@@ -21,9 +20,9 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) (e
 
 	// validation
 	// verify account exists
-	if !service.idValid(id) {
-		service.logger.Debug(err)
-		return output.ErrNotFound
+	_, err = service.getAccount(id)
+	if err != nil {
+		return err
 	}
 
 	// do not allow delete if there are any certs using the account

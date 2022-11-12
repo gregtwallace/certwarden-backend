@@ -1,17 +1,34 @@
 package private_keys
 
 import (
+	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
 )
 
-// idValid returns true if the specified keyId exists in storage
-func (service *Service) idValid(keyId int) bool {
-	// fetch key id from storage, if fails it doesn't exist
-	_, err := service.storage.GetOneKeyById(keyId)
+// getKey returns the Key for the specified id or an
+// error.
+func (service *Service) getKey(id int) (Key, error) {
+	// basic check
+	if !validation.IsIdExistingValidRange(id) {
+		service.logger.Debug(validation.ErrIdBad)
+		return Key{}, output.ErrValidationFailed
+	}
 
-	// true if no error, no error if succesfully retrieved
-	return err == nil
+	// get the key from storage
+	key, err := service.storage.GetOneKeyById(id)
+	if err != nil {
+		// special error case for no record found
+		if err == storage.ErrNoRecord {
+			service.logger.Debug(err)
+			return Key{}, output.ErrNotFound
+		} else {
+			service.logger.Error(err)
+			return Key{}, output.ErrStorageGeneric
+		}
+	}
+
+	return key, nil
 }
 
 // nameValid returns true if the specified key name is acceptable and

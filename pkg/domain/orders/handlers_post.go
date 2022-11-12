@@ -15,13 +15,18 @@ import (
 // ACME may send back the existing order instead of creating a new one
 // endpoint: /api/v1/certificates/:id/orders
 func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err error) {
-	certIdStr := httprouter.ParamsFromContext(r.Context()).ByName("certid")
-
-	// convert id param to an integer
-	certId, err := strconv.Atoi(certIdStr)
+	// certId param
+	certIdParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
+	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
+	}
+
+	// get certificate (validate exists)
+	_, err = service.certificates.GetCertificate(certId)
+	if err != nil {
+		return err
 	}
 
 	// place order and kickoff high-priority fulfillment
@@ -49,30 +54,29 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 // FulfillExistingOrder is a handler that attempts to fulfill an existing order (i.e.
 // move it to the 'valid' state)
 func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Request) (err error) {
+	// get params
 	params := httprouter.ParamsFromContext(r.Context())
-	certIdStr := params.ByName("certid")
-	orderIdStr := params.ByName("orderid")
 
-	// convert id params to integers
-	certId, err := strconv.Atoi(certIdStr)
-	if err != nil {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
-	}
-	orderId, err := strconv.Atoi(orderIdStr)
+	certIdParam := params.ByName("certid")
+	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
 
-	/// validation
-	// ids (ensure cert and order match)
-	// also confirm order isn't invalid
-	if !service.isOrderRetryable(certId, orderId) {
+	orderIdParam := params.ByName("orderid")
+	orderId, err := strconv.Atoi(orderIdParam)
+	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
-	///
+
+	// validate order is acceptable
+	err = service.isOrderRetryable(certId, orderId)
+	if err != nil {
+		return err
+	}
+	// end validation
 
 	// kickoff order fulfillment (async)
 	err = service.orderFromAcme(orderId, true)
@@ -106,17 +110,18 @@ type revokePayload struct {
 // RevokeOrder is a handler that will revoke an order if it is valid and not
 // past its valid_to timestamp.
 func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) (err error) {
+	// get params
 	params := httprouter.ParamsFromContext(r.Context())
-	certIdStr := params.ByName("certid")
-	orderIdStr := params.ByName("orderid")
 
-	// convert params to integers
-	certId, err := strconv.Atoi(certIdStr)
+	certIdParam := params.ByName("certid")
+	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
-	orderId, err := strconv.Atoi(orderIdStr)
+
+	orderIdParam := params.ByName("orderid")
+	orderId, err := strconv.Atoi(orderIdParam)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -129,29 +134,18 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) (err
 	// no need to error check, default int val is 0, which is the
 	// desired value if not specified
 
-	// validation
-	// ids (ensure cert and order match)
-	// also confirm order is revocable (valid and unexpired)
-	if !service.isOrderRevocable(certId, orderId) {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
+	// validation / get order
+	// revocation reason (see: rfc5280 section-5.3.1)
+	err = service.validRevocationReason(payload.Reason)
+	if err != nil {
+		return err
+	}
+	// order
+	order, err := service.getOrderForRevocation(certId, orderId)
+	if err != nil {
+		return err
 	}
 	// end validation
-
-	// revoke cert
-	// fetch the relevant order
-	order, err := service.storage.GetOneOrder(orderId)
-	if err != nil {
-		service.logger.Error(err)
-		return // done, failed
-	}
-
-	// fetch the certificate with sensitive data and update the order object
-	order.Certificate, err = service.storage.GetOneCertById(order.Certificate.ID)
-	if err != nil {
-		service.logger.Error(err)
-		return // done, failed
-	}
 
 	// get account key
 	key, err := order.Certificate.CertificateAccount.AcmeAccountKey()

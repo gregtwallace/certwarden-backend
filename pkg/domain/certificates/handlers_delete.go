@@ -10,19 +10,18 @@ import (
 
 // DeleteCert deletes a cert from storage
 func (service *Service) DeleteCert(w http.ResponseWriter, r *http.Request) (err error) {
+	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
-
-	// convert id param to an integer
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
 
-	// verify cert exists
-	if !service.idValid(id) {
-		service.logger.Debug(err)
-		return output.ErrNotFound
+	// verify cert id exists
+	_, err = service.GetCertificate(id)
+	if err != nil {
+		return err
 	}
 
 	// delete from storage

@@ -117,6 +117,10 @@ func (app *Application) GetAuthsService() *authorizations.Service {
 	return app.authorizations
 }
 
+func (app *Application) GetCertificatesService() *certificates.Service {
+	return app.certificates
+}
+
 // ApiUrl returns the full API URL for the API, including /api
 func (app *Application) ApiUrl() string {
 	if app.IsHttps() {
