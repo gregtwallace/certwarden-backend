@@ -68,10 +68,9 @@ func (service *Service) backgroundDirManager() {
 		failWaitTime := 15 * time.Minute
 
 		// loop logic for periodic updates
-		waitTime := defaultWaitTime
-		for {
-			time.Sleep(waitTime)
+		var waitTime time.Duration
 
+		for {
 			err := service.fetchAcmeDirectory()
 			if err != nil {
 				service.logger.Errorf("directory update failed, will retry shortly: %v", err)
@@ -80,6 +79,8 @@ func (service *Service) backgroundDirManager() {
 			} else {
 				waitTime = defaultWaitTime
 			}
+
+			time.Sleep(waitTime)
 		}
 	}()
 }

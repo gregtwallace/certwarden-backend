@@ -26,7 +26,6 @@ type Service struct {
 // NewService creates a new service
 func NewService(app App, dirUri string) (*Service, error) {
 	service := new(Service)
-	var err error
 
 	// logger
 	service.logger = app.GetLogger()
@@ -41,13 +40,7 @@ func NewService(app App, dirUri string) (*Service, error) {
 	service.dirUri = dirUri
 	service.dir = new(directory)
 
-	// initial population
-	err = service.fetchAcmeDirectory()
-	if err != nil {
-		return nil, err
-	}
-
-	// start go routine to check for periodic updates
+	// start directory manager
 	service.backgroundDirManager()
 
 	// nonce manager
