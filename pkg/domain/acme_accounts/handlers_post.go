@@ -52,7 +52,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (
 		payload.Email = new(string)
 		*payload.Email = ""
 	} else if !validation.EmailValidOrBlank(*payload.Email) {
-		service.logger.Debug(err)
+		service.logger.Debug(ErrEmailBad)
 		return output.ErrValidationFailed
 	}
 

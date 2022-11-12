@@ -115,7 +115,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 
 	// email (update cannot be to blank)
 	if payload.Email == nil || !validation.EmailValid(*payload.Email) {
-		service.logger.Debug(err)
+		service.logger.Debug(ErrEmailBad)
 		return output.ErrValidationFailed
 	}
 	// end validation

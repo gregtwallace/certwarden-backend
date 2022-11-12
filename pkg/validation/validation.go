@@ -6,10 +6,6 @@ import (
 )
 
 var (
-	// email
-	ErrEmailBad     = errors.New("bad email")
-	ErrEmailMissing = errors.New("missing email")
-
 	// domain
 	ErrDomainBad     = errors.New("bad domain or subject name")
 	ErrDomainMissing = errors.New("missing domain or subject")
@@ -20,31 +16,6 @@ var (
 	ErrOrderInvalid      = errors.New("order is invalid and cannot be retried")
 	ErrOrderNotRevocable = errors.New("order (cert) cannot be revoked")
 )
-
-// EmailValid returns true if the string contains a
-// validly formatted email address
-func EmailValid(email string) bool {
-	// valid email regex
-	emailRegex, err := regexp.Compile(`^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,4}$`)
-	if err != nil {
-		// should never happen
-		return false
-	}
-
-	return emailRegex.MatchString(email)
-}
-
-// EmailValidOrBlank returns true if the email is blank or
-// contains a valid email format
-func EmailValidOrBlank(email string) bool {
-	// blank check
-	if email == "" {
-		return true
-	}
-
-	// regex check
-	return EmailValid(email)
-}
 
 // DomainValid returns true if the string is a validly formatted
 // domain name

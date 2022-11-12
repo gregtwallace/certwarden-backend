@@ -8,8 +8,14 @@ import (
 )
 
 var (
-	ErrIdBad   = errors.New("account id is invalid")
+	// id
+	ErrIdBad = errors.New("account id is invalid")
+
+	// name
 	ErrNameBad = errors.New("account name is not valid")
+
+	// email
+	ErrEmailBad = errors.New("email is not valid")
 )
 
 // getAccount returns the Account for the specified account id.
