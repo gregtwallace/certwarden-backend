@@ -1,84 +1,32 @@
 package orders
 
-import (
-	"errors"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/domain/certificates"
-	"time"
-)
-
-var ErrOrderExists = errors.New("order location already in storage")
-
-// NewOrderAcmePayload is a struct for posting new and updated Order info
-// to storage. This is used when ACME returns info about an Order.
-type NewOrderAcmePayload struct {
-	CertId         int
-	AccountId      int
-	Status         string
-	KnownRevoked   bool
-	Expires        int
-	DnsIds         []string
-	Error          *string
-	Authorizations []string
-	Finalize       string
-	Location       string
-	CreatedAt      int
-	UpdatedAt      int
-}
-
-// newOrderAcmePayload makes a OrderAcmePayload using the specified certificate
-// and acme.Response
-func makeNewOrderAcmePayload(cert certificates.Certificate, acmeResponse acme.Order) NewOrderAcmePayload {
-	acmeErr, err := acmeResponse.Error.MarshalledString()
+// orderFromAcme updates inProcess to indicate the specified order is being
+// processed and launches a go routine that sends the order job to a worker.
+// Priority allows high priority orders to always be processed before low priority
+// orders. The intent is for automated tasks to be low priority, vs manual user
+// initiated tasks being high priority.
+func (service *Service) orderFromAcme(orderId int, highPriority bool) (err error) {
+	// add to working to indicate order is being worked
+	err = service.inProcess.add(orderId)
+	// error indicates already inProcess
 	if err != nil {
-		acmeErr = nil
+		return err
 	}
 
-	payload := NewOrderAcmePayload{
-		CertId:         cert.ID,
-		AccountId:      cert.CertificateAccount.ID,
-		Status:         acmeResponse.Status,
-		KnownRevoked:   false,
-		Expires:        acmeResponse.Expires.ToUnixTime(),
-		DnsIds:         acmeResponse.Identifiers.DnsIdentifiers(),
-		Error:          acmeErr,
-		Authorizations: acmeResponse.Authorizations,
-		Finalize:       acmeResponse.Finalize,
-		Location:       acmeResponse.Location,
-		CreatedAt:      int(time.Now().Unix()),
-		UpdatedAt:      int(time.Now().Unix()),
-	}
+	// send the order job to a worker which will try and fulfill order and then remove the order
+	// from inProcess after it is complete
+	go func(service *Service, orderId int, highPriority bool) {
+		job := orderJob{
+			orderId: orderId,
+		}
 
-	return payload
-}
+		// add job, based on priority
+		if highPriority {
+			service.highJobs <- job
+		} else {
+			service.lowJobs <- job
+		}
+	}(service, orderId, highPriority)
 
-// UpdateAcmeOrderPayload is the payload to update storage regarding an existing ACME order
-type UpdateAcmeOrderPayload struct {
-	Status         string
-	Expires        *int
-	DnsIds         []string
-	Error          *string
-	Authorizations []string
-	Finalize       string
-	CertificateUrl *string
-	UpdatedAt      int
-	OrderId        int
-}
-
-// makeUpdateOrderAcmePayload makes the UpdateAcmeOrderPayload using a new payload and the orderId
-func makeUpdateOrderAcmePayload(orderId int, acmeResponse acme.Order) UpdateAcmeOrderPayload {
-	acmeErr, err := acmeResponse.Error.MarshalledString()
-	if err != nil {
-		acmeErr = nil
-	}
-
-	return UpdateAcmeOrderPayload{
-		Status:         acmeResponse.Status,
-		DnsIds:         acmeResponse.Identifiers.DnsIdentifiers(),
-		Error:          acmeErr,
-		Authorizations: acmeResponse.Authorizations,
-		UpdatedAt:      int(time.Now().Unix()),
-		OrderId:        orderId,
-		CertificateUrl: acmeResponse.Certificate,
-	}
+	return nil
 }
