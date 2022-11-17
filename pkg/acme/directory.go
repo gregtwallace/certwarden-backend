@@ -2,9 +2,14 @@ package acme
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"reflect"
 	"time"
+)
+
+var (
+	ErrDirMissingUrl = errors.New("missing required url(s)")
 )
 
 // acmeDirectory struct holds ACME directory object
@@ -44,9 +49,23 @@ func (service *Service) fetchAcmeDirectory() error {
 
 	var fetchedDir directory
 	err = json.Unmarshal(body, &fetchedDir)
+	// check for Unmarshal error
 	if err != nil {
 		return err
-	} else if reflect.DeepEqual(fetchedDir, *service.dir) {
+	}
+
+	// check for missing URLs in response
+	if fetchedDir.NewNonce == "" ||
+		fetchedDir.NewAccount == "" ||
+		fetchedDir.NewOrder == "" ||
+		// omit NewAuthz as it MUST be omitted if server does not implement pre-authorization
+		fetchedDir.RevokeCert == "" ||
+		fetchedDir.KeyChange == "" {
+		return ErrDirMissingUrl
+	}
+
+	// Only update if the fetched directory content is different than current
+	if reflect.DeepEqual(fetchedDir, *service.dir) {
 		// directory already up to date
 		service.logger.Infof("directory %s already up to date", service.dirUri)
 	} else {
@@ -73,7 +92,7 @@ func (service *Service) backgroundDirManager() {
 		for {
 			err := service.fetchAcmeDirectory()
 			if err != nil {
-				service.logger.Errorf("directory update failed, will retry shortly: %v", err)
+				service.logger.Errorf("directory update failed, will retry shortly (%v)", err)
 				// if something failed, decrease the wait to try again
 				waitTime = failWaitTime
 			} else {
