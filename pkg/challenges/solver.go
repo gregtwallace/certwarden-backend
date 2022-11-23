@@ -30,7 +30,11 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// provision the needed resource for validation and defer deprovisioning
-	service.Provision(identifier, method, key, challenge.Token)
+	err = service.Provision(identifier, method, key, challenge.Token)
+	if err != nil {
+		return "", err
+	}
+
 	defer func() {
 		err := service.Deprovision(identifier, method, challenge.Token)
 		if err != nil {
