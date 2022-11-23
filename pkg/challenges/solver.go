@@ -31,7 +31,12 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 
 	// provision the needed resource for validation and defer deprovisioning
 	service.Provision(identifier, method, key, challenge.Token)
-	defer service.Deprovision(identifier, method, challenge.Token)
+	defer func() {
+		err := service.Deprovision(identifier, method, challenge.Token)
+		if err != nil {
+			service.logger.Error(err)
+		}
+	}()
 
 	// Below this point is to inform ACME the challenge is ready to be validated
 	// by the server and to subsequently monitor the challenge to be moved to the

@@ -41,9 +41,13 @@ func (service *Service) Deprovision(identifier acme.Identifier, method Method, t
 	switch method {
 	case http01Internal:
 		// remove from internal http server
-		service.challengeProviders.http01Internal.Deprovision(token)
+		err = service.challengeProviders.http01Internal.Deprovision(token)
 	default:
 		return errUnsupportedMethod
+	}
+
+	if err != nil {
+		return err
 	}
 
 	return nil
