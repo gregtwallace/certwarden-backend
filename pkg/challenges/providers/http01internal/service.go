@@ -23,7 +23,7 @@ type Service struct {
 	mu      sync.RWMutex // added mutex due to unsafe if add and remove token both run
 }
 
-// NewService creates a new acme_accounts service
+// NewService creates a new service
 func NewService(app App, port int) (*Service, error) {
 	service := new(Service)
 
