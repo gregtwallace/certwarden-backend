@@ -49,7 +49,7 @@ type Application struct {
 
 // CloseStorage closes the storage connection
 func (app *Application) CloseStorage() {
-	app.storage.Close()
+	_ = app.storage.Close()
 }
 
 //
