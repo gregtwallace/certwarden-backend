@@ -73,7 +73,7 @@ func (app *Application) viewLogHandler(w http.ResponseWriter, r *http.Request) (
 	// manipulate the log to make it proper json
 	jsonBytes := []byte("[")
 	jsonBytes = append(jsonBytes, logBytes...)
-	jsonBytes = append(jsonBytes, []byte("{}]")...)
+	jsonBytes = append(jsonBytes, []byte("{}]")...) // add empty item because final log ends in ,
 
 	// unmarshal to cleanup the json
 	var logsJson []logEntry
@@ -84,7 +84,8 @@ func (app *Application) viewLogHandler(w http.ResponseWriter, r *http.Request) (
 	}
 
 	// output
-	_, err = app.output.WriteJSON(w, http.StatusOK, logsJson, "logs")
+	// Note: len -1 is to remove the last empty item
+	_, err = app.output.WriteJSON(w, http.StatusOK, logsJson[:len(logsJson)-1], "logs")
 	if err != nil {
 		app.logger.Error(err)
 		return output.ErrWriteJsonFailed
