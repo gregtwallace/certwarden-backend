@@ -1,6 +1,7 @@
 package app
 
 import (
+	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"log"
 	"os"
 
@@ -12,14 +13,19 @@ const configFile = "./config.yaml"
 
 // config is the configuration structure for app (and subsequently services)
 type config struct {
-	Hostname        *string `yaml:"hostname"`
-	HttpsPort       *int    `yaml:"https_port"`
-	HttpPort        *int    `yaml:"http_port"`
-	LogLevel        *string `yaml:"log_level"`
-	ServeFrontend   *bool   `yaml:"serve_frontend"`
-	PrivateKeyName  *string `yaml:"private_key_name"`
-	CertificateName *string `yaml:"certificate_name"`
-	DevMode         *bool   `yaml:"dev_mode"`
+	Hostname           *string                  `yaml:"hostname"`
+	HttpsPort          *int                     `yaml:"https_port"`
+	HttpPort           *int                     `yaml:"http_port"`
+	LogLevel           *string                  `yaml:"log_level"`
+	ServeFrontend      *bool                    `yaml:"serve_frontend"`
+	PrivateKeyName     *string                  `yaml:"private_key_name"`
+	CertificateName    *string                  `yaml:"certificate_name"`
+	DevMode            *bool                    `yaml:"dev_mode"`
+	ChallengeProviders challengeProvidersConfig `yaml:"challenge_providers"`
+}
+
+type challengeProvidersConfig struct {
+	Http01InternalConfig http01internal.Config `yaml:"http_01_internal"`
 }
 
 // readConfigFile parses the config yaml file. It also sets default config
@@ -45,6 +51,7 @@ func readConfigFile() (cfg config) {
 		log.Printf("warn: config file error: %s", err)
 		return cfg
 	}
+	log.Println(*cfg.ChallengeProviders.Http01InternalConfig.Port)
 
 	return cfg
 }
@@ -61,8 +68,14 @@ func defaultConfig() (cfg config) {
 		PrivateKeyName:  new(string),
 		CertificateName: new(string),
 		DevMode:         new(bool),
+		ChallengeProviders: challengeProvidersConfig{
+			Http01InternalConfig: http01internal.Config{
+				Port: new(int),
+			},
+		},
 	}
 
+	// set default values
 	// http/s server
 	*cfg.Hostname = "localhost"
 	*cfg.HttpsPort = 4055
@@ -77,6 +90,12 @@ func defaultConfig() (cfg config) {
 
 	// dev mode
 	*cfg.DevMode = false
+
+	// challenge providers
+	// http-01-internal
+	*cfg.ChallengeProviders.Http01InternalConfig.Port = 4060
+
+	// end challenge providers
 
 	return cfg
 }

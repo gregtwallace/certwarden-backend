@@ -17,6 +17,7 @@ type App interface {
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
 	GetDevMode() bool
+	GetHttp01InternalConfig() *http01internal.Config
 }
 
 // interface for any provider service
@@ -62,8 +63,8 @@ func NewService(app App) (service *Service, err error) {
 	// challenge providers
 
 	// http-01 internal challenge server
-	// TODO: Don't hardcode port
-	service.challengeProviders.http01Internal, err = http01internal.NewService(app, 4060)
+	// get config
+	service.challengeProviders.http01Internal, err = http01internal.NewService(app, app.GetHttp01InternalConfig())
 	if err != nil {
 		return nil, err
 	}

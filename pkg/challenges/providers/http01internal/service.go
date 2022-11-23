@@ -7,7 +7,10 @@ import (
 	"go.uber.org/zap"
 )
 
-var errServiceComponent = errors.New("necessary http-01 internal challenge service component is missing")
+var (
+	errServiceComponent = errors.New("necessary http-01 internal challenge service component is missing")
+	errConfigComponent  = errors.New("necessary http-01 config option missing")
+)
 
 // App interface is for connecting to the main app
 type App interface {
@@ -23,8 +26,13 @@ type Service struct {
 	mu      sync.RWMutex // added mutex due to unsafe if add and remove token both run
 }
 
+// Configuration options
+type Config struct {
+	Port *int `yaml:"port"`
+}
+
 // NewService creates a new service
-func NewService(app App, port int) (*Service, error) {
+func NewService(app App, config *Config) (*Service, error) {
 	service := new(Service)
 
 	// devmode?
@@ -40,7 +48,10 @@ func NewService(app App, port int) (*Service, error) {
 	service.tokens = make(map[string]string, 50)
 
 	// start web server for http01 challenges
-	err := service.startServer(port)
+	if config.Port == nil {
+		return nil, errConfigComponent
+	}
+	err := service.startServer(*config.Port)
 	if err != nil {
 		return nil, err
 	}
