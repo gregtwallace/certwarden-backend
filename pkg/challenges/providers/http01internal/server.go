@@ -32,7 +32,11 @@ func (service *Service) startServer(port int) (err error) {
 
 	// launch webserver
 	service.logger.Infof("starting http-01 challenge server on %s.", servAddr)
-	service.logger.Warn("http-01 challenge server is not running on port 80; requests must be proxied to part 80 or they will not pass")
+	if port != 80 {
+		service.logger.Warnf("http-01 challenge server is not running on port 80; internet "+
+			"facing port 80 must be proxied to port %d to function.", port)
+	}
+
 	go func() {
 		service.logger.Panic(srv.ListenAndServe())
 	}()
