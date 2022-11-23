@@ -51,7 +51,6 @@ func readConfigFile() (cfg config) {
 		log.Printf("warn: config file error: %s", err)
 		return cfg
 	}
-	log.Println(*cfg.ChallengeProviders.Http01InternalConfig.Port)
 
 	return cfg
 }
