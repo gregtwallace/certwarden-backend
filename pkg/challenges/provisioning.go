@@ -18,10 +18,10 @@ func (service *Service) Provision(identifier acme.Identifier, method Method, key
 	switch method {
 	case http01Internal:
 		err = service.challengeProviders.http01Internal.Provision(resourceName, resourceContent)
-	case dns01Script:
-		// TODO: Support DNS
-		service.logger.Errorf("dns-01 unsupported (keyauth hash: %s", resourceContent)
-		return errUnsupportedMethod
+
+	case dns01Cloudflare:
+		err = service.challengeProviders.dns01Cloudflare.Provision(resourceName, resourceContent)
+
 	default:
 		return errUnsupportedMethod
 	}
@@ -37,15 +37,25 @@ func (service *Service) Provision(identifier acme.Identifier, method Method, key
 // Deprovision removes the ACME challenge resource from the Method's
 // provider.
 func (service *Service) Deprovision(identifier acme.Identifier, method Method, token string) (err error) {
+	// calculate the needed resource name
+	resourceName, err := method.validationResourceName(identifier, token)
+	if err != nil {
+		return err
+	}
+
 	// Deprovision with the appropriate provider
 	switch method {
 	case http01Internal:
-		// remove from internal http server
-		err = service.challengeProviders.http01Internal.Deprovision(token)
+		err = service.challengeProviders.http01Internal.Deprovision(resourceName)
+
+	case dns01Cloudflare:
+		err = service.challengeProviders.dns01Cloudflare.Deprovision(resourceName)
+
 	default:
 		return errUnsupportedMethod
 	}
 
+	// central error check
 	if err != nil {
 		return err
 	}

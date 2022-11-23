@@ -3,6 +3,7 @@ package challenges
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 
 	"go.uber.org/zap"
@@ -34,7 +35,8 @@ type Service struct {
 
 // service challenge providers
 type challengeProviders struct {
-	http01Internal providerService
+	http01Internal  providerService
+	dns01Cloudflare providerService
 }
 
 // NewService creates a new service
@@ -62,6 +64,12 @@ func NewService(app App) (service *Service, err error) {
 	// http-01 internal challenge server
 	// TODO: Don't hardcode port
 	service.challengeProviders.http01Internal, err = http01internal.NewService(app, 4060)
+	if err != nil {
+		return nil, err
+	}
+
+	// dns-01 cloudflare challenge service
+	service.challengeProviders.dns01Cloudflare, err = dns01cloudflare.NewService(app)
 	if err != nil {
 		return nil, err
 	}

@@ -17,7 +17,7 @@ const (
 	UnknownMethod Method = iota
 
 	http01Internal
-	dns01Script
+	dns01Cloudflare
 )
 
 // Method custom JSON Marshal (turns the Method into MethodDetails for output)
@@ -60,7 +60,13 @@ func (method Method) challengeType() acme.ChallengeType {
 }
 
 // validationResource creates the resource name and content that are required
-// to succesfully validate an ACME Challenge.
+// to succesfully validate an ACME Challenge using the Method.
 func (method Method) validationResource(identifier acme.Identifier, key acme.AccountKey, token string) (name string, content string, err error) {
 	return method.challengeType().ValidationResource(identifier, key, token)
+}
+
+// validationResourceName creates the resource name that is required to
+// succesfully validate an ACME Challenge using the Method.
+func (method Method) validationResourceName(identifier acme.Identifier, token string) (name string, err error) {
+	return method.challengeType().ValidationResourceName(identifier, token)
 }

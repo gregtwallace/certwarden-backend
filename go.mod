@@ -22,6 +22,8 @@ replace legocerthub-backend/pkg/acme/nonces => /pkg/acme/nonces
 
 replace legocerthub-backend/pkg/challenges => /pkg/challenges
 
+replace legocerthub-backend/pkg/challenges/providers/dns01cloudflare => /pkg/challenges/providers/dns01cloudflare
+
 replace legocerthub-backend/pkg/challenges/providers/http01internal => /pkg/challenges/providers/http01internal
 
 replace legocerthub-backend/pkg/datatypes => /pkg/datatypes

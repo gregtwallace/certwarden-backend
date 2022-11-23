@@ -19,14 +19,13 @@ var methodDetails = []challMethodDetails{
 		name:          "HTTP (Self Served)",
 		challengeType: acme.ChallengeTypeHttp01,
 	},
-	// TODO: Implement DNS
-	// {
-	// 	// call external scripts to create and delete dns records
-	// 	Method:        dns01Script,
-	// 	Value:         "dns-01-script",
-	// 	Name:          "DNS-01 (Manual Script)",
-	// 	ChallengeType: acme.Dns01,
-	// },
+	{
+		// create and delete dns records on Cloudflare
+		method:        dns01Cloudflare,
+		storageValue:  "dns-01-cloudflare",
+		name:          "DNS-01 (Cloudflare)",
+		challengeType: acme.ChallengeTypeDns01,
+	},
 }
 
 // ListOfMethods() returns a slice of challenge methods
