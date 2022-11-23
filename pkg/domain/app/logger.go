@@ -8,6 +8,9 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// logFile is the path and filename to store the application's log
+const logFile = "./lego-certhub.log.json"
+
 // defaultLogLevel is the default logging level when not in devMode
 // and the configured level isn't valid or specified
 const defaultLogLevel = zapcore.InfoLevel
@@ -16,10 +19,13 @@ func (app *Application) initZapLogger() {
 	config := zap.NewProductionEncoderConfig()
 	config.EncodeTime = zapcore.ISO8601TimeEncoder
 
+	// to make the whole file Unmarshal-able
+	config.LineEnding = ",\n"
+
 	// log file
 	fileEncoder := zapcore.NewJSONEncoder(config)
 
-	logFile, err := os.OpenFile("lego-certhub.log.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	logFile, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -27,6 +33,7 @@ func (app *Application) initZapLogger() {
 	writer := zapcore.AddSync(logFile)
 
 	// log console
+	config.LineEnding = "\n" // regular line break for console
 	// no stack trace in console
 	config.StacktraceKey = ""
 	consoleEncoder := zapcore.NewConsoleEncoder(config)

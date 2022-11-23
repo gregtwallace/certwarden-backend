@@ -1,8 +1,11 @@
 package app
 
 import (
+	"encoding/json"
+	"io"
 	"legocerthub-backend/pkg/output"
 	"net/http"
+	"os"
 )
 
 type appStatus struct {
@@ -35,6 +38,53 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 	}
 
 	_, err = app.output.WriteJSON(w, http.StatusOK, currentStatus, "server")
+	if err != nil {
+		app.logger.Error(err)
+		return output.ErrWriteJsonFailed
+	}
+
+	return nil
+}
+
+// logEntry represents the structure of the zap log
+type logEntry struct {
+	Level      string `json:"level"`
+	TimeStamp  string `json:"ts"`
+	Caller     string `json:"caller"`
+	Message    string `json:"msg"`
+	StackTrace string `json:"stacktrace,omitempty"`
+}
+
+// viewLogHandler is a handler that returns the content of the log file to the client
+func (app *Application) viewLogHandler(w http.ResponseWriter, r *http.Request) (err error) {
+	// open log, read only
+	logFile, err := os.OpenFile(logFile, os.O_RDONLY, 0600)
+	if err != nil {
+		app.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// read in the log file
+	logBytes, err := io.ReadAll(logFile)
+	if err != nil {
+		app.logger.Error(err)
+		return output.ErrInternal
+	}
+	// manipulate the log to make it proper json
+	jsonBytes := []byte("[")
+	jsonBytes = append(jsonBytes, logBytes...)
+	jsonBytes = append(jsonBytes, []byte("{}]")...)
+
+	// unmarshal to cleanup the json
+	var logsJson []logEntry
+	err = json.Unmarshal(jsonBytes, &logsJson)
+	if err != nil {
+		app.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// output
+	_, err = app.output.WriteJSON(w, http.StatusOK, logsJson, "logs")
 	if err != nil {
 		app.logger.Error(err)
 		return output.ErrWriteJsonFailed
