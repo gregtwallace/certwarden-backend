@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var errServiceComponent = errors.New("necessary http-01 challenge service component is missing")
+var errServiceComponent = errors.New("necessary http-01 internal challenge service component is missing")
 
 // App interface is for connecting to the main app
 type App interface {
