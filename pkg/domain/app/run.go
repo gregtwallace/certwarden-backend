@@ -142,6 +142,7 @@ func create() (*Application, error) {
 	// prod
 	go func() {
 		defer wg.Done()
+		var err error
 		app.acmeProd, err = acme.NewService(app, acmeProdUrl)
 		wgErrors <- err
 	}()
@@ -149,6 +150,7 @@ func create() (*Application, error) {
 	// staging
 	go func() {
 		defer wg.Done()
+		var err error
 		app.acmeStaging, err = acme.NewService(app, acmeStagingUrl)
 		wgErrors <- err
 	}()
