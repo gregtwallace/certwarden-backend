@@ -3,6 +3,7 @@ package challenges
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 
@@ -18,6 +19,7 @@ type App interface {
 	GetAcmeStagingService() *acme.Service
 	GetDevMode() bool
 	GetHttp01InternalConfig() *http01internal.Config
+	GetDns01CloudflareConfig() *dns01cloudflare.Config
 }
 
 // interface for any provider service
@@ -31,6 +33,7 @@ type Service struct {
 	logger             *zap.SugaredLogger
 	acmeProd           *acme.Service
 	acmeStaging        *acme.Service
+	dnsChecker         *dns_checker.Service
 	challengeProviders challengeProviders
 }
 
@@ -60,20 +63,26 @@ func NewService(app App) (service *Service, err error) {
 		return nil, errServiceComponent
 	}
 
-	// challenge providers
+	// configure dns checker service
+	// TODO: omit this if no dns providers are enabled
+	service.dnsChecker, err = dns_checker.NewService(app)
+	if err != nil {
+		return nil, err
+	}
 
+	// challenge providers
 	// http-01 internal challenge server
-	// get config
 	service.challengeProviders.http01Internal, err = http01internal.NewService(app, app.GetHttp01InternalConfig())
 	if err != nil {
 		return nil, err
 	}
 
 	// dns-01 cloudflare challenge service
-	service.challengeProviders.dns01Cloudflare, err = dns01cloudflare.NewService(app)
+	service.challengeProviders.dns01Cloudflare, err = dns01cloudflare.NewService(app, app.GetDns01CloudflareConfig(), service.dnsChecker)
 	if err != nil {
 		return nil, err
 	}
+	// end challenge providers
 
 	return service, nil
 }

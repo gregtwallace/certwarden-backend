@@ -4,6 +4,7 @@ import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges"
+	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 
 	"go.uber.org/zap"
@@ -18,6 +19,7 @@ type App interface {
 	GetAcmeStagingService() *acme.Service
 	GetDevMode() bool
 	GetHttp01InternalConfig() *http01internal.Config
+	GetDns01CloudflareConfig() *dns01cloudflare.Config
 }
 
 // service struct

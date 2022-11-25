@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/domain/acme_accounts"
@@ -57,6 +58,10 @@ func (app *Application) CloseStorage() {
 // return various app parts which are used as needed by services
 func (app *Application) GetHttp01InternalConfig() *http01internal.Config {
 	return &app.config.ChallengeProviders.Http01InternalConfig
+}
+
+func (app *Application) GetDns01CloudflareConfig() *dns01cloudflare.Config {
+	return &app.config.ChallengeProviders.Dns01CloudflareConfig
 }
 
 func (app *Application) GetDevMode() bool {

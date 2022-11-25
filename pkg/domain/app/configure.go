@@ -1,6 +1,7 @@
 package app
 
 import (
+	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"log"
 	"os"
@@ -25,7 +26,8 @@ type config struct {
 }
 
 type challengeProvidersConfig struct {
-	Http01InternalConfig http01internal.Config `yaml:"http_01_internal"`
+	Http01InternalConfig  http01internal.Config  `yaml:"http_01_internal"`
+	Dns01CloudflareConfig dns01cloudflare.Config `yaml:"dns_01_cloudflare"`
 }
 
 // readConfigFile parses the config yaml file. It also sets default config
@@ -93,6 +95,9 @@ func defaultConfig() (cfg config) {
 	// challenge providers
 	// http-01-internal
 	*cfg.ChallengeProviders.Http01InternalConfig.Port = 4060
+
+	// dns-01-cloudflare
+	// no defaults
 
 	// end challenge providers
 

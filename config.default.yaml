@@ -35,3 +35,6 @@ challenge_providers:
   http_01_internal:
     # port to run the http challenge server on
     port: 4060
+  dns_01_cloudflare:
+    account_email: user@example.com
+    account_api_key: 12345abcde

@@ -7,12 +7,19 @@ require github.com/julienschmidt/httprouter v1.3.0
 require github.com/mattn/go-sqlite3 v1.14.12
 
 require (
+	github.com/cloudflare/cloudflare-go v0.55.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
+	github.com/hashicorp/go-retryablehttp v0.7.1 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
+	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
@@ -21,6 +28,8 @@ replace legocerthub-backend/pkg/acme => /pkg/acme
 replace legocerthub-backend/pkg/acme/nonces => /pkg/acme/nonces
 
 replace legocerthub-backend/pkg/challenges => /pkg/challenges
+
+replace legocerthub-backend/pkg/challenges/dns_checker => /pkg/challenges/dns_checker
 
 replace legocerthub-backend/pkg/challenges/providers/dns01cloudflare => /pkg/challenges/providers/dns01cloudflare
 
