@@ -13,7 +13,9 @@ func (service *Service) Provision(token string, keyAuth string) (err error) {
 
 // RemoveToken removes the specified token from the slice of
 // hosted tokens
-func (service *Service) Deprovision(token string) (err error) {
+func (service *Service) Deprovision(token string, keyAuth string) (err error) {
+	// keyAuth is unused in this function
+
 	service.mu.Lock()
 	defer service.mu.Unlock()
 

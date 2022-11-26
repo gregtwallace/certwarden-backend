@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -24,21 +25,18 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 		return err
 	}
 
-	// remove old DNS record, if one exists
-	err = service.deleteDNSRecord(resourceName, zoneID)
-	if err != nil {
-		return err
-	}
+	// no need to delete, just handle already exists error (which in theory isn't possible
+	// anyway because resourceContent should always change)
 
 	// create DNS record on cloudflare for the ACME resource
 	_, err = service.cloudflareApi.CreateDNSRecord(context.Background(), zoneID, newAcmeRecord(resourceName, resourceContent))
-	if err != nil {
+	if err != nil && !(strings.Contains(err.Error(), "81057") || strings.Contains(err.Error(), "Record already exists")) {
 		return err
 	}
 
 	// confirm dns record has propagated before returning result
 	// retry propagation check a few times before failing
-	maxTries := 5
+	maxTries := 10
 	for i := 1; i <= maxTries; i++ {
 		// sleep at start to allow some propagation
 		time.Sleep(time.Duration(i) * 15 * time.Second)
@@ -59,7 +57,9 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 	return errors.New("failed to propagate dns record")
 }
 
-func (service *Service) Deprovision(resourceName string) error {
+// Deprovision removes the resource from the internal tracking map and deletes
+// the corresponding DNS record on Cloudflare.
+func (service *Service) Deprovision(resourceName string, resourceContent string) error {
 	// remove from internal map
 	err := service.dnsRecords.Delete(resourceName)
 	if err != nil {
@@ -75,7 +75,7 @@ func (service *Service) Deprovision(resourceName string) error {
 	}
 
 	// remove old DNS record
-	err = service.deleteDNSRecord(resourceName, zoneID)
+	err = service.deleteDNSRecord(resourceName, resourceContent, zoneID)
 	if err != nil {
 		return err
 	}

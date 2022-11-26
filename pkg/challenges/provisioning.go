@@ -28,11 +28,10 @@ func (service *Service) Provision(identifier acme.Identifier, method Method, key
 	return nil
 }
 
-// Deprovision removes the ACME challenge resource from the Method's
-// provider.
-func (service *Service) Deprovision(identifier acme.Identifier, method Method, token string) (err error) {
-	// calculate the needed resource name
-	resourceName, err := method.validationResourceName(identifier, token)
+// Deprovision removes the ACME challenge resource from the Method's provider.
+func (service *Service) Deprovision(identifier acme.Identifier, method Method, key acme.AccountKey, token string) (err error) {
+	// calculate the needed resource
+	resourceName, resourceContent, err := method.validationResource(identifier, key, token)
 	if err != nil {
 		return err
 	}
@@ -43,7 +42,7 @@ func (service *Service) Deprovision(identifier acme.Identifier, method Method, t
 	}
 
 	// Deprovision with the appropriate provider
-	err = service.providers[method].Deprovision(resourceName)
+	err = service.providers[method].Deprovision(resourceName, resourceContent)
 	if err != nil {
 		return err
 	}

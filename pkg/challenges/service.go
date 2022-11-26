@@ -25,7 +25,7 @@ type App interface {
 // interface for any provider service
 type providerService interface {
 	Provision(resourceName string, resourceContent string) (err error)
-	Deprovision(resourceName string) (err error)
+	Deprovision(resourceName string, resourceContent string) (err error)
 }
 
 // service struct

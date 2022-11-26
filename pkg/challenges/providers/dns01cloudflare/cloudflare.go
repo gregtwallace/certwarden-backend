@@ -7,6 +7,18 @@ import (
 	"github.com/cloudflare/cloudflare-go"
 )
 
+// acmeRecord returns the cloudflare dns record for a given acme resource
+// name and content
+func newAcmeRecord(resourceName, resourceContent string) cloudflare.DNSRecord {
+	return cloudflare.DNSRecord{
+		Type:      "TXT",
+		Name:      resourceName,
+		Content:   resourceContent,
+		TTL:       60,
+		Proxiable: false,
+	}
+}
+
 // getZoneID returns the ZoneID for a specific resourceName
 func (service *Service) getZoneID(resourceName string) (zoneID string, err error) {
 	// determine the resource TLD (i.e. the ZoneID Name)
@@ -22,13 +34,14 @@ func (service *Service) getZoneID(resourceName string) (zoneID string, err error
 	return zoneID, nil
 }
 
-// deleteDNSRecord deletes the resourceName's record from the specified
-// zoneID, if the resource already has a DNS record. Otherwise, it does
-// nothing.
-func (service *Service) deleteDNSRecord(resourceName string, zoneID string) (err error) {
+// deleteDNSRecord deletes the resourceName's record with the specified content from
+// the specified zoneID, if the record exists. If it does not exist, it does nothing.
+func (service *Service) deleteDNSRecord(resourceName string, resourceContent string, zoneID string) (err error) {
+	// fetch matching record(s) (should only be one)
 	records, err := service.cloudflareApi.DNSRecords(context.Background(), zoneID, cloudflare.DNSRecord{
-		Type: "TXT",
-		Name: resourceName,
+		Type:    "TXT",
+		Name:    resourceName,
+		Content: resourceContent,
 	})
 	if err != nil {
 		return err
@@ -39,7 +52,7 @@ func (service *Service) deleteDNSRecord(resourceName string, zoneID string) (err
 		return nil
 	}
 
-	// does exist, delete all records with the name
+	// does exist, delete all records with the name and content (should only ever be one)
 	for i := range records {
 		err = service.cloudflareApi.DeleteDNSRecord(context.Background(), zoneID, records[i].ID)
 		if err != nil {
@@ -47,17 +60,9 @@ func (service *Service) deleteDNSRecord(resourceName string, zoneID string) (err
 		}
 	}
 
-	return nil
-}
-
-// acmeRecord returns the cloudflare dns record for a given acme resource
-// name and content
-func newAcmeRecord(resourceName, resourceContent string) cloudflare.DNSRecord {
-	return cloudflare.DNSRecord{
-		Type:      "TXT",
-		Name:      resourceName,
-		Content:   resourceContent,
-		TTL:       60,
-		Proxiable: false,
+	if err != nil {
+		return err
 	}
+
+	return nil
 }

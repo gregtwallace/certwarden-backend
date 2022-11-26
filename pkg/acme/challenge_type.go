@@ -23,7 +23,7 @@ const (
 // to succesfully validate an ACME Challenge.
 func (challType ChallengeType) ValidationResource(identifier Identifier, key AccountKey, token string) (name string, content string, err error) {
 	// resource name
-	name, err = challType.ValidationResourceName(identifier, token)
+	name, err = challType.validationResourceName(identifier, token)
 	if err != nil {
 		return "", "", err
 	}
@@ -39,7 +39,7 @@ func (challType ChallengeType) ValidationResource(identifier Identifier, key Acc
 
 // ValidationResourceName returns the resource name that is required to
 // validate the specified identifier
-func (challType ChallengeType) ValidationResourceName(identifier Identifier, token string) (name string, err error) {
+func (challType ChallengeType) validationResourceName(identifier Identifier, token string) (name string, err error) {
 	// verify identifier is the proper type (only dns identifiers are supported)
 	if identifier.Type != identifierTypeDns {
 		return "", errWrongIdentifierType
