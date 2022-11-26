@@ -39,10 +39,12 @@ func (service *Service) deleteDNSRecord(resourceName string, zoneID string) (err
 		return nil
 	}
 
-	// does exist, delete it
-	err = service.cloudflareApi.DeleteDNSRecord(context.Background(), zoneID, records[0].ID)
-	if err != nil {
-		return err
+	// does exist, delete all records with the name
+	for i := range records {
+		err = service.cloudflareApi.DeleteDNSRecord(context.Background(), zoneID, records[i].ID)
+		if err != nil {
+			service.logger.Error(err)
+		}
 	}
 
 	return nil
@@ -59,18 +61,3 @@ func newAcmeRecord(resourceName, resourceContent string) cloudflare.DNSRecord {
 		Proxiable: false,
 	}
 }
-
-// findAcmeRecord searches for an ACME record with the given resource name
-// and zoneID and returns the record's ID if it exists. If it does not exist,
-// an empty string is returned instead.
-// func (service *Service) findAcmeRecord(resourceName string, zoneID string) (recordID string, err error) {
-// 	records, err := service.cloudflareApi.DNSRecords(context.Background(), zoneID, cloudflare.DNSRecord{
-// 		Type: "TXT",
-// 		Name: resourceName,
-// 	})
-// 	if err != nil {
-// 		return "", err
-// 	}
-
-// 	return records[0].ID, nil
-// }
