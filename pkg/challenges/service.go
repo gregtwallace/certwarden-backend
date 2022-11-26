@@ -65,6 +65,8 @@ func NewService(app App) (service *Service, err error) {
 	}
 
 	// challenge providers
+	service.providers = make(map[Method]providerService)
+
 	// http-01 internal challenge server
 	service.providers[http01Internal], err = http01internal.NewService(app, app.GetHttp01InternalConfig())
 	if err != nil {
