@@ -30,17 +30,11 @@ type providerService interface {
 
 // service struct
 type Service struct {
-	logger             *zap.SugaredLogger
-	acmeProd           *acme.Service
-	acmeStaging        *acme.Service
-	dnsChecker         *dns_checker.Service
-	challengeProviders challengeProviders
-}
-
-// service challenge providers
-type challengeProviders struct {
-	http01Internal  providerService
-	dns01Cloudflare providerService
+	logger      *zap.SugaredLogger
+	acmeProd    *acme.Service
+	acmeStaging *acme.Service
+	dnsChecker  *dns_checker.Service
+	providers   map[Method]providerService
 }
 
 // NewService creates a new service
@@ -72,13 +66,13 @@ func NewService(app App) (service *Service, err error) {
 
 	// challenge providers
 	// http-01 internal challenge server
-	service.challengeProviders.http01Internal, err = http01internal.NewService(app, app.GetHttp01InternalConfig())
+	service.providers[http01Internal], err = http01internal.NewService(app, app.GetHttp01InternalConfig())
 	if err != nil {
 		return nil, err
 	}
 
 	// dns-01 cloudflare challenge service
-	service.challengeProviders.dns01Cloudflare, err = dns01cloudflare.NewService(app, app.GetDns01CloudflareConfig(), service.dnsChecker)
+	service.providers[dns01Cloudflare], err = dns01cloudflare.NewService(app, app.GetDns01CloudflareConfig(), service.dnsChecker)
 	if err != nil {
 		return nil, err
 	}

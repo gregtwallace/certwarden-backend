@@ -14,19 +14,13 @@ func (service *Service) Provision(identifier acme.Identifier, method Method, key
 		return err
 	}
 
-	// Provision with the appropriate provider
-	switch method {
-	case http01Internal:
-		err = service.challengeProviders.http01Internal.Provision(resourceName, resourceContent)
-
-	case dns01Cloudflare:
-		err = service.challengeProviders.dns01Cloudflare.Provision(resourceName, resourceContent)
-
-	default:
+	// confirm provider is available
+	if service.providers[method] == nil {
 		return errUnsupportedMethod
 	}
 
-	// centralize error check from provisioning
+	// Provision with the appropriate provider
+	err = service.providers[method].Provision(resourceName, resourceContent)
 	if err != nil {
 		return err
 	}
@@ -43,19 +37,13 @@ func (service *Service) Deprovision(identifier acme.Identifier, method Method, t
 		return err
 	}
 
-	// Deprovision with the appropriate provider
-	switch method {
-	case http01Internal:
-		err = service.challengeProviders.http01Internal.Deprovision(resourceName)
-
-	case dns01Cloudflare:
-		err = service.challengeProviders.dns01Cloudflare.Deprovision(resourceName)
-
-	default:
+	// confirm provider is available
+	if service.providers[method] == nil {
 		return errUnsupportedMethod
 	}
 
-	// central error check
+	// Deprovision with the appropriate provider
+	err = service.providers[method].Deprovision(resourceName)
 	if err != nil {
 		return err
 	}
