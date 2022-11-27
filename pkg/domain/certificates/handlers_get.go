@@ -1,7 +1,6 @@
 package certificates
 
 import (
-	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/validation"
 	"net/http"
@@ -96,7 +95,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	}
 
 	// available challenge methods
-	newCertOptions.AvailableChallengeMethods = challenges.ListOfMethods()
+	newCertOptions.AvailableChallengeMethods = service.challenges.ListOfMethods()
 
 	// return response to client
 	_, err = service.output.WriteJSON(w, http.StatusOK, newCertOptions, "certificate_options")

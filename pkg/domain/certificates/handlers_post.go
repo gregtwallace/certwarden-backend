@@ -12,22 +12,22 @@ import (
 
 // NewPayload is the struct for creating a new certificate
 type NewPayload struct {
-	Name                 *string  `json:"name"`
-	Description          *string  `json:"description"`
-	PrivateKeyID         *int     `json:"private_key_id"`
-	AcmeAccountID        *int     `json:"acme_account_id"`
-	ChallengeMethodValue *string  `json:"challenge_method_value"`
-	Subject              *string  `json:"subject"`
-	SubjectAltNames      []string `json:"subject_alts"`
-	Organization         *string  `json:"organization"`
-	OrganizationalUnit   *string  `json:"organizational_unit"`
-	Country              *string  `json:"country"`
-	State                *string  `json:"state"`
-	City                 *string  `json:"city"`
-	ApiKey               string   `json:"-"`
-	ApiKeyViaUrl         bool     `json:"-"`
-	CreatedAt            int      `json:"-"`
-	UpdatedAt            int      `json:"-"`
+	Name                 *string                 `json:"name"`
+	Description          *string                 `json:"description"`
+	PrivateKeyID         *int                    `json:"private_key_id"`
+	AcmeAccountID        *int                    `json:"acme_account_id"`
+	ChallengeMethodValue *challenges.MethodValue `json:"challenge_method_value"`
+	Subject              *string                 `json:"subject"`
+	SubjectAltNames      []string                `json:"subject_alts"`
+	Organization         *string                 `json:"organization"`
+	OrganizationalUnit   *string                 `json:"organizational_unit"`
+	Country              *string                 `json:"country"`
+	State                *string                 `json:"state"`
+	City                 *string                 `json:"city"`
+	ApiKey               string                  `json:"-"`
+	ApiKeyViaUrl         bool                    `json:"-"`
+	CreatedAt            int                     `json:"-"`
+	UpdatedAt            int                     `json:"-"`
 }
 
 // PostNewCert creates a new certificate object in storage. No actual encryption certificate
@@ -64,7 +64,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 		return output.ErrValidationFailed
 	}
 	// challenge method
-	if payload.ChallengeMethodValue == nil || challenges.MethodByStorageValue(*payload.ChallengeMethodValue) == challenges.UnknownMethod {
+	if payload.ChallengeMethodValue == nil || service.challenges.MethodByStorageValue(*payload.ChallengeMethodValue) == challenges.UnknownMethod {
 		service.logger.Debug("unknown challenge method")
 		return output.ErrValidationFailed
 	}

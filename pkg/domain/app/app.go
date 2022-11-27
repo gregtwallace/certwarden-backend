@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/datatypes"
@@ -36,11 +37,12 @@ type Application struct {
 	httpClient     *httpclient.Client
 	output         *output.Service
 	router         *httprouter.Router
+	acmeProd       *acme.Service
+	acmeStaging    *acme.Service
+	challenges     *challenges.Service
 	storage        *sqlite.Storage
 	auth           *auth.Service
 	keys           *private_keys.Service
-	acmeProd       *acme.Service
-	acmeStaging    *acme.Service
 	accounts       *acme_accounts.Service
 	authorizations *authorizations.Service
 	orders         *orders.Service
@@ -83,6 +85,10 @@ func (app *Application) GetHttpClient() *httpclient.Client {
 
 func (app *Application) GetOutputter() *output.Service {
 	return app.output
+}
+
+func (app *Application) GetChallengesService() *challenges.Service {
+	return app.challenges
 }
 
 // hacky workaround for storage since can't just combine into one interface

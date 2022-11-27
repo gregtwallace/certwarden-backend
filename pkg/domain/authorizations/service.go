@@ -15,6 +15,7 @@ var errServiceComponent = errors.New("necessary authorizations service component
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
+	GetChallengesService() *challenges.Service
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
 	GetDevMode() bool
@@ -53,8 +54,8 @@ func NewService(app App) (service *Service, err error) {
 	}
 
 	// challenge solver
-	service.challenges, err = challenges.NewService(app)
-	if err != nil || service.challenges == nil {
+	service.challenges = app.GetChallengesService()
+	if service.challenges == nil {
 		return nil, errServiceComponent
 	}
 

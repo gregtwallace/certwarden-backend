@@ -20,7 +20,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 
 	// range to the correct challenge to solve based on Type
 	for i := range challenges {
-		if challenges[i].Type == method.challengeType() {
+		if challenges[i].Type == method.ChallengeType {
 			found = true
 			challenge = challenges[i]
 		}

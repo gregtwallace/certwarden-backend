@@ -152,7 +152,7 @@ func (store *Storage) GetAllValidCurrentOrders() (orders []orders.Order, err err
 			return nil, err
 		}
 
-		convertedOrder := oneOrder.toOrder()
+		convertedOrder := oneOrder.toOrder(store)
 		orders = append(orders, convertedOrder)
 	}
 
@@ -292,7 +292,7 @@ func (store *Storage) GetOrdersByCert(certId int) (orders []orders.Order, err er
 			return nil, err
 		}
 
-		convertedOrder := oneOrder.toOrder()
+		convertedOrder := oneOrder.toOrder(store)
 
 		orders = append(orders, convertedOrder)
 	}
@@ -472,7 +472,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		return orders.Order{}, err
 	}
 
-	order = oneOrder.toOrder()
+	order = oneOrder.toOrder(store)
 
 	return order, nil
 }

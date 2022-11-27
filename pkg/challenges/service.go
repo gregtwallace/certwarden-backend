@@ -34,7 +34,8 @@ type Service struct {
 	acmeProd    *acme.Service
 	acmeStaging *acme.Service
 	dnsChecker  *dns_checker.Service
-	providers   map[Method]providerService
+	providers   map[MethodValue]providerService
+	methods     []Method
 }
 
 // NewService creates a new service
@@ -65,20 +66,23 @@ func NewService(app App) (service *Service, err error) {
 	}
 
 	// challenge providers
-	service.providers = make(map[Method]providerService)
+	service.providers = make(map[MethodValue]providerService)
 
 	// http-01 internal challenge server
-	service.providers[http01Internal], err = http01internal.NewService(app, app.GetHttp01InternalConfig())
+	service.providers[methodValueHttp01Internal], err = http01internal.NewService(app, app.GetHttp01InternalConfig())
 	if err != nil {
 		return nil, err
 	}
 
 	// dns-01 cloudflare challenge service
-	service.providers[dns01Cloudflare], err = dns01cloudflare.NewService(app, app.GetDns01CloudflareConfig(), service.dnsChecker)
+	service.providers[methodValueDns01Cloudflare], err = dns01cloudflare.NewService(app, app.GetDns01CloudflareConfig(), service.dnsChecker)
 	if err != nil {
 		return nil, err
 	}
 	// end challenge providers
+
+	// configure methods (list of all, properly flagged as enabled or not)
+	service.configureMethods()
 
 	return service, nil
 }

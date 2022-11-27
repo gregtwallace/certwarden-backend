@@ -1,66 +1,89 @@
 package challenges
 
-import (
-	"encoding/json"
-	"errors"
-	"legocerthub-backend/pkg/acme"
-)
-
-var errUnsupportedMethod = errors.New("unsupported challenge method")
+import "legocerthub-backend/pkg/acme"
 
 // Define challenge methods (which are more than just a challenge
 // type). This allows for multiple methods using the same RFC 8555
 // challenge type.
-type Method int
 
+// MethodValue is the string value that methods are stored in
+// storage as and is also used to refer to specific, unique methods
+type MethodValue string
+
+// Method contains all of the details about a defined method.
+type Method struct {
+	Value         MethodValue        `json:"value"`
+	Name          string             `json:"name"`
+	Enabled       bool               `json:"enabled"`
+	ChallengeType acme.ChallengeType `json:"type"`
+}
+
+// Define values. These values should be assigned once and NEVER
+// changed to avoid storage issues.
 const (
-	UnknownMethod Method = iota
+	unknownMethodValue MethodValue = ""
 
-	http01Internal
-	dns01Cloudflare
+	methodValueHttp01Internal  = "http-01-internal"
+	methodValueDns01Cloudflare = "dns-01-cloudflare"
 )
 
-// Method custom JSON Marshal (turns the Method into MethodDetails for output)
-func (method Method) MarshalJSON() (data []byte, err error) {
-	// get method details
-	details := method.details()
-
-	// put the exportable details into an exportable struct
-	output := struct {
-		StorageValue  string             `json:"value"`
-		Name          string             `json:"name"`
-		ChallengeType acme.ChallengeType `json:"type"`
-	}{
-		StorageValue:  details.storageValue,
-		Name:          details.name,
-		ChallengeType: details.challengeType,
-	}
-
-	// return details marshalled
-	return json.Marshal(output)
+// UnknownMethod is used when a Method does not match any known Method.
+var UnknownMethod = Method{
+	Value:         unknownMethodValue,
+	Name:          "Unknown Method",
+	ChallengeType: acme.UnknownChallengeType,
 }
 
-// custom UnmarshalJSON not needed at present
-
-// details returns the full details for the Method.
-func (method Method) details() challMethodDetails {
-	for i := range methodDetails {
-		if method == methodDetails[i].method {
-			return methodDetails[i]
-		}
-	}
-
-	// no details exist
-	return challMethodDetails{}
+// methods contains the details corresponding to all of the defined
+// methodValues
+var methods = []Method{
+	// Note: Enabled is configured later by the service
+	{
+		// serve the http record from an internal http server
+		Value:         methodValueHttp01Internal,
+		Name:          "HTTP (Self Served)",
+		ChallengeType: acme.ChallengeTypeHttp01,
+	},
+	{
+		// create and delete dns records on Cloudflare
+		Value:         methodValueDns01Cloudflare,
+		Name:          "DNS-01 (Cloudflare)",
+		ChallengeType: acme.ChallengeTypeDns01,
+	},
 }
 
-// Type returns the Challenge Type for the Method.
-func (method Method) challengeType() acme.ChallengeType {
-	return method.details().challengeType
+// Configure the service's methods by loading them and determining
+// if they're currently enabled.
+func (service *Service) configureMethods() {
+	// range through MethodDetailed to set the Enabled field according
+	// to the Service configuration.
+	for i := range methods {
+		methods[i].Enabled = (service.providers[methods[i].Value] != nil)
+	}
+
+	service.methods = methods
 }
 
 // validationResource creates the resource name and content that are required
 // to succesfully validate an ACME Challenge using the Method.
 func (method Method) validationResource(identifier acme.Identifier, key acme.AccountKey, token string) (name string, content string, err error) {
-	return method.challengeType().ValidationResource(identifier, key, token)
+	return method.ChallengeType.ValidationResource(identifier, key, token)
+}
+
+// ListOfMethods() returns a slice of challenge methods as currently
+// configured (i.e. with enabled/disabled status)
+func (service *Service) ListOfMethods() (methods []Method) {
+	return service.methods
+}
+
+// MethodByValue returns a challenge method based on its Value.
+// If a method isn't found, UnknownMethod is returned.
+func (service *Service) MethodByStorageValue(value MethodValue) Method {
+	for i := range service.methods {
+		if value == service.methods[i].Value {
+			return service.methods[i]
+		}
+	}
+
+	return UnknownMethod
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/app/auth"
 	"net/url"
 	"os"
@@ -13,6 +14,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var errServiceComponent = errors.New("necessary storage service component is missing")
+
 // config for DB
 const dbTimeout = time.Duration(5 * time.Second)
 const dbDsn = "./lego-certhub.db"
@@ -21,17 +24,29 @@ var dbOptions = url.Values{
 	"_fk": []string{"true"},
 }
 
+// App interface is for connecting to the main app
+type App interface {
+	GetChallengesService() *challenges.Service
+}
+
 // Storage is the struct that holds data about the connection
 type Storage struct {
-	Db      *sql.DB
-	Timeout time.Duration
+	Db         *sql.DB
+	Timeout    time.Duration
+	challenges *challenges.Service
 }
 
 // OpenStorage opens an existing sqlite database or creates a new one if needed.
 // It also creates tables. It then returns Storage.
-func OpenStorage() (*Storage, error) {
+func OpenStorage(app App) (*Storage, error) {
 	store := new(Storage)
 	var err error
+
+	// challenges service
+	store.challenges = app.GetChallengesService()
+	if store.challenges == nil {
+		return nil, errServiceComponent
+	}
 
 	// set timeout
 	store.Timeout = dbTimeout

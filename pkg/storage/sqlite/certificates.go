@@ -15,7 +15,7 @@ type certificateDb struct {
 	certificateAccountDb accountDb
 	subject              string
 	subjectAltNames      commaJoinedStrings
-	challengeMethodValue string
+	challengeMethodValue challenges.MethodValue
 	organization         string
 	organizationalUnit   string
 	country              string
@@ -27,7 +27,7 @@ type certificateDb struct {
 	apiKeyViaUrl         bool
 }
 
-func (cert certificateDb) toCertificate() certificates.Certificate {
+func (cert certificateDb) toCertificate(store *Storage) certificates.Certificate {
 	return certificates.Certificate{
 		ID:                 cert.id,
 		Name:               cert.name,
@@ -36,7 +36,7 @@ func (cert certificateDb) toCertificate() certificates.Certificate {
 		CertificateAccount: cert.certificateAccountDb.toAccount(),
 		Subject:            cert.subject,
 		SubjectAltNames:    cert.subjectAltNames.toSlice(),
-		ChallengeMethod:    challenges.MethodByStorageValue(cert.challengeMethodValue),
+		ChallengeMethod:    store.challenges.MethodByStorageValue(cert.challengeMethodValue),
 		Organization:       cert.organization,
 		OrganizationalUnit: cert.organizationalUnit,
 		Country:            cert.country,

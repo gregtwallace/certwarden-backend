@@ -14,19 +14,19 @@ import (
 // DetailsUpdatePayload is the struct for editing an existing cert. A number of
 // fields can be updated by the client on the fly (without ACME interaction).
 type DetailsUpdatePayload struct {
-	ID                   int      `json:"-"`
-	Name                 *string  `json:"name"`
-	Description          *string  `json:"description"`
-	PrivateKeyId         *int     `json:"private_key_id"`
-	ChallengeMethodValue *string  `json:"challenge_method_value"`
-	SubjectAltNames      []string `json:"subject_alts"`
-	Organization         *string  `json:"organization"`
-	OrganizationalUnit   *string  `json:"organizational_unit"`
-	Country              *string  `json:"country"`
-	State                *string  `json:"state"`
-	City                 *string  `json:"city"`
-	ApiKeyViaUrl         *bool    `json:"api_key_via_url"`
-	UpdatedAt            int      `json:"-"`
+	ID                   int                     `json:"-"`
+	Name                 *string                 `json:"name"`
+	Description          *string                 `json:"description"`
+	PrivateKeyId         *int                    `json:"private_key_id"`
+	ChallengeMethodValue *challenges.MethodValue `json:"challenge_method_value"`
+	SubjectAltNames      []string                `json:"subject_alts"`
+	Organization         *string                 `json:"organization"`
+	OrganizationalUnit   *string                 `json:"organizational_unit"`
+	Country              *string                 `json:"country"`
+	State                *string                 `json:"state"`
+	City                 *string                 `json:"city"`
+	ApiKeyViaUrl         *bool                   `json:"api_key_via_url"`
+	UpdatedAt            int                     `json:"-"`
 }
 
 // PutDetailsCert is a handler that sets various details about a cert and saves
@@ -66,7 +66,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 	// challenge method (optional)
-	if payload.ChallengeMethodValue != nil && challenges.MethodByStorageValue(*payload.ChallengeMethodValue) == challenges.UnknownMethod {
+	if payload.ChallengeMethodValue != nil && service.challenges.MethodByStorageValue(*payload.ChallengeMethodValue) == challenges.UnknownMethod {
 		service.logger.Debug("unknown challenge method")
 		return output.ErrValidationFailed
 	}

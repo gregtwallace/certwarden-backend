@@ -98,7 +98,7 @@ func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error
 		}
 
 		// convert and append
-		certs = append(certs, oneCert.toCertificate())
+		certs = append(certs, oneCert.toCertificate(store))
 	}
 
 	return certs, nil
@@ -205,7 +205,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 	}
 
 	// convert and return
-	return oneCert.toCertificate(), nil
+	return oneCert.toCertificate(store), nil
 }
 
 // GetCertPemById returns a the pem from the most recent valid order for the specified

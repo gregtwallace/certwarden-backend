@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/app/auth"
 	"legocerthub-backend/pkg/domain/authorizations"
@@ -101,36 +102,6 @@ func create() (*Application, error) {
 		return nil, err
 	}
 
-	// storage
-	app.storage, err = sqlite.OpenStorage()
-	if err != nil {
-		return nil, err
-	}
-
-	// get app's tls cert
-	// if fails, set to nil (will disable https)
-	app.httpsCert, err = app.newAppCert()
-	if err != nil {
-		app.logger.Errorf("failed to configure https cert: %s", err)
-		// if not https, and not dev mode, certain functions will be blocked
-		if !*app.config.DevMode {
-			app.logger.Error("certain functionality (e.g. pem downloads via API keys) will be disabled until the server is run in https mode")
-		}
-		app.httpsCert = nil
-	}
-
-	// users service
-	app.auth, err = auth.NewService(app)
-	if err != nil {
-		return nil, err
-	}
-
-	// keys service
-	app.keys, err = private_keys.NewService(app)
-	if err != nil {
-		return nil, err
-	}
-
 	// acme services
 	// use waitgroup to expedite directory fetching
 	var wg sync.WaitGroup
@@ -163,6 +134,43 @@ func create() (*Application, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+	// end acme services
+
+	// challenges
+	app.challenges, err = challenges.NewService(app)
+	if err != nil {
+		return nil, err
+	}
+
+	// storage
+	app.storage, err = sqlite.OpenStorage(app)
+	if err != nil {
+		return nil, err
+	}
+
+	// get app's tls cert
+	// if fails, set to nil (will disable https)
+	app.httpsCert, err = app.newAppCert()
+	if err != nil {
+		app.logger.Errorf("failed to configure https cert: %s", err)
+		// if not https, and not dev mode, certain functions will be blocked
+		if !*app.config.DevMode {
+			app.logger.Error("certain functionality (e.g. pem downloads via API keys) will be disabled until the server is run in https mode")
+		}
+		app.httpsCert = nil
+	}
+
+	// users service
+	app.auth, err = auth.NewService(app)
+	if err != nil {
+		return nil, err
+	}
+
+	// keys service
+	app.keys, err = private_keys.NewService(app)
+	if err != nil {
+		return nil, err
 	}
 
 	// accounts service
