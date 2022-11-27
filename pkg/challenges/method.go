@@ -1,6 +1,9 @@
 package challenges
 
-import "legocerthub-backend/pkg/acme"
+import (
+	"legocerthub-backend/pkg/acme"
+	"reflect"
+)
 
 // Define challenge methods (which are more than just a challenge
 // type). This allows for multiple methods using the same RFC 8555
@@ -34,34 +37,37 @@ var UnknownMethod = Method{
 	ChallengeType: acme.UnknownChallengeType,
 }
 
-// methods contains the details corresponding to all of the defined
-// methodValues
-var methods = []Method{
-	// Note: Enabled is configured later by the service
-	{
-		// serve the http record from an internal http server
-		Value:         methodValueHttp01Internal,
-		Name:          "HTTP (Self Served)",
-		ChallengeType: acme.ChallengeTypeHttp01,
-	},
-	{
-		// create and delete dns records on Cloudflare
-		Value:         methodValueDns01Cloudflare,
-		Name:          "DNS-01 (Cloudflare)",
-		ChallengeType: acme.ChallengeTypeDns01,
-	},
-}
-
 // Configure the service's methods by loading them and determining
 // if they're currently enabled.
 func (service *Service) configureMethods() {
-	// range through MethodDetailed to set the Enabled field according
-	// to the Service configuration.
-	for i := range methods {
-		methods[i].Enabled = (service.providers[methods[i].Value] != nil)
+
+	// methods contains the details corresponding to all of the defined
+	// methodValues
+	var methodsList = []Method{
+		// Note: Enabled is configured later by the service
+		{
+			// serve the http record from an internal http server
+			Value:         methodValueHttp01Internal,
+			Name:          "HTTP (Self Served)",
+			ChallengeType: acme.ChallengeTypeHttp01,
+		},
+		{
+			// create and delete dns records on Cloudflare
+			Value:         methodValueDns01Cloudflare,
+			Name:          "DNS-01 (Cloudflare)",
+			ChallengeType: acme.ChallengeTypeDns01,
+		},
 	}
 
-	service.methods = methods
+	// range through MethodDetailed to set the Enabled field according
+	// to the Service configuration.
+	for i := range methodsList {
+		if provider, ok := service.providers[methodsList[i].Value]; ok && !reflect.ValueOf(provider).IsNil() {
+			methodsList[i].Enabled = true
+		}
+	}
+
+	service.methods = methodsList
 }
 
 // validationResource creates the resource name and content that are required
