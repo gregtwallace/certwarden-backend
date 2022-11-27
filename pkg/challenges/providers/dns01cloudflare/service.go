@@ -27,7 +27,7 @@ type Service struct {
 
 // Configuration options
 type Config struct {
-	Enable        *bool  `yaml:"enabled"`
+	Enable        *bool  `yaml:"enable"`
 	AccountEmail  string `yaml:"account_email"`
 	AccountApiKey string `yaml:"account_api_key"`
 }
