@@ -33,6 +33,7 @@ dev_mode: false
 challenge_providers:
   # http-01 internal server
   http_01_internal:
+    enable: true
     # port to run the http challenge server on
     port: 4060
   dns_01_cloudflare:

@@ -28,11 +28,17 @@ type Service struct {
 
 // Configuration options
 type Config struct {
-	Port *int `yaml:"port"`
+	Enable *bool `yaml:"enable"`
+	Port   *int  `yaml:"port"`
 }
 
 // NewService creates a new service
 func NewService(app App, config *Config) (*Service, error) {
+	// if disabled, return nil and no error
+	if !*config.Enable {
+		return nil, nil
+	}
+
 	service := new(Service)
 
 	// devmode?

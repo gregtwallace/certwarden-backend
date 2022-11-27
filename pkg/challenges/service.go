@@ -10,7 +10,10 @@ import (
 	"go.uber.org/zap"
 )
 
-var errServiceComponent = errors.New("necessary challenges service component is missing")
+var (
+	errServiceComponent = errors.New("necessary challenges service component is missing")
+	errNoProviders      = errors.New("no challenge providers are properly configured (at least one must be enabled)")
+)
 
 // App interface is for connecting to the main app
 type App interface {
@@ -83,6 +86,17 @@ func NewService(app App) (service *Service, err error) {
 
 	// configure methods (list of all, properly flagged as enabled or not)
 	service.configureMethods()
+
+	// confirm at least one Method is enabled, else error
+	atLeastOneMethod := false
+	for i := range service.methods {
+		if service.methods[i].Enabled {
+			atLeastOneMethod = true
+		}
+	}
+	if !atLeastOneMethod {
+		return nil, errNoProviders
+	}
 
 	return service, nil
 }
