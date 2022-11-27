@@ -73,6 +73,9 @@ func defaultConfig() (cfg config) {
 			Http01InternalConfig: http01internal.Config{
 				Port: new(int),
 			},
+			Dns01CloudflareConfig: dns01cloudflare.Config{
+				Enable: new(bool),
+			},
 		},
 	}
 
@@ -97,7 +100,7 @@ func defaultConfig() (cfg config) {
 	*cfg.ChallengeProviders.Http01InternalConfig.Port = 4060
 
 	// dns-01-cloudflare
-	// no defaults
+	*cfg.ChallengeProviders.Dns01CloudflareConfig.Enable = false
 
 	// end challenge providers
 

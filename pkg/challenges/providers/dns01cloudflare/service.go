@@ -27,12 +27,18 @@ type Service struct {
 
 // Configuration options
 type Config struct {
+	Enable        *bool  `yaml:"enabled"`
 	AccountEmail  string `yaml:"account_email"`
 	AccountApiKey string `yaml:"account_api_key"`
 }
 
 // NewService creates a new service
 func NewService(app App, config *Config, dnsChecker *dns_checker.Service) (*Service, error) {
+	// if disabled, return nil and no error
+	if !*config.Enable {
+		return nil, nil
+	}
+
 	service := new(Service)
 	var err error
 
