@@ -3,6 +3,7 @@ package challenges
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
+	"reflect"
 )
 
 var errUnsupportedMethod = errors.New("unsupported or disabled challenge method")
@@ -18,7 +19,7 @@ func (service *Service) Provision(identifier acme.Identifier, method Method, key
 	}
 
 	// confirm provider is available
-	if service.providers[method.Value] == nil {
+	if provider, ok := service.providers[method.Value]; !ok || reflect.ValueOf(provider).IsNil() {
 		return errUnsupportedMethod
 	}
 
@@ -40,7 +41,7 @@ func (service *Service) Deprovision(identifier acme.Identifier, method Method, k
 	}
 
 	// confirm provider is available
-	if service.providers[method.Value] == nil {
+	if provider, ok := service.providers[method.Value]; !ok || reflect.ValueOf(provider).IsNil() {
 		return errUnsupportedMethod
 	}
 
