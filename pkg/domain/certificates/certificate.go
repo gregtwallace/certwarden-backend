@@ -38,6 +38,7 @@ type certificateSummaryResponse struct {
 	CertificateAccount certificateAccountSummaryResponse `json:"acme_account"`
 	Subject            string                            `json:"subject"`
 	SubjectAltNames    []string                          `json:"subject_alts"`
+	ChallengeMethod    challenges.Method                 `json:"challenge_method"`
 }
 
 type certificateKeySummaryResponse struct {
@@ -67,6 +68,7 @@ func (cert Certificate) summaryResponse() certificateSummaryResponse {
 		},
 		Subject:         cert.Subject,
 		SubjectAltNames: cert.SubjectAltNames,
+		ChallengeMethod: cert.ChallengeMethod,
 	}
 }
 
@@ -74,16 +76,15 @@ func (cert Certificate) summaryResponse() certificateSummaryResponse {
 // fields that can be returned as JSON
 type certificateDetailedResponse struct {
 	certificateSummaryResponse
-	ChallengeMethod    challenges.Method `json:"challenge_method"`
-	Organization       string            `json:"organization"`
-	OrganizationalUnit string            `json:"organizational_unit"`
-	Country            string            `json:"country"`
-	State              string            `json:"state"`
-	City               string            `json:"city"`
-	CreatedAt          int               `json:"created_at"`
-	UpdatedAt          int               `json:"updated_at"`
-	ApiKey             string            `json:"api_key"`
-	ApiKeyViaUrl       bool              `json:"api_key_via_url"`
+	Organization       string `json:"organization"`
+	OrganizationalUnit string `json:"organizational_unit"`
+	Country            string `json:"country"`
+	State              string `json:"state"`
+	City               string `json:"city"`
+	CreatedAt          int    `json:"created_at"`
+	UpdatedAt          int    `json:"updated_at"`
+	ApiKey             string `json:"api_key"`
+	ApiKeyViaUrl       bool   `json:"api_key_via_url"`
 }
 
 func (cert Certificate) detailedResponse(withSensitive bool) certificateDetailedResponse {
@@ -95,7 +96,6 @@ func (cert Certificate) detailedResponse(withSensitive bool) certificateDetailed
 
 	return certificateDetailedResponse{
 		certificateSummaryResponse: cert.summaryResponse(),
-		ChallengeMethod:            cert.ChallengeMethod,
 		Organization:               cert.Organization,
 		OrganizationalUnit:         cert.OrganizationalUnit,
 		Country:                    cert.Country,

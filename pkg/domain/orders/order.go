@@ -2,6 +2,7 @@ package orders
 
 import (
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/private_keys"
 )
@@ -50,6 +51,7 @@ type orderCertificateSummaryResponse struct {
 	CertificateAccount orderCertificateAccountSummaryResponse `json:"acme_account"`
 	Subject            string                                 `json:"subject"`
 	SubjectAltNames    []string                               `json:"subject_alts"`
+	ChallengeMethod    challenges.Method                      `json:"challenge_method"`
 }
 
 type orderCertificateAccountSummaryResponse struct {
@@ -85,6 +87,7 @@ func (order Order) summaryResponse() orderSummaryResponse {
 			},
 			Subject:         order.Certificate.Subject,
 			SubjectAltNames: order.Certificate.SubjectAltNames,
+			ChallengeMethod: order.Certificate.ChallengeMethod,
 		},
 		Status:         order.Status,
 		KnownRevoked:   order.KnownRevoked,
