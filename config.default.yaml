@@ -38,5 +38,15 @@ challenge_providers:
     port: 4060
   dns_01_cloudflare:
     enable: false
-    account_email: user@example.com
-    account_api_key: 12345abcde
+    accounts:
+      - email: user@example.com
+        global_api_key: 12345abcde
+    tokens:
+      - api_token: 123abc
+        zone_names: 
+          - example.com
+          - example1.com
+          - example2.com
+      - api_token: 345def
+        zone_names:
+          - example4.com

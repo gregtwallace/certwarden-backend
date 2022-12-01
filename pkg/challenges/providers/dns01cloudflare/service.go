@@ -1,12 +1,10 @@
 package dns01cloudflare
 
 import (
-	"context"
 	"errors"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/datatypes"
 
-	"github.com/cloudflare/cloudflare-go"
 	"go.uber.org/zap"
 )
 
@@ -19,17 +17,10 @@ type App interface {
 
 // Accounts service struct
 type Service struct {
-	logger        *zap.SugaredLogger
-	dnsChecker    *dns_checker.Service
-	cloudflareApi *cloudflare.API
-	dnsRecords    *datatypes.SafeMap
-}
-
-// Configuration options
-type Config struct {
-	Enable        *bool  `yaml:"enable"`
-	AccountEmail  string `yaml:"account_email"`
-	AccountApiKey string `yaml:"account_api_key"`
+	logger           *zap.SugaredLogger
+	dnsChecker       *dns_checker.Service
+	knownDomainZones *datatypes.SafeMap
+	dnsRecords       *datatypes.SafeMap
 }
 
 // NewService creates a new service
@@ -40,7 +31,6 @@ func NewService(app App, config *Config, dnsChecker *dns_checker.Service) (*Serv
 	}
 
 	service := new(Service)
-	var err error
 
 	// logger
 	service.logger = app.GetLogger()
@@ -52,16 +42,13 @@ func NewService(app App, config *Config, dnsChecker *dns_checker.Service) (*Serv
 	service.dnsChecker = dnsChecker
 
 	// cloudflare api
-	service.cloudflareApi, err = cloudflare.New(config.AccountApiKey, config.AccountEmail)
+	err := service.configureCloudflareAPI(config)
 	if err != nil {
 		return nil, err
 	}
 
-	// Verify the account credentials actually work
-	_, err = service.cloudflareApi.UserDetails(context.Background())
-	if err != nil {
-		return nil, err
-	}
+	// debug log configured domains
+	service.logger.Debugf("dns01cloudflare configured domains: %s", service.knownDomainZones.ListKeys())
 
 	// map to hold current dnsRecords
 	service.dnsRecords = datatypes.NewSafeMap()
