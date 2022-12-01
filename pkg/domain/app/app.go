@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
@@ -24,6 +23,9 @@ import (
 
 // application version
 const appVersion = "0.5.0"
+
+// api path
+const apiUrlPath = "/api"
 
 // Directory URLs for Let's Encrypt
 const acmeProdUrl string = "https://acme-v02.api.letsencrypt.org/directory"
@@ -137,13 +139,18 @@ func (app *Application) GetCertificatesService() *certificates.Service {
 	return app.certificates
 }
 
-// ApiUrl returns the full API URL for the API, including /api
-func (app *Application) ApiUrl() string {
+// baseUrl returns the root URL for the server
+func (app *Application) baseUrl() string {
 	if app.IsHttps() {
-		return fmt.Sprintf("https://%s:%d/api", *app.config.Hostname, *app.config.HttpsPort)
+		return "https://" + app.config.httpsDomainAndPort()
 	} else {
-		return fmt.Sprintf("http://%s:%d/api", *app.config.Hostname, *app.config.HttpPort)
+		return "http://" + app.config.httpDomainAndPort()
 	}
+}
+
+// ApiUrl returns the full API URL for the API, including the api path
+func (app *Application) ApiUrl() string {
+	return app.baseUrl() + apiUrlPath
 }
 
 // FrontendUrl returns the full URL for the frontend app. If the frontend
@@ -153,9 +160,5 @@ func (app *Application) FrontendUrl() string {
 		return ""
 	}
 
-	if app.IsHttps() {
-		return fmt.Sprintf("https://%s:%d%s", *app.config.Hostname, *app.config.HttpsPort, frontendUrlPath)
-	} else {
-		return fmt.Sprintf("http://%s:%d%s", *app.config.Hostname, *app.config.HttpPort, frontendUrlPath)
-	}
+	return app.baseUrl() + frontendUrlPath
 }

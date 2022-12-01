@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"log"
@@ -23,6 +24,16 @@ type config struct {
 	CertificateName    *string                  `yaml:"certificate_name"`
 	DevMode            *bool                    `yaml:"dev_mode"`
 	ChallengeProviders challengeProvidersConfig `yaml:"challenge_providers"`
+}
+
+// httpAddress() returns formatted http server address string
+func (c config) httpDomainAndPort() string {
+	return fmt.Sprintf("%s:%d", *c.Hostname, *c.HttpPort)
+}
+
+// httpsAddress() returns formatted https server address string
+func (c config) httpsDomainAndPort() string {
+	return fmt.Sprintf("%s:%d", *c.Hostname, *c.HttpsPort)
 }
 
 type challengeProvidersConfig struct {

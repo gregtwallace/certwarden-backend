@@ -42,7 +42,7 @@ func RunLeGoAPI() {
 
 	// http server config
 	srv := &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.HttpPort),
+		Addr:         app.config.httpDomainAndPort(),
 		Handler:      app.routes(),
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  readTimeout,
@@ -59,15 +59,30 @@ func RunLeGoAPI() {
 		}
 
 		// https server config
-		srv.Addr = fmt.Sprintf("%s:%d", *app.config.Hostname, *app.config.HttpsPort)
+		srv.Addr = app.config.httpsDomainAndPort()
 		srv.TLSConfig = tlsConf
 
+		// configure and launch http redirect server
+		redirectSrv := &http.Server{
+			Addr: app.config.httpDomainAndPort(),
+			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				http.Redirect(w, r, "https://"+app.config.httpsDomainAndPort()+r.RequestURI, http.StatusTemporaryRedirect)
+			}),
+			IdleTimeout:  1 * time.Minute,
+			ReadTimeout:  readTimeout,
+			WriteTimeout: writeTimeout,
+		}
+		app.logger.Infof("starting http redirect on %s", app.baseUrl())
+		go func() {
+			app.logger.Panic(redirectSrv.ListenAndServe())
+		}()
+
 		// launch https
-		app.logger.Infof("starting lego-certhub (https) on %s", srv.Addr)
+		app.logger.Infof("starting lego-certhub (https) on %s", app.baseUrl())
 		app.logger.Panic(srv.ListenAndServeTLS("", ""))
 	} else {
 		// if https failed, launch localhost only http server
-		app.logger.Warnf("starting insecure lego-certhub (http) on %s", srv.Addr)
+		app.logger.Warnf("starting insecure lego-certhub (http) on %s", app.baseUrl())
 		app.logger.Panic(srv.ListenAndServe())
 	}
 }
