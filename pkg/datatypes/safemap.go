@@ -2,6 +2,7 @@ package datatypes
 
 import (
 	"errors"
+	"reflect"
 	"sync"
 )
 
@@ -72,4 +73,12 @@ func (safeMap *SafeMap) Delete(elementName string) (err error) {
 	delete(safeMap.Map, elementName)
 
 	return nil
+}
+
+// ListKeys returns an array of all of the keys within the map.
+func (safeMap *SafeMap) ListKeys() []reflect.Value {
+	safeMap.RLock()
+	defer safeMap.RUnlock()
+
+	return reflect.ValueOf(safeMap.Map).MapKeys()
 }
