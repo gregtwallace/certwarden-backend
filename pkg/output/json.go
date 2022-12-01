@@ -40,7 +40,7 @@ func (service *Service) WriteJSON(w http.ResponseWriter, status int, data interf
 		return "", err
 	}
 
-	service.logger.Debugf("writing json to client (%s)", wrap)
+	// service.logger.Debugf("writing json to client (%s)", wrap)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
