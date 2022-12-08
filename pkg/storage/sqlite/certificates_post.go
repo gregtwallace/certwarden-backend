@@ -2,8 +2,6 @@ package sqlite
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"legocerthub-backend/pkg/domain/certificates"
 )
 
@@ -13,11 +11,8 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (id int, err 
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	tx, err := store.Db.BeginTx(ctx, nil)
-	if err != nil {
-		return -2, err
-	}
-	defer tx.Rollback()
+	// don't check for in use in storage. main app business logic should
+	// take care of it
 
 	// insert the new cert
 	query := `
@@ -27,7 +22,7 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (id int, err 
 	RETURNING id
 	`
 
-	err = tx.QueryRowContext(ctx, query,
+	err = store.Db.QueryRowContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.PrivateKeyID,
@@ -46,31 +41,6 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (id int, err 
 		payload.ApiKeyViaUrl,
 	).Scan(&id)
 
-	if err != nil {
-		return -2, err
-	}
-
-	// table already enforces unique private_key_id, so no need to check against other certs
-	// however, verify there is not an acme account with the same key
-	query = `
-		SELECT private_key_id
-		FROM
-		  acme_accounts
-		WHERE
-			private_key_id = $1
-	`
-
-	row := tx.QueryRowContext(ctx, query, id)
-
-	var exists bool
-	err = row.Scan(&exists)
-	if err != nil && err != sql.ErrNoRows {
-		return -2, err
-	} else if exists {
-		return -2, errors.New("private key in use by acme account")
-	}
-
-	err = tx.Commit()
 	if err != nil {
 		return -2, err
 	}
