@@ -1,23 +1,22 @@
 package acme
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/sha256"
-	"encoding/json"
 	"errors"
-	"log"
 )
 
 // jsonWebKey is the JWK in the ACME protectedHeader. Members MUST be in lexicographical
 // order to ensure proper thumbprint generation.
 type jsonWebKey struct {
-	CurveName      string `json:"crv,omitempty"` // EC
-	PublicExponent string `json:"e,omitempty"`   // RSA
 	KeyType        string `json:"kty,omitempty"`
-	Modulus        string `json:"n,omitempty"` // RSA
-	CurvePointX    string `json:"x,omitempty"` // EC
-	CurvePointY    string `json:"y,omitempty"` // EC
+	PublicExponent string `json:"e,omitempty"`   // RSA
+	Modulus        string `json:"n,omitempty"`   // RSA
+	CurveName      string `json:"crv,omitempty"` // EC
+	CurvePointX    string `json:"x,omitempty"`   // EC
+	CurvePointY    string `json:"y,omitempty"`   // EC
 }
 
 // jwk return a jwk for the AccountKey
@@ -58,18 +57,33 @@ func (accountKey *AccountKey) jwk() (jwk *jsonWebKey, err error) {
 // jwkThumbprint returns the SHA-256 thumbprint for the JWK. This is calculated
 // as specified in RFC7638, section 3. RFC8555 8.1 requires this for responding
 // to challenges.
-func (jwk *jsonWebKey) encodedThumbprint() (thumbprint string, err error) {
-	// marshal the jwk
-	octets, err := json.Marshal(jwk)
-	if err != nil {
-		return "", err
+func (jwk *jsonWebKey) encodedSHA256Thumbprint() (thumbprint string, err error) {
+	// rfc 7638 s3.1 - consdtruct json object containing only the required	members
+	// of a JWK representing the key and with no whitespace or line breaks before
+	// or after any syntactic elements and with the	required members ordered
+	// lexicographically by the Unicode	[UNICODE] code points of the member names.
+	var buf bytes.Buffer
+	switch jwk.KeyType {
+	case "RSA":
+		_, _ = buf.WriteString(`{"e":"`)
+		_, _ = buf.WriteString(jwk.PublicExponent)
+		_, _ = buf.WriteString(`","kty":"RSA","n":"`)
+		_, _ = buf.WriteString(jwk.Modulus)
+		_, _ = buf.WriteString(`"}`)
+	case "EC":
+		_, _ = buf.WriteString(`{"crv":"`)
+		_, _ = buf.WriteString(jwk.CurveName)
+		_, _ = buf.WriteString(`","kty":"EC","x":"`)
+		_, _ = buf.WriteString(jwk.CurvePointX)
+		_, _ = buf.WriteString(`","y":"`)
+		_, _ = buf.WriteString(jwk.CurvePointY)
+		_, _ = buf.WriteString(`"}`)
+	default:
+		return "", errors.New("acme: jwk thumbprint: unsupported private key type")
 	}
 
-	// TODO: Remove
-	log.Println(string(octets))
-
 	// calculare the hash for the JSON object
-	sum256 := sha256.Sum256(octets)
+	sum256 := sha256.Sum256(buf.Bytes())
 
 	// encode as base64url
 	thumbprint = encodeString(sum256[:])
