@@ -8,7 +8,10 @@ import (
 	"go.uber.org/zap"
 )
 
-var errServiceComponent = errors.New("necessary dns-01 cloudflare challenge service component is missing")
+var (
+	errServiceComponent = errors.New("necessary dns-01 cloudflare challenge service component is missing")
+	errNoDomains        = errors.New("cloudflare config error: no domains (zones) found")
+)
 
 // App interface is for connecting to the main app
 type App interface {
@@ -45,6 +48,11 @@ func NewService(app App, config *Config, dnsChecker *dns_checker.Service) (*Serv
 	err := service.configureCloudflareAPI(config)
 	if err != nil {
 		return nil, err
+	}
+
+	// make sure at least one domain configured, or the config is bad
+	if len(service.knownDomainZones.ListKeys()) <= 0 {
+		return nil, errNoDomains
 	}
 
 	// debug log configured domains
