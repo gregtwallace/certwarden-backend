@@ -60,11 +60,12 @@ func NewService(app App) (service *Service, err error) {
 		return nil, errServiceComponent
 	}
 
-	// configure dns checker service
-	// TODO: omit this if no dns providers are enabled
-	service.dnsChecker, err = dns_checker.NewService(app)
-	if err != nil {
-		return nil, err
+	// configure dns checker service (if any dns methods enabled)
+	if app.GetDns01CloudflareConfig().Enable != nil && *app.GetDns01CloudflareConfig().Enable {
+		service.dnsChecker, err = dns_checker.NewService(app)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// challenge providers

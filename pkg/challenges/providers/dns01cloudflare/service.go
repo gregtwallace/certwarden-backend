@@ -43,6 +43,9 @@ func NewService(app App, config *Config, dnsChecker *dns_checker.Service) (*Serv
 
 	// dns checker
 	service.dnsChecker = dnsChecker
+	if service.dnsChecker == nil {
+		return nil, errServiceComponent
+	}
 
 	// cloudflare api
 	err := service.configureCloudflareAPI(config)
