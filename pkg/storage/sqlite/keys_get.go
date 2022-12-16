@@ -3,29 +3,61 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"legocerthub-backend/pkg/domain/private_keys"
+	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/storage"
 )
 
 // GetAllKeys returns a slice of all Keys in the db
-func (store Storage) GetAllKeys() ([]private_keys.Key, error) {
+func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Key, totalRowCount int, err error) {
+	// validate and set sort
+	sortField := q.SortField()
+	switch sortField {
+	// allow these as-is
+	case "id":
+	case "name":
+	case "description":
+	case "algorithm":
+	// default if not in allowed list
+	default:
+		sortField = "name"
+	}
+
+	sort := sortField + " " + q.SortDirection()
+
+	// do query
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	query := `
+	// WARNING: SQL Injection is possible if the variables are not properly
+	// validated prior to this query being assembled!
+	query := fmt.Sprintf(`
 	SELECT
-		id, name, description, algorithm, pem, api_key, api_key_via_url, created_at, updated_at
+		id, name, description, algorithm, pem, api_key, api_key_via_url, created_at, updated_at,
+	
+		count(*) OVER() AS full_count
 	FROM
 		private_keys
 	ORDER BY
-		name
-	`
+		%s
+	LIMIT
+		$1
+	OFFSET
+		$2
+	`, sort)
 
-	rows, err := store.Db.QueryContext(ctx, query)
+	rows, err := store.Db.QueryContext(ctx, query,
+		q.Limit(),
+		q.Offset(),
+	)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
+
+	// for total row count
+	var totalRows int
 
 	var allKeys []private_keys.Key
 	for rows.Next() {
@@ -40,9 +72,11 @@ func (store Storage) GetAllKeys() ([]private_keys.Key, error) {
 			&oneKeyDb.apiKeyViaUrl,
 			&oneKeyDb.createdAt,
 			&oneKeyDb.updatedAt,
+
+			&totalRows,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		convertedKey := oneKeyDb.toKey()
@@ -50,7 +84,7 @@ func (store Storage) GetAllKeys() ([]private_keys.Key, error) {
 		allKeys = append(allKeys, convertedKey)
 	}
 
-	return allKeys, nil
+	return allKeys, totalRows, nil
 }
 
 // GetOneKeyById returns a KeyExtended based on unique id

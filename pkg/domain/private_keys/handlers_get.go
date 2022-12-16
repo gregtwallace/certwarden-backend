@@ -3,6 +3,7 @@ package private_keys
 import (
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
@@ -10,23 +11,35 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+type allKeysResponse struct {
+	Keys      []KeySummaryResponse `json:"private_keys"`
+	TotalKeys int                  `json:"total_records"`
+}
+
 // GetAllKeys returns all of the private keys in storage as JSON
 func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) (err error) {
+	// parse pagination and sorting
+	query := pagination_sort.ParseRequestToQuery(r)
+
 	// get keys from storage
-	keys, err := service.storage.GetAllKeys()
+	keys, totalRows, err := service.storage.GetAllKeys(query)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// make keysResponse (for json output)
-	var keysResponse []KeySummaryResponse
+	// assemble response
+	response := allKeysResponse{
+		TotalKeys: totalRows,
+	}
+
+	// populate keysSummaries for output
 	for i := range keys {
-		keysResponse = append(keysResponse, keys[i].SummaryResponse())
+		response.Keys = append(response.Keys, keys[i].SummaryResponse())
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, keysResponse, "private_keys")
+	_, err = service.output.WriteJSON(w, http.StatusOK, response, "all_private_keys")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

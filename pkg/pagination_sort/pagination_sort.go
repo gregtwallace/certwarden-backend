@@ -48,6 +48,8 @@ const (
 )
 
 var validFieldNames = []string{
+	"algorithm",
+	"description",
 	"id",
 	"name",
 	"subject",

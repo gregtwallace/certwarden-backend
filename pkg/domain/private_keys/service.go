@@ -3,6 +3,7 @@ package private_keys
 import (
 	"errors"
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/pagination_sort"
 
 	"go.uber.org/zap"
 )
@@ -20,7 +21,7 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	GetAllKeys() ([]Key, error)
+	GetAllKeys(q pagination_sort.Query) (keys []Key, totalRows int, err error)
 	GetOneKeyById(id int) (Key, error)
 	GetOneKeyByName(name string) (Key, error)
 
