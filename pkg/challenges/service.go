@@ -12,7 +12,6 @@ import (
 
 var (
 	errServiceComponent = errors.New("necessary challenges service component is missing")
-	errNoProviders      = errors.New("no challenge providers are properly configured (at least one must be enabled)")
 )
 
 // App interface is for connecting to the main app
@@ -72,30 +71,28 @@ func NewService(app App) (service *Service, err error) {
 	service.providers = make(map[MethodValue]providerService)
 
 	// http-01 internal challenge server
-	service.providers[methodValueHttp01Internal], err = http01internal.NewService(app, app.GetHttp01InternalConfig())
+	http01Internal, err := http01internal.NewService(app, app.GetHttp01InternalConfig())
 	if err != nil {
 		return nil, err
 	}
+	if http01Internal != nil {
+		service.providers[methodValueHttp01Internal] = http01Internal
+	}
 
 	// dns-01 cloudflare challenge service
-	service.providers[methodValueDns01Cloudflare], err = dns01cloudflare.NewService(app, app.GetDns01CloudflareConfig(), service.dnsChecker)
+	dns01Cloudflare, err := dns01cloudflare.NewService(app, app.GetDns01CloudflareConfig(), service.dnsChecker)
 	if err != nil {
 		return nil, err
+	}
+	if dns01Cloudflare != nil {
+		service.providers[methodValueDns01Cloudflare] = dns01Cloudflare
 	}
 	// end challenge providers
 
 	// configure methods (list of all, properly flagged as enabled or not)
-	service.configureMethods()
-
-	// confirm at least one Method is enabled, else error
-	atLeastOneMethod := false
-	for i := range service.methods {
-		if service.methods[i].Enabled {
-			atLeastOneMethod = true
-		}
-	}
-	if !atLeastOneMethod {
-		return nil, errNoProviders
+	err = service.configureMethods()
+	if err != nil {
+		return nil, err
 	}
 
 	return service, nil

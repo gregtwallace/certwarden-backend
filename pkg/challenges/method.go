@@ -1,9 +1,11 @@
 package challenges
 
 import (
+	"errors"
 	"legocerthub-backend/pkg/acme"
-	"reflect"
 )
+
+var errNoProviders = errors.New("no challenge providers are properly configured (at least one must be enabled)")
 
 // Define challenge methods (which are more than just a challenge
 // type). This allows for multiple methods using the same RFC 8555
@@ -39,7 +41,7 @@ var UnknownMethod = Method{
 
 // Configure the service's methods by loading them and determining
 // if they're currently enabled.
-func (service *Service) configureMethods() {
+func (service *Service) configureMethods() error {
 
 	// methods contains the details corresponding to all of the defined
 	// methodValues
@@ -60,14 +62,22 @@ func (service *Service) configureMethods() {
 	}
 
 	// range through MethodDetailed to set the Enabled field according
-	// to the Service configuration.
+	// to the Service configuration & confirm at least one method is actually
+	// enabled.
+	atLeastOneEnabled := false
 	for i := range methodsList {
-		if provider, ok := service.providers[methodsList[i].Value]; ok && !reflect.ValueOf(provider).IsNil() {
+		if _, ok := service.providers[methodsList[i].Value]; ok {
 			methodsList[i].Enabled = true
+			atLeastOneEnabled = true
 		}
+	}
+	if !atLeastOneEnabled {
+		return errNoProviders
 	}
 
 	service.methods = methodsList
+
+	return nil
 }
 
 // validationResource creates the resource name and content that are required
