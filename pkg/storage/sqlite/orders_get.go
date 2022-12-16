@@ -2,17 +2,48 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
 	"legocerthub-backend/pkg/domain/orders"
+	"legocerthub-backend/pkg/pagination_sort"
 	"time"
 )
 
 // GetAllValidCurrentOrders fetches each cert's most recent valid order (essentially this
-// is a list of the certificates that are currently being hosted via API key)
-func (store *Storage) GetAllValidCurrentOrders() (orders []orders.Order, err error) {
+// is a list of the certificates that are currently being hosted via API key). If a
+// maxTimeRemaining is specified, the list will be filtered to omit orders with more than
+// that duration of valid_to time remaining.
+func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query, maxTimeRemaining *time.Duration) (orders []orders.Order, totalRowCount int, err error) {
+	// validate and set sort
+	sortField := q.SortField()
+	switch sortField {
+	case "id":
+		sortField = "c.id"
+	case "name":
+		sortField = "c.name"
+	case "subject":
+		sortField = "c.subject"
+	case "valid_to":
+		sortField = "ao.valid_to"
+	default:
+		sortField = "ao.valid_to"
+	}
+
+	sort := sortField + " " + q.SortDirection()
+
+	// If there is a maxTimeRemaining, omit results that are valid beyond that
+	// maxTimeRemaining.
+	minValidRemainingQuery := ""
+	if maxTimeRemaining != nil {
+		maxExpirationUnix := time.Now().Add(*maxTimeRemaining).Unix()
+		minValidRemainingQuery = fmt.Sprintf("AND ao.valid_to < %d", maxExpirationUnix)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	query := `
+	// WARNING: SQL Injection is possible if the variables are not properly
+	// validated prior to this query being assembled!
+	query := fmt.Sprintf(`
 	SELECT
 		/* order */
 		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, 
@@ -39,7 +70,9 @@ func (store *Storage) GetAllValidCurrentOrders() (orders []orders.Order, err err
 		/* finalized key */
 		COALESCE(fk.id, -2), COALESCE(fk.name, 'null'), COALESCE(fk.description, 'null'), 
 		COALESCE(fk.algorithm, 'null'), COALESCE(fk.pem, 'null'), COALESCE(fk.api_key, 'null'),
-		COALESCE(fk.api_key_via_url, false), COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2)
+		COALESCE(fk.api_key_via_url, false), COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2),
+		
+		count(*) OVER() AS full_count
 	FROM
 		acme_orders ao
 		LEFT JOIN certificates c on (ao.certificate_id = c.id)
@@ -57,20 +90,34 @@ func (store *Storage) GetAllValidCurrentOrders() (orders []orders.Order, err err
 		ao.pem NOT NULL
 		AND
 		ao.certificate_id IS NOT NULL
+		%s
 	GROUP BY
-		certificate_id
+		ao.certificate_id
 	HAVING
-		MAX(valid_to)
+		MAX(ao.valid_to)
 	ORDER BY
-		expires DESC
-	`
+		%s
+	LIMIT
+		$2
+	OFFSET
+		$3
+	`,
+		minValidRemainingQuery,
+		sort)
 
+	// get records
 	rows, err := store.Db.QueryContext(ctx, query,
-		time.Now().Unix())
+		time.Now().Unix(),
+		q.Limit(),
+		q.Offset(),
+	)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
+
+	// for total row count
+	var totalRows int
 
 	for rows.Next() {
 		var oneOrder orderDb
@@ -147,16 +194,18 @@ func (store *Storage) GetAllValidCurrentOrders() (orders []orders.Order, err err
 			&oneOrder.finalizedKey.apiKeyViaUrl,
 			&oneOrder.finalizedKey.createdAt,
 			&oneOrder.finalizedKey.updatedAt,
+
+			&totalRows,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		convertedOrder := oneOrder.toOrder(store)
 		orders = append(orders, convertedOrder)
 	}
 
-	return orders, nil
+	return orders, totalRows, nil
 }
 
 // GetOrdersByCert fetches all of the orders for a specified certificate ID

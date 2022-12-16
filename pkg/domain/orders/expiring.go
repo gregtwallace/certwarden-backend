@@ -2,6 +2,7 @@ package orders
 
 import (
 	"database/sql"
+	"legocerthub-backend/pkg/pagination_sort"
 	"time"
 )
 
@@ -9,7 +10,7 @@ import (
 // TODO: Move to customizable setting in config.yaml and frontent->settings
 // reorderTime: If less than this duration of time remaining on cert,
 // LeGo Certhub will try to obtain a newer cert.
-const reorderTime = 40 * (24 * time.Hour)
+var reorderTime = 40 * (24 * time.Hour)
 
 // daily time to refresh
 const refreshHour = 03
@@ -56,27 +57,23 @@ func (service *Service) backgroundCertRefresher() {
 func (service *Service) orderExpiringCerts() (err error) {
 	service.logger.Info("ordering any expiring certificates")
 
-	// get orders relating to all currently valid cers
-	orders, err := service.storage.GetAllValidCurrentOrders()
+	// get orders relating to all currently valid certs, filtering with the
+	// reorderTime so only expiring orders are returned
+	expiringOrders, _, err := service.storage.GetAllValidCurrentOrders(pagination_sort.Query{}, &reorderTime)
 	if err != nil {
 		return err
 	}
 
 	// for each order, check expiration
-	for i := range orders {
-		// calculate remaining time on order's cert
-		expUnix := time.Unix(int64(*orders[i].ValidTo), 0)
-		// if less than reorderTime, order a new one
-		if time.Until(expUnix) < reorderTime {
-			// refresh
-			err = service.refreshCert(orders[i].Certificate.ID)
-			if err != nil {
-				// log error, but keep going through remaining range
-				service.logger.Errorf("failed to refresh cert (%d): %s", orders[i].Certificate.ID, err)
-			}
-			// sleep a little so slew of new orders doesn't hit ACME all at once
-			time.Sleep(15 * time.Second)
+	for i := range expiringOrders {
+		// refresh
+		err = service.refreshCert(expiringOrders[i].Certificate.ID)
+		if err != nil {
+			// log error, but keep going through remaining range
+			service.logger.Errorf("failed to refresh cert (%d): %s", expiringOrders[i].Certificate.ID, err)
 		}
+		// sleep a little so slew of new orders doesn't hit ACME all at once
+		time.Sleep(15 * time.Second)
 	}
 
 	service.logger.Info("placement of expiring certificate orders complete")

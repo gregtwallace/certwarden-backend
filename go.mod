@@ -57,6 +57,8 @@ replace legocerthub-backend/pkg/httpclient => /pkg/httpclient
 
 replace legocerthub-backend/pkg/output => /pkg/output
 
+replace legocerthub-backend/pkg/pagination_sort => /pkg/pagination_sort
+
 replace legocerthub-backend/pkg/storage => /pkg/storage
 
 replace legocerthub-backend/pkg/storage/sqlite => /pkg/storage/sqlite

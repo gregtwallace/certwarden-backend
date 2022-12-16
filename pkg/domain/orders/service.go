@@ -6,6 +6,8 @@ import (
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/pagination_sort"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -37,7 +39,7 @@ type Storage interface {
 	UpdateOrderCert(orderId int, CertPayload CertPayload) (err error)
 	RevokeOrder(orderId int) (err error)
 
-	GetAllValidCurrentOrders() (orders []Order, err error)
+	GetAllValidCurrentOrders(q pagination_sort.Query, maxTimeRemaining *time.Duration) (orders []Order, totalRows int, err error)
 	GetNewestIncompleteCertOrderId(certId int) (orderId int, err error)
 
 	// certs

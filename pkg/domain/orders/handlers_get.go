@@ -2,6 +2,7 @@ package orders
 
 import (
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/storage"
 	"net/http"
 	"strconv"
@@ -54,11 +55,20 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) (e
 	return nil
 }
 
+// validCurrentResponse is the API response for this query
+type validCurrentResponse struct {
+	Orders      []orderSummaryResponse `json:"orders"`
+	TotalOrders int                    `json:"total_orders"`
+}
+
 // GetAllValidCurrentOrders fetches each cert's most recent valid order (essentially this
 // is a list of the certificates that are currently being hosted via API key)
 func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.Request) (err error) {
+	// parse pagination and sorting
+	query := pagination_sort.ParseRequestToQuery(r)
+
 	// get from storage
-	orders, err := service.storage.GetAllValidCurrentOrders()
+	orders, totalOrders, err := service.storage.GetAllValidCurrentOrders(query, nil)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {
@@ -71,13 +81,15 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 	}
 
 	// response
-	var response []orderSummaryResponse
+	response := validCurrentResponse{
+		TotalOrders: totalOrders,
+	}
 	for i := range orders {
-		response = append(response, orders[i].summaryResponse())
+		response.Orders = append(response.Orders, orders[i].summaryResponse())
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, response, "orders")
+	_, err = service.output.WriteJSON(w, http.StatusOK, response, "valid_current_orders")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
