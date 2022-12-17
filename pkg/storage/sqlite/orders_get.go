@@ -209,11 +209,34 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query, maxTimeR
 }
 
 // GetOrdersByCert fetches all of the orders for a specified certificate ID
-func (store *Storage) GetOrdersByCert(certId int) (orders []orders.Order, err error) {
+func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orders []orders.Order, totalRowCount int, err error) {
+	// validate and set sort
+	sortField := q.SortField()
+
+	switch sortField {
+	case "id":
+		sortField = "ao.id"
+	case "created_at":
+		sortField = "ao.created_at"
+	case "valid_to":
+		sortField = "ao.valid_to"
+	case "status":
+		sortField = "ao.status"
+	case "keyname":
+		sortField = "fk.name"
+	default:
+		sortField = "ao.created_at"
+	}
+
+	sort := sortField + " " + q.SortDirection()
+
+	// do query
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	query := `
+	// WARNING: SQL Injection is possible if the variables are not properly
+	// validated prior to this query being assembled!
+	query := fmt.Sprintf(`
 	SELECT
 		/* order */
 		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, 
@@ -240,7 +263,9 @@ func (store *Storage) GetOrdersByCert(certId int) (orders []orders.Order, err er
 		/* finalized key */
 		COALESCE(fk.id, -2), COALESCE(fk.name, 'null'), COALESCE(fk.description, 'null'), 
 		COALESCE(fk.algorithm, 'null'), COALESCE(fk.pem, 'null'), COALESCE(fk.api_key, 'null'),
-		COALESCE(fk.api_key_via_url, false), COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2)
+		COALESCE(fk.api_key_via_url, false), COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2),
+
+		count(*) OVER() AS full_count
 	FROM
 		acme_orders ao
 		LEFT JOIN certificates c on (ao.certificate_id = c.id)
@@ -251,14 +276,25 @@ func (store *Storage) GetOrdersByCert(certId int) (orders []orders.Order, err er
 	WHERE
 		ao.certificate_id = $1
 	ORDER BY
-		expires DESC
-	`
+		%s
+	LIMIT
+		$2
+	OFFSET
+		$3
+	`, sort)
 
-	rows, err := store.Db.QueryContext(ctx, query, certId)
+	rows, err := store.Db.QueryContext(ctx, query,
+		certId,
+		q.Limit(),
+		q.Offset(),
+	)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
+
+	// for total row count
+	var totalRows int
 
 	for rows.Next() {
 		var oneOrder orderDb
@@ -336,9 +372,11 @@ func (store *Storage) GetOrdersByCert(certId int) (orders []orders.Order, err er
 			&oneOrder.finalizedKey.apiKeyViaUrl,
 			&oneOrder.finalizedKey.createdAt,
 			&oneOrder.finalizedKey.updatedAt,
+
+			&totalRows,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		convertedOrder := oneOrder.toOrder(store)
@@ -346,7 +384,7 @@ func (store *Storage) GetOrdersByCert(certId int) (orders []orders.Order, err er
 		orders = append(orders, convertedOrder)
 	}
 
-	return orders, nil
+	return orders, 0, nil
 }
 
 // GetNewestIncompleteCertOrderId returns the most recent incomplete order for a specified certId,

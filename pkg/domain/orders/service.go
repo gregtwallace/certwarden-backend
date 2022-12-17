@@ -29,7 +29,7 @@ type App interface {
 type Storage interface {
 	// orders
 	GetOneOrder(orderId int) (order Order, err error)
-	GetOrdersByCert(certId int) (orders []Order, err error)
+	GetOrdersByCert(certId int, q pagination_sort.Query) (orders []Order, totalRows int, err error)
 
 	PostNewOrder(payload NewOrderAcmePayload) (newId int, err error)
 
