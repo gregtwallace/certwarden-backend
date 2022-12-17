@@ -59,7 +59,7 @@ func (service *Service) orderExpiringCerts() (err error) {
 
 	// get orders relating to all currently valid certs, filtering with the
 	// reorderTime so only expiring orders are returned
-	expiringOrders, _, err := service.storage.GetAllValidCurrentOrders(pagination_sort.Query{}, &reorderTime)
+	expiringOrders, _, err := service.storage.GetAllValidCurrentOrders(pagination_sort.QueryAll, &reorderTime)
 	if err != nil {
 		return err
 	}

@@ -37,6 +37,12 @@ func (q Query) SortDirection() string {
 	return q.sort.direction
 }
 
+// QueryAll is a query that returns all records
+var QueryAll = Query{
+	limit:  -1,
+	offset: 0,
+}
+
 // configure paramters for validation
 const (
 	defaultLimit = 10
