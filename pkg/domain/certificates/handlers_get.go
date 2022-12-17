@@ -2,6 +2,7 @@ package certificates
 
 import (
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
@@ -9,23 +10,37 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// allKeysResponse provides the json response struct
+// to answer a query for a portion of the keys
+type allKeysResponse struct {
+	Certificates      []certificateSummaryResponse `json:"certificates"`
+	TotalCertificates int                          `json:"total_records"`
+}
+
 // GetAllCertificates fetches all certs from storage and outputs them as JSON
 func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) (err error) {
+	// parse pagination and sorting
+	query := pagination_sort.ParseRequestToQuery(r)
+
 	// get certs from storage
-	certs, err := service.storage.GetAllCerts()
+	certs, totalRows, err := service.storage.GetAllCerts(query)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
 	// make response (for json output)
-	var response []certificateSummaryResponse
+	response := allKeysResponse{
+		TotalCertificates: totalRows,
+	}
+
+	// populate cert summaries for output
 	for i := range certs {
-		response = append(response, certs[i].summaryResponse())
+		response.Certificates = append(response.Certificates, certs[i].summaryResponse())
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, response, "certificates")
+	_, err = service.output.WriteJSON(w, http.StatusOK, response, "all_certificates")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

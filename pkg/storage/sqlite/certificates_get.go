@@ -3,17 +3,44 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/storage"
 	"time"
 
 	"legocerthub-backend/pkg/domain/certificates"
 )
 
-func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error) {
+func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates.Certificate, totalRowCount int, err error) {
+	// validate and set sort
+	sortField := q.SortField()
+
+	switch sortField {
+	// allow these
+	case "id":
+		sortField = "c.id"
+	case "name":
+		sortField = "c.name"
+	case "description":
+		sortField = "c.subject"
+	case "keyname":
+		sortField = "pk.name"
+	case "accountname":
+		sortField = "aa.name"
+	// default if not in allowed list
+	default:
+		sortField = "c.name"
+	}
+
+	sort := sortField + " " + q.SortDirection()
+
+	// do query
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	query := `
+	// WARNING: SQL Injection is possible if the variables are not properly
+	// validated prior to this query being assembled!
+	query := fmt.Sprintf(`
 	SELECT 
 		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
@@ -26,21 +53,33 @@ func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error
 		aa.created_at, aa.updated_at, aa.kid,
 
 		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_via_url,
-		ak.created_at, ak.updated_at
+		ak.created_at, ak.updated_at,
+
+		count(*) OVER() AS full_count
 	FROM
 		certificates c
 		LEFT JOIN private_keys pk on (c.private_key_id = pk.id)
 		LEFT JOIN acme_accounts aa on (c.acme_account_id = aa.id)
 		LEFT JOIN private_keys ak on (aa.private_key_id = ak.id)
 	ORDER BY
-		c.name
-	`
+		%s
+	LIMIT
+		$1
+	OFFSET
+		$2
+	`, sort)
 
-	rows, err := store.Db.QueryContext(ctx, query)
+	rows, err := store.Db.QueryContext(ctx, query,
+		q.Limit(),
+		q.Offset(),
+	)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
+
+	// for total row count
+	var totalRows int
 
 	for rows.Next() {
 		var oneCert certificateDb
@@ -92,16 +131,18 @@ func (store *Storage) GetAllCerts() (certs []certificates.Certificate, err error
 			&oneCert.certificateAccountDb.accountKeyDb.apiKeyViaUrl,
 			&oneCert.certificateAccountDb.accountKeyDb.createdAt,
 			&oneCert.certificateAccountDb.accountKeyDb.updatedAt,
+
+			&totalRows,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		// convert and append
 		certs = append(certs, oneCert.toCertificate(store))
 	}
 
-	return certs, nil
+	return certs, totalRows, nil
 }
 
 // GetOneCertById returns a Cert based on its unique id

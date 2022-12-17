@@ -7,6 +7,7 @@ import (
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/pagination_sort"
 
 	"go.uber.org/zap"
 )
@@ -29,7 +30,7 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	GetAllCerts() (certs []Certificate, err error)
+	GetAllCerts(q pagination_sort.Query) (certs []Certificate, totalRowCount int, err error)
 	GetOneCertById(id int) (cert Certificate, err error)
 	GetOneCertByName(name string) (cert Certificate, err error)
 

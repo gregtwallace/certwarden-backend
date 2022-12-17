@@ -11,6 +11,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// allKeysResponse provides the json response struct
+// to answer a query for a portion of the keys
 type allKeysResponse struct {
 	Keys      []KeySummaryResponse `json:"private_keys"`
 	TotalKeys int                  `json:"total_records"`

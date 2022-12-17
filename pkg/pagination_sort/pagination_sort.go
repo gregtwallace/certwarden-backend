@@ -54,6 +54,7 @@ const (
 )
 
 var validFieldNames = []string{
+	"accountname",
 	"algorithm",
 	"description",
 	"email",
