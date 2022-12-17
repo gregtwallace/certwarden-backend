@@ -3,31 +3,76 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"legocerthub-backend/pkg/domain/acme_accounts"
+	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/storage"
 )
 
 // GetAllAccounts returns a slice of all of the Accounts in the database
-func (store *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
+func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_accounts.Account, totalRowCount int, err error) {
+	// validate and set sort
+	sortField := q.SortField()
+
+	switch sortField {
+	// allow these
+	case "id":
+		sortField = "aa.id"
+	case "name":
+		sortField = "aa.name"
+	case "description":
+		sortField = "aa.description"
+	case "keyname":
+		sortField = "pk.name"
+	case "status":
+		sortField = "aa.status"
+	case "email":
+		sortField = "aa.email"
+	case "is_staging":
+		sortField = "aa.is_staging"
+	// default if not in allowed list
+	default:
+		sortField = "aa.name"
+	}
+
+	sort := sortField + " " + q.SortDirection()
+
+	// do query
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	query := `
+	// WARNING: SQL Injection is possible if the variables are not properly
+	// validated prior to this query being assembled!
+	query := fmt.Sprintf(`
 	SELECT
 		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
 		aa.created_at, aa.updated_at, aa.kid,
 		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_via_url,
-		pk.created_at, pk.updated_at
+		pk.created_at, pk.updated_at,
+
+		count(*) OVER() AS full_count
 	FROM
 		acme_accounts aa
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
-	ORDER BY aa.name`
+	ORDER BY
+		%s
+	LIMIT
+		$1
+	OFFSET
+		$2
+	`, sort)
 
-	rows, err := store.Db.QueryContext(ctx, query)
+	rows, err := store.Db.QueryContext(ctx, query,
+		q.Limit(),
+		q.Offset(),
+	)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
+
+	// for total row count
+	var totalRows int
 
 	var allAccounts []acme_accounts.Account
 	for rows.Next() {
@@ -53,9 +98,11 @@ func (store *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 			&oneAccount.accountKeyDb.apiKeyViaUrl,
 			&oneAccount.accountKeyDb.createdAt,
 			&oneAccount.accountKeyDb.updatedAt,
+
+			&totalRows,
 		)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		// convert to Account
@@ -64,7 +111,7 @@ func (store *Storage) GetAllAccounts() ([]acme_accounts.Account, error) {
 		allAccounts = append(allAccounts, convertedAccount)
 	}
 
-	return allAccounts, nil
+	return allAccounts, totalRows, nil
 }
 
 // GetOneAccountById returns an Account based on its unique id

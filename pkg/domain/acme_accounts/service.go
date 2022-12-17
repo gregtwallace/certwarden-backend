@@ -5,6 +5,7 @@ import (
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/pagination_sort"
 
 	"go.uber.org/zap"
 )
@@ -23,7 +24,7 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	GetAllAccounts() ([]Account, error)
+	GetAllAccounts(q pagination_sort.Query) ([]Account, int, error)
 	GetOneAccountById(id int) (Account, error)
 	GetOneAccountByName(name string) (Account, error)
 

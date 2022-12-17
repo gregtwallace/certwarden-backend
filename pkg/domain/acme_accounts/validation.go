@@ -3,6 +3,7 @@ package acme_accounts
 import (
 	"errors"
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
 )
@@ -74,7 +75,7 @@ func (service *Service) nameValid(accountName string, accountId *int) bool {
 // GetUsableAccounts returns a list of accounts that have status == valid
 // and have also accepted the ToS (which is probably redundant)
 func (service *Service) GetUsableAccounts() ([]Account, error) {
-	accounts, err := service.storage.GetAllAccounts()
+	accounts, _, err := service.storage.GetAllAccounts(pagination_sort.QueryAll)
 	if err != nil {
 		return nil, err
 	}

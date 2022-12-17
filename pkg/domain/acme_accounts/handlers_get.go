@@ -2,6 +2,7 @@ package acme_accounts
 
 import (
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
@@ -9,23 +10,37 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// allAccountsResponse provides the json response struct
+// to answer a query for a portion of the accounts
+type allAccountsResponse struct {
+	Accounts      []AccountSummaryResponse `json:"acme_accounts"`
+	TotalAccounts int                      `json:"total_records"`
+}
+
 // GetAllAccounts is an http handler that returns all acme accounts in the form of JSON written to w
 func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) (err error) {
+	// parse pagination and sorting
+	query := pagination_sort.ParseRequestToQuery(r)
+
 	// get all from storage
-	accounts, err := service.storage.GetAllAccounts()
+	accounts, totalRows, err := service.storage.GetAllAccounts(query)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// make keysResponse (for json output)
-	var acctsResponse []AccountSummaryResponse
+	// assemble response
+	response := allAccountsResponse{
+		TotalAccounts: totalRows,
+	}
+
+	// populate account summaries for output
 	for i := range accounts {
-		acctsResponse = append(acctsResponse, accounts[i].SummaryResponse())
+		response.Accounts = append(response.Accounts, accounts[i].SummaryResponse())
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, acctsResponse, "acme_accounts")
+	_, err = service.output.WriteJSON(w, http.StatusOK, response, "all_acme_accounts")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
