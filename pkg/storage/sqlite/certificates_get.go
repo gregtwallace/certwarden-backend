@@ -21,7 +21,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 		sortField = "c.id"
 	case "name":
 		sortField = "c.name"
-	case "description":
+	case "subject":
 		sortField = "c.subject"
 	case "keyname":
 		sortField = "pk.name"
