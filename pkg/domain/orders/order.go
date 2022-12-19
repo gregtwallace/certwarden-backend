@@ -52,6 +52,7 @@ type orderCertificateSummaryResponse struct {
 	Subject            string                                 `json:"subject"`
 	SubjectAltNames    []string                               `json:"subject_alts"`
 	ChallengeMethod    challenges.Method                      `json:"challenge_method"`
+	ApiKeyViaUrl       bool                                   `json:"api_key_via_url"`
 }
 
 type orderCertificateAccountSummaryResponse struct {
@@ -88,6 +89,7 @@ func (order Order) summaryResponse() orderSummaryResponse {
 			Subject:         order.Certificate.Subject,
 			SubjectAltNames: order.Certificate.SubjectAltNames,
 			ChallengeMethod: order.Certificate.ChallengeMethod,
+			ApiKeyViaUrl:    order.Certificate.ApiKeyViaUrl,
 		},
 		Status:         order.Status,
 		KnownRevoked:   order.KnownRevoked,

@@ -21,18 +21,20 @@ type Key struct {
 // keySummaryResponse is a JSON response containing only
 // fields desired for the summary
 type KeySummaryResponse struct {
-	ID          int                  `json:"id"`
-	Name        string               `json:"name"`
-	Description string               `json:"description"`
-	Algorithm   key_crypto.Algorithm `json:"algorithm"`
+	ID           int                  `json:"id"`
+	Name         string               `json:"name"`
+	Description  string               `json:"description"`
+	Algorithm    key_crypto.Algorithm `json:"algorithm"`
+	ApiKeyViaUrl bool                 `json:"api_key_via_url"`
 }
 
 func (key Key) SummaryResponse() KeySummaryResponse {
 	return KeySummaryResponse{
-		ID:          key.ID,
-		Name:        key.Name,
-		Description: key.Description,
-		Algorithm:   key.Algorithm,
+		ID:           key.ID,
+		Name:         key.Name,
+		Description:  key.Description,
+		Algorithm:    key.Algorithm,
+		ApiKeyViaUrl: key.ApiKeyViaUrl,
 	}
 }
 
@@ -40,10 +42,9 @@ func (key Key) SummaryResponse() KeySummaryResponse {
 // fields that can be returned as JSON
 type keyDetailedResponse struct {
 	KeySummaryResponse
-	ApiKey       string `json:"api_key,omitempty"`
-	ApiKeyViaUrl bool   `json:"api_key_via_url"`
-	CreatedAt    int    `json:"created_at"`
-	UpdatedAt    int    `json:"updated_at"`
+	ApiKey    string `json:"api_key,omitempty"`
+	CreatedAt int    `json:"created_at"`
+	UpdatedAt int    `json:"updated_at"`
 	// exclude PEM
 }
 
@@ -57,10 +58,9 @@ func (key Key) detailedResponse(withSensitive bool) keyDetailedResponse {
 	return keyDetailedResponse{
 		KeySummaryResponse: key.SummaryResponse(),
 
-		ApiKey:       apiKey,
-		ApiKeyViaUrl: key.ApiKeyViaUrl,
-		CreatedAt:    key.CreatedAt,
-		UpdatedAt:    key.UpdatedAt,
+		ApiKey:    apiKey,
+		CreatedAt: key.CreatedAt,
+		UpdatedAt: key.UpdatedAt,
 	}
 }
 

@@ -39,6 +39,7 @@ type certificateSummaryResponse struct {
 	Subject            string                            `json:"subject"`
 	SubjectAltNames    []string                          `json:"subject_alts"`
 	ChallengeMethod    challenges.Method                 `json:"challenge_method"`
+	ApiKeyViaUrl       bool                              `json:"api_key_via_url"`
 }
 
 type certificateKeySummaryResponse struct {
@@ -69,6 +70,7 @@ func (cert Certificate) summaryResponse() certificateSummaryResponse {
 		Subject:         cert.Subject,
 		SubjectAltNames: cert.SubjectAltNames,
 		ChallengeMethod: cert.ChallengeMethod,
+		ApiKeyViaUrl:    cert.ApiKeyViaUrl,
 	}
 }
 
@@ -84,7 +86,6 @@ type certificateDetailedResponse struct {
 	CreatedAt          int    `json:"created_at"`
 	UpdatedAt          int    `json:"updated_at"`
 	ApiKey             string `json:"api_key"`
-	ApiKeyViaUrl       bool   `json:"api_key_via_url"`
 }
 
 func (cert Certificate) detailedResponse(withSensitive bool) certificateDetailedResponse {
@@ -104,7 +105,6 @@ func (cert Certificate) detailedResponse(withSensitive bool) certificateDetailed
 		CreatedAt:                  cert.CreatedAt,
 		UpdatedAt:                  cert.UpdatedAt,
 		ApiKey:                     apiKey,
-		ApiKeyViaUrl:               cert.ApiKeyViaUrl,
 	}
 }
 
