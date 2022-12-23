@@ -73,17 +73,8 @@ func (sm *sessionManager) close(session sessionClaims) error {
 func (sm *sessionManager) refresh(oldSession, newSession sessionClaims) error {
 	// remove old session (error if doesn't exist, so this is validation)
 	err := sm.close(oldSession)
-	// Only error if not in devMove. This accounts for React doing a double
-	// call with StrictMode enabled in React dev. That is, if a stale session
-	// is used (the 2nd call), instead of failing to refreah a 2nd time sm.close()
-	// will close  the session created by React's first call and then NOT return an error
-	// here. This will lead to the 2nd refresh call succeeding and providing a
-	// newly created session. Because of the behavior of sm.close() the 1st
-	// refresh call session is destroyed thus preventing extra sessions from piling
-	// up from the double React calls.
-	// This should NOT be the production behavior as this disables security measure
-	// of checking for refresh token re-use.
-	if err != nil && !sm.devMode {
+
+	if err != nil {
 		// closeSubject already called by sm.close()
 		return err
 	}
