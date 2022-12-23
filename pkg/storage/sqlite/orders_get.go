@@ -384,7 +384,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 		orders = append(orders, convertedOrder)
 	}
 
-	return orders, 0, nil
+	return orders, totalRows, nil
 }
 
 // GetNewestIncompleteCertOrderId returns the most recent incomplete order for a specified certId,
