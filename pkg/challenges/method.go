@@ -50,13 +50,13 @@ func (service *Service) configureMethods() error {
 		{
 			// serve the http record from an internal http server
 			Value:         methodValueHttp01Internal,
-			Name:          "HTTP (Self Served)",
+			Name:          "HTTP on API Server",
 			ChallengeType: acme.ChallengeTypeHttp01,
 		},
 		{
 			// create and delete dns records on Cloudflare
 			Value:         methodValueDns01Cloudflare,
-			Name:          "DNS-01 (Cloudflare)",
+			Name:          "DNS Cloudflare",
 			ChallengeType: acme.ChallengeTypeDns01,
 		},
 	}
