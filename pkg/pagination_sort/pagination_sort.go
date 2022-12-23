@@ -45,7 +45,7 @@ var QueryAll = Query{
 
 // configure paramters for validation
 const (
-	defaultLimit = 25
+	defaultLimit = 20
 	minLimit     = 1
 	maxLimit     = 1000
 
