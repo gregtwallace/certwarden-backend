@@ -90,11 +90,11 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query, maxTimeR
 		ao.pem NOT NULL
 		AND
 		ao.certificate_id IS NOT NULL
-		%s
 	GROUP BY
 		ao.certificate_id
 	HAVING
 		MAX(ao.valid_to)
+		%s
 	ORDER BY
 		%s
 	LIMIT
