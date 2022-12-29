@@ -1,9 +1,11 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/randomness"
+	"sync"
 
 	"go.uber.org/zap"
 )
@@ -20,6 +22,8 @@ type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 	GetAuthStorage() Storage
+	GetShutdownContext() context.Context
+	GetShutdownWaitGroup() *sync.WaitGroup
 }
 
 type Storage interface {
@@ -84,7 +88,7 @@ func NewService(app App) (*Service, error) {
 	// create session manager
 	service.sessionManager = newSessionManager(service.devMode)
 	// start cleaner
-	service.sessionManager.cleaner()
+	service.startCleanerService(app.GetShutdownContext(), app.GetShutdownWaitGroup())
 
 	return service, nil
 }

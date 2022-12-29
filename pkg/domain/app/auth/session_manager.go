@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"legocerthub-backend/pkg/datatypes"
+	"sync"
 	"time"
 )
 
@@ -108,26 +110,39 @@ func (sm *sessionManager) closeSubject(subject string) {
 // that checks for expired sessions and removes them. This is to
 // prevent the accumulation of expired sessions that were never
 // formally logged out of.
-func (sm *sessionManager) cleaner() {
+func (service *Service) startCleanerService(ctx context.Context, wg *sync.WaitGroup) {
+	// log start and update wg
+	service.logger.Info("starting auth session cleaner service")
+	wg.Add(1)
+
 	go func() {
 		// wait time is based on expiration of sessions (refresh)
 		waitTime := 2 * refreshTokenExpiration
 		for {
-			time.Sleep(waitTime)
+			select {
+			case <-ctx.Done():
+				// exit
+				service.logger.Info("auth session cleaner service shutdown complete")
+				wg.Done()
+				return
+
+			case <-time.After(waitTime):
+				// continue and run
+			}
 
 			// lock sessions for cleaning
-			sm.sessions.Lock()
+			service.sessionManager.sessions.Lock()
 
 			// range through all sessions
-			for elementName, session := range sm.sessions.Map {
+			for elementName, session := range service.sessionManager.sessions.Map {
 				if session.(sessionClaims).ExpiresAt.Unix() <= time.Now().Unix() {
 					// if expiration has passed, delete element
-					delete(sm.sessions.Map, elementName)
+					delete(service.sessionManager.sessions.Map, elementName)
 				}
 			}
 
 			// done cleaning, unlock
-			sm.sessions.Unlock()
+			service.sessionManager.sessions.Unlock()
 		}
 	}()
 }
