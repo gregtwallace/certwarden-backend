@@ -30,6 +30,7 @@ import (
 func RunLeGoAPI() {
 	// app context for shutdown
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	// create the app
 	app, err := create(ctx)
@@ -152,7 +153,23 @@ func RunLeGoAPI() {
 	}
 
 	// wait for each component/service to shutdown
-	app.shutdownWaitgroup.Wait()
+	// but also implement a maxWait chan to force close (panic)
+	maxWait := 2 * time.Minute
+	waitChan := make(chan struct{})
+
+	// close wait chan when wg finishes waiting
+	go func() {
+		defer close(waitChan)
+		app.shutdownWaitgroup.Wait()
+	}()
+
+	select {
+	case <-waitChan:
+		// continue, normal
+	case <-time.After(maxWait):
+		// timed out
+		app.logger.Panic("shutdown procedure failed (timed out)")
+	}
 
 	// close storage
 	app.CloseStorage()
