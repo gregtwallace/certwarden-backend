@@ -12,19 +12,33 @@ import (
 // GeneratePrivateKeyPem generates a key in PEM format based on the algorithm.
 // It returns an error if the algorithm is invalid or is otherwise unable to
 // generate the key PEM.
-func (alg Algorithm) GeneratePrivateKeyPem() (string, error) {
+func (alg Algorithm) GeneratePrivateKeyPem() (pem string, err error) {
 	algDetails := alg.details()
 
 	switch algDetails.keyType {
 	case "RSA":
-		return generateRSAPrivateKeyPem(algDetails.bitLen)
+		pem, err = generateRSAPrivateKeyPem(algDetails.bitLen)
 	case "EC":
-		return generateECDSAPrivateKeyPem(algDetails.ellipticCurveFunc())
+		pem, err = generateECDSAPrivateKeyPem(algDetails.ellipticCurveFunc())
 	default:
-		// break to error return
+		// if key type is not supported
+		err = errUnsupportedAlgorithm
 	}
 
-	return "", errUnsupportedAlgorithm
+	// common error handler
+	if err != nil {
+		return "", err
+	}
+
+	// sanitize before returning (and subsequently saving)
+	// this is probably not needed, but to ensure consistency across all
+	// platforms I chose to implement it anyway
+	pem, _, err = ValidateAndStandardizeKeyPem(pem)
+	if err != nil {
+		return "", err
+	}
+
+	return pem, nil
 }
 
 // generateRSAPrivateKeyPem generates an RSA key using the specified bit length

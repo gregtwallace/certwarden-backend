@@ -1,13 +1,14 @@
 package key_crypto
 
 import (
-	"bytes"
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"strings"
+	"unicode"
 )
 
 var (
@@ -16,25 +17,74 @@ var (
 )
 
 // ValidateKeyPem sanitizes a pem string and then returns the sanitized pem string
-// and algorithm. An error is returned if there is an issue with them pem provided.
-// This function is used to verify imported keys before saving to storage.
-func ValidateKeyPem(keyPem string) (sanitizedKeyPem string, alg Algorithm, err error) {
-	// normalize line breaks (convert all to LF (unix style))
-	pemBytes := []byte(keyPem)
-	// windows -> unix
-	pemBytes = bytes.Replace(pemBytes, []byte{13, 10}, []byte{10}, -1)
-	// mac -> unix
-	pemBytes = bytes.Replace(pemBytes, []byte{13}, []byte{10}, -1)
+// and algorithm. An error is returned if there is an issue with the pem provided.
+// This function is used to verify keys before saving to storage. It ensures the same
+// key is always formatted in the exact same manner to prevent adding duplicate keys
+// to storage (i.e. since formatting is exact, the db unique constraint should always
+// catch duplicates)
+func ValidateAndStandardizeKeyPem(keyPem string) (sanitizedKeyPem string, alg Algorithm, err error) {
+	// remove leading and trailing whitespace
+	keyPem = strings.TrimSpace(keyPem)
 
-	pemNormalized := string(pemBytes)
+	// check for exactly one beginning clause
+	count := strings.Count(keyPem, "-----BEGIN")
+	if count != 1 {
+		return "", UnknownAlgorithm, errUnsupportedPem
+	}
+
+	// check for exactly one ending clause
+	count = strings.Count(keyPem, "-----END")
+	if count != 1 {
+		return "", UnknownAlgorithm, errUnsupportedPem
+	}
+
+	// error if pem does not start exactly as required
+	valid := strings.HasPrefix(keyPem, "-----BEGIN")
+	if !valid {
+		return "", UnknownAlgorithm, errUnsupportedPem
+	}
+
+	// error if pem does not end exactly as required
+	valid = strings.HasSuffix(keyPem, "KEY-----")
+	if !valid {
+		return "", UnknownAlgorithm, errUnsupportedPem
+	}
+
+	// split pem into beginning, content, and end to sanitize the content
+	split := strings.SplitN(keyPem, "PRIVATE KEY-----", 2)
+	begin := split[0] + "PRIVATE KEY-----"
+
+	split = strings.SplitN(split[1], "-----END", 2)
+	end := "-----END" + split[1]
+
+	content := split[0]
+
+	// remove all whitespace chars from content and then re-add a unix
+	// line break after every 64th rune (standard for pem)
+	contentRunes := []rune{}
+	runeCount := 0
+	for _, r := range content {
+		if !unicode.IsSpace(r) {
+			contentRunes = append(contentRunes, r)
+			runeCount += 1
+			// after every 64th, append LF (unix new line)
+			if runeCount%64 == 0 {
+				contentRunes = append(contentRunes, rune(10))
+			}
+		}
+	}
+
+	// reassemble pem in standardized format
+	// begin, LF, content, LF, end, LF
+	sanitizedKeyPem = begin + string(byte(10)) + string(contentRunes) + string(byte(10)) + end + string(byte(10))
 
 	// get the algorithm value of the new key & confirm it is supported
-	_, algorithmValue, err := pemStringDecode(pemNormalized, UnknownAlgorithm)
+	_, algorithmValue, err := pemStringDecode(sanitizedKeyPem, UnknownAlgorithm)
 	if err != nil {
 		return "", UnknownAlgorithm, err
 	}
 
-	return pemNormalized, algorithmValue, nil
+	return sanitizedKeyPem, algorithmValue, nil
 }
 
 // PemStringToKey returns the PrivateKey for a given pem string

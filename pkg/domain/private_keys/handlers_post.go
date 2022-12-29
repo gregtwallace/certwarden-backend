@@ -68,7 +68,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 		// must initialize to avoid invalid address
 		payload.AlgorithmValue = new(string)
 		var alg key_crypto.Algorithm
-		*payload.PemContent, alg, err = key_crypto.ValidateKeyPem(*payload.PemContent)
+		*payload.PemContent, alg, err = key_crypto.ValidateAndStandardizeKeyPem(*payload.PemContent)
 		*payload.AlgorithmValue = alg.StorageValue()
 		if err != nil {
 			service.logger.Debug(err)
