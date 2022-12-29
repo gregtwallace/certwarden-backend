@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges"
@@ -16,15 +18,21 @@ import (
 	"legocerthub-backend/pkg/storage/sqlite"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"runtime"
 	"sync"
+	"syscall"
 	"time"
 )
 
 // RunLeGoAPI starts the application
 func RunLeGoAPI() {
+	// app context for shutdown
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+
 	// create the app
-	app, err := create()
+	app, err := create(ctx)
 	if err != nil {
 		log.Panicf("failed to configure app: %s", err)
 		return
@@ -49,6 +57,9 @@ func RunLeGoAPI() {
 		WriteTimeout: writeTimeout,
 	}
 
+	// var for redirect server (if needed)
+	redirectSrv := &http.Server{}
+
 	// configure and launch https if app succesfully got a cert
 	if app.httpsCert != nil {
 		// make tls config
@@ -63,7 +74,7 @@ func RunLeGoAPI() {
 		srv.TLSConfig = tlsConf
 
 		// configure and launch http redirect server
-		redirectSrv := &http.Server{
+		redirectSrv = &http.Server{
 			Addr: app.config.httpDomainAndPort(),
 			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, "https://"+app.config.httpsDomainAndPort()+r.RequestURI, http.StatusTemporaryRedirect)
@@ -73,23 +84,85 @@ func RunLeGoAPI() {
 			WriteTimeout: writeTimeout,
 		}
 		app.logger.Infof("starting http redirect on %s", app.baseUrl())
+		app.shutdownWaitgroup.Add(1)
 		go func() {
-			app.logger.Panic(redirectSrv.ListenAndServe())
+			err := redirectSrv.ListenAndServe()
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				app.logger.Panic(err)
+			}
+			app.logger.Info("http redirect server shutdown complete")
+			app.shutdownWaitgroup.Done()
 		}()
 
 		// launch https
 		app.logger.Infof("starting lego-certhub (https) on %s", app.baseUrl())
-		app.logger.Panic(srv.ListenAndServeTLS("", ""))
+		app.shutdownWaitgroup.Add(1)
+		go func() {
+			err := srv.ListenAndServeTLS("", "")
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				app.logger.Panic(err)
+			}
+			app.logger.Info("https server shutdown complete")
+			app.shutdownWaitgroup.Done()
+		}()
+
 	} else {
 		// if https failed, launch localhost only http server
 		app.logger.Warnf("starting insecure lego-certhub (http) on %s", app.baseUrl())
-		app.logger.Panic(srv.ListenAndServe())
+		app.shutdownWaitgroup.Add(1)
+		go func() {
+			err := srv.ListenAndServe()
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				app.logger.Panic(err)
+			}
+			app.logger.Info("http server shutdown complete")
+			app.shutdownWaitgroup.Done()
+		}()
 	}
+
+	// shutdown logic
+	// wait for shutdown context to signal
+	<-app.shutdownContext.Done()
+	app.logger.Info("shutdown initiated")
+
+	// disable shutdown context listener (allows for ctrl-c again to force close)
+	stop()
+
+	// shutdown the main web server (and redirect server)
+	maxShutdownTime := 30 * time.Second
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), maxShutdownTime)
+		defer cancel()
+
+		err = srv.Shutdown(ctx)
+		if err != nil {
+			app.logger.Errorf("error shutting down http(s) server")
+		}
+	}()
+
+	if app.httpsCert != nil {
+		go func() {
+			err = redirectSrv.Shutdown(context.Background())
+			if err != nil {
+				app.logger.Errorf("error shutting down http redirect server")
+			}
+		}()
+	}
+
+	// wait for each component/service to shutdown
+	app.shutdownWaitgroup.Wait()
+
+	// close storage
+	app.CloseStorage()
+
+	// done
+	app.logger.Info("shutdown complete")
+	os.Exit(0)
 }
 
 // create creates an app object with logger, storage, and all needed
 // services
-func create() (*Application, error) {
+func create(ctx context.Context) (*Application, error) {
 	app := new(Application)
 	var err error
 
@@ -99,6 +172,10 @@ func create() (*Application, error) {
 
 	// logger (zap)
 	app.initZapLogger()
+
+	// shutdown context and waitgroup for graceful shutdown
+	app.shutdownContext = ctx
+	app.shutdownWaitgroup = new(sync.WaitGroup)
 
 	// is the server in development mode?
 	// this changes some basic things like: log level and connection timeouts

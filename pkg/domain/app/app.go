@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
@@ -16,6 +17,7 @@ import (
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
+	"sync"
 
 	"github.com/julienschmidt/httprouter"
 	"go.uber.org/zap"
@@ -33,28 +35,35 @@ const acmeStagingUrl string = "https://acme-staging-v02.api.letsencrypt.org/dire
 
 // Application is the main app struct
 type Application struct {
-	config         *config
-	logger         *zap.SugaredLogger
-	httpsCert      *datatypes.SafeCert
-	httpClient     *httpclient.Client
-	output         *output.Service
-	router         *httprouter.Router
-	acmeProd       *acme.Service
-	acmeStaging    *acme.Service
-	challenges     *challenges.Service
-	storage        *sqlite.Storage
-	auth           *auth.Service
-	keys           *private_keys.Service
-	accounts       *acme_accounts.Service
-	authorizations *authorizations.Service
-	orders         *orders.Service
-	certificates   *certificates.Service
-	download       *download.Service
+	config            *config
+	logger            *zap.SugaredLogger
+	shutdownContext   context.Context
+	shutdownWaitgroup *sync.WaitGroup
+	httpsCert         *datatypes.SafeCert
+	httpClient        *httpclient.Client
+	output            *output.Service
+	router            *httprouter.Router
+	acmeProd          *acme.Service
+	acmeStaging       *acme.Service
+	challenges        *challenges.Service
+	storage           *sqlite.Storage
+	auth              *auth.Service
+	keys              *private_keys.Service
+	accounts          *acme_accounts.Service
+	authorizations    *authorizations.Service
+	orders            *orders.Service
+	certificates      *certificates.Service
+	download          *download.Service
 }
 
 // CloseStorage closes the storage connection
 func (app *Application) CloseStorage() {
-	_ = app.storage.Close()
+	err := app.storage.Close()
+	if err != nil {
+		app.logger.Errorf("error closing storage: %s", err)
+	} else {
+		app.logger.Info("storage closed")
+	}
 }
 
 //
@@ -161,4 +170,17 @@ func (app *Application) FrontendUrl() string {
 	}
 
 	return app.baseUrl() + frontendUrlPath
+}
+
+// shutdown related
+func (app *Application) GetShutdownContext() context.Context {
+	return app.shutdownContext
+}
+
+func (app *Application) ShutdownWGAdd(delta int) {
+	app.shutdownWaitgroup.Add(delta)
+}
+
+func (app *Application) ShutdownWGDone() {
+	app.shutdownWaitgroup.Done()
 }
