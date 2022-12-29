@@ -123,7 +123,6 @@ func RunLeGoAPI() {
 	// shutdown logic
 	// wait for shutdown context to signal
 	<-app.shutdownContext.Done()
-	app.logger.Info("shutdown initiated")
 
 	// disable shutdown context listener (allows for ctrl-c again to force close)
 	stop()
@@ -142,7 +141,10 @@ func RunLeGoAPI() {
 
 	if app.httpsCert != nil {
 		go func() {
-			err = redirectSrv.Shutdown(context.Background())
+			ctx, cancel := context.WithTimeout(context.Background(), maxShutdownTime)
+			defer cancel()
+
+			err = redirectSrv.Shutdown(ctx)
 			if err != nil {
 				app.logger.Errorf("error shutting down http redirect server")
 			}
