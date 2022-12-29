@@ -31,6 +31,10 @@ func (app *Application) newAppCert() (*datatypes.SafeCert, error) {
 	sc.Update(cert)
 
 	// go routine to periodically try to refresh the cert
+	// log start and update wg
+	app.logger.Info("starting https cert refresh service")
+	app.shutdownWaitgroup.Add(1)
+
 	go func() {
 		var parsedCert *x509.Certificate
 		var remainingValidTime time.Duration
@@ -41,7 +45,7 @@ func (app *Application) newAppCert() (*datatypes.SafeCert, error) {
 			// determine time to expiration
 			parsedCert, err = x509.ParseCertificate(sc.Read().Certificate[0])
 			if err != nil {
-				app.logger.Panicf("lego tls certificate error: %s", err)
+				app.logger.Panicf("tls certificate error: %s", err)
 			}
 			remainingValidTime = time.Until(parsedCert.NotAfter)
 
@@ -58,8 +62,17 @@ func (app *Application) newAppCert() (*datatypes.SafeCert, error) {
 				sleepFor = 1 * time.Hour * 24
 			}
 
-			// sleep
-			time.Sleep(sleepFor)
+			// sleep or wait for shutdown context to be done
+			select {
+			case <-app.shutdownContext.Done():
+				// close routine
+				app.logger.Info("https cert refresh service shutdown complete")
+				app.shutdownWaitgroup.Done()
+				return
+
+			case <-time.After(sleepFor):
+				// sleep and retry
+			}
 
 			// attempt refresh from storage
 			newCert, err = app.getAppCertFromStorage()
