@@ -1,6 +1,7 @@
 package dns01cloudflare
 
 import (
+	"context"
 	"errors"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/datatypes"
@@ -16,10 +17,12 @@ var (
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
+	GetShutdownContext() context.Context
 }
 
 // Accounts service struct
 type Service struct {
+	shutdownContext  context.Context
 	logger           *zap.SugaredLogger
 	dnsChecker       *dns_checker.Service
 	knownDomainZones *datatypes.SafeMap
@@ -34,6 +37,9 @@ func NewService(app App, config *Config, dnsChecker *dns_checker.Service) (*Serv
 	}
 
 	service := new(Service)
+
+	// shutdown context
+	service.shutdownContext = app.GetShutdownContext()
 
 	// logger
 	service.logger = app.GetLogger()

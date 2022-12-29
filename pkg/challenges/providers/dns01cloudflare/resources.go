@@ -55,7 +55,15 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 	maxTries := 10
 	for i := 1; i <= maxTries; i++ {
 		// sleep at start to allow some propagation
-		time.Sleep(time.Duration(i) * 15 * time.Second)
+		// cancel/error if shutdown is called
+		select {
+		case <-service.shutdownContext.Done():
+			// cancel/error if shutting down
+			return errors.New("cloudflare dns provisioning canceled due to shutdown")
+
+		case <-time.After(time.Duration(i) * 15 * time.Second):
+			// sleep and retry
+		}
 
 		// check for propagation
 		propagated, err := service.dnsChecker.CheckTXT(resourceName, resourceContent)
