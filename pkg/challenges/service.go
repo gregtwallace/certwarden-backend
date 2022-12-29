@@ -36,12 +36,13 @@ type providerService interface {
 
 // service struct
 type Service struct {
-	logger      *zap.SugaredLogger
-	acmeProd    *acme.Service
-	acmeStaging *acme.Service
-	dnsChecker  *dns_checker.Service
-	providers   map[MethodValue]providerService
-	methods     []Method
+	shutdownContext context.Context
+	logger          *zap.SugaredLogger
+	acmeProd        *acme.Service
+	acmeStaging     *acme.Service
+	dnsChecker      *dns_checker.Service
+	providers       map[MethodValue]providerService
+	methods         []Method
 }
 
 // NewService creates a new service
@@ -53,6 +54,9 @@ func NewService(app App) (service *Service, err error) {
 	if service.logger == nil {
 		return nil, errServiceComponent
 	}
+
+	// shutdown context
+	service.shutdownContext = app.GetShutdownContext()
 
 	// acme services
 	service.acmeProd = app.GetAcmeProdService()

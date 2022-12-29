@@ -67,7 +67,15 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	// monitor for processing to complete (max 5 tries, 20 seconds apart each)
 	for i := 1; i <= 5; i++ {
 		// sleep to allow ACME time to process
-		time.Sleep(20 * time.Second)
+		// cancel/error if shutdown is called
+		select {
+		case <-service.shutdownContext.Done():
+			// cancel/error if shutting down
+			return "", errors.New("cloudflare dns provisioning canceled due to shutdown")
+
+		case <-time.After(20 * time.Second):
+			// sleep and retry
+		}
 
 		// get challenge and check for error or final Statuses
 		challenge, err = acmeService.GetChallenge(challenge.Url, key)
