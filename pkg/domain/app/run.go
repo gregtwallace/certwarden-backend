@@ -104,7 +104,7 @@ func create() (*Application, error) {
 	// this changes some basic things like: log level and connection timeouts
 	// This does NOT prevent interactions with ACME production environment!
 	if *app.config.DevMode {
-		app.logger.Error("key security measures disabled (development mode enabled)")
+		app.logger.Warn("development mode enabled (do not run in production)")
 	}
 
 	// create http client
