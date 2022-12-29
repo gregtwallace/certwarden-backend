@@ -4,6 +4,7 @@ import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -13,9 +14,18 @@ type orderJob struct {
 }
 
 // makeOrderWorker creates a indefinite thread to process incoming orderJobs
-func (service *Service) makeOrderWorker(id int, highPriorityJobs <-chan orderJob, lowPriorityJobs <-chan orderJob) {
+func (service *Service) makeOrderWorker(id int, highPriorityJobs <-chan orderJob, lowPriorityJobs <-chan orderJob, wg *sync.WaitGroup) {
+	service.logger.Debugf("starting order worker (%d)", id)
+	// acme directory refresh service shutdown complete
+	wg.Add(1)
+	defer wg.Done()
+
+doingWork:
 	for {
 		select {
+		case <-service.shutdownContext.Done():
+			// break to shutdown
+			break doingWork
 		case highJob := <-highPriorityJobs:
 			service.doOrderJob(highJob)
 			service.logger.Debugf("worker %d: end of high priority order fulfiller (orderId: %d)", id, highJob.orderId)
@@ -23,6 +33,9 @@ func (service *Service) makeOrderWorker(id int, highPriorityJobs <-chan orderJob
 		lower:
 			for {
 				select {
+				case <-service.shutdownContext.Done():
+					// break to shutdown
+					break doingWork
 				case highJob := <-highPriorityJobs:
 					service.doOrderJob(highJob)
 					service.logger.Debugf("worker %d: end of high priority order fulfiller (orderId: %d)", id, highJob.orderId)
@@ -33,8 +46,9 @@ func (service *Service) makeOrderWorker(id int, highPriorityJobs <-chan orderJob
 			service.doOrderJob(lowJob)
 			service.logger.Debugf("worker %d: end of low priority order fulfiller (orderId: %d)", id, lowJob.orderId)
 		}
-
 	}
+
+	service.logger.Debugf("order worker (%d) shutdown complete", id)
 }
 
 // doOrderJob works the orderJob specified. Once complete, the job is removed from the inProcess
@@ -174,7 +188,16 @@ fulfillLoop:
 		case "processing":
 			// TODO: Implement exponential backoff
 			if i != maxTries {
-				time.Sleep(time.Duration(i) * 30 * time.Second)
+				// cancel on shutdown context
+				select {
+				case <-service.shutdownContext.Done():
+					// abort refreshing due to shutdown
+					service.logger.Error("order job canceled due to shutdown")
+					return
+
+				case <-time.After(time.Duration(i) * 30 * time.Second):
+					// sleep and retry
+				}
 			}
 
 		case "invalid": // break, irrecoverable

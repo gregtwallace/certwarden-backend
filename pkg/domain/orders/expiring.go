@@ -1,8 +1,11 @@
 package orders
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"legocerthub-backend/pkg/pagination_sort"
+	"sync"
 	"time"
 )
 
@@ -18,11 +21,14 @@ const refreshMinute = 12
 
 // backgroundCertRefresher orders expiring certs on a daily basis at a time
 // specified
-func (service *Service) backgroundCertRefresher() {
-	service.logger.Info("starting background cert refresh go routine")
+func (service *Service) backgroundCertRefresher(ctx context.Context, wg *sync.WaitGroup) {
+	// log start and update wg
+	service.logger.Info("starting expiring cert refresh service")
+	wg.Add(1)
 
-	// go routine for refreshing
-	go func(service *Service) {
+	// service routine
+	go func() {
+		defer wg.Done()
 		var nextRunTime time.Time
 
 		// indefinite refresh loop
@@ -40,8 +46,16 @@ func (service *Service) backgroundCertRefresher() {
 				nextRunTime = todayRunTime.Add(24 * time.Hour)
 			}
 
-			// sleep until next run
-			time.Sleep(time.Until(nextRunTime))
+			// sleep or wait for shutdown context to be done
+			select {
+			case <-ctx.Done():
+				// close routine
+				service.logger.Info("expiring cert refresh service shutdown complete")
+				return
+
+			case <-time.After(time.Until(nextRunTime)):
+				// sleep and retry
+			}
 
 			// run refresh
 			err := service.orderExpiringCerts()
@@ -49,7 +63,7 @@ func (service *Service) backgroundCertRefresher() {
 				service.logger.Errorf("error ordering expiring certs: %s", err)
 			}
 		}
-	}(service)
+	}()
 }
 
 // orderExpiringCerts automatically orders any certficates that are within
@@ -73,7 +87,15 @@ func (service *Service) orderExpiringCerts() (err error) {
 			service.logger.Errorf("failed to refresh cert (%d): %s", expiringOrders[i].Certificate.ID, err)
 		}
 		// sleep a little so slew of new orders doesn't hit ACME all at once
-		time.Sleep(15 * time.Second)
+		// cancel on shutdown context
+		select {
+		case <-service.shutdownContext.Done():
+			// abort refreshing due to shutdown
+			return errors.New("expiring cert refresh canceled due to shutdown")
+
+		case <-time.After(15 * time.Second):
+			// sleep and continue
+		}
 	}
 
 	service.logger.Info("placement of expiring certificate orders complete")

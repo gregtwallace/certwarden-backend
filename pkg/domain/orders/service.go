@@ -1,12 +1,14 @@
 package orders
 
 import (
+	"context"
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -23,6 +25,8 @@ type App interface {
 	GetAcmeStagingService() *acme.Service
 	GetCertificatesService() *certificates.Service
 	GetAuthsService() *authorizations.Service
+	GetShutdownContext() context.Context
+	GetShutdownWaitGroup() *sync.WaitGroup
 }
 
 // Storage interface for storage functions
@@ -48,21 +52,25 @@ type Storage interface {
 
 // Keys service struct
 type Service struct {
-	logger         *zap.SugaredLogger
-	output         *output.Service
-	storage        Storage
-	acmeProd       *acme.Service
-	acmeStaging    *acme.Service
-	certificates   *certificates.Service
-	authorizations *authorizations.Service
-	inProcess      *inProcess
-	highJobs       chan orderJob
-	lowJobs        chan orderJob
+	shutdownContext context.Context
+	logger          *zap.SugaredLogger
+	output          *output.Service
+	storage         Storage
+	acmeProd        *acme.Service
+	acmeStaging     *acme.Service
+	certificates    *certificates.Service
+	authorizations  *authorizations.Service
+	inProcess       *inProcess
+	highJobs        chan orderJob
+	lowJobs         chan orderJob
 }
 
 // NewService creates a new private_key service
 func NewService(app App) (*Service, error) {
 	service := new(Service)
+
+	// shutdown context
+	service.shutdownContext = app.GetShutdownContext()
 
 	// logger
 	service.logger = app.GetLogger()
@@ -115,11 +123,11 @@ func NewService(app App) (*Service, error) {
 
 	// make workers
 	for i := 0; i < workerCount; i++ {
-		go service.makeOrderWorker(i, service.highJobs, service.lowJobs)
+		go service.makeOrderWorker(i, service.highJobs, service.lowJobs, app.GetShutdownWaitGroup())
 	}
 
 	// start cert refresh goroutine
-	service.backgroundCertRefresher()
+	service.backgroundCertRefresher(service.shutdownContext, app.GetShutdownWaitGroup())
 
 	return service, nil
 }
