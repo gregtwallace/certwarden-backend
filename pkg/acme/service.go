@@ -1,9 +1,11 @@
 package acme
 
 import (
+	"context"
 	"errors"
 	"legocerthub-backend/pkg/acme/nonces"
 	"legocerthub-backend/pkg/httpclient"
+	"sync"
 
 	"go.uber.org/zap"
 )
@@ -12,6 +14,8 @@ import (
 type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetHttpClient() *httpclient.Client
+	GetShutdownContext() context.Context
+	GetShutdownWaitGroup() *sync.WaitGroup
 }
 
 // Acme service struct
@@ -41,7 +45,7 @@ func NewService(app App, dirUri string) (*Service, error) {
 	service.dir = new(directory)
 
 	// start directory manager
-	service.backgroundDirManager()
+	service.backgroundDirManager(app.GetShutdownContext(), app.GetShutdownWaitGroup())
 
 	// nonce manager
 	service.nonceManager = nonces.NewManager(service.httpClient, &service.dir.NewNonce)

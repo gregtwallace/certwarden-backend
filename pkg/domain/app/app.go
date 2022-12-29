@@ -177,10 +177,6 @@ func (app *Application) GetShutdownContext() context.Context {
 	return app.shutdownContext
 }
 
-func (app *Application) ShutdownWGAdd(delta int) {
-	app.shutdownWaitgroup.Add(delta)
-}
-
-func (app *Application) ShutdownWGDone() {
-	app.shutdownWaitgroup.Done()
+func (app *Application) GetShutdownWaitGroup() *sync.WaitGroup {
+	return app.shutdownWaitgroup
 }

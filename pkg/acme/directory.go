@@ -1,10 +1,12 @@
 package acme
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"reflect"
+	"sync"
 	"time"
 )
 
@@ -80,8 +82,13 @@ func (service *Service) fetchAcmeDirectory() error {
 // backgroundDirManager starts a goroutine that is an indefinite for loop
 // that checks for directory updates at the specified time interval.
 // The interval is shorter if the previous update encountered an error.
-func (service *Service) backgroundDirManager() {
-	go func() {
+func (service *Service) backgroundDirManager(ctx context.Context, wg *sync.WaitGroup) {
+	// log start and update wg
+	service.logger.Infof("starting acme directory refresh service (%s)", service.dirUri)
+	wg.Add(1)
+
+	// service routine
+	go func(service *Service, ctx context.Context, wg *sync.WaitGroup) {
 		// can adjust wait times if desired
 		defaultWaitTime := 24 * time.Hour
 		failWaitTime := 15 * time.Minute
@@ -99,9 +106,19 @@ func (service *Service) backgroundDirManager() {
 				waitTime = defaultWaitTime
 			}
 
-			time.Sleep(waitTime)
+			// sleep or wait for shutdown context to be done
+			select {
+			case <-ctx.Done():
+				// close routine
+				service.logger.Infof("acme directory refresh service shutdown (%s)", service.dirUri)
+				wg.Done()
+				return
+
+			case <-time.After(waitTime):
+				// sleep and retry
+			}
 		}
-	}()
+	}(service, ctx, wg)
 }
 
 // TosUrl returns the string for the url where the ToS are located
