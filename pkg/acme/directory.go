@@ -110,7 +110,7 @@ func (service *Service) backgroundDirManager(ctx context.Context, wg *sync.WaitG
 			select {
 			case <-ctx.Done():
 				// close routine
-				service.logger.Infof("acme directory refresh service shutdown (%s)", service.dirUri)
+				service.logger.Infof("acme directory refresh service shutdown complete (%s)", service.dirUri)
 				wg.Done()
 				return
 
