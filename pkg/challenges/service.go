@@ -1,11 +1,13 @@
 package challenges
 
 import (
+	"context"
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
+	"sync"
 
 	"go.uber.org/zap"
 )
@@ -22,6 +24,8 @@ type App interface {
 	GetDevMode() bool
 	GetHttp01InternalConfig() *http01internal.Config
 	GetDns01CloudflareConfig() *dns01cloudflare.Config
+	GetShutdownContext() context.Context
+	GetShutdownWaitGroup() *sync.WaitGroup
 }
 
 // interface for any provider service

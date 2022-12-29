@@ -1,6 +1,7 @@
 package http01internal
 
 import (
+	"context"
 	"errors"
 	"sync"
 
@@ -16,6 +17,8 @@ var (
 type App interface {
 	GetDevMode() bool
 	GetLogger() *zap.SugaredLogger
+	GetShutdownContext() context.Context
+	GetShutdownWaitGroup() *sync.WaitGroup
 }
 
 // Accounts service struct
@@ -57,7 +60,7 @@ func NewService(app App, config *Config) (*Service, error) {
 	if config.Port == nil {
 		return nil, errConfigComponent
 	}
-	err := service.startServer(*config.Port)
+	err := service.startServer(*config.Port, app.GetShutdownContext(), app.GetShutdownWaitGroup())
 	if err != nil {
 		return nil, err
 	}
