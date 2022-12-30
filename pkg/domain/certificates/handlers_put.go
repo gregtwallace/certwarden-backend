@@ -2,10 +2,12 @@ package certificates
 
 import (
 	"encoding/json"
+	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -50,7 +52,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 
 	// validation
 	// id
-	_, err = service.GetCertificate(payload.ID)
+	cert, err := service.GetCertificate(payload.ID)
 	if err != nil {
 		return err
 	}
@@ -66,14 +68,41 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 	// challenge method (optional)
-	if payload.ChallengeMethodValue != nil && service.challenges.MethodByStorageValue(*payload.ChallengeMethodValue) == challenges.UnknownMethod {
-		service.logger.Debug("unknown challenge method")
-		return output.ErrValidationFailed
+	challengeMethod := challenges.UnknownMethod
+	// if specified, check it
+	if payload.ChallengeMethodValue != nil {
+		// if method is specified, set var to new method
+		challengeMethod = service.challenges.MethodByStorageValue(*payload.ChallengeMethodValue)
+		// if method is unknown, invalid
+		if challengeMethod == challenges.UnknownMethod {
+			service.logger.Debug("unknown challenge method")
+			return output.ErrValidationFailed
+		}
+		// if subject is wildcard and method does not support it, fail
+		if strings.HasPrefix(cert.Subject, "*.") && challengeMethod.ChallengeType != acme.ChallengeTypeDns01 {
+			service.logger.Debug("challenge method does not support subject")
+			return output.ErrValidationFailed
+		}
+		// do not check subject alts here, they are checked below
+	} else {
+		// if method is not being changed, set var to existing method
+		challengeMethod = cert.ChallengeMethod
 	}
 	// subject alts (optional)
-	if payload.SubjectAltNames != nil && !subjectAltsValid(payload.SubjectAltNames) {
-		service.logger.Debug(ErrDomainBad)
-		return output.ErrValidationFailed
+	// if new alts are being specified
+	if payload.SubjectAltNames != nil {
+		if !subjectAltsValid(payload.SubjectAltNames, challengeMethod) {
+			service.logger.Debug(ErrDomainBad)
+			return output.ErrValidationFailed
+		}
+
+		// if keeping old alts and they exist (more than 0)
+	} else if len(cert.SubjectAltNames) > 0 {
+		// verify against the challenge method
+		if !subjectAltsValid(cert.SubjectAltNames, challengeMethod) {
+			service.logger.Debug(ErrDomainBad)
+			return output.ErrValidationFailed
+		}
 	}
 	// TODO: Do any validation of CSR components?
 	// end validation

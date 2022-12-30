@@ -5,7 +5,6 @@ import (
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/randomness"
-	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"time"
 )
@@ -64,18 +63,19 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 		return output.ErrValidationFailed
 	}
 	// challenge method
-	if payload.ChallengeMethodValue == nil || service.challenges.MethodByStorageValue(*payload.ChallengeMethodValue) == challenges.UnknownMethod {
+	challMethod := service.challenges.MethodByStorageValue(*payload.ChallengeMethodValue)
+	if payload.ChallengeMethodValue == nil || challMethod == challenges.UnknownMethod {
 		service.logger.Debug("unknown challenge method")
 		return output.ErrValidationFailed
 	}
 	// subject
-	if payload.Subject == nil || !validation.DomainValid(*payload.Subject) {
+	if payload.Subject == nil || !subjectValid(*payload.Subject, challMethod) {
 		service.logger.Debug(ErrDomainBad)
 		return output.ErrValidationFailed
 	}
 	// subject alts
 	// blank is okay, skip validation if not specified
-	if payload.SubjectAltNames != nil && !subjectAltsValid(payload.SubjectAltNames) {
+	if payload.SubjectAltNames != nil && !subjectAltsValid(payload.SubjectAltNames, challMethod) {
 		service.logger.Debug(ErrDomainBad)
 		return output.ErrValidationFailed
 	}
