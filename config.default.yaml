@@ -28,6 +28,16 @@ certificate_name: legocerthub
 # This should NOT be used in production!
 dev_mode: false
 
+# Orders configuration
+orders:
+  # settings for automatic ordering
+  auto_order_enable: true
+  # order certs with less than this number of days remaining of validity
+  valid_remaining_days_threshold: 40
+  # time for the daily ordering to occur
+  refresh_time_hour: 3
+  refresh_time_minute: 12
+
 # Challenge Providers
 challenge_providers:
   # http-01 internal server

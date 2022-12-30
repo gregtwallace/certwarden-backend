@@ -69,6 +69,10 @@ func (app *Application) CloseStorage() {
 //
 
 // return various app parts which are used as needed by services
+func (app *Application) GetOrdersConfig() *orders.Config {
+	return &app.config.Orders
+}
+
 func (app *Application) GetHttp01InternalConfig() *http01internal.Config {
 	return &app.config.ChallengeProviders.Http01InternalConfig
 }

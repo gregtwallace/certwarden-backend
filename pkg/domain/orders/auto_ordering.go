@@ -8,22 +8,23 @@ import (
 	"time"
 )
 
-// automatic reorder config options
-// TODO: Move to customizable setting in config.yaml and frontent->settings
-// reorderTime: If less than this duration of time remaining on cert,
-// LeGo Certhub will try to obtain a newer cert.
-const reorderTime = 40 * (24 * time.Hour)
-
-// daily time to refresh
-const refreshHour = 03
-const refreshMinute = 12
-
 // startAutoOrderService starts a go routine that completes existing orders that are
 // not yet in a 'valid' or 'invalid' state and also places new orders forexpiring certs
 // The service runs daily at the time specified in consts.
-func (service *Service) startAutoOrderService(ctx context.Context, wg *sync.WaitGroup) {
+func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, wg *sync.WaitGroup) {
+	// dont run if not enabled
+	if !*cfg.AutomaticOrderingEnable {
+		return
+	}
+
+	// calculate timing based on config
+	remainingDaysThreshold := time.Duration(*cfg.ValidRemainingDaysThreshold) * (24 * time.Hour)
+	refreshHour := *cfg.RefreshTimeHour
+	refreshMinute := *cfg.RefreshTimeMinute
+
 	// log start and update wg
-	service.logger.Info("starting automatic certificate ordering service")
+	service.logger.Infof("starting automatic certificate ordering service; %d day expiration threshold; "+
+		"orders will be placed every day at %d:%d", *cfg.ValidRemainingDaysThreshold, refreshHour, refreshMinute)
 	wg.Add(1)
 
 	// service routine
@@ -65,7 +66,7 @@ func (service *Service) startAutoOrderService(ctx context.Context, wg *sync.Wait
 			}
 
 			// order expiring certificates
-			err = service.orderExpiringCerts()
+			err = service.orderExpiringCerts(remainingDaysThreshold)
 			if err != nil {
 				service.logger.Errorf("error ordering expiring certs: %s", err)
 			}
@@ -97,13 +98,13 @@ func (service *Service) retryIncompleteOrders() (err error) {
 	return nil
 }
 
-// orderExpiringCerts automatically orders any certficates that are within
-// the expiration window.
-func (service *Service) orderExpiringCerts() (err error) {
+// orderExpiringCerts automatically orders any certficates that are valid but have a valid_to
+// timestamp within the specified threshold
+func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration) (err error) {
 	service.logger.Info("adding expiring certificates to order queue")
 
 	// get slice of all expiring certificate ids
-	expiringCertIds, err := service.storage.GetExpiringCertIds(reorderTime)
+	expiringCertIds, err := service.storage.GetExpiringCertIds(remainingDaysThreshold)
 	if err != nil {
 		return err
 	}

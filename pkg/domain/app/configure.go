@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
+	"legocerthub-backend/pkg/domain/orders"
 	"log"
 	"os"
 
@@ -23,6 +24,7 @@ type config struct {
 	PrivateKeyName     *string                  `yaml:"private_key_name"`
 	CertificateName    *string                  `yaml:"certificate_name"`
 	DevMode            *bool                    `yaml:"dev_mode"`
+	Orders             orders.Config            `yaml:"orders"`
 	ChallengeProviders challengeProvidersConfig `yaml:"challenge_providers"`
 }
 
@@ -80,6 +82,12 @@ func defaultConfig() (cfg config) {
 		PrivateKeyName:  new(string),
 		CertificateName: new(string),
 		DevMode:         new(bool),
+		Orders: orders.Config{
+			AutomaticOrderingEnable:     new(bool),
+			ValidRemainingDaysThreshold: new(int),
+			RefreshTimeHour:             new(int),
+			RefreshTimeMinute:           new(int),
+		},
 		ChallengeProviders: challengeProvidersConfig{
 			Http01InternalConfig: http01internal.Config{
 				Enable: new(bool),
@@ -106,6 +114,12 @@ func defaultConfig() (cfg config) {
 
 	// dev mode
 	*cfg.DevMode = false
+
+	// orders
+	*cfg.Orders.AutomaticOrderingEnable = true
+	*cfg.Orders.ValidRemainingDaysThreshold = 40
+	*cfg.Orders.RefreshTimeHour = 3
+	*cfg.Orders.RefreshTimeMinute = 12
 
 	// challenge providers
 	// http-01-internal
