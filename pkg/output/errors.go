@@ -17,6 +17,7 @@ var (
 	// write
 	ErrWriteJsonFailed = Error{Status: 500, Message: "json response write failed"}
 	ErrWritePemFailed  = Error{Status: 500, Message: "pem write failed"}
+	ErrWriteZipFailed  = Error{Status: 500, Message: "zip write failed"}
 
 	// validation
 	ErrValidationFailed = Error{Status: 400, Message: "request validation (param or payload) invalid"}

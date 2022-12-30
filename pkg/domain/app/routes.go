@@ -19,7 +19,8 @@ func (app *Application) routes() http.Handler {
 
 	// app
 	app.makeSecureHandle(http.MethodGet, "/api/status", app.statusHandler)
-	app.makeSecureHandle(http.MethodGet, "/api/v1/logs", app.viewLogHandler)
+	app.makeSecureHandle(http.MethodGet, "/api/v1/log", app.viewCurrentLogHandler)
+	app.makeSecureHandle(http.MethodGet, "/api/v1/logs", app.downloadLogsHandler)
 
 	// private_keys
 	app.makeSecureHandle(http.MethodGet, "/api/v1/privatekeys", app.keys.GetAllKeys)
