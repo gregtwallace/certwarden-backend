@@ -43,7 +43,9 @@ type Storage interface {
 	UpdateOrderCert(orderId int, CertPayload CertPayload) (err error)
 	RevokeOrder(orderId int) (err error)
 
-	GetAllValidCurrentOrders(q pagination_sort.Query, maxTimeRemaining *time.Duration) (orders []Order, totalRows int, err error)
+	GetAllValidCurrentOrders(q pagination_sort.Query) (orders []Order, totalRows int, err error)
+	GetAllIncompleteOrderIds() (orderIds []int, err error)
+	GetExpiringCertIds(maxTimeRemaining time.Duration) (certIds []int, err error)
 	GetNewestIncompleteCertOrderId(certId int) (orderId int, err error)
 
 	// certs
@@ -126,8 +128,8 @@ func NewService(app App) (*Service, error) {
 		go service.makeOrderWorker(i, service.highJobs, service.lowJobs, app.GetShutdownWaitGroup())
 	}
 
-	// start cert refresh goroutine
-	service.backgroundCertRefresher(service.shutdownContext, app.GetShutdownWaitGroup())
+	// start service to automatically place and complete orders
+	service.startAutoOrderService(service.shutdownContext, app.GetShutdownWaitGroup())
 
 	return service, nil
 }

@@ -8,11 +8,9 @@ import (
 	"time"
 )
 
-// GetAllValidCurrentOrders fetches each cert's most recent valid order (essentially this
-// is a list of the certificates that are currently being hosted via API key). If a
-// maxTimeRemaining is specified, the list will be filtered to omit orders with more than
-// that duration of valid_to time remaining.
-func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query, maxTimeRemaining *time.Duration) (orders []orders.Order, totalRowCount int, err error) {
+// GetAllValidCurrentOrders fetches each cert's most recent valid order, if the cert currently has a valid order.
+// This is used for a frontend dashboard.
+func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders []orders.Order, totalRowCount int, err error) {
 	// validate and set sort
 	sortField := q.SortField()
 	switch sortField {
@@ -30,14 +28,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query, maxTimeR
 
 	sort := sortField + " " + q.SortDirection()
 
-	// If there is a maxTimeRemaining, omit results that are valid beyond that
-	// maxTimeRemaining.
-	minValidRemainingQuery := ""
-	if maxTimeRemaining != nil {
-		maxExpirationUnix := time.Now().Add(*maxTimeRemaining).Unix()
-		minValidRemainingQuery = fmt.Sprintf("AND ao.valid_to < %d", maxExpirationUnix)
-	}
-
+	// query
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
@@ -94,7 +85,6 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query, maxTimeR
 		ao.certificate_id
 	HAVING
 		MAX(ao.valid_to)
-		%s
 	ORDER BY
 		%s
 	LIMIT
@@ -102,7 +92,6 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query, maxTimeR
 	OFFSET
 		$3
 	`,
-		minValidRemainingQuery,
 		sort)
 
 	// get records
@@ -385,6 +374,53 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 	}
 
 	return orders, totalRows, nil
+}
+
+// GetAllIncompleteOrderIds returns an array of all of the incomplete orders in storage.
+func (store *Storage) GetAllIncompleteOrderIds() (orderIds []int, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	query := `
+	SELECT
+		id
+	FROM
+		acme_orders
+	WHERE
+		status = "pending"
+		OR
+		status = "ready"
+		OR
+		status = "processing"
+	`
+
+	// qeuery db
+	rows, err := store.Db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// read result
+	for rows.Next() {
+		var orderId int
+
+		err = rows.Scan(&orderId)
+		if err != nil {
+			return nil, err
+		}
+
+		orderIds = append(orderIds, orderId)
+	}
+
+	return orderIds, nil
+}
+
+// GetExpiringCertIds returns a slice of certificate ids for certificates that are valid for less
+// than the specified maxTimeRemaining. If a cert does not have a valid order, it is excluded.
+func (store *Storage) GetExpiringCertIds(maxTimeRemaining time.Duration) (certIds []int, err error) {
+
+	return certIds, nil
 }
 
 // GetNewestIncompleteCertOrderId returns the most recent incomplete order for a specified certId,

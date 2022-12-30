@@ -82,7 +82,7 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 	query := pagination_sort.ParseRequestToQuery(r)
 
 	// get from storage
-	orders, totalOrders, err := service.storage.GetAllValidCurrentOrders(query, nil)
+	orders, totalOrders, err := service.storage.GetAllValidCurrentOrders(query)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {
