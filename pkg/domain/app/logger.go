@@ -1,15 +1,15 @@
 package app
 
 import (
-	"log"
 	"os"
 
+	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 // logFile is the path and filename to store the application's log
-const logFile = "./lego-certhub.log.json"
+const logFile = "./log/lego-certhub.log.json"
 
 // defaultLogLevel is the default logging level when not in devMode
 // and the configured level isn't valid or specified
@@ -25,12 +25,16 @@ func (app *Application) initZapLogger() {
 	// log file
 	fileEncoder := zapcore.NewJSONEncoder(config)
 
-	logFile, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	if err != nil {
-		log.Fatalln(err)
+	lumberjack := &lumberjack.Logger{
+		Filename: logFile,
+		MaxSize:  1,   // megabytes
+		MaxAge:   364, // days
+		// MaxBackups: 10,
+		LocalTime: true,
+		Compress:  false,
 	}
 
-	writer := zapcore.AddSync(logFile)
+	writer := zapcore.AddSync(lumberjack)
 
 	// log console
 	config.LineEnding = "\n" // regular line break for console
