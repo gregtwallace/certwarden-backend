@@ -36,11 +36,11 @@ func (handler handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// if there was an error, log it and write error JSON
 	if err != nil {
-		writtenErr, writeErr := handler.output.WriteErrorJSON(w, err)
+		_, writeErr := handler.output.WriteErrorJSON(w, err)
 		if writeErr != nil {
-			handler.logger.Errorf("failed to send error to client for %s: failed to write json (%s)", r.URL.Path, writeErr)
+			handler.logger.Errorf("%s %s: failed to send error to client (failed to write json: %s)", r.Method, r.URL.Path, writeErr)
 		} else {
-			handler.logger.Debugf("error sent to client for %s: %s", r.URL.Path, writtenErr)
+			handler.logger.Debugf("%s %s: error sent to client", r.Method, r.URL.Path)
 		}
 	} else {
 		handler.logger.Debugf("%s %s: handled without error", r.Method, r.URL.Path)
