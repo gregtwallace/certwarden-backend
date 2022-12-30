@@ -84,7 +84,7 @@ func RunLeGoAPI() {
 			ReadTimeout:  readTimeout,
 			WriteTimeout: writeTimeout,
 		}
-		app.logger.Infof("starting http redirect on %s", app.baseUrl())
+		app.logger.Infof("starting http redirect on %s", "http://"+app.config.httpDomainAndPort())
 		app.shutdownWaitgroup.Add(1)
 		go func() {
 			err := redirectSrv.ListenAndServe()
