@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/domain/orders"
@@ -16,16 +17,16 @@ const configFile = "./config.yaml"
 
 // config is the configuration structure for app (and subsequently services)
 type config struct {
-	Hostname           *string                  `yaml:"hostname"`
-	HttpsPort          *int                     `yaml:"https_port"`
-	HttpPort           *int                     `yaml:"http_port"`
-	LogLevel           *string                  `yaml:"log_level"`
-	ServeFrontend      *bool                    `yaml:"serve_frontend"`
-	PrivateKeyName     *string                  `yaml:"private_key_name"`
-	CertificateName    *string                  `yaml:"certificate_name"`
-	DevMode            *bool                    `yaml:"dev_mode"`
-	Orders             orders.Config            `yaml:"orders"`
-	ChallengeProviders challengeProvidersConfig `yaml:"challenge_providers"`
+	Hostname        *string           `yaml:"hostname"`
+	HttpsPort       *int              `yaml:"https_port"`
+	HttpPort        *int              `yaml:"http_port"`
+	LogLevel        *string           `yaml:"log_level"`
+	ServeFrontend   *bool             `yaml:"serve_frontend"`
+	PrivateKeyName  *string           `yaml:"private_key_name"`
+	CertificateName *string           `yaml:"certificate_name"`
+	DevMode         *bool             `yaml:"dev_mode"`
+	Orders          orders.Config     `yaml:"orders"`
+	Challenges      challenges.Config `yaml:"challenge_providers"`
 }
 
 // httpAddress() returns formatted http server address string
@@ -36,11 +37,6 @@ func (c config) httpDomainAndPort() string {
 // httpsAddress() returns formatted https server address string
 func (c config) httpsDomainAndPort() string {
 	return fmt.Sprintf("%s:%d", *c.Hostname, *c.HttpsPort)
-}
-
-type challengeProvidersConfig struct {
-	Http01InternalConfig  http01internal.Config  `yaml:"http_01_internal"`
-	Dns01CloudflareConfig dns01cloudflare.Config `yaml:"dns_01_cloudflare"`
 }
 
 // readConfigFile parses the config yaml file. It also sets default config
@@ -88,7 +84,7 @@ func defaultConfig() (cfg config) {
 			RefreshTimeHour:             new(int),
 			RefreshTimeMinute:           new(int),
 		},
-		ChallengeProviders: challengeProvidersConfig{
+		Challenges: challenges.Config{
 			Http01InternalConfig: http01internal.Config{
 				Enable: new(bool),
 				Port:   new(int),
@@ -123,11 +119,11 @@ func defaultConfig() (cfg config) {
 
 	// challenge providers
 	// http-01-internal
-	*cfg.ChallengeProviders.Http01InternalConfig.Enable = true
-	*cfg.ChallengeProviders.Http01InternalConfig.Port = 4060
+	*cfg.Challenges.Http01InternalConfig.Enable = true
+	*cfg.Challenges.Http01InternalConfig.Port = 4060
 
 	// dns-01-cloudflare
-	*cfg.ChallengeProviders.Dns01CloudflareConfig.Enable = false
+	*cfg.Challenges.Dns01CloudflareConfig.Enable = false
 
 	// end challenge providers
 

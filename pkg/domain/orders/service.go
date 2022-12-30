@@ -18,7 +18,6 @@ var errServiceComponent = errors.New("necessary orders service component is miss
 
 // App interface is for connecting to the main app
 type App interface {
-	GetOrdersConfig() *Config
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 	GetOrderStorage() Storage
@@ -77,11 +76,8 @@ type Service struct {
 }
 
 // NewService creates a new private_key service
-func NewService(app App) (*Service, error) {
+func NewService(app App, cfg *Config) (*Service, error) {
 	service := new(Service)
-
-	// get config
-	config := app.GetOrdersConfig()
 
 	// shutdown context
 	service.shutdownContext = app.GetShutdownContext()
@@ -141,7 +137,7 @@ func NewService(app App) (*Service, error) {
 	}
 
 	// start service to automatically place and complete orders
-	service.startAutoOrderService(config, service.shutdownContext, app.GetShutdownWaitGroup())
+	service.startAutoOrderService(cfg, service.shutdownContext, app.GetShutdownWaitGroup())
 
 	return service, nil
 }

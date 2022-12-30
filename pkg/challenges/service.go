@@ -22,8 +22,6 @@ type App interface {
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
 	GetDevMode() bool
-	GetHttp01InternalConfig() *http01internal.Config
-	GetDns01CloudflareConfig() *dns01cloudflare.Config
 	GetShutdownContext() context.Context
 	GetShutdownWaitGroup() *sync.WaitGroup
 }
@@ -32,6 +30,12 @@ type App interface {
 type providerService interface {
 	Provision(resourceName string, resourceContent string) (err error)
 	Deprovision(resourceName string, resourceContent string) (err error)
+}
+
+// Config holds all of the challenge config
+type Config struct {
+	Http01InternalConfig  http01internal.Config  `yaml:"http_01_internal"`
+	Dns01CloudflareConfig dns01cloudflare.Config `yaml:"dns_01_cloudflare"`
 }
 
 // service struct
@@ -46,7 +50,7 @@ type Service struct {
 }
 
 // NewService creates a new service
-func NewService(app App) (service *Service, err error) {
+func NewService(app App, cfg *Config) (service *Service, err error) {
 	service = new(Service)
 
 	// logger
@@ -69,7 +73,9 @@ func NewService(app App) (service *Service, err error) {
 	}
 
 	// configure dns checker service (if any dns methods enabled)
-	if app.GetDns01CloudflareConfig().Enable != nil && *app.GetDns01CloudflareConfig().Enable {
+	enableDnsChecker := cfg.Dns01CloudflareConfig.Enable != nil && *cfg.Dns01CloudflareConfig.Enable
+
+	if enableDnsChecker {
 		service.dnsChecker, err = dns_checker.NewService(app)
 		if err != nil {
 			return nil, err
@@ -80,7 +86,7 @@ func NewService(app App) (service *Service, err error) {
 	service.providers = make(map[MethodValue]providerService)
 
 	// http-01 internal challenge server
-	http01Internal, err := http01internal.NewService(app, app.GetHttp01InternalConfig())
+	http01Internal, err := http01internal.NewService(app, &cfg.Http01InternalConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +95,7 @@ func NewService(app App) (service *Service, err error) {
 	}
 
 	// dns-01 cloudflare challenge service
-	dns01Cloudflare, err := dns01cloudflare.NewService(app, app.GetDns01CloudflareConfig(), service.dnsChecker)
+	dns01Cloudflare, err := dns01cloudflare.NewService(app, &cfg.Dns01CloudflareConfig, service.dnsChecker)
 	if err != nil {
 		return nil, err
 	}

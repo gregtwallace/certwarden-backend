@@ -249,7 +249,7 @@ func create(ctx context.Context) (*Application, error) {
 	// end acme services
 
 	// challenges
-	app.challenges, err = challenges.NewService(app)
+	app.challenges, err = challenges.NewService(app, &app.config.Challenges)
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +303,7 @@ func create(ctx context.Context) (*Application, error) {
 	}
 
 	// orders service
-	app.orders, err = orders.NewService(app)
+	app.orders, err = orders.NewService(app, &app.config.Orders)
 	if err != nil {
 		return nil, err
 	}
