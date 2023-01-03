@@ -69,6 +69,9 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 	response.Message = "authenticated"
 	response.AccessToken = auth.AccessToken
 	response.SessionClaims = auth.SessionClaims
+
+	service.logger.Infof("user '%s' logged in", auth.SessionClaims.Subject)
+
 	// write auth cookies (part of response)
 	auth.writeCookies(w)
 
