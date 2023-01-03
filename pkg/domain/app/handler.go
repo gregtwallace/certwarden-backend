@@ -42,9 +42,10 @@ func (handler handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			handler.logger.Debugf("%s %s: error sent to client", r.Method, r.URL.Path)
 		}
-	} else {
-		handler.logger.Debugf("%s %s: handled without error", r.Method, r.URL.Path)
 	}
+	// else {
+	// 	handler.logger.Debugf("%s %s: handled without error", r.Method, r.URL.Path)
+	// }
 }
 
 // checkJwt is middleware that checks for a valid jwt
