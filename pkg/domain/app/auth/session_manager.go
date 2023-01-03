@@ -137,6 +137,7 @@ func (service *Service) startCleanerService(ctx context.Context, wg *sync.WaitGr
 			for elementName, session := range service.sessionManager.sessions.Map {
 				if session.(sessionClaims).ExpiresAt.Unix() <= time.Now().Unix() {
 					// if expiration has passed, delete element
+					service.logger.Infof("user '%s' logged out (expired)", session.(sessionClaims).Subject)
 					delete(service.sessionManager.sessions.Map, elementName)
 				}
 			}

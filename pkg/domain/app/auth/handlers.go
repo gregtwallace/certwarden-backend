@@ -156,6 +156,7 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err erro
 				// do return, there was an error with the token received
 				return output.ErrUnauthorized
 			}
+			service.logger.Infof("user '%s' logged out", oldClaims.Subject)
 		} else {
 			service.logger.Info(err)
 			// don't return, keep working
