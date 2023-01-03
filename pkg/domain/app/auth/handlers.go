@@ -152,7 +152,7 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err erro
 			// remove session in manager
 			err = service.sessionManager.close(*oldClaims)
 			if err != nil {
-				service.logger.Error(err)
+				service.logger.Errorf("logout error for '%s': %s", oldClaims.Subject, err)
 				// do return, there was an error with the token received
 				return output.ErrUnauthorized
 			}
