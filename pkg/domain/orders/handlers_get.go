@@ -1,9 +1,11 @@
 package orders
 
 import (
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/storage"
+	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
 
@@ -108,5 +110,59 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
 	}
+	return nil
+}
+
+// DownloadOneOrder returns the pem for a single cert to the client
+func (service *Service) DownloadOneOrder(w http.ResponseWriter, r *http.Request) (err error) {
+	// insecure okay, cert pem is not private
+
+	// get params
+	params := httprouter.ParamsFromContext(r.Context())
+
+	certIdParam := params.ByName("certid")
+	certId, err := strconv.Atoi(certIdParam)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	orderIdParam := params.ByName("orderid")
+	orderId, err := strconv.Atoi(orderIdParam)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// basic check
+	if !validation.IsIdExistingValidRange(certId) {
+		service.logger.Debug(ErrCertIdBad)
+		return output.ErrValidationFailed
+	}
+	if !validation.IsIdExistingValidRange(orderId) {
+		service.logger.Debug(ErrOrderIdBad)
+		return output.ErrValidationFailed
+	}
+
+	// get from storage
+	certName, certPem, err := service.storage.GetOrderPemById(certId, orderId)
+	if err != nil {
+		// special error case for no record found
+		if err == storage.ErrNoRecord {
+			service.logger.Debug(err)
+			return output.ErrNotFound
+		} else {
+			service.logger.Error(err)
+			return output.ErrStorageGeneric
+		}
+	}
+
+	// return pem file to client
+	_, err = service.output.WritePem(w, fmt.Sprintf("%s.cert.pem", certName), certPem)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWritePemFailed
+	}
+
 	return nil
 }

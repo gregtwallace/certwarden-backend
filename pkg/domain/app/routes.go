@@ -63,6 +63,8 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodGet, "/api/v1/orders/currentvalid", app.orders.GetAllValidCurrentOrders)
 	app.makeSecureHandle(http.MethodGet, "/api/v1/certificates/:certid/orders", app.orders.GetCertOrders)
 	app.makeSecureHandle(http.MethodPost, "/api/v1/certificates/:certid/orders", app.orders.NewOrder)
+
+	app.makeSecureHandle(http.MethodGet, "/api/v1/certificates/:certid/orders/:orderid/download", app.orders.DownloadOneOrder)
 	app.makeSecureHandle(http.MethodPost, "/api/v1/certificates/:certid/orders/:orderid", app.orders.FulfillExistingOrder)
 	app.makeSecureHandle(http.MethodPost, "/api/v1/certificates/:certid/orders/:orderid/revoke", app.orders.RevokeOrder)
 
