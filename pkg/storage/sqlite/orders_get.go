@@ -419,6 +419,56 @@ func (store *Storage) GetAllIncompleteOrderIds() (orderIds []int, err error) {
 // GetExpiringCertIds returns a slice of certificate ids for certificates that are valid for less
 // than the specified maxTimeRemaining. If a cert does not have a valid order, it is excluded.
 func (store *Storage) GetExpiringCertIds(maxTimeRemaining time.Duration) (certIds []int, err error) {
+	// query
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	query := `
+		SELECT
+			c.id
+		FROM
+			acme_orders ao
+			LEFT JOIN certificates c on (ao.certificate_id = c.id)
+		WHERE 
+			ao.status = "valid"
+			AND
+			ao.known_revoked = 0
+			AND
+			ao.valid_to > $1
+			AND
+			ao.pem NOT NULL
+			AND
+			ao.certificate_id IS NOT NULL
+		GROUP BY
+			ao.certificate_id
+		HAVING
+			MAX(ao.valid_to)
+			AND ao.valid_to < $2
+		`
+
+	// calculate the max expiration (unix) for the query
+	maxExpirationUnix := time.Now().Add(maxTimeRemaining).Unix()
+
+	// get records
+	rows, err := store.Db.QueryContext(ctx, query,
+		time.Now().Unix(),
+		maxExpirationUnix,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var certId int
+
+		err = rows.Scan(&certId)
+		if err != nil {
+			return nil, err
+		}
+
+		certIds = append(certIds, certId)
+	}
 
 	return certIds, nil
 }
