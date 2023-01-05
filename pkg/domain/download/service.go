@@ -25,7 +25,7 @@ type Storage interface {
 	GetOneKeyByName(name string) (private_keys.Key, error)
 
 	GetOneCertByName(name string) (cert certificates.Certificate, err error)
-	GetCertPemById(certId int) (pem string, err error)
+	GetCertPemById(certId int) (name string, pem string, err error)
 }
 
 // Keys service struct

@@ -51,6 +51,7 @@ func (app *Application) routes() http.Handler {
 	// certificates
 	app.makeSecureHandle(http.MethodGet, "/api/v1/certificates", app.certificates.GetAllCerts)
 	app.makeSecureHandle(http.MethodGet, "/api/v1/certificates/:certid", app.certificates.GetOneCert)
+	app.makeSecureHandle(http.MethodGet, "/api/v1/certificates/:certid/download", app.certificates.DownloadOneCert)
 
 	app.makeSecureHandle(http.MethodPost, "/api/v1/certificates", app.certificates.PostNewCert)
 

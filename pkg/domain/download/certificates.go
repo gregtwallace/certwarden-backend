@@ -109,7 +109,7 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 	}
 
 	// get pem of the most recent valid order for the cert
-	certPem, err = service.storage.GetCertPemById(cert.ID)
+	_, certPem, err = service.storage.GetCertPemById(cert.ID)
 	if err != nil {
 		// special error case for no record found
 		// of note, this indicates the cert exists but there is no

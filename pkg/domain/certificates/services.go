@@ -33,6 +33,7 @@ type Storage interface {
 	GetAllCerts(q pagination_sort.Query) (certs []Certificate, totalRowCount int, err error)
 	GetOneCertById(id int) (cert Certificate, err error)
 	GetOneCertByName(name string) (cert Certificate, err error)
+	GetCertPemById(certId int) (name string, pem string, err error)
 
 	PostNewCert(payload NewPayload) (id int, err error)
 

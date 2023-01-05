@@ -1,6 +1,7 @@
 package certificates
 
 import (
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/validation"
@@ -76,6 +77,37 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) (err 
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
+	}
+
+	return nil
+}
+
+// DownloadOneCert returns the pem for a single cert to the client
+func (service *Service) DownloadOneCert(w http.ResponseWriter, r *http.Request) (err error) {
+	// if not running https, error
+	if !service.https && !service.devMode {
+		return output.ErrUnavailableHttp
+	}
+
+	// get id from param
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// get from storage
+	certName, certPem, err := service.storage.GetCertPemById(id)
+	if err != nil {
+		return err
+	}
+
+	// return pem file to client
+	_, err = service.output.WritePem(w, fmt.Sprintf("%s.cert.pem", certName), certPem)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWritePemFailed
 	}
 
 	return nil
