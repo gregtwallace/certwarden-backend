@@ -16,6 +16,7 @@ type NewPayload struct {
 	AlgorithmValue *string `json:"algorithm_value"`
 	PemContent     *string `json:"pem"`
 	ApiKey         string  `json:"-"`
+	ApiKeyDisabled *bool   `json:"api_key_disabled"`
 	ApiKeyViaUrl   bool    `json:"-"`
 	CreatedAt      int     `json:"-"`
 	UpdatedAt      int     `json:"-"`
@@ -76,6 +77,11 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 		}
 	}
 	// end key add method
+	// api key disabled (set default if not specified)
+	if payload.ApiKeyDisabled == nil {
+		payload.ApiKeyDisabled = new(bool)
+		*payload.ApiKeyDisabled = false
+	}
 	// end validation
 
 	// add additional details to the payload before saving

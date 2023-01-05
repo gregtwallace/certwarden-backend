@@ -34,7 +34,7 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 	// validated prior to this query being assembled!
 	query := fmt.Sprintf(`
 	SELECT
-		id, name, description, algorithm, pem, api_key, api_key_via_url, created_at, updated_at,
+		id, name, description, algorithm, pem, api_key, api_key_disabled, api_key_via_url, created_at, updated_at,
 	
 		count(*) OVER() AS full_count
 	FROM
@@ -69,6 +69,7 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 			&oneKeyDb.algorithmValue,
 			&oneKeyDb.pem,
 			&oneKeyDb.apiKey,
+			&oneKeyDb.apiKeyDisabled,
 			&oneKeyDb.apiKeyViaUrl,
 			&oneKeyDb.createdAt,
 			&oneKeyDb.updatedAt,
@@ -104,7 +105,7 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 
 	query := `
 	SELECT
-		id, name, description, algorithm, pem, api_key, api_key_via_url, created_at, updated_at
+		id, name, description, algorithm, pem, api_key, api_key_disabled, api_key_via_url, created_at, updated_at
 	FROM
 		private_keys
 	WHERE
@@ -123,6 +124,7 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 		&oneKeyDb.algorithmValue,
 		&oneKeyDb.pem,
 		&oneKeyDb.apiKey,
+		&oneKeyDb.apiKeyDisabled,
 		&oneKeyDb.apiKeyViaUrl,
 		&oneKeyDb.createdAt,
 		&oneKeyDb.updatedAt,
@@ -153,7 +155,7 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 
 	query := `
 		SELECT
-			pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_via_url,
+			pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_disabled, pk.api_key_via_url,
 			pk.created_at, pk.updated_at
 		FROM
 		  private_keys pk
@@ -195,6 +197,7 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 			&oneKeyDb.algorithmValue,
 			&oneKeyDb.pem,
 			&oneKeyDb.apiKey,
+			&oneKeyDb.apiKeyDisabled,
 			&oneKeyDb.apiKeyViaUrl,
 			&oneKeyDb.createdAt,
 			&oneKeyDb.updatedAt,

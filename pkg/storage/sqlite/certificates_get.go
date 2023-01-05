@@ -46,13 +46,13 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_via_url,
 		
-		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_via_url,
+		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_disabled, pk.api_key_via_url,
 		pk.created_at, pk.updated_at,
 
 		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
 		aa.created_at, aa.updated_at, aa.kid,
 
-		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_via_url,
+		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_disabled, ak.api_key_via_url,
 		ak.created_at, ak.updated_at,
 
 		count(*) OVER() AS full_count
@@ -107,6 +107,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 			&oneCert.certificateKeyDb.algorithmValue,
 			&oneCert.certificateKeyDb.pem,
 			&oneCert.certificateKeyDb.apiKey,
+			&oneCert.certificateKeyDb.apiKeyDisabled,
 			&oneCert.certificateKeyDb.apiKeyViaUrl,
 			&oneCert.certificateKeyDb.createdAt,
 			&oneCert.certificateKeyDb.updatedAt,
@@ -128,6 +129,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 			&oneCert.certificateAccountDb.accountKeyDb.algorithmValue,
 			&oneCert.certificateAccountDb.accountKeyDb.pem,
 			&oneCert.certificateAccountDb.accountKeyDb.apiKey,
+			&oneCert.certificateAccountDb.accountKeyDb.apiKeyDisabled,
 			&oneCert.certificateAccountDb.accountKeyDb.apiKeyViaUrl,
 			&oneCert.certificateAccountDb.accountKeyDb.createdAt,
 			&oneCert.certificateAccountDb.accountKeyDb.updatedAt,
@@ -166,13 +168,13 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_via_url,
 		
-		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_via_url,
+		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_disabled, pk.api_key_via_url,
 		pk.created_at, pk.updated_at,
 
 		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
 		aa.created_at, aa.updated_at, aa.kid,
 
-		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_via_url,
+		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_disabled, ak.api_key_via_url,
 		ak.created_at, ak.updated_at
 	FROM
 		certificates c
@@ -211,6 +213,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		&oneCert.certificateKeyDb.algorithmValue,
 		&oneCert.certificateKeyDb.pem,
 		&oneCert.certificateKeyDb.apiKey,
+		&oneCert.certificateKeyDb.apiKeyDisabled,
 		&oneCert.certificateKeyDb.apiKeyViaUrl,
 		&oneCert.certificateKeyDb.createdAt,
 		&oneCert.certificateKeyDb.updatedAt,
@@ -232,6 +235,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		&oneCert.certificateAccountDb.accountKeyDb.algorithmValue,
 		&oneCert.certificateAccountDb.accountKeyDb.pem,
 		&oneCert.certificateAccountDb.accountKeyDb.apiKey,
+		&oneCert.certificateAccountDb.accountKeyDb.apiKeyDisabled,
 		&oneCert.certificateAccountDb.accountKeyDb.apiKeyViaUrl,
 		&oneCert.certificateAccountDb.accountKeyDb.createdAt,
 		&oneCert.certificateAccountDb.accountKeyDb.updatedAt,

@@ -47,7 +47,8 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 	SELECT
 		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
 		aa.created_at, aa.updated_at, aa.kid,
-		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_via_url,
+
+		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_disabled, pk.api_key_via_url,
 		pk.created_at, pk.updated_at,
 
 		count(*) OVER() AS full_count
@@ -95,6 +96,7 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 			&oneAccount.accountKeyDb.algorithmValue,
 			&oneAccount.accountKeyDb.pem,
 			&oneAccount.accountKeyDb.apiKey,
+			&oneAccount.accountKeyDb.apiKeyDisabled,
 			&oneAccount.accountKeyDb.apiKeyViaUrl,
 			&oneAccount.accountKeyDb.createdAt,
 			&oneAccount.accountKeyDb.updatedAt,
@@ -133,7 +135,8 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 	SELECT
 		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
 		aa.created_at, aa.updated_at, aa.kid,
-		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_via_url,
+
+		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_disabled, pk.api_key_via_url,
 		pk.created_at, pk.updated_at
 	FROM
 		acme_accounts aa
@@ -163,6 +166,7 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 		&oneAccount.accountKeyDb.algorithmValue,
 		&oneAccount.accountKeyDb.pem,
 		&oneAccount.accountKeyDb.apiKey,
+		&oneAccount.accountKeyDb.apiKeyDisabled,
 		&oneAccount.accountKeyDb.apiKeyViaUrl,
 		&oneAccount.accountKeyDb.createdAt,
 		&oneAccount.accountKeyDb.updatedAt,

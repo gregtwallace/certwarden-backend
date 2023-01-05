@@ -8,5 +8,7 @@ var (
 
 	errApiKeyFromUrlDisallowed = errors.New("apikey found in url but not allowed")
 
+	errApiDisabled = errors.New("download via api is disabled")
+
 	errNoPem = errors.New("pem is blank")
 )

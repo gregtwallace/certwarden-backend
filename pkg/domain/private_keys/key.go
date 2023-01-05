@@ -7,34 +7,37 @@ import (
 
 // Key is a single private key with all data
 type Key struct {
-	ID           int
-	Name         string
-	Description  string
-	Algorithm    key_crypto.Algorithm
-	Pem          string
-	ApiKey       string
-	ApiKeyViaUrl bool
-	CreatedAt    int
-	UpdatedAt    int
+	ID             int
+	Name           string
+	Description    string
+	Algorithm      key_crypto.Algorithm
+	Pem            string
+	ApiKey         string
+	ApiKeyDisabled bool
+	ApiKeyViaUrl   bool
+	CreatedAt      int
+	UpdatedAt      int
 }
 
 // keySummaryResponse is a JSON response containing only
 // fields desired for the summary
 type KeySummaryResponse struct {
-	ID           int                  `json:"id"`
-	Name         string               `json:"name"`
-	Description  string               `json:"description"`
-	Algorithm    key_crypto.Algorithm `json:"algorithm"`
-	ApiKeyViaUrl bool                 `json:"api_key_via_url"`
+	ID             int                  `json:"id"`
+	Name           string               `json:"name"`
+	Description    string               `json:"description"`
+	Algorithm      key_crypto.Algorithm `json:"algorithm"`
+	ApiKeyDisabled bool                 `json:"api_key_disabled"`
+	ApiKeyViaUrl   bool                 `json:"api_key_via_url"`
 }
 
 func (key Key) SummaryResponse() KeySummaryResponse {
 	return KeySummaryResponse{
-		ID:           key.ID,
-		Name:         key.Name,
-		Description:  key.Description,
-		Algorithm:    key.Algorithm,
-		ApiKeyViaUrl: key.ApiKeyViaUrl,
+		ID:             key.ID,
+		Name:           key.Name,
+		Description:    key.Description,
+		Algorithm:      key.Algorithm,
+		ApiKeyDisabled: key.ApiKeyDisabled,
+		ApiKeyViaUrl:   key.ApiKeyViaUrl,
 	}
 }
 

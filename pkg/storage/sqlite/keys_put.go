@@ -18,15 +18,17 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (err erro
 	SET
 		name = case when $1 is null then name else $1 end,
 		description = case when $2 is null then description else $2 end,
-		api_key_via_url = case when $3 is null then api_key_via_url else $3 end,
-		updated_at = $4
+		api_key_disabled = case when $3 is null then description else $3 end,
+		api_key_via_url = case when $4 is null then api_key_via_url else $4 end,
+		updated_at = $5
 	WHERE
-		id = $5
+		id = $6
 	`
 
 	_, err = store.Db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
+		payload.ApiKeyDisabled,
 		payload.ApiKeyViaUrl,
 		payload.UpdatedAt,
 		payload.ID)

@@ -12,8 +12,8 @@ func (store *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err e
 	defer cancel()
 
 	query := `
-	INSERT INTO private_keys (name, description, algorithm, pem, api_key, api_key_via_url, created_at, updated_at)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	INSERT INTO private_keys (name, description, algorithm, pem, api_key, api_key_disabled, api_key_via_url, created_at, updated_at)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	RETURNING id
 	`
 
@@ -24,6 +24,7 @@ func (store *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err e
 		payload.AlgorithmValue,
 		payload.PemContent,
 		payload.ApiKey,
+		payload.ApiKeyDisabled,
 		payload.ApiKeyViaUrl,
 		payload.CreatedAt,
 		payload.UpdatedAt,

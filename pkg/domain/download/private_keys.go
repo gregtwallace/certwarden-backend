@@ -93,6 +93,12 @@ func (service *Service) getKeyPem(keyName string, apiKey string, apiKeyViaUrl bo
 		}
 	}
 
+	// if key is disabled via API, error
+	if key.ApiKeyDisabled {
+		service.logger.Debug(errApiDisabled)
+		return "", output.ErrUnauthorized
+	}
+
 	// if apiKey came from URL, and key does not support this, error
 	if apiKeyViaUrl && !key.ApiKeyViaUrl {
 		service.logger.Debug(errApiKeyFromUrlDisallowed)
