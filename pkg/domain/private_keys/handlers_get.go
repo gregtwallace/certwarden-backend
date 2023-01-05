@@ -1,9 +1,11 @@
 package private_keys
 
 import (
+	"fmt"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
+	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
@@ -76,6 +78,50 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed
+	}
+
+	return nil
+}
+
+// DownloadOneKey returns the pem for a single key to the client
+func (service *Service) DownloadOneKey(w http.ResponseWriter, r *http.Request) (err error) {
+	// if not running https, error
+	if !service.https && !service.devMode {
+		return output.ErrUnavailableHttp
+	}
+
+	// params
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// basic check
+	if !validation.IsIdExistingValidRange(id) {
+		service.logger.Debug(ErrIdBad)
+		return output.ErrValidationFailed
+	}
+
+	// get the key from storage (and validate id)
+	keyName, keyPem, err := service.storage.GetKeyPemById(id)
+	if err != nil {
+		// special error case for no record found
+		if err == storage.ErrNoRecord {
+			service.logger.Debug(err)
+			return output.ErrNotFound
+		} else {
+			service.logger.Error(err)
+			return output.ErrStorageGeneric
+		}
+	}
+
+	// return pem file to client
+	_, err = service.output.WritePem(w, fmt.Sprintf("%s.key.pem", keyName), keyPem)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWritePemFailed
 	}
 
 	return nil

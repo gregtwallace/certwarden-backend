@@ -211,23 +211,25 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 	return availableKeys, nil
 }
 
-// // GetKeyPemById returns the pem for the specified key id
-// func (store *Storage) GetKeyPemById(id int) (pem string, err error) {
-// 	return store.getKeyPem(id, "")
-// }
+// GetKeyPemById returns the name and pem for the specified key id
+func (store *Storage) GetKeyPemById(id int) (name string, pem string, err error) {
+	return store.getKeyPem(id, "")
+}
 
 // GetKeyPemByName returns the pem for the specified key name
 func (store *Storage) GetKeyPemByName(name string) (pem string, err error) {
-	return store.getKeyPem(-1, name)
+	_, pem, err = store.getKeyPem(-1, name)
+	return pem, err
 }
 
 // dbGetOneKey returns a key from the db based on unique id or unique name
-func (store Storage) getKeyPem(id int, name string) (pem string, err error) {
+func (store Storage) getKeyPem(id int, inName string) (outName string, pem string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
 	query := `
 	SELECT
+		name,
 		pem
 	FROM
 		private_keys
@@ -240,18 +242,18 @@ func (store Storage) getKeyPem(id int, name string) (pem string, err error) {
 	// query
 	row := store.Db.QueryRowContext(ctx, query,
 		id,
-		name,
+		inName,
 	)
 
 	// scan
-	err = row.Scan(&pem)
+	err = row.Scan(&outName, &pem)
 	if err != nil {
 		// if no record exists
 		if err == sql.ErrNoRows {
 			err = storage.ErrNoRecord
 		}
-		return "", err
+		return "", "", err
 	}
 
-	return pem, nil
+	return outName, pem, nil
 }
