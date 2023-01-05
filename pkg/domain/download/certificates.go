@@ -2,6 +2,7 @@ package download
 
 import (
 	"encoding/pem"
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 func (service *Service) DownloadCertViaHeader(w http.ResponseWriter, r *http.Request) (err error) {
 	// get name from request
 	params := httprouter.ParamsFromContext(r.Context())
-	keyName := params.ByName("name")
+	certName := params.ByName("name")
 
 	// get apiKey from header
 	apiKey := r.Header.Get("X-API-Key")
@@ -24,13 +25,13 @@ func (service *Service) DownloadCertViaHeader(w http.ResponseWriter, r *http.Req
 	}
 
 	// fetch the cert using the apiKey
-	certPem, _, err := service.getCertPem(keyName, apiKey, true, false)
+	certPem, _, err := service.getCertPem(certName, apiKey, true, false)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, certPem)
+	_, err = service.output.WritePem(w, fmt.Sprintf("%s.cert.pem", certName), certPem)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed
@@ -45,18 +46,18 @@ func (service *Service) DownloadCertViaHeader(w http.ResponseWriter, r *http.Req
 func (service *Service) DownloadCertViaUrl(w http.ResponseWriter, r *http.Request) (err error) {
 	// get cert name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
-	keyName := params.ByName("name")
+	certName := params.ByName("name")
 
 	apiKey := getApiKeyFromParams(params)
 
 	// fetch the cert using the apiKey
-	certPem, _, err := service.getCertPem(keyName, apiKey, true, true)
+	certPem, _, err := service.getCertPem(certName, apiKey, true, true)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, certPem)
+	_, err = service.output.WritePem(w, fmt.Sprintf("%s.cert.pem", certName), certPem)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed

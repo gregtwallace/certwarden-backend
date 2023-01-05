@@ -1,6 +1,7 @@
 package download
 
 import (
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"net/http"
@@ -29,7 +30,7 @@ func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Requ
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, keyPem)
+	_, err = service.output.WritePem(w, fmt.Sprintf("%s.key.pem", keyName), keyPem)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed
@@ -55,7 +56,7 @@ func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, keyPem)
+	_, err = service.output.WritePem(w, fmt.Sprintf("%s.key.pem", keyName), keyPem)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed

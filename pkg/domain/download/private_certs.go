@@ -1,6 +1,7 @@
 package download
 
 import (
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strings"
@@ -8,13 +9,11 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// DownloadPrivateCertViaHeader is the handler to write just a
-// cert's chain to the client, if the proper apiKey is provided via
-// header (standard method)
+// DownloadPrivateCertViaHeader
 func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *http.Request) (err error) {
 	// get cert name
 	params := httprouter.ParamsFromContext(r.Context())
-	keyName := params.ByName("name")
+	certName := params.ByName("name")
 
 	// get apiKey from header
 	apiKey := r.Header.Get("X-API-Key")
@@ -24,13 +23,13 @@ func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *h
 	}
 
 	// fetch the private cert
-	certPem, err := service.getPrivateCertPem(keyName, apiKey, false)
+	certPem, err := service.getPrivateCertPem(certName, apiKey, false)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, certPem)
+	_, err = service.output.WritePem(w, fmt.Sprintf("%s.certkey.pem", certName), certPem)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed
@@ -39,25 +38,22 @@ func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *h
 	return nil
 }
 
-// DownloadPrivateCertViaUrl is the handler to write just a
-// cert's chain to the client, if the proper apiKey is provided via
-// URL (NOT recommended - only implemented to support clients that
-// can't specify the apiKey header)
+// DownloadPrivateCertViaUrl
 func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http.Request) (err error) {
 	// get cert name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
-	keyName := params.ByName("name")
+	certName := params.ByName("name")
 
 	apiKey := getApiKeyFromParams(params)
 
 	// fetch the private cert
-	certPem, err := service.getPrivateCertPem(keyName, apiKey, true)
+	certPem, err := service.getPrivateCertPem(certName, apiKey, true)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, certPem)
+	_, err = service.output.WritePem(w, fmt.Sprintf("%s.certkey.pem", certName), certPem)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed
