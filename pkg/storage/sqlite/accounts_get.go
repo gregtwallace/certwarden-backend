@@ -48,8 +48,8 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
 		aa.created_at, aa.updated_at, aa.kid,
 
-		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_disabled, pk.api_key_via_url,
-		pk.created_at, pk.updated_at,
+		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_new,
+		pk.api_key_disabled, pk.api_key_via_url, pk.created_at, pk.updated_at,
 
 		count(*) OVER() AS full_count
 	FROM
@@ -96,6 +96,7 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 			&oneAccount.accountKeyDb.algorithmValue,
 			&oneAccount.accountKeyDb.pem,
 			&oneAccount.accountKeyDb.apiKey,
+			&oneAccount.accountKeyDb.apiKeyNew,
 			&oneAccount.accountKeyDb.apiKeyDisabled,
 			&oneAccount.accountKeyDb.apiKeyViaUrl,
 			&oneAccount.accountKeyDb.createdAt,
@@ -136,8 +137,8 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
 		aa.created_at, aa.updated_at, aa.kid,
 
-		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_disabled, pk.api_key_via_url,
-		pk.created_at, pk.updated_at
+		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_new, 
+		pk.api_key_disabled, pk.api_key_via_url, pk.created_at, pk.updated_at
 	FROM
 		acme_accounts aa
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
@@ -166,6 +167,7 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 		&oneAccount.accountKeyDb.algorithmValue,
 		&oneAccount.accountKeyDb.pem,
 		&oneAccount.accountKeyDb.apiKey,
+		&oneAccount.accountKeyDb.apiKeyNew,
 		&oneAccount.accountKeyDb.apiKeyDisabled,
 		&oneAccount.accountKeyDb.apiKeyViaUrl,
 		&oneAccount.accountKeyDb.createdAt,

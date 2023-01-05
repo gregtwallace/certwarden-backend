@@ -28,6 +28,8 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodGet, "/api/v1/privatekeys/:id/download", app.keys.DownloadOneKey)
 
 	app.makeSecureHandle(http.MethodPost, "/api/v1/privatekeys", app.keys.PostNewKey)
+	app.makeSecureHandle(http.MethodPost, "/api/v1/privatekeys/:id/apikey", app.keys.StageNewApiKey)
+	app.makeSecureHandle(http.MethodDelete, "/api/v1/privatekeys/:id/apikey", app.keys.RemoveOldApiKey)
 
 	app.makeSecureHandle(http.MethodPut, "/api/v1/privatekeys/:id", app.keys.PutKeyUpdate)
 

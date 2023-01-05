@@ -14,6 +14,7 @@ type keyDb struct {
 	algorithmValue string
 	pem            string
 	apiKey         string
+	apiKeyNew      string
 	apiKeyDisabled bool
 	apiKeyViaUrl   bool
 	createdAt      int
@@ -30,6 +31,7 @@ func (key keyDb) toKey() private_keys.Key {
 		Algorithm:      key_crypto.AlgorithmByStorageValue(key.algorithmValue),
 		Pem:            key.pem,
 		ApiKey:         key.apiKey,
+		ApiKeyNew:      key.apiKeyNew,
 		ApiKeyDisabled: key.apiKeyDisabled,
 		ApiKeyViaUrl:   key.apiKeyViaUrl,
 		CreatedAt:      key.createdAt,

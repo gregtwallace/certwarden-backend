@@ -47,22 +47,22 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 		c.api_key, c.api_key_via_url,
 		
 		/* cert's key */
-		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_disabled, ck.api_key_via_url,
-		ck.created_at, ck.updated_at,
+		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new,
+		ck.api_key_disabled, ck.api_key_via_url, ck.created_at, ck.updated_at,
 
 		/* cert's account */
 		ca.id, ca.name, ca.description, ca.status, ca.email, ca.accepted_tos, ca.is_staging,
 		ca.created_at, ca.updated_at, ca.kid,
 
 		/* cert's account's key */
-		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_disabled, ak.api_key_via_url,
-		ak.created_at, ak.updated_at,
+		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_new,
+		ak.api_key_disabled, ak.api_key_via_url, ak.created_at, ak.updated_at,
 
 		/* finalized key */
 		COALESCE(fk.id, -2), COALESCE(fk.name, 'null'), COALESCE(fk.description, 'null'), 
 		COALESCE(fk.algorithm, 'null'), COALESCE(fk.pem, 'null'), COALESCE(fk.api_key, 'null'), 
-		COALESCE(fk.api_key_disabled, false), COALESCE(fk.api_key_via_url, false),
-		COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2),
+		COALESCE(fk.api_key_new, 'null'), COALESCE(fk.api_key_disabled, false),
+		COALESCE(fk.api_key_via_url, false), COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2),
 		
 		count(*) OVER() AS full_count
 	FROM
@@ -150,6 +150,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			&oneOrder.certificate.certificateKeyDb.algorithmValue,
 			&oneOrder.certificate.certificateKeyDb.pem,
 			&oneOrder.certificate.certificateKeyDb.apiKey,
+			&oneOrder.certificate.certificateKeyDb.apiKeyNew,
 			&oneOrder.certificate.certificateKeyDb.apiKeyDisabled,
 			&oneOrder.certificate.certificateKeyDb.apiKeyViaUrl,
 			&oneOrder.certificate.certificateKeyDb.createdAt,
@@ -172,6 +173,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			&oneOrder.certificate.certificateAccountDb.accountKeyDb.algorithmValue,
 			&oneOrder.certificate.certificateAccountDb.accountKeyDb.pem,
 			&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKey,
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyNew,
 			&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyDisabled,
 			&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyViaUrl,
 			&oneOrder.certificate.certificateAccountDb.accountKeyDb.createdAt,
@@ -183,6 +185,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			&oneOrder.finalizedKey.algorithmValue,
 			&oneOrder.finalizedKey.pem,
 			&oneOrder.finalizedKey.apiKey,
+			&oneOrder.finalizedKey.apiKeyNew,
 			&oneOrder.finalizedKey.apiKeyDisabled,
 			&oneOrder.finalizedKey.apiKeyViaUrl,
 			&oneOrder.finalizedKey.createdAt,
@@ -242,22 +245,22 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 		c.api_key, c.api_key_via_url,
 		
 		/* cert's key */
-		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_disabled, ck.api_key_via_url,
-		ck.created_at, ck.updated_at,
+		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new, ck.api_key_disabled,
+		ck.api_key_via_url,	ck.created_at, ck.updated_at,
 
 		/* cert's account */
 		ca.id, ca.name, ca.description, ca.status, ca.email, ca.accepted_tos, ca.is_staging,
 		ca.created_at, ca.updated_at, ca.kid,
 
 		/* cert's account's key */
-		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_disabled, ak.api_key_via_url,
-		ak.created_at, ak.updated_at,
+		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_new, ak.api_key_disabled,
+		ak.api_key_via_url,	ak.created_at, ak.updated_at,
 
 		/* finalized key */
 		COALESCE(fk.id, -2), COALESCE(fk.name, 'null'), COALESCE(fk.description, 'null'), 
 		COALESCE(fk.algorithm, 'null'), COALESCE(fk.pem, 'null'), COALESCE(fk.api_key, 'null'),
-		COALESCE(fk.api_key_disabled, false), COALESCE(fk.api_key_via_url, false), COALESCE(fk.created_at, -2),
-		COALESCE(fk.updated_at, -2),
+		COALESCE(fk.api_key_new, 'null'), COALESCE(fk.api_key_disabled, false),
+		COALESCE(fk.api_key_via_url, false), COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2),
 
 		count(*) OVER() AS full_count
 	FROM
@@ -332,6 +335,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			&oneOrder.certificate.certificateKeyDb.algorithmValue,
 			&oneOrder.certificate.certificateKeyDb.pem,
 			&oneOrder.certificate.certificateKeyDb.apiKey,
+			&oneOrder.certificate.certificateKeyDb.apiKeyNew,
 			&oneOrder.certificate.certificateKeyDb.apiKeyDisabled,
 			&oneOrder.certificate.certificateKeyDb.apiKeyViaUrl,
 			&oneOrder.certificate.certificateKeyDb.createdAt,
@@ -354,6 +358,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			&oneOrder.certificate.certificateAccountDb.accountKeyDb.algorithmValue,
 			&oneOrder.certificate.certificateAccountDb.accountKeyDb.pem,
 			&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKey,
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyNew,
 			&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyDisabled,
 			&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyViaUrl,
 			&oneOrder.certificate.certificateAccountDb.accountKeyDb.createdAt,
@@ -365,6 +370,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			&oneOrder.finalizedKey.algorithmValue,
 			&oneOrder.finalizedKey.pem,
 			&oneOrder.finalizedKey.apiKey,
+			&oneOrder.finalizedKey.apiKeyNew,
 			&oneOrder.finalizedKey.apiKeyDisabled,
 			&oneOrder.finalizedKey.apiKeyViaUrl,
 			&oneOrder.finalizedKey.createdAt,
@@ -543,22 +549,22 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		c.api_key, c.api_key_via_url,
 		
 		/* cert's key */
-		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_disabled, ck.api_key_via_url,
-		ck.created_at, ck.updated_at,
+		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ak.api_key_new, ck.api_key_disabled,
+		ck.api_key_via_url,	ck.created_at, ck.updated_at,
 
 		/* cert's account */
 		ca.id, ca.name, ca.description, ca.status, ca.email, ca.accepted_tos, ca.is_staging,
 		ca.created_at, ca.updated_at, ca.kid,
 
 		/* cert's account's key */
-		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_disabled, ak.api_key_via_url,
-		ak.created_at, ak.updated_at,
+		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_new, ak.api_key_disabled,
+		ak.api_key_via_url,	ak.created_at, ak.updated_at,
 
 		/* finalized key */
 		COALESCE(fk.id, -2), COALESCE(fk.name, 'null'), COALESCE(fk.description, 'null'), 
 		COALESCE(fk.algorithm, 'null'), COALESCE(fk.pem, 'null'), COALESCE(fk.api_key, 'null'),
-		COALESCE(fk.api_key_disabled, false), COALESCE(fk.api_key_via_url, false), COALESCE(fk.created_at, -2),
-		COALESCE(fk.updated_at, -2)
+		COALESCE(fk.api_key_new, 'null'), COALESCE(fk.api_key_disabled, false), COALESCE(fk.api_key_via_url, false),
+		COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2)
 	FROM
 		acme_orders ao
 		LEFT JOIN certificates c on (ao.certificate_id = c.id)
@@ -615,6 +621,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		&oneOrder.certificate.certificateKeyDb.algorithmValue,
 		&oneOrder.certificate.certificateKeyDb.pem,
 		&oneOrder.certificate.certificateKeyDb.apiKey,
+		&oneOrder.certificate.certificateKeyDb.apiKeyNew,
 		&oneOrder.certificate.certificateKeyDb.apiKeyDisabled,
 		&oneOrder.certificate.certificateKeyDb.apiKeyViaUrl,
 		&oneOrder.certificate.certificateKeyDb.createdAt,
@@ -637,6 +644,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		&oneOrder.certificate.certificateAccountDb.accountKeyDb.algorithmValue,
 		&oneOrder.certificate.certificateAccountDb.accountKeyDb.pem,
 		&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKey,
+		&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyNew,
 		&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyDisabled,
 		&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyViaUrl,
 		&oneOrder.certificate.certificateAccountDb.accountKeyDb.createdAt,
@@ -648,6 +656,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		&oneOrder.finalizedKey.algorithmValue,
 		&oneOrder.finalizedKey.pem,
 		&oneOrder.finalizedKey.apiKey,
+		&oneOrder.finalizedKey.apiKeyNew,
 		&oneOrder.finalizedKey.apiKeyDisabled,
 		&oneOrder.finalizedKey.apiKeyViaUrl,
 		&oneOrder.finalizedKey.createdAt,

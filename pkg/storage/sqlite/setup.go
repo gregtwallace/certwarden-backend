@@ -127,6 +127,7 @@ func (store *Storage) createDBTables() error {
 		algorithm text NOT NULL,
 		pem text NOT NULL UNIQUE,
 		api_key text NOT NULL,
+		api_key_new text NOT NULL,
 		api_key_disabled NOT NULL DEFAULT 0 CHECK(api_key_via_url IN (0,1)),
 		api_key_via_url integer NOT NULL DEFAULT 0 CHECK(api_key_via_url IN (0,1)),
 		created_at integer NOT NULL,

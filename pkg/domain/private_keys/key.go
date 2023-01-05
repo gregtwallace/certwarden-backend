@@ -13,6 +13,7 @@ type Key struct {
 	Algorithm      key_crypto.Algorithm
 	Pem            string
 	ApiKey         string
+	ApiKeyNew      string
 	ApiKeyDisabled bool
 	ApiKeyViaUrl   bool
 	CreatedAt      int
@@ -45,7 +46,8 @@ func (key Key) SummaryResponse() KeySummaryResponse {
 // fields that can be returned as JSON
 type keyDetailedResponse struct {
 	KeySummaryResponse
-	ApiKey    string `json:"api_key,omitempty"`
+	ApiKey    string `json:"api_key"`
+	ApiKeyNew string `json:"api_key_new,omitempty"`
 	CreatedAt int    `json:"created_at"`
 	UpdatedAt int    `json:"updated_at"`
 	// exclude PEM
@@ -54,14 +56,20 @@ type keyDetailedResponse struct {
 func (key Key) detailedResponse(withSensitive bool) keyDetailedResponse {
 	// option to redact sensitive info
 	apiKey := key.ApiKey
+	apiKeyNew := key.ApiKeyNew
 	if !withSensitive {
 		apiKey = "[redacted]"
+		// redact new key, if it exists
+		if apiKeyNew != "" {
+			apiKeyNew = "[redacted]"
+		}
 	}
 
 	return keyDetailedResponse{
 		KeySummaryResponse: key.SummaryResponse(),
 
 		ApiKey:    apiKey,
+		ApiKeyNew: apiKeyNew,
 		CreatedAt: key.CreatedAt,
 		UpdatedAt: key.UpdatedAt,
 	}

@@ -27,7 +27,11 @@ type Storage interface {
 	GetKeyPemById(id int) (name string, pem string, err error)
 
 	PostNewKey(NewPayload) (keyId int, err error)
+
 	PutKeyUpdate(UpdatePayload) error
+	PutKeyApiKey(keyId int, apiKey string, updateTimeUnix int) (err error)
+	PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUnix int) error
+
 	DeleteKey(int) error
 
 	GetAvailableKeys() ([]Key, error)

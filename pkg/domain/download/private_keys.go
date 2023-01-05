@@ -105,8 +105,8 @@ func (service *Service) getKeyPem(keyName string, apiKey string, apiKeyViaUrl bo
 		return "", output.ErrUnauthorized
 	}
 
-	// verify apikey matches private key's apiKey
-	if apiKey != key.ApiKey {
+	// verify apikey matches private key's apiKey (new or old)
+	if (apiKey != key.ApiKey) && (apiKey != key.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
 		return "", output.ErrUnauthorized
 	}
