@@ -175,6 +175,13 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 // unauthorized parties from checking what routes exist. This is definitely overkill since
 // the software is open source.
 func (app *Application) notFoundHandler(w http.ResponseWriter, r *http.Request) (err error) {
+	// if OPTIONS, return no content
+	// otherwise, preflight errors occur for bad routes (see: https://stackoverflow.com/questions/52047548/response-for-preflight-does-not-have-http-ok-status-in-angular)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return nil
+	}
+
 	// default error 401
 	outError := output.ErrUnauthorized
 
@@ -183,6 +190,7 @@ func (app *Application) notFoundHandler(w http.ResponseWriter, r *http.Request) 
 		outError = output.ErrNotFound
 	}
 
+	// return error
 	_, err = app.output.WriteErrorJSON(w, outError)
 	if err != nil {
 		app.logger.Error(err)

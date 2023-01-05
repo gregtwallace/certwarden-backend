@@ -8,6 +8,8 @@ import (
 // by default, these are always allowed
 var defaultHostnames = []string{"localhost", "127.0.0.1"}
 
+// enableCORS applies CORS to an http.Handler and is intended to
+// wrap the router
 func (app *Application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// generic default origin if origin isn't found in list (will be rejected)
@@ -32,7 +34,7 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 		w.Header().Add("Access-Control-Allow-Headers", "authorization, content-type, x-no-retry")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		w.Header().Add("Access-Control-Allow-Methods", "PUT, DELETE")
+		w.Header().Add("Access-Control-Allow-Methods", "DELETE, GET, OPTIONS, POST, PUT")
 
 		// server to client headers
 		w.Header().Add("Access-Control-Expose-Headers", "content-disposition, content-type")

@@ -98,6 +98,7 @@ func (app *Application) routes() http.Handler {
 
 	// invalid route
 	app.router.NotFound = app.makeHandler(app.notFoundHandler)
+	app.router.MethodNotAllowed = app.makeHandler(app.notFoundHandler)
 
 	return app.enableCORS(app.router)
 }
