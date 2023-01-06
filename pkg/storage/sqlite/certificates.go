@@ -24,6 +24,7 @@ type certificateDb struct {
 	createdAt            int
 	updatedAt            int
 	apiKey               string
+	apiKeyNew            string
 	apiKeyViaUrl         bool
 }
 
@@ -45,6 +46,7 @@ func (cert certificateDb) toCertificate(store *Storage) certificates.Certificate
 		CreatedAt:          cert.createdAt,
 		UpdatedAt:          cert.updatedAt,
 		ApiKey:             cert.apiKey,
+		ApiKeyNew:          cert.apiKeyNew,
 		ApiKeyViaUrl:       cert.apiKeyViaUrl,
 	}
 }

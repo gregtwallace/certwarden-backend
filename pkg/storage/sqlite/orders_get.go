@@ -44,7 +44,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
-		c.api_key, c.api_key_via_url,
+		c.api_key, c.api_key_new, c.api_key_via_url,
 		
 		/* cert's key */
 		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new,
@@ -142,6 +142,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			&oneOrder.certificate.createdAt,
 			&oneOrder.certificate.updatedAt,
 			&oneOrder.certificate.apiKey,
+			&oneOrder.certificate.apiKeyNew,
 			&oneOrder.certificate.apiKeyViaUrl,
 
 			&oneOrder.certificate.certificateKeyDb.id,
@@ -242,7 +243,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
-		c.api_key, c.api_key_via_url,
+		c.api_key, c.api_key_new, c.api_key_via_url,
 		
 		/* cert's key */
 		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new, ck.api_key_disabled,
@@ -327,6 +328,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			&oneOrder.certificate.createdAt,
 			&oneOrder.certificate.updatedAt,
 			&oneOrder.certificate.apiKey,
+			&oneOrder.certificate.apiKeyNew,
 			&oneOrder.certificate.apiKeyViaUrl,
 
 			&oneOrder.certificate.certificateKeyDb.id,
@@ -546,7 +548,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
-		c.api_key, c.api_key_via_url,
+		c.api_key, c.api_key_new, c.api_key_via_url,
 		
 		/* cert's key */
 		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ak.api_key_new, ck.api_key_disabled,
@@ -613,6 +615,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		&oneOrder.certificate.createdAt,
 		&oneOrder.certificate.updatedAt,
 		&oneOrder.certificate.apiKey,
+		&oneOrder.certificate.apiKeyNew,
 		&oneOrder.certificate.apiKeyViaUrl,
 
 		&oneOrder.certificate.certificateKeyDb.id,

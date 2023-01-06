@@ -82,3 +82,61 @@ func (store *Storage) UpdateCertUpdatedTime(certId int) (err error) {
 
 	return nil
 }
+
+// PutCertNewApiKey sets a cert's new api key and updates the updated at time
+func (store *Storage) PutCertNewApiKey(certId int, newApiKey string, updateTimeUnix int) (err error) {
+	// database action
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		certificates
+	SET
+		api_key_new = $1,
+		updated_at = $2
+	WHERE
+		id = $3
+	`
+
+	_, err = store.Db.ExecContext(ctx, query,
+		newApiKey,
+		updateTimeUnix,
+		certId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// PutCertApiKey sets a cert's api key and updates the updated at time
+func (store *Storage) PutCertApiKey(certId int, apiKey string, updateTimeUnix int) (err error) {
+	// database action
+	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		certificates
+	SET
+		api_key = $1,
+		updated_at = $2
+	WHERE
+		id = $3
+	`
+
+	_, err = store.Db.ExecContext(ctx, query,
+		apiKey,
+		updateTimeUnix,
+		certId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

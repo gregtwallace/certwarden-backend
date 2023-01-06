@@ -2,11 +2,15 @@ package certificates
 
 import (
 	"encoding/json"
+	"errors"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/randomness"
 	"net/http"
+	"strconv"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 // NewPayload is the struct for creating a new certificate
@@ -122,6 +126,59 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 		Status:  http.StatusCreated,
 		Message: "created",
 		ID:      id,
+	}
+
+	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrWriteJsonFailed
+	}
+
+	return nil
+}
+
+// StageNewApiKey generates a new API key and places it in the cert api_key_new
+func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) (err error) {
+	// get id param
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
+	certId, err := strconv.Atoi(idParam)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// validation
+	// get cert (validate exists)
+	cert, err := service.GetCertificate(certId)
+	if err != nil {
+		return err
+	}
+
+	// verify new api key is empty
+	if cert.ApiKeyNew != "" {
+		service.logger.Debug(errors.New("new api key already exists"))
+		return output.ErrValidationFailed
+	}
+	// validation -- end
+
+	// generate new api key
+	newApiKey, err := randomness.GenerateApiKey()
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// update storage
+	err = service.storage.PutCertNewApiKey(certId, newApiKey, int(time.Now().Unix()))
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+
+	// return response to client
+	response := output.JsonResponse{
+		Status:  http.StatusCreated,
+		Message: "new api key created", // TODO?
 	}
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")

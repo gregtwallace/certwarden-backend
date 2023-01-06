@@ -38,6 +38,8 @@ type Storage interface {
 	PostNewCert(payload NewPayload) (id int, err error)
 
 	PutDetailsCert(payload DetailsUpdatePayload) (err error)
+	PutCertApiKey(certId int, apiKey string, updateTimeUnix int) (err error)
+	PutCertNewApiKey(certId int, newApiKey string, updateTimeUnix int) (err error)
 
 	DeleteCert(id int) (err error)
 }

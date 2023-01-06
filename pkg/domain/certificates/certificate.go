@@ -25,6 +25,7 @@ type Certificate struct {
 	CreatedAt          int
 	UpdatedAt          int
 	ApiKey             string
+	ApiKeyNew          string
 	ApiKeyViaUrl       bool
 }
 
@@ -86,13 +87,19 @@ type certificateDetailedResponse struct {
 	CreatedAt          int    `json:"created_at"`
 	UpdatedAt          int    `json:"updated_at"`
 	ApiKey             string `json:"api_key"`
+	ApiKeyNew          string `json:"api_key_new,omitempty"`
 }
 
 func (cert Certificate) detailedResponse(withSensitive bool) certificateDetailedResponse {
 	// option to redact sensitive info
 	apiKey := cert.ApiKey
+	apiKeyNew := cert.ApiKeyNew
 	if !withSensitive {
 		apiKey = "[redacted]"
+		// redact if not empty
+		if apiKeyNew != "" {
+			apiKeyNew = "[redacted]"
+		}
 	}
 
 	return certificateDetailedResponse{
@@ -105,6 +112,7 @@ func (cert Certificate) detailedResponse(withSensitive bool) certificateDetailed
 		CreatedAt:                  cert.CreatedAt,
 		UpdatedAt:                  cert.UpdatedAt,
 		ApiKey:                     apiKey,
+		ApiKeyNew:                  apiKeyNew,
 	}
 }
 

@@ -102,8 +102,8 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 		return "", "", output.ErrUnauthorized
 	}
 
-	// verify apikey matches cert
-	if apiKey != cert.ApiKey {
+	// verify apikey matches cert apikey (new or old)
+	if (apiKey != cert.ApiKey) && (apiKey != cert.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
 		return "", "", output.ErrUnauthorized
 	}
