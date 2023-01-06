@@ -61,7 +61,7 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err e
 	return nil
 }
 
-// RemoveOldApiKey generates a key's api_key, replaces it with the key's
+// RemoveOldApiKey discards a key's api_key, replaces it with the key's
 // api_key_new, and then blanks api_key_new
 func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) (err error) {
 	// get id param
