@@ -441,10 +441,9 @@ func (store *Storage) GetExpiringCertIds(maxTimeRemaining time.Duration) (certId
 
 	query := `
 		SELECT
-			c.id
+			ao.certificate_id
 		FROM
 			acme_orders ao
-			LEFT JOIN certificates c on (ao.certificate_id = c.id)
 		WHERE 
 			ao.status = "valid"
 			AND
@@ -459,7 +458,8 @@ func (store *Storage) GetExpiringCertIds(maxTimeRemaining time.Duration) (certId
 			ao.certificate_id
 		HAVING
 			MAX(ao.valid_to)
-			AND ao.valid_to < $2
+			AND
+			ao.valid_to < $2
 		`
 
 	// calculate the max expiration (unix) for the query

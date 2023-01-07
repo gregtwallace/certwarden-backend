@@ -110,7 +110,7 @@ func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration)
 	}
 
 	// address each expiring cert
-	for certId := range expiringCertIds {
+	for _, certId := range expiringCertIds {
 		// check for an existing incomplete order
 		orderId, err := service.storage.GetNewestIncompleteCertOrderId(certId)
 
