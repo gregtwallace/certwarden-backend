@@ -1,6 +1,6 @@
 # Host and Ports for API Server
-# Either http or https will start depending on if valid private_key and
-# certificate names are specified below. Otherwise app is started with http
+# Https will start if there is a valid private_key and certificate
+# pair specified below. If not, http starts.
 # WARNING: You should obtain a valid certificate immediately to avoid loss
 # of data confidentiality.
 # Additionally, key and certificate downloads via the API key will be disabled
@@ -8,6 +8,11 @@
 hostname: "localhost"
 https_port: 4055
 http_port: 4050
+
+# enable http redirect - if this is enabled, when server is running
+# https it will also start a server on the http port that will redirect
+# the client to https
+enable_http_redirect: false
 
 # Server logging level (valid levels are: debug, info, warn, error, dpanic,
 # panic, and fatal)

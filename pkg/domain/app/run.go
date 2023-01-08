@@ -75,25 +75,27 @@ func RunLeGoAPI() {
 		srv.TLSConfig = tlsConf
 
 		// configure and launch http redirect server
-		redirectSrv = &http.Server{
-			Addr: app.config.httpDomainAndPort(),
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				http.Redirect(w, r, "https://"+app.config.httpsDomainAndPort()+r.RequestURI, http.StatusTemporaryRedirect)
-			}),
-			IdleTimeout:  1 * time.Minute,
-			ReadTimeout:  readTimeout,
-			WriteTimeout: writeTimeout,
-		}
-		app.logger.Infof("starting http redirect on %s", "http://"+app.config.httpDomainAndPort())
-		app.shutdownWaitgroup.Add(1)
-		go func() {
-			err := redirectSrv.ListenAndServe()
-			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				app.logger.Panic(err)
+		if *app.config.EnableHttpRedirect {
+			redirectSrv = &http.Server{
+				Addr: app.config.httpDomainAndPort(),
+				Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					http.Redirect(w, r, "https://"+app.config.httpsDomainAndPort()+r.RequestURI, http.StatusTemporaryRedirect)
+				}),
+				IdleTimeout:  1 * time.Minute,
+				ReadTimeout:  readTimeout,
+				WriteTimeout: writeTimeout,
 			}
-			app.logger.Info("http redirect server shutdown complete")
-			app.shutdownWaitgroup.Done()
-		}()
+			app.logger.Infof("starting http redirect on %s", "http://"+app.config.httpDomainAndPort())
+			app.shutdownWaitgroup.Add(1)
+			go func() {
+				err := redirectSrv.ListenAndServe()
+				if err != nil && !errors.Is(err, http.ErrServerClosed) {
+					app.logger.Panic(err)
+				}
+				app.logger.Info("http redirect server shutdown complete")
+				app.shutdownWaitgroup.Done()
+			}()
+		}
 
 		// launch https
 		app.logger.Infof("starting lego-certhub (https) on %s", app.baseUrl())
@@ -140,7 +142,7 @@ func RunLeGoAPI() {
 		}
 	}()
 
-	if app.httpsCert != nil {
+	if app.httpsCert != nil && *app.config.EnableHttpRedirect {
 		go func() {
 			ctx, cancel := context.WithTimeout(context.Background(), maxShutdownTime)
 			defer cancel()

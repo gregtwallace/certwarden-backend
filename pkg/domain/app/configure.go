@@ -17,16 +17,17 @@ const configFile = "./config.yaml"
 
 // config is the configuration structure for app (and subsequently services)
 type config struct {
-	Hostname        *string           `yaml:"hostname"`
-	HttpsPort       *int              `yaml:"https_port"`
-	HttpPort        *int              `yaml:"http_port"`
-	LogLevel        *string           `yaml:"log_level"`
-	ServeFrontend   *bool             `yaml:"serve_frontend"`
-	PrivateKeyName  *string           `yaml:"private_key_name"`
-	CertificateName *string           `yaml:"certificate_name"`
-	DevMode         *bool             `yaml:"dev_mode"`
-	Orders          orders.Config     `yaml:"orders"`
-	Challenges      challenges.Config `yaml:"challenge_providers"`
+	Hostname           *string           `yaml:"hostname"`
+	HttpsPort          *int              `yaml:"https_port"`
+	HttpPort           *int              `yaml:"http_port"`
+	EnableHttpRedirect *bool             `yaml:"enable_http_redirect"`
+	LogLevel           *string           `yaml:"log_level"`
+	ServeFrontend      *bool             `yaml:"serve_frontend"`
+	PrivateKeyName     *string           `yaml:"private_key_name"`
+	CertificateName    *string           `yaml:"certificate_name"`
+	DevMode            *bool             `yaml:"dev_mode"`
+	Orders             orders.Config     `yaml:"orders"`
+	Challenges         challenges.Config `yaml:"challenge_providers"`
 }
 
 // httpAddress() returns formatted http server address string
@@ -70,14 +71,15 @@ func readConfigFile() (cfg config) {
 // config.default.yaml should be updated if this func is updated
 func defaultConfig() (cfg config) {
 	cfg = config{
-		Hostname:        new(string),
-		LogLevel:        new(string),
-		ServeFrontend:   new(bool),
-		HttpsPort:       new(int),
-		HttpPort:        new(int),
-		PrivateKeyName:  new(string),
-		CertificateName: new(string),
-		DevMode:         new(bool),
+		Hostname:           new(string),
+		HttpsPort:          new(int),
+		HttpPort:           new(int),
+		EnableHttpRedirect: new(bool),
+		LogLevel:           new(string),
+		ServeFrontend:      new(bool),
+		PrivateKeyName:     new(string),
+		CertificateName:    new(string),
+		DevMode:            new(bool),
 		Orders: orders.Config{
 			AutomaticOrderingEnable:     new(bool),
 			ValidRemainingDaysThreshold: new(int),
@@ -100,6 +102,8 @@ func defaultConfig() (cfg config) {
 	*cfg.Hostname = "localhost"
 	*cfg.HttpsPort = 4055
 	*cfg.HttpPort = 4050
+
+	*cfg.EnableHttpRedirect = false
 
 	*cfg.LogLevel = defaultLogLevel.String()
 	*cfg.ServeFrontend = true
