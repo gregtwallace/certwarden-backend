@@ -149,7 +149,7 @@ fulfillLoop:
 			}
 
 			// finalize the order
-			acmeOrder, err = acmeService.FinalizeOrder(order.Finalize, csr, key)
+			acmeOrder, err = acmeService.FinalizeOrder(acmeOrder.Finalize, csr, key)
 			if err != nil {
 				service.logger.Error(err)
 				return // done, failed
