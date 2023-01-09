@@ -2,11 +2,11 @@ package dns_checker
 
 import "net"
 
-// dnsIPPair contains a primary and secondary DNS server for
+// DnsServiceIPPair contains a primary and secondary DNS server for
 // a given DNS service
-type dnsServiceIPPair struct {
-	primary   string
-	secondary string
+type DnsServiceIPPair struct {
+	Primary   string `yaml:"primary_ip"`
+	Secondary string `yaml:"secondary_ip"`
 }
 
 // dnsResolverPair contains the net.Resolver pair for a specific DNS service
@@ -26,14 +26,15 @@ func (rPair dnsResolverPair) checkDnsRecord(fqdn string, recordValue string, rec
 		return exists, nil
 	}
 
-	// if primary errored, try secondary
-	exists, err = checkDnsRecord(fqdn, recordValue, recordType, rPair.secondary)
-	// check for secondary error
-	if err != nil {
-		// return error
-		return false, err
+	// if primary errored, try secondary (if there is one)
+	if rPair.secondary != nil {
+		exists, err = checkDnsRecord(fqdn, recordValue, recordType, rPair.secondary)
+		// if NO error, return exists
+		if err == nil {
+			return exists, nil
+		}
 	}
 
-	// return if no error
-	return exists, nil
+	// return false/error (neither attempt found the record)
+	return false, err
 }

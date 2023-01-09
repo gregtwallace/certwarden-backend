@@ -6,6 +6,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"time"
 )
 
 // thresholds to decide if checking succeeded for not.
@@ -102,11 +103,20 @@ func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue strin
 func checkDnsRecord(fqdn string, recordValue string, recordType dnsRecordType, r *net.Resolver) (exists bool, err error) {
 	var values []string
 
+	// nil check
+	if r == nil {
+		return false, errors.New("can't check record, resolver is nil")
+	}
+
+	// timeout context
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutSeconds*time.Second)
+	defer cancel()
+
 	// run appropriate query function
 	switch recordType {
 	// TXT records
 	case txtRecord:
-		values, err = r.LookupTXT(context.Background(), fqdn)
+		values, err = r.LookupTXT(ctx, fqdn)
 
 	// any other (unsupported)
 	default:

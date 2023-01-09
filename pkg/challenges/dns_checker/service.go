@@ -13,6 +13,11 @@ type App interface {
 	GetLogger() *zap.SugaredLogger
 }
 
+// Config is used to configure the service
+type Config struct {
+	DnsServices []DnsServiceIPPair `yaml:"dns_services"`
+}
+
 // service struct
 type Service struct {
 	logger       *zap.SugaredLogger
@@ -20,7 +25,7 @@ type Service struct {
 }
 
 // NewService creates a new service
-func NewService(app App) (service *Service, err error) {
+func NewService(app App, cfg Config) (service *Service, err error) {
 	service = new(Service)
 
 	// logger
@@ -29,28 +34,11 @@ func NewService(app App) (service *Service, err error) {
 		return nil, errServiceComponent
 	}
 
-	// Set up dns IP pairs
-	// TODO: Make dynamic in config
-	dnsServices := []dnsServiceIPPair{
-		// Cloudflare
-		{
-			primary:   "1.1.1.1",
-			secondary: "1.0.0.1",
-		},
-		// Quad9
-		{
-			primary:   "9.9.9.9",
-			secondary: "149.112.112.112",
-		},
-		// Google
-		{
-			primary:   "8.8.8.8",
-			secondary: "4.4.4.4",
-		},
-	}
-
 	// configure resolvers
-	service.dnsResolvers = makeResolvers(dnsServices)
+	service.dnsResolvers, err = makeResolvers(cfg.DnsServices)
+	if err != nil {
+		return nil, err
+	}
 
 	return service, nil
 }

@@ -5,7 +5,7 @@
 # of data confidentiality.
 # Additionally, key and certificate downloads via the API key will be disabled
 # if the server is running as http.
-hostname: "localhost"
+hostname: 'localhost'
 https_port: 4055
 http_port: 4050
 
@@ -16,7 +16,7 @@ enable_http_redirect: false
 
 # Server logging level (valid levels are: debug, info, warn, error, dpanic,
 # panic, and fatal)
-log_level: "info"
+log_level: 'info'
 
 # Should the server also host the frontend?
 serve_frontend: true
@@ -44,23 +44,32 @@ orders:
   refresh_time_minute: 12
 
 # Challenge Providers
-challenge_providers:
-  # http-01 internal server
-  http_01_internal:
-    enable: true
-    # port to run the http challenge server on
-    port: 4060
-  dns_01_cloudflare:
-    enable: false
-    accounts:
-      - email: user@example.com
-        global_api_key: 12345abcde
-    tokens:
-      - api_token: 123abc
-        zone_names: 
-          - example.com
-          - example1.com
-          - example2.com
-      - api_token: 345def
-        zone_names:
-          - example4.com
+challenges:
+  dns_checker:
+    dns_services:
+      - primary_ip: 1.1.1.1
+        secondary_ip: 1.0.0.1
+      - primary_ip: 9.9.9.9
+        secondary_ip: 149.112.112.112
+      - primary_ip: 8.8.8.8
+        secondary_ip: 8.8.4.4
+  providers:
+    # http-01 internal server
+    http_01_internal:
+      enable: true
+      # port to run the http challenge server on
+      port: 4060
+    dns_01_cloudflare:
+      enable: false
+      accounts:
+        - email: user@example.com
+          global_api_key: 12345abcde
+      tokens:
+        - api_token: 123abc
+          zone_names:
+            - example.com
+            - example1.com
+            - example2.com
+        - api_token: 345def
+          zone_names:
+            - example4.com

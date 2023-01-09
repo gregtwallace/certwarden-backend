@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"legocerthub-backend/pkg/challenges"
+	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/domain/orders"
@@ -27,7 +28,7 @@ type config struct {
 	CertificateName    *string           `yaml:"certificate_name"`
 	DevMode            *bool             `yaml:"dev_mode"`
 	Orders             orders.Config     `yaml:"orders"`
-	Challenges         challenges.Config `yaml:"challenge_providers"`
+	Challenges         challenges.Config `yaml:"challenges"`
 }
 
 // httpAddress() returns formatted http server address string
@@ -87,12 +88,15 @@ func defaultConfig() (cfg config) {
 			RefreshTimeMinute:           new(int),
 		},
 		Challenges: challenges.Config{
-			Http01InternalConfig: http01internal.Config{
-				Enable: new(bool),
-				Port:   new(int),
-			},
-			Dns01CloudflareConfig: dns01cloudflare.Config{
-				Enable: new(bool),
+			DnsCheckerConfig: dns_checker.Config{},
+			ProviderConfigs: challenges.ConfigProviders{
+				Http01InternalConfig: http01internal.Config{
+					Enable: new(bool),
+					Port:   new(int),
+				},
+				Dns01CloudflareConfig: dns01cloudflare.Config{
+					Enable: new(bool),
+				},
 			},
 		},
 	}
@@ -121,13 +125,32 @@ func defaultConfig() (cfg config) {
 	*cfg.Orders.RefreshTimeHour = 3
 	*cfg.Orders.RefreshTimeMinute = 12
 
+	// challenge dns checker services
+	cfg.Challenges.DnsCheckerConfig.DnsServices = []dns_checker.DnsServiceIPPair{
+		// Cloudflare
+		{
+			Primary:   "1.1.1.1",
+			Secondary: "1.0.0.1",
+		},
+		// Quad9
+		{
+			Primary:   "9.9.9.9",
+			Secondary: "149.112.112.112",
+		},
+		// Google
+		{
+			Primary:   "8.8.8.8",
+			Secondary: "4.4.4.4",
+		},
+	}
+
 	// challenge providers
 	// http-01-internal
-	*cfg.Challenges.Http01InternalConfig.Enable = true
-	*cfg.Challenges.Http01InternalConfig.Port = 4060
+	*cfg.Challenges.ProviderConfigs.Http01InternalConfig.Enable = true
+	*cfg.Challenges.ProviderConfigs.Http01InternalConfig.Port = 4060
 
 	// dns-01-cloudflare
-	*cfg.Challenges.Dns01CloudflareConfig.Enable = false
+	*cfg.Challenges.ProviderConfigs.Dns01CloudflareConfig.Enable = false
 
 	// end challenge providers
 
