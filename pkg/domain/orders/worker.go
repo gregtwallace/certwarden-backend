@@ -64,7 +64,7 @@ func (service *Service) doOrderJob(job orderJob) {
 	}(job.orderId, service)
 
 	// fetch the relevant order
-	order, err := service.storage.GetOneOrder(job.orderId)
+	orderDb, err := service.storage.GetOneOrder(job.orderId)
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed
@@ -76,17 +76,17 @@ func (service *Service) doOrderJob(job orderJob) {
 		if err != nil {
 			service.logger.Error(err)
 		}
-	}(order.Certificate.ID)
+	}(orderDb.Certificate.ID)
 
 	// get account key
-	key, err := order.Certificate.CertificateAccount.AcmeAccountKey()
+	key, err := orderDb.Certificate.CertificateAccount.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed
 	}
 
 	// make cert CSR
-	csr, err := order.Certificate.MakeCsrDer()
+	csr, err := orderDb.Certificate.MakeCsrDer()
 	if err != nil {
 		service.logger.Error(err)
 		return // done, failed
@@ -97,7 +97,7 @@ func (service *Service) doOrderJob(job orderJob) {
 
 	// acmeService to avoid repeated isStaging logic
 	var acmeService *acme.Service
-	if order.Certificate.CertificateAccount.IsStaging {
+	if orderDb.Certificate.CertificateAccount.IsStaging {
 		acmeService = service.acmeStaging
 	} else {
 		acmeService = service.acmeProd
@@ -108,7 +108,7 @@ func (service *Service) doOrderJob(job orderJob) {
 fulfillLoop:
 	for i := 1; i <= maxTries; i++ {
 		// Get the order (for most recent Order object and Status)
-		acmeOrder, err = acmeService.GetOrder(order.Location, key)
+		acmeOrder, err = acmeService.GetOrder(orderDb.Location, key)
 		if err != nil {
 			// if ACME returned 404, the order object is now invalid
 			// assume the ACME server deleted it and update accordingly
@@ -126,7 +126,7 @@ fulfillLoop:
 		switch acmeOrder.Status {
 		case "pending": // needs to be authed
 			var authStatus string
-			authStatus, err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, order.Certificate.ChallengeMethod, key, order.Certificate.CertificateAccount.IsStaging)
+			authStatus, err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, orderDb.Certificate.ChallengeMethod, key, orderDb.Certificate.CertificateAccount.IsStaging)
 			if err != nil {
 				service.logger.Error(err)
 				return // done, failed
@@ -142,7 +142,7 @@ fulfillLoop:
 
 		case "ready": // needs to be finalized
 			// save finalized_key_id in storage
-			err = service.storage.UpdateFinalizedKey(order.ID, order.Certificate.CertificateKey.ID)
+			err = service.storage.UpdateFinalizedKey(orderDb.ID, orderDb.Certificate.CertificateKey.ID)
 			if err != nil {
 				service.logger.Error(err)
 				return // done, failed
@@ -174,7 +174,7 @@ fulfillLoop:
 				}
 
 				// process pem and save to storage
-				err = service.savePemChain(order.ID, certPemChain)
+				err = service.savePemChain(orderDb.ID, certPemChain)
 				if err != nil {
 					service.logger.Error(err)
 					return
