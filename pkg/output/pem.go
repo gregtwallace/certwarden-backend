@@ -8,7 +8,7 @@ import (
 // WritePem sends the pem string to the client as the appropriate
 // application type
 func (service *Service) WritePem(w http.ResponseWriter, filename string, pem string) (bytesWritten int, err error) {
-	service.logger.Debug("writing file to client")
+	service.logger.Debugf("writing pem %s to client", filename)
 
 	// for cert chain: application/pem-certificate-chain
 	w.Header().Set("Content-Type", "application/x-pem-file")
