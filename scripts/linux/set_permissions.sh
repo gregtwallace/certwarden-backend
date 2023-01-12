@@ -1,9 +1,11 @@
 #/bin/bash
 
-chown legocerthub:legocerthub /opt/legocerthub -R
+lego_path=/opt/legocerthub
+lego_user=legocerthub
 
-find /opt/legocerthub -type d -exec chmod 755 {} \;
-find /opt/legocerthub -type f -exec chmod 640 {} \;
+chown $lego_user:$lego_user $lego_path -R
 
-chmod 750 /opt/legocerthub/lego-amd64-linux
+find $lego_path -type d -exec chmod 755 {} \;
+find $lego_path -type f -exec chmod 640 {} \;
 
+chmod 750 $lego_path/lego-linux-*

@@ -7,7 +7,7 @@ User=legocerthub
 Restart=always
 RestartSec=5s
 WorkingDirectory=/opt/legocerthub
-ExecStart=/opt/legocerthub/lego-amd64-linux
+ExecStart=/opt/legocerthub/lego-linux-amd64
 
 [Install]
 WantedBy=multi-user.target
