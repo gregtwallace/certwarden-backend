@@ -140,7 +140,7 @@ func defaultConfig() (cfg config) {
 		// Google
 		{
 			Primary:   "8.8.8.8",
-			Secondary: "4.4.4.4",
+			Secondary: "8.8.4.4",
 		},
 	}
 

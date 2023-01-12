@@ -37,6 +37,7 @@ func NewService(app App, cfg Config) (service *Service, err error) {
 	// configure resolvers
 	service.dnsResolvers, err = makeResolvers(cfg.DnsServices)
 	if err != nil {
+		service.logger.Errorf("failed to configure dns checker resolvers (%s)", err)
 		return nil, err
 	}
 

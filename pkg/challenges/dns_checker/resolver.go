@@ -3,7 +3,6 @@ package dns_checker
 import (
 	"context"
 	"errors"
-	"log"
 	"net"
 	"time"
 )
@@ -53,7 +52,6 @@ func makeResolver(ipAddress string) (*net.Resolver, error) {
 		return nil, errBlankIP
 	}
 
-	log.Printf("making dns resolver for ip %s", ipAddress)
 	r := &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
