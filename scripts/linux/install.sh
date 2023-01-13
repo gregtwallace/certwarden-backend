@@ -17,9 +17,6 @@ if [ "$(id -u)" -ne 0 ]; then echo "Please run as root." >&2; exit 1; fi
 # create user to run app
 useradd -r -s /bin/false $lego_user
 
-# allow unprivileged binding to port 80
-sysctl -w net.ipv4.ip_unprivileged_port_start=80
-
 # copy all files to install path
 mkdir $lego_path
 cp -R ../* $lego_path
