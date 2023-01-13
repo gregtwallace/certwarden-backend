@@ -32,7 +32,7 @@ chmod 750 $lego_path/lego-linux-*
 chmod 750 $lego_path/scripts/*.sh
 
 # allow binding to low port numbers
-# setcap CAP_NET_BIND_SERVICE=+eip /opt/legocerthub/lego-linux-*
+setcap CAP_NET_BIND_SERVICE=+eip /opt/legocerthub/lego-linux-*
 
 # install and start service
 cp ./legocerthub.service /etc/systemd/system/legocerthub.service
