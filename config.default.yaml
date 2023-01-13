@@ -12,7 +12,7 @@ http_port: 4050
 # enable http redirect - if this is enabled, when server is running
 # https it will also start a server on the http port that will redirect
 # the client to https
-enable_http_redirect: false
+enable_http_redirect: true
 
 # Server logging level (valid levels are: debug, info, warn, error, dpanic,
 # panic, and fatal)

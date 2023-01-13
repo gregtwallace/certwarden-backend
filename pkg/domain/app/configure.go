@@ -107,7 +107,7 @@ func defaultConfig() (cfg config) {
 	*cfg.HttpsPort = 4055
 	*cfg.HttpPort = 4050
 
-	*cfg.EnableHttpRedirect = false
+	*cfg.EnableHttpRedirect = true
 
 	*cfg.LogLevel = defaultLogLevel.String()
 	*cfg.ServeFrontend = true
