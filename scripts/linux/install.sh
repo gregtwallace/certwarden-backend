@@ -4,15 +4,15 @@
 lego_path=/opt/legocerthub
 lego_user=legocerthub
 
+# Check for root
+if [ "$(id -u)" -ne 0 ]; then echo "Please run as root." >&2; exit 1; fi
+
 echo "Enter the ip or hostname for LeGo. This is required to access LeGo"
 echo "from a remote host. Leaving blank or setting to localhost will restrict"
 echo "access to just localhost and will need to be updated in config.yaml later"
 read -p 'Hostname [localhost]: ' hostname
 
 hostname=${hostname:-localhost}
-
-# Check for root
-if [ "$(id -u)" -ne 0 ]; then echo "Please run as root." >&2; exit 1; fi
 
 # create user to run app
 useradd -r -s /bin/false $lego_user
