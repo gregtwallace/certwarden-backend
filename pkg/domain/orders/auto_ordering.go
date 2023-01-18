@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"legocerthub-backend/pkg/randomness"
 	"sync"
 	"time"
 )
@@ -31,13 +32,21 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 	go func() {
 		defer wg.Done()
 		var nextRunTime time.Time
-		var err error
 
 		// indefinite service loop
 		for {
+			// random second for runtime, as preferred by Let's Encrypt
+			// see: https://letsencrypt.org/docs/integration-guide/#when-to-renew
+			refreshSecond, err := randomness.GenerateRandomInt(60)
+			if err != nil {
+				// if error, use 12
+				service.logger.Errorf("failed to generate auto order random second integer (%s)", err)
+				refreshSecond = 12
+			}
+
 			// today's runtime
 			todayRunTime := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
-				refreshHour, refreshMinute, 0, 0, time.Local)
+				refreshHour, refreshMinute, refreshSecond, 0, time.Local)
 
 			// calculate next run based on if today's runtime has passed or not
 			if todayRunTime.After(time.Now()) {
