@@ -4,6 +4,10 @@
 lego_path=/opt/legocerthub
 lego_user=legocerthub
 
+# move to script path
+script_path=$(dirname $0)
+cd $script_path
+
 # Check for root
 if [ "$(id -u)" -ne 0 ]; then echo "Please run as root." >&2; exit 1; fi
 
