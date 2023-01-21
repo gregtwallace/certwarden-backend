@@ -46,6 +46,11 @@ orders:
 # Challenge Providers
 challenges:
   dns_checker:
+    # specifying skip check wait disables dns record validation and instead
+    # sleeps for the specified number of seconds and then assumes the record
+    # is fully propagated
+    skip_check_wait_seconds: null
+    # services to use if checker is not disabled
     dns_services:
       - primary_ip: 1.1.1.1
         secondary_ip: 1.0.0.1

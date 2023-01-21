@@ -2,6 +2,7 @@ package dns_checker
 
 import (
 	"errors"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -15,12 +16,14 @@ type App interface {
 
 // Config is used to configure the service
 type Config struct {
-	DnsServices []DnsServiceIPPair `yaml:"dns_services"`
+	SkipCheckWaitSeconds *int               `yaml:"skip_check_wait_seconds"`
+	DnsServices          []DnsServiceIPPair `yaml:"dns_services"`
 }
 
 // service struct
 type Service struct {
 	logger       *zap.SugaredLogger
+	skipWait     time.Duration
 	dnsResolvers []dnsResolverPair
 }
 
@@ -34,11 +37,16 @@ func NewService(app App, cfg Config) (service *Service, err error) {
 		return nil, errServiceComponent
 	}
 
-	// configure resolvers
-	service.dnsResolvers, err = makeResolvers(cfg.DnsServices)
-	if err != nil {
-		service.logger.Errorf("failed to configure dns checker resolvers (%s)", err)
-		return nil, err
+	// configure resolvers (unless skipping check)
+	if cfg.SkipCheckWaitSeconds != nil {
+		service.logger.Warnf("dns record validation disabled, will manually sleep %d seconds instead", *cfg.SkipCheckWaitSeconds)
+		service.skipWait = time.Duration(*cfg.SkipCheckWaitSeconds) * time.Second
+	} else {
+		service.dnsResolvers, err = makeResolvers(cfg.DnsServices)
+		if err != nil {
+			service.logger.Errorf("failed to configure dns checker resolvers (%s)", err)
+			return nil, err
+		}
 	}
 
 	return service, nil

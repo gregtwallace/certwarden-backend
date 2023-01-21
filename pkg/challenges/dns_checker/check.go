@@ -19,22 +19,18 @@ const (
 	functioningRequirement = 0.5
 )
 
-// define dnsRecordType
-type dnsRecordType int
-
-// consts for supported record types (probably not needed but in the event of
-// future expansion)
-const (
-	UnknownRecordType dnsRecordType = iota
-
-	txtRecord
-)
-
 // checkDnsRecordAllServices sends concurrent dns requests using all configured
 // resolvers to check for the existence of the specified record. If the propagation
 // requirement is met, TRUE is returned. An Error is returned if the functioning
 // requirement is not met.
 func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue string, recordType dnsRecordType) (exists bool, err error) {
+	// if no resolvers (i.e. configured to skip)
+	if service.dnsResolvers == nil {
+		// sleep the skip wait and then return true (assume propagated)
+		time.Sleep(service.skipWait)
+		return true, nil
+	}
+
 	// use waitgroup for concurrent checking
 	var wg sync.WaitGroup
 	resolverTotal := len(service.dnsResolvers)

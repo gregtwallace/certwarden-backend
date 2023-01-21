@@ -88,7 +88,10 @@ func defaultConfig() (cfg config) {
 			RefreshTimeMinute:           new(int),
 		},
 		Challenges: challenges.Config{
-			DnsCheckerConfig: dns_checker.Config{},
+			DnsCheckerConfig: dns_checker.Config{
+				// skip_check_wait_seconds defaults to nil
+				// servers are a slice, no need to call new()
+			},
 			ProviderConfigs: challenges.ConfigProviders{
 				Http01InternalConfig: http01internal.Config{
 					Enable: new(bool),
