@@ -212,6 +212,7 @@ func create(ctx context.Context) (*Application, error) {
 	// output service
 	app.output, err = output.NewService(app)
 	if err != nil {
+		app.logger.Errorf("failed to configure app output (%s)", err)
 		return nil, err
 	}
 
@@ -245,6 +246,7 @@ func create(ctx context.Context) (*Application, error) {
 	close(wgErrors)
 	for err = range wgErrors {
 		if err != nil {
+			app.logger.Errorf("failed to configure app acme service(s) (%s)", err)
 			return nil, err
 		}
 	}
@@ -253,12 +255,14 @@ func create(ctx context.Context) (*Application, error) {
 	// challenges
 	app.challenges, err = challenges.NewService(app, &app.config.Challenges)
 	if err != nil {
+		app.logger.Errorf("failed to configure app challenges (%s)", err)
 		return nil, err
 	}
 
 	// storage
 	app.storage, err = sqlite.OpenStorage(app)
 	if err != nil {
+		app.logger.Errorf("failed to configure app storage (%s)", err)
 		return nil, err
 	}
 
@@ -277,42 +281,49 @@ func create(ctx context.Context) (*Application, error) {
 	// users service
 	app.auth, err = auth.NewService(app)
 	if err != nil {
+		app.logger.Errorf("failed to configure app authentication (%s)", err)
 		return nil, err
 	}
 
 	// keys service
 	app.keys, err = private_keys.NewService(app)
 	if err != nil {
+		app.logger.Errorf("failed to configure app keys (%s)", err)
 		return nil, err
 	}
 
 	// accounts service
 	app.accounts, err = acme_accounts.NewService(app)
 	if err != nil {
+		app.logger.Errorf("failed to configure app accounts (%s)", err)
 		return nil, err
 	}
 
 	// authorizations service
 	app.authorizations, err = authorizations.NewService(app)
 	if err != nil {
+		app.logger.Errorf("failed to configure app authorizations (%s)", err)
 		return nil, err
 	}
 
 	// certificates service
 	app.certificates, err = certificates.NewService(app)
 	if err != nil {
+		app.logger.Errorf("failed to configure app certificates (%s)", err)
 		return nil, err
 	}
 
 	// orders service
 	app.orders, err = orders.NewService(app, &app.config.Orders)
 	if err != nil {
+		app.logger.Errorf("failed to configure app orders (%s)", err)
 		return nil, err
 	}
 
 	// download service
 	app.download, err = download.NewService(app)
 	if err != nil {
+		app.logger.Errorf("failed to configure app download (%s)", err)
 		return nil, err
 	}
 
