@@ -16,7 +16,6 @@ import (
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -35,7 +34,7 @@ func RunLeGoAPI() {
 	// create the app
 	app, err := create(ctx)
 	if err != nil {
-		log.Panicf("failed to configure app: %s", err)
+		os.Exit(1)
 		return
 	}
 	defer app.CloseStorage()
@@ -188,11 +187,17 @@ func create(ctx context.Context) (*Application, error) {
 	var err error
 
 	// parse config file
-	cfg := readConfigFile()
-	app.config = &cfg
+	app.config, err = readConfigFile()
+	// defer err check to after logger
 
 	// logger (zap)
 	app.initZapLogger()
+
+	// config file error check
+	if err != nil {
+		app.logger.Errorf("failed to read app config file (%s)", err)
+		return nil, err
+	}
 
 	// shutdown context and waitgroup for graceful shutdown
 	app.shutdownContext = ctx
@@ -207,7 +212,7 @@ func create(ctx context.Context) (*Application, error) {
 
 	// create http client
 	userAgent := fmt.Sprintf("LeGoCertHub/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
-	app.httpClient = httpclient.New(userAgent, *cfg.DevMode)
+	app.httpClient = httpclient.New(userAgent, *app.config.DevMode)
 
 	// output service
 	app.output, err = output.NewService(app)

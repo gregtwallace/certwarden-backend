@@ -46,8 +46,9 @@ func (app *Application) initZapLogger() {
 	// log level based on devMode and config
 	logLevel := defaultLogLevel
 	var logLevelParseErr error
-	// devMode
-	if *app.config.DevMode {
+
+	// if config is bad, or if devmode, use debug
+	if app.config == nil || *app.config.DevMode {
 		logLevel = zapcore.DebugLevel
 	} else {
 		// non-dev mode

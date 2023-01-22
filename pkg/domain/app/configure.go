@@ -43,15 +43,15 @@ func (c config) httpsDomainAndPort() string {
 
 // readConfigFile parses the config yaml file. It also sets default config
 // for any unspecified options
-func readConfigFile() (cfg config) {
+func readConfigFile() (cfg *config, err error) {
 	// load default config options
 	cfg = defaultConfig()
 
 	// open config file, if exists
 	file, err := os.Open(configFile)
 	if err != nil {
-		log.Printf("warn: config file error: %s", err)
-		return cfg
+		log.Printf("warn: can't open config file, using defaults (%s)", err)
+		return cfg, nil
 	}
 	defer file.Close()
 
@@ -59,19 +59,18 @@ func readConfigFile() (cfg config) {
 	// this will overwrite default values, but only for options that exist
 	// in the config file
 	decoder := yaml.NewDecoder(file)
-	err = decoder.Decode(&cfg)
+	err = decoder.Decode(cfg)
 	if err != nil {
-		log.Printf("warn: config file error: %s", err)
-		return cfg
+		return nil, err
 	}
 
-	return cfg
+	return cfg, nil
 }
 
 // defaultConfig generates the configuration using defaults
 // config.default.yaml should be updated if this func is updated
-func defaultConfig() (cfg config) {
-	cfg = config{
+func defaultConfig() (cfg *config) {
+	cfg = &config{
 		Hostname:           new(string),
 		HttpsPort:          new(int),
 		HttpPort:           new(int),
