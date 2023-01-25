@@ -52,6 +52,9 @@ challenges:
     skip_check_wait_seconds: null
     # services to use if checker is not disabled
     dns_services:
+      # generally you do NOT want these to be internal dns servers
+      # internal dns usually has long cache and doesn't truly check propagation
+      # if you don't want external dns checking, use skip_check above
       - primary_ip: 1.1.1.1
         secondary_ip: 1.0.0.1
       - primary_ip: 9.9.9.9
