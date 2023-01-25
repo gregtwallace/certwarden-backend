@@ -1,6 +1,7 @@
 package dns_checker
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -11,6 +12,7 @@ var errServiceComponent = errors.New("necessary challenges service component is 
 
 // App interface is for connecting to the main app
 type App interface {
+	GetShutdownContext() context.Context
 	GetLogger() *zap.SugaredLogger
 }
 
@@ -22,14 +24,18 @@ type Config struct {
 
 // service struct
 type Service struct {
-	logger       *zap.SugaredLogger
-	skipWait     time.Duration
-	dnsResolvers []dnsResolverPair
+	shutdownContext context.Context
+	logger          *zap.SugaredLogger
+	skipWait        time.Duration
+	dnsResolvers    []dnsResolverPair
 }
 
 // NewService creates a new service
 func NewService(app App, cfg Config) (service *Service, err error) {
 	service = new(Service)
+
+	// shutdown context
+	service.shutdownContext = app.GetShutdownContext()
 
 	// logger
 	service.logger = app.GetLogger()

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"legocerthub-backend/pkg/challenges/dns_checker"
 	"strings"
-	"time"
 
 	"github.com/cloudflare/cloudflare-go"
 )
@@ -50,35 +50,19 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 		return err
 	}
 
-	// confirm dns record has propagated before returning result
-	// retry propagation check a few times before failing
-	maxTries := 10
-	for i := 1; i <= maxTries; i++ {
-		// sleep at start to allow some propagation
-		// cancel/error if shutdown is called
-		select {
-		case <-service.shutdownContext.Done():
-			// cancel/error if shutting down
-			return errors.New("cloudflare dns provisioning canceled due to shutdown")
-
-		case <-time.After(time.Duration(i) * 15 * time.Second):
-			// sleep and retry
-		}
-
-		// check for propagation
-		propagated, err := service.dnsChecker.CheckTXT(resourceName, resourceContent)
-		// if error, log error but still retry
-		if err != nil {
-			service.logger.Error(err)
-		}
-
-		// if propagated, done & success
-		if propagated {
-			return nil
-		}
+	// check for propagation
+	propagated, err := service.dnsChecker.CheckTXTWithRetry(resourceName, resourceContent, 10)
+	if err != nil {
+		service.logger.Error(err)
+		return err
 	}
 
-	return errors.New("failed to propagate dns record")
+	// if failed to propagate
+	if !propagated {
+		return dns_checker.ErrDnsRecordNotFound
+	}
+
+	return nil
 }
 
 // Deprovision removes the resource from the internal tracking map and deletes

@@ -64,6 +64,12 @@ challenges:
       enable: true
       # port to run the http challenge server on
       port: 4060
+    # dns-01 using scripts that are external to LeGo
+    dns_01_manual:
+      enable: false
+      create_script: ./scripts/create-dns.sh
+      delete_script: ./scripts/delete-dns.sh
+    # dns-01 via LeGo Cloudflare integration
     dns_01_cloudflare:
       enable: false
       accounts:

@@ -6,6 +6,7 @@ import (
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
+	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"sync"
 
@@ -35,6 +36,7 @@ type providerService interface {
 // ConfigProviders holds the challenge provider configs
 type ConfigProviders struct {
 	Http01InternalConfig  http01internal.Config  `yaml:"http_01_internal"`
+	Dns01ManualConfig     dns01manual.Config     `yaml:"dns_01_manual"`
 	Dns01CloudflareConfig dns01cloudflare.Config `yaml:"dns_01_cloudflare"`
 }
 
@@ -84,6 +86,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	if enableDnsChecker {
 		service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
 		if err != nil {
+			service.logger.Errorf("failed to configure dns checker (%s)", err)
 			return nil, err
 		}
 	}
@@ -94,15 +97,27 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	// http-01 internal challenge server
 	http01Internal, err := http01internal.NewService(app, &cfg.ProviderConfigs.Http01InternalConfig)
 	if err != nil {
+		service.logger.Errorf("failed to configure http 01 internal (%s)", err)
 		return nil, err
 	}
 	if http01Internal != nil {
 		service.providers[methodValueHttp01Internal] = http01Internal
 	}
 
+	// dns-01 manual external scripts
+	dns01Manual, err := dns01manual.NewService(app, &cfg.ProviderConfigs.Dns01ManualConfig, service.dnsChecker)
+	if err != nil {
+		service.logger.Errorf("failed to configure dns 01 manual (%s)", err)
+		return nil, err
+	}
+	if dns01Manual != nil {
+		service.providers[methodValueDns01Manual] = dns01Manual
+	}
+
 	// dns-01 cloudflare challenge service
 	dns01Cloudflare, err := dns01cloudflare.NewService(app, &cfg.ProviderConfigs.Dns01CloudflareConfig, service.dnsChecker)
 	if err != nil {
+		service.logger.Errorf("failed to configure dns 01 cloudflare (%s)", err)
 		return nil, err
 	}
 	if dns01Cloudflare != nil {
@@ -113,6 +128,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	// configure methods (list of all, properly flagged as enabled or not)
 	err = service.configureMethods()
 	if err != nil {
+		service.logger.Errorf("failed to configure challenge methods (%s)", err)
 		return nil, err
 	}
 

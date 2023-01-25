@@ -5,6 +5,7 @@ import (
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
+	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/domain/orders"
 	"log"
@@ -96,6 +97,10 @@ func defaultConfig() (cfg *config) {
 					Enable: new(bool),
 					Port:   new(int),
 				},
+				Dns01ManualConfig: dns01manual.Config{
+					Enable: new(bool),
+					// script paths don't have a default
+				},
 				Dns01CloudflareConfig: dns01cloudflare.Config{
 					Enable: new(bool),
 				},
@@ -150,6 +155,9 @@ func defaultConfig() (cfg *config) {
 	// http-01-internal
 	*cfg.Challenges.ProviderConfigs.Http01InternalConfig.Enable = true
 	*cfg.Challenges.ProviderConfigs.Http01InternalConfig.Port = 4060
+
+	// dns-01-manual
+	*cfg.Challenges.ProviderConfigs.Dns01ManualConfig.Enable = false
 
 	// dns-01-cloudflare
 	*cfg.Challenges.ProviderConfigs.Dns01CloudflareConfig.Enable = false

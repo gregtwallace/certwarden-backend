@@ -29,6 +29,7 @@ const (
 	unknownMethodValue MethodValue = ""
 
 	methodValueHttp01Internal  = "http-01-internal"
+	methodValueDns01Manual     = "dns-01-manual"
 	methodValueDns01Cloudflare = "dns-01-cloudflare"
 )
 
@@ -52,6 +53,12 @@ func (service *Service) configureMethods() error {
 			Value:         methodValueHttp01Internal,
 			Name:          "HTTP on API Server",
 			ChallengeType: acme.ChallengeTypeHttp01,
+		},
+		{
+			// use external scripts to create and delete dns records
+			Value:         methodValueDns01Manual,
+			Name:          "DNS (Manual Script)",
+			ChallengeType: acme.ChallengeTypeDns01,
 		},
 		{
 			// create and delete dns records on Cloudflare
