@@ -64,17 +64,21 @@ func NewService(app App, config *Config, dnsChecker *dns_checker.Service) (*Serv
 	// powershell
 	service.shellPath, err = exec.LookPath("powershell.exe")
 	if err != nil {
+		service.logger.Debugf("unable to find powershell (%s)", err)
 		// then try bash
 		service.shellPath, err = exec.LookPath("bash")
 		if err != nil {
+			service.logger.Debugf("unable to find bash (%s)", err)
 			// then try zshell
 			service.shellPath, err = exec.LookPath("zsh")
 			if err != nil {
+				service.logger.Debugf("unable to find zshell (%s)", err)
 				// then try sh
 				service.shellPath, err = exec.LookPath("sh")
 				if err != nil {
+					service.logger.Debugf("unable to find sh (%s)", err)
 					// failed
-					return nil, err
+					return nil, errors.New("unable to find suitable shell")
 				}
 			}
 		}
