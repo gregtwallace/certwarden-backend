@@ -26,7 +26,7 @@ func (cert *Certificate) MakeCsrDer() (csr []byte, err error) {
 	template := x509.CertificateRequest{
 		SignatureAlgorithm: cert.CertificateKey.Algorithm.CsrSigningAlg(),
 		Subject:            subj,
-		DNSNames:           cert.SubjectAltNames,
+		DNSNames:           append([]string{cert.Subject}, cert.SubjectAltNames...),
 		// unused: EmailAddresses, IPAddresses, URIs, Attributes (deprecated), ExtraExtensions
 	}
 
