@@ -35,27 +35,27 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 
 		// indefinite service loop
 		for {
-			// random second for runtime, as preferred by Let's Encrypt
+			// run time for today
+			nextRunTime = time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
+				refreshHour, refreshMinute, 0, 0, time.Local)
+
+			// if today's run already passed, run tomorrow
+			if !nextRunTime.After(time.Now()) {
+				nextRunTime = nextRunTime.Add(24 * time.Hour)
+			}
+
+			// add random second to runtime, as preferred by Let's Encrypt
 			// see: https://letsencrypt.org/docs/integration-guide/#when-to-renew
+			// added after timestamp calc to avoid accidental duplicate run on same day
+			// e.g. if runs at :12 and then next timestamp is :50, it is possible for the
+			// new stamp to not be after now and therefore would run a second time
 			refreshSecond, err := randomness.GenerateRandomInt(60)
 			if err != nil {
 				// if error, use 12
 				service.logger.Errorf("failed to generate auto order random second integer (%s)", err)
 				refreshSecond = 12
 			}
-
-			// today's runtime
-			todayRunTime := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
-				refreshHour, refreshMinute, refreshSecond, 0, time.Local)
-
-			// calculate next run based on if today's runtime has passed or not
-			if todayRunTime.After(time.Now()) {
-				// if today's run hasn't passed, next run is today
-				nextRunTime = todayRunTime
-			} else {
-				// if today's time HAS passed, next run is tomorrow
-				nextRunTime = todayRunTime.Add(24 * time.Hour)
-			}
+			nextRunTime = nextRunTime.Add(time.Duration(refreshSecond) * time.Second)
 
 			// sleep or wait for shutdown context to be done
 			select {
@@ -65,7 +65,7 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 				return
 
 			case <-time.After(time.Until(nextRunTime)):
-				// sleep and retry
+				// sleep until run time
 			}
 
 			// complete existing orders that are not 'valid' or 'invalid' (i.e. not completed)
