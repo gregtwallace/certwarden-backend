@@ -73,17 +73,17 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodPost, "/api/v1/certificates/:certid/orders/:orderid/revoke", app.orders.RevokeOrder)
 
 	// download keys and certs
-	app.makeHandle(http.MethodGet, "/api/v1/download/privatekeys/:name", app.download.DownloadKeyViaHeader)
-	app.makeHandle(http.MethodGet, "/api/v1/download/certificates/:name", app.download.DownloadCertViaHeader)
-	app.makeHandle(http.MethodGet, "/api/v1/download/privatecerts/:name", app.download.DownloadPrivateCertViaHeader)
-	app.makeHandle(http.MethodGet, "/api/v1/download/certrootchains/:name", app.download.DownloadCertRootChainViaHeader)
+	app.makeDownloadHandle(http.MethodGet, "/api/v1/download/privatekeys/:name", app.download.DownloadKeyViaHeader)
+	app.makeDownloadHandle(http.MethodGet, "/api/v1/download/certificates/:name", app.download.DownloadCertViaHeader)
+	app.makeDownloadHandle(http.MethodGet, "/api/v1/download/privatecerts/:name", app.download.DownloadPrivateCertViaHeader)
+	app.makeDownloadHandle(http.MethodGet, "/api/v1/download/certrootchains/:name", app.download.DownloadCertRootChainViaHeader)
 
 	// download keys and certs - via URL routes
 	// include
-	app.makeHandle(http.MethodGet, "/api/v1/download/privatekeys/:name/*apiKey", app.download.DownloadKeyViaUrl)
-	app.makeHandle(http.MethodGet, "/api/v1/download/certificates/:name/*apiKey", app.download.DownloadCertViaUrl)
-	app.makeHandle(http.MethodGet, "/api/v1/download/privatecerts/:name/*apiKey", app.download.DownloadPrivateCertViaUrl)
-	app.makeHandle(http.MethodGet, "/api/v1/download/certrootchains/:name/*apiKey", app.download.DownloadCertRootChainViaUrl)
+	app.makeDownloadHandle(http.MethodGet, "/api/v1/download/privatekeys/:name/*apiKey", app.download.DownloadKeyViaUrl)
+	app.makeDownloadHandle(http.MethodGet, "/api/v1/download/certificates/:name/*apiKey", app.download.DownloadCertViaUrl)
+	app.makeDownloadHandle(http.MethodGet, "/api/v1/download/privatecerts/:name/*apiKey", app.download.DownloadPrivateCertViaUrl)
+	app.makeDownloadHandle(http.MethodGet, "/api/v1/download/certrootchains/:name/*apiKey", app.download.DownloadCertRootChainViaUrl)
 
 	// frontend (if enabled)
 	if *app.config.ServeFrontend {

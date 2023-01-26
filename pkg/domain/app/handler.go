@@ -29,6 +29,25 @@ func (app *Application) makeHandle(method string, path string, handlerFunc custo
 	app.router.Handler(method, path, app.makeHandler(handlerFunc))
 }
 
+// makeDownloadHandle is the same as makeHandle but adds some Info logging to keep track of
+// clients accessing sensitive information
+func (app *Application) makeDownloadHandle(method string, path string, handlerFunc customHandlerFunc) {
+	downloadFunc := func(w http.ResponseWriter, r *http.Request) error {
+		app.logger.Infof("client %s attempting to download %s", r.RemoteAddr, r.RequestURI)
+
+		err := handlerFunc(w, r)
+		if err != nil {
+			app.logger.Infof("client %s failed to download %s (%s)", r.RemoteAddr, r.RequestURI, err)
+			return err
+		}
+
+		app.logger.Infof("client %s downloaded %s", r.RemoteAddr, r.RequestURI)
+		return nil
+	}
+
+	app.makeHandle(method, path, downloadFunc)
+}
+
 // ServeHTTP implements http.Handler. Essentially the handlerFunc is executed
 // and the error is processed (logged and then written as JSON)
 func (handler handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
