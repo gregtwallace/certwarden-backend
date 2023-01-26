@@ -28,38 +28,41 @@ type loginPayload struct {
 func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error) {
 	var payload loginPayload
 
+	// log attempt
+	service.logger.Infof("login attempt from %s", r.RemoteAddr)
+
 	// decode body into payload
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		service.logger.Info(err)
+		service.logger.Infof("login attempt from %s failed due to payload error (%s)", r.RemoteAddr, err)
 		return output.ErrUnauthorized
 	}
 
 	// fetch the password hash from storage
 	user, err := service.storage.GetOneUserByName(payload.Username)
 	if err != nil {
-		service.logger.Info(err)
+		service.logger.Infof("login attempt from %s failed (bad username - %s)", r.RemoteAddr, err)
 		return output.ErrUnauthorized
 	}
 
 	// compare
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(payload.Password))
 	if err != nil {
-		service.logger.Info(err)
+		service.logger.Infof("login attempt from %s failed (bad password - %s)", r.RemoteAddr, err)
 		return output.ErrUnauthorized
 	}
 
 	// user and password now verified, make auth
 	auth, err := service.createAuth(user.Username)
 	if err != nil {
-		service.logger.Error(err)
+		service.logger.Errorf("login attempt from %s failed due to internal error (%s)", r.RemoteAddr, err)
 		return output.ErrInternal
 	}
 
 	// save auth's session in manager
 	err = service.sessionManager.new(auth.SessionClaims)
 	if err != nil {
-		service.logger.Error(err)
+		service.logger.Errorf("login attempt from %s failed due to internal error (%s)", r.RemoteAddr, err)
 		return output.ErrUnauthorized
 	}
 
@@ -70,8 +73,6 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 	response.AccessToken = auth.AccessToken
 	response.SessionClaims = auth.SessionClaims
 
-	service.logger.Infof("user '%s' logged in", auth.SessionClaims.Subject)
-
 	// write auth cookies (part of response)
 	auth.writeCookies(w)
 
@@ -81,16 +82,22 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 		return output.ErrWriteJsonFailed
 	}
 
+	// log success
+	service.logger.Infof("user '%s' logged in from %s", auth.SessionClaims.Subject, r.RemoteAddr)
+
 	return nil
 }
 
 // Refresh takes the RefreshToken, confirms it is valid and from a valid auth
 // and then returns a new Access Token to the client.
 func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err error) {
+	// log attempt
+	service.logger.Infof("refresh token attempt from %s", r.RemoteAddr)
+
 	// get the refresh token cookie from request
 	cookie, err := r.Cookie(refreshCookieName)
 	if err != nil {
-		service.logger.Info(err)
+		service.logger.Infof("refresh attempt from %s failed (bad cookie - %s)", r.RemoteAddr, err)
 		return output.ErrUnauthorized
 	}
 
@@ -98,21 +105,21 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 	refreshCookie := refreshCookie(*cookie)
 	oldClaims, err := refreshCookie.valid(service.refreshJwtSecret)
 	if err != nil {
-		service.logger.Info(err)
+		service.logger.Infof("refresh attempt from %s failed (bad cookie - %s)", r.RemoteAddr, err)
 		return output.ErrUnauthorized
 	}
 
 	// refresh token verified, make new auth
 	auth, err := service.createAuth(oldClaims.Subject)
 	if err != nil {
-		service.logger.Error(err)
+		service.logger.Errorf("refresh attempt from %s failed due to internal error (%s)", r.RemoteAddr, err)
 		return output.ErrInternal
 	}
 
 	// refresh session in manager (remove old, add new)
 	err = service.sessionManager.refresh(*oldClaims, auth.SessionClaims)
 	if err != nil {
-		service.logger.Error(err)
+		service.logger.Errorf("refresh attempt from %s failed due to internal error (%s)", r.RemoteAddr, err)
 		return output.ErrUnauthorized
 	}
 
@@ -131,11 +138,17 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 		return output.ErrWriteJsonFailed
 	}
 
+	// log success
+	service.logger.Infof("refresh from %s for '%s' succeeded", r.RemoteAddr, auth.SessionClaims.Subject)
+
 	return nil
 }
 
 // Logout deletes the client cookies.
 func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err error) {
+	// log attempt
+	service.logger.Infof("logout attempt from %s", r.RemoteAddr)
+
 	// logic flow different from logout, still want succesful logout even
 	// if cookie doesn't parse or token is expired.
 	// However, if there is no cookie, don't try to remove session from
@@ -192,68 +205,76 @@ type passwordChangePayload struct {
 
 // ChangePassword allows a user to change their password
 func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (err error) {
+	// log attempt
+	service.logger.Infof("change password attempt from %s", r.RemoteAddr)
+
 	// if not running https, error
 	if !service.https && !service.devMode {
+		service.logger.Warn("cannot change password while running as http")
 		return output.ErrUnavailableHttp
 	}
-
-	var payload passwordChangePayload
 
 	// This route will be unsecured in the router because the claims need to be accessed.
 	// validate jwt and get the claims (to confirm the username)
 	claims, err := service.ValidAuthHeader(r.Header, w)
 	if err != nil {
+		service.logger.Infof("change password from %s failed (bad auth header - %s)", r.RemoteAddr, err)
 		return output.ErrUnauthorized
 	}
 	username := claims["sub"].(string)
 
 	// decode body into payload
+	var payload passwordChangePayload
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		service.logger.Info(err)
+		service.logger.Infof("change password attempt from %s for '%s' failed due to payload error (%s)", r.RemoteAddr, username, err)
 		return output.ErrUnauthorized
 	}
 
 	// fetch the password hash from storage
 	user, err := service.storage.GetOneUserByName(username)
 	if err != nil {
-		service.logger.Info(err)
+		// shouldn't be possible since header was valid
+		service.logger.Errorf("change password attempt from %s for '%s' failed (bad username - %s)", r.RemoteAddr, username, err)
 		return output.ErrUnauthorized
 	}
 
 	// confirm current password is correct
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(payload.CurrentPassword))
 	if err != nil {
-		service.logger.Info(err)
+		service.logger.Infof("change password attempt from %s for '%s' failed (bad password - %s)", r.RemoteAddr, username, err)
 		return output.ErrUnauthorized
 	}
 
 	// verify new password matches
 	if payload.NewPassword != payload.ConfirmNewPassword {
-		service.logger.Info("new password did not match confirm new password")
+		service.logger.Infof("change password attempt from %s for '%s' failed (new password did not match confirm new password)", r.RemoteAddr, username)
 		return output.ErrValidationFailed
 	}
 
 	// TODO: Additional password complexity requirements?
 	// verify password is long enough
 	if len(payload.NewPassword) < 10 {
-		service.logger.Info("password did not meet length requirement")
+		service.logger.Infof("change password attempt from %s for '%s' failed (new password did not meet requirements)", r.RemoteAddr, username)
 		return output.ErrValidationFailed
 	}
 
 	// generate new password hash
 	newPasswordHash, err := bcrypt.GenerateFromPassword([]byte(payload.NewPassword), BcryptCost)
 	if err != nil {
-		service.logger.Error(err)
+		service.logger.Errorf("change password attempt from %s for '%s' failed due to internal error (%s)", r.RemoteAddr, username, err)
 		return output.ErrInternal
 	}
 
 	// update password in storage
 	userId, err := service.storage.UpdateUserPassword(username, string(newPasswordHash))
 	if err != nil {
-		service.logger.Error(err)
+		service.logger.Errorf("change password attempt from %s for '%s' failed due to internal error (%s)", r.RemoteAddr, username, err)
 		return output.ErrStorageGeneric
 	}
+
+	// log success (before response since new pw already saved)
+	service.logger.Infof("change password attempt from %s for '%s' succeeded", r.RemoteAddr, username)
 
 	// return response to client
 	response := output.JsonResponse{}
