@@ -16,8 +16,7 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 		allowedOrigin := "https://" + defaultHostnames[0]
 
 		// add config hostname to approved list
-		permittedHostnames := []string{*app.config.Hostname}
-		permittedHostnames = append(permittedHostnames, defaultHostnames...)
+		permittedHostnames := append([]string{*app.config.Hostname}, defaultHostnames...)
 
 		// allow any scheme and/or port from a permitted origin
 		url, err := url.ParseRequestURI(r.Header.Get("Origin"))
