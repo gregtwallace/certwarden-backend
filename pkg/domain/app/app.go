@@ -22,7 +22,7 @@ import (
 )
 
 // application version
-const appVersion = "0.6.9"
+const appVersion = "0.6.10"
 
 // api path
 const apiUrlPath = "/api"
