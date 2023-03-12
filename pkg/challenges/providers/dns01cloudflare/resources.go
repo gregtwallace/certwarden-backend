@@ -45,7 +45,7 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 	// anyway because resourceContent should always change)
 
 	// create DNS record on cloudflare for the ACME resource
-	zone.api.CreateDNSRecord(context.Background(), zone.id, newAcmeRecord(resourceName, resourceContent))
+	_, err = zone.api.CreateDNSRecord(context.Background(), zone.id, newAcmeRecord(resourceName, resourceContent))
 	if err != nil && !(strings.Contains(err.Error(), "81057") || strings.Contains(err.Error(), "Record already exists")) {
 		return err
 	}
