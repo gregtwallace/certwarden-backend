@@ -28,7 +28,17 @@ func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue strin
 	if service.dnsResolvers == nil {
 		// sleep the skip wait and then return true (assume propagated)
 		service.logger.Debugf("dns check (%s): skipping and sleeping %d seconds", fqdn, int(service.skipWait.Seconds()))
-		time.Sleep(service.skipWait)
+
+		// sleep or cancel/error if shutdown is called
+		select {
+		case <-service.shutdownContext.Done():
+			// cancel/error if shutting down
+			return false, errShutdown
+
+		case <-time.After(service.skipWait):
+			// sleep and retry
+		}
+
 		return true, nil
 	}
 
