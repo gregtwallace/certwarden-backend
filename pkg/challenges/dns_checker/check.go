@@ -27,6 +27,7 @@ func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue strin
 	// if no resolvers (i.e. configured to skip)
 	if service.dnsResolvers == nil {
 		// sleep the skip wait and then return true (assume propagated)
+		service.logger.Debugf("dns check (%s): skipping and sleeping %d seconds", fqdn, int(service.skipWait.Seconds()))
 		time.Sleep(service.skipWait)
 		return true, nil
 	}
