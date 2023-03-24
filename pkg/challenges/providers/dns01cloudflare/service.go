@@ -59,7 +59,7 @@ func NewService(app App, config *Config, dnsChecker *dns_checker.Service) (*Serv
 	}
 
 	// debug log configured domains
-	service.logger.Debugf("dns01cloudflare configured domains: %s", service.knownDomainZones.ListKeys())
+	service.logger.Infof("dns01cloudflare configured domains: %s", service.knownDomainZones.ListKeys())
 
 	// map to hold current dnsRecords
 	service.dnsRecords = datatypes.NewSafeMap()
