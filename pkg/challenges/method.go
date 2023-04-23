@@ -57,7 +57,7 @@ func (service *Service) configureMethods() error {
 		{
 			// use external scripts to create and delete dns records
 			Value:         methodValueDns01Manual,
-			Name:          "DNS (Manual Script)",
+			Name:          "DNS Manual Script",
 			ChallengeType: acme.ChallengeTypeDns01,
 		},
 		{
