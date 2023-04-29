@@ -102,7 +102,7 @@ func (service *Service) privateKeyIdValid(keyId int, certId *int) bool {
 // domain name it also verifies the method is dns-01
 func subjectValid(domain string, challMethod challenges.Method) bool {
 	// check domain is valid
-	if !validation.DomainValid(domain) {
+	if !validation.DomainValid(domain, true) {
 		return false
 	}
 

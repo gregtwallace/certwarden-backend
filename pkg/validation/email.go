@@ -31,7 +31,7 @@ func EmailValid(email string) bool {
 	}
 
 	// validate domain
-	if !DomainValid(domain) {
+	if !DomainValid(domain, false) {
 		return false
 	}
 

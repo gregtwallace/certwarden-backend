@@ -47,6 +47,9 @@ func makeInvalidEmails() []string {
 	// example without an @
 	invalidEmails = append(invalidEmails, "john.smith.example.com")
 
+	// example with wildcard
+	invalidEmails = append(invalidEmails, "greg@*.example.com")
+
 	// invalid usernames with known valid domain
 	for _, username := range invalidUsernames {
 		invalidEmails = append(invalidEmails, username+"@example.com")

@@ -44,27 +44,58 @@ var invalidDomains = []string{
 func TestValidation_DomainValid(t *testing.T) {
 	// test valid domains
 	for _, domain := range validDomains {
-		valid := DomainValid(domain)
+		// wildcard on (no wildcard tests though)
+		valid := DomainValid(domain, true)
 		if !valid {
 			t.Errorf("valid domain name test case '%s' returned invalid", domain)
 		}
 
-		// also test with wildcard
+		// wildcard off (no wildcard tests though)
+		valid = DomainValid(domain, false)
+		if !valid {
+			t.Errorf("valid domain name test case '%s' returned invalid", domain)
+		}
+
+		// test with wild card + valid domain + wildcard ok on
 		domain = "*." + domain
+
+		valid = DomainValid(domain, true)
 		if !valid {
 			t.Errorf("valid domain name wildcard test case '%s' returned invalid", domain)
+		}
+
+		// test with wild card + valid domain + wildcard ok NOT on
+		valid = DomainValid(domain, false)
+		// should NOT be valid since support is off
+		if valid {
+			t.Errorf("valid domain name wildcard test case with wildcard off '%s' returned valid", domain)
 		}
 	}
 
 	// test invalid domains
 	for _, domain := range invalidDomains {
-		valid := DomainValid(domain)
+		// wildcard on (no wildcard tests though)
+		valid := DomainValid(domain, true)
 		if valid {
 			t.Errorf("invalid domain name test case '%s' returned valid", domain)
 		}
 
-		// also test with wildcard
+		// wildcard off (no wildcard tests though)
+		valid = DomainValid(domain, false)
+		if valid {
+			t.Errorf("invalid domain name test case '%s' returned valid", domain)
+		}
+
+		// test with wild card + invalid domain + wildcard ok on
 		domain = "*." + domain
+
+		valid = DomainValid(domain, true)
+		if valid {
+			t.Errorf("invalid domain name wildcard test case '%s' returned valid", domain)
+		}
+
+		// test with wild card + invalid domain + wildcard ok NOT on
+		valid = DomainValid(domain, false)
 		if valid {
 			t.Errorf("invalid domain name wildcard test case '%s' returned valid", domain)
 		}
