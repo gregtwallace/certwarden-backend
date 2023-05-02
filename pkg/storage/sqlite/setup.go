@@ -18,7 +18,7 @@ var errServiceComponent = errors.New("necessary storage service component is mis
 
 // config for DB
 const dbTimeout = time.Duration(5 * time.Second)
-const dbDsn = "./lego-certhub.db"
+const dbFilename = "/lego-certhub.db"
 
 var dbOptions = url.Values{
 	"_fk": []string{"true"},
@@ -38,7 +38,7 @@ type Storage struct {
 
 // OpenStorage opens an existing sqlite database or creates a new one if needed.
 // It also creates tables. It then returns Storage.
-func OpenStorage(app App) (*Storage, error) {
+func OpenStorage(app App, dataPath string) (*Storage, error) {
 	store := new(Storage)
 	var err error
 
@@ -51,15 +51,16 @@ func OpenStorage(app App) (*Storage, error) {
 	// set timeout
 	store.Timeout = dbTimeout
 
-	// append options to the Dsn
-	connString := dbDsn + "?" + dbOptions.Encode()
+	// full path and append options to the Dsn for connString
+	dbWithPath := dataPath + dbFilename
+	connString := dbWithPath + "?" + dbOptions.Encode()
 
 	// check if db file exists
 	dbExists := true
-	if _, err := os.Stat(dbDsn); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(dbWithPath); errors.Is(err, os.ErrNotExist) {
 		dbExists = false
 		// create db file
-		file, err := os.Create(dbDsn)
+		file, err := os.Create(dbWithPath)
 		if err != nil {
 			return nil, err
 		}
@@ -72,7 +73,7 @@ func OpenStorage(app App) (*Storage, error) {
 		// if db file is new, delete it on error
 		if !dbExists {
 			_ = store.Db.Close()
-			_ = os.Remove(dbDsn)
+			_ = os.Remove(dbWithPath)
 		}
 		return nil, err
 	}
@@ -85,7 +86,7 @@ func OpenStorage(app App) (*Storage, error) {
 		// if db file is new, delete it on error
 		if !dbExists {
 			_ = store.Db.Close()
-			_ = os.Remove(dbDsn)
+			_ = os.Remove(dbWithPath)
 		}
 		return nil, err
 	}
@@ -96,7 +97,7 @@ func OpenStorage(app App) (*Storage, error) {
 		if err != nil {
 			// delete new db on error setting it up
 			_ = store.Db.Close()
-			_ = os.Remove(dbDsn)
+			_ = os.Remove(dbWithPath)
 			return nil, err
 		}
 	}

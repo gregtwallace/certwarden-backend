@@ -16,6 +16,7 @@ import (
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -186,6 +187,17 @@ func create(ctx context.Context) (*Application, error) {
 	app := new(Application)
 	var err error
 
+	// make data dir if doesn't exist
+	_, err = os.Stat(dataStoragePath)
+	if errors.Is(err, os.ErrNotExist) {
+		// create data dir
+		err = os.Mkdir(dataStoragePath, 0700)
+		if err != nil {
+			log.Printf("failed to make data storage directory (%s)", err)
+			return nil, err
+		}
+	}
+
 	// parse config file
 	app.config, err = readConfigFile()
 	// defer err check to after logger
@@ -265,7 +277,7 @@ func create(ctx context.Context) (*Application, error) {
 	}
 
 	// storage
-	app.storage, err = sqlite.OpenStorage(app)
+	app.storage, err = sqlite.OpenStorage(app, dataStoragePath)
 	if err != nil {
 		app.logger.Errorf("failed to configure app storage (%s)", err)
 		return nil, err

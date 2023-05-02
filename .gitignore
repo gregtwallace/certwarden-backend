@@ -1,11 +1,5 @@
-# database files
-*.db
-
-# active config file
-config.yaml
-
-# log files
-/log
+# instance data storage
+/data
 
 # compiled frontend (this will be added later to releases)
 /frontend_build

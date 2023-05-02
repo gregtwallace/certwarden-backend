@@ -15,7 +15,7 @@ import (
 )
 
 // path to the config file
-const configFile = "./config.yaml"
+const configFile = dataStoragePath + "/config.yaml"
 
 // config is the configuration structure for app (and subsequently services)
 type config struct {

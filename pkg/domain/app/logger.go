@@ -9,8 +9,8 @@ import (
 )
 
 // logFile is the path and filename to store the application's log
-const logFilePath = "./log/"
-const logFileName = "lego-certhub.log"
+const logFilePath = dataStoragePath + "/log"
+const logFileName = "/lego-certhub.log"
 
 // defaultLogLevel is the default logging level when not in devMode
 // and the configured level isn't valid or specified
