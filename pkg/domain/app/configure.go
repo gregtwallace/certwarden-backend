@@ -19,27 +19,28 @@ const configFile = dataStoragePath + "/config.yaml"
 
 // config is the configuration structure for app (and subsequently services)
 type config struct {
-	Hostname           *string           `yaml:"hostname"`
-	HttpsPort          *int              `yaml:"https_port"`
-	HttpPort           *int              `yaml:"http_port"`
-	EnableHttpRedirect *bool             `yaml:"enable_http_redirect"`
-	LogLevel           *string           `yaml:"log_level"`
-	ServeFrontend      *bool             `yaml:"serve_frontend"`
-	PrivateKeyName     *string           `yaml:"private_key_name"`
-	CertificateName    *string           `yaml:"certificate_name"`
-	DevMode            *bool             `yaml:"dev_mode"`
-	Orders             orders.Config     `yaml:"orders"`
-	Challenges         challenges.Config `yaml:"challenges"`
+	BindAddress          *string           `yaml:"bind_address"`
+	HttpsPort            *int              `yaml:"https_port"`
+	HttpPort             *int              `yaml:"http_port"`
+	EnableHttpRedirect   *bool             `yaml:"enable_http_redirect"`
+	LogLevel             *string           `yaml:"log_level"`
+	ServeFrontend        *bool             `yaml:"serve_frontend"`
+	CORSPermittedOrigins []string          `yaml:"cors_permitted_origins"`
+	PrivateKeyName       *string           `yaml:"private_key_name"`
+	CertificateName      *string           `yaml:"certificate_name"`
+	DevMode              *bool             `yaml:"dev_mode"`
+	Orders               orders.Config     `yaml:"orders"`
+	Challenges           challenges.Config `yaml:"challenges"`
 }
 
 // httpAddress() returns formatted http server address string
-func (c config) httpDomainAndPort() string {
-	return fmt.Sprintf("%s:%d", *c.Hostname, *c.HttpPort)
+func (c config) httpServAddress() string {
+	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.HttpPort)
 }
 
 // httpsAddress() returns formatted https server address string
-func (c config) httpsDomainAndPort() string {
-	return fmt.Sprintf("%s:%d", *c.Hostname, *c.HttpsPort)
+func (c config) httpsServAddress() string {
+	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.HttpsPort)
 }
 
 // readConfigFile parses the config yaml file. It also sets default config
@@ -72,7 +73,7 @@ func readConfigFile() (cfg *config, err error) {
 // config.default.yaml should be updated if this func is updated
 func defaultConfig() (cfg *config) {
 	cfg = &config{
-		Hostname:           new(string),
+		BindAddress:        new(string),
 		HttpsPort:          new(int),
 		HttpPort:           new(int),
 		EnableHttpRedirect: new(bool),
@@ -110,7 +111,7 @@ func defaultConfig() (cfg *config) {
 
 	// set default values
 	// http/s server
-	*cfg.Hostname = "localhost"
+	*cfg.BindAddress = ""
 	*cfg.HttpsPort = 4055
 	*cfg.HttpPort = 4050
 
@@ -118,6 +119,7 @@ func defaultConfig() (cfg *config) {
 
 	*cfg.LogLevel = defaultLogLevel.String()
 	*cfg.ServeFrontend = true
+	cfg.CORSPermittedOrigins = []string{}
 
 	// key/cert
 	*cfg.PrivateKeyName = "legocerthub"

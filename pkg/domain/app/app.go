@@ -141,30 +141,6 @@ func (app *Application) GetCertificatesService() *certificates.Service {
 	return app.certificates
 }
 
-// baseUrl returns the root URL for the server
-func (app *Application) baseUrl() string {
-	if app.IsHttps() {
-		return "https://" + app.config.httpsDomainAndPort()
-	} else {
-		return "http://" + app.config.httpDomainAndPort()
-	}
-}
-
-// ApiUrl returns the full API URL for the API, including the api path
-func (app *Application) ApiUrl() string {
-	return app.baseUrl() + apiUrlPath
-}
-
-// FrontendUrl returns the full URL for the frontend app. If the frontend
-// is not being hosted, an empty string is returned.
-func (app *Application) FrontendUrl() string {
-	if !*app.config.ServeFrontend {
-		return ""
-	}
-
-	return app.baseUrl() + frontendUrlPath
-}
-
 // shutdown related
 func (app *Application) GetShutdownContext() context.Context {
 	return app.shutdownContext

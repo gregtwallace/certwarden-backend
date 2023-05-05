@@ -2,35 +2,27 @@ package app
 
 import (
 	"net/http"
-	"net/url"
 )
 
-// by default, these are always allowed
-var defaultHostnames = []string{"localhost", "127.0.0.1"}
-
-// enableCORS applies CORS to an http.Handler and is intended to
-// wrap the router
+// enableCORS applies CORS to an http.Handler and is intended to wrap the router
 func (app *Application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// generic default origin if origin isn't found in list (will be rejected)
-		allowedOrigin := "https://" + defaultHostnames[0]
-
-		// add config hostname to approved list
-		permittedHostnames := append([]string{*app.config.Hostname}, defaultHostnames...)
-
-		// allow any scheme and/or port from a permitted origin
-		url, err := url.ParseRequestURI(r.Header.Get("Origin"))
-		if err == nil {
-			for _, hostname := range permittedHostnames {
-				if hostname == url.Hostname() {
-					allowedOrigin = url.String()
+		// if additional CORS Permitted Origins are defined, check the origin against
+		// them and add permissive header if match is found
+		if len(app.config.CORSPermittedOrigins) > 0 {
+			actualOrigin := r.Header.Get("Origin")
+			for _, permittedOrigin := range app.config.CORSPermittedOrigins {
+				// match found?
+				if actualOrigin == permittedOrigin {
+					w.Header().Set("Access-Control-Allow-Origin", actualOrigin)
+					// once found, no need to check more
 					break
 				}
 			}
 		}
 
 		// client to server headers
-		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+		// Access-Control-Allow-Origin not mandatory
 		w.Header().Add("Access-Control-Allow-Headers", "authorization, content-type, x-no-retry")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Add("Access-Control-Allow-Methods", "DELETE, GET, OPTIONS, POST, PUT")

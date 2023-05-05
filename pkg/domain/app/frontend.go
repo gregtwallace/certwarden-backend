@@ -17,11 +17,19 @@ func (app *Application) setFrontendEnv() error {
 	// remove any old environment
 	_ = os.Remove(frontendEnvFile)
 
+	// calculate API url (always localhost since same server)
+	apiUrl := ""
+	if app.IsHttps() {
+		apiUrl = "https://localhost:" + strconv.Itoa(*app.config.HttpsPort) + apiUrlPath
+	} else {
+		apiUrl = "http://localhost:" + strconv.Itoa(*app.config.HttpPort) + apiUrlPath
+	}
+
 	// content of new environment file
 	envFileContent := `
 	window.env = {
 		BASE_PATH_NAME: '` + frontendUrlPath + `',
-		API_URL: '` + app.ApiUrl() + `',
+		API_URL: '` + apiUrl + `',
 		DEV_MODE: ` + strconv.FormatBool(*app.config.DevMode) + `
 	};
 	`

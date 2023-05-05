@@ -51,7 +51,7 @@ func RunLeGoAPI() {
 
 	// http server config
 	srv := &http.Server{
-		Addr:         app.config.httpDomainAndPort(),
+		Addr:         app.config.httpServAddress(),
 		Handler:      app.routes(),
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  readTimeout,
@@ -71,21 +71,21 @@ func RunLeGoAPI() {
 		}
 
 		// https server config
-		srv.Addr = app.config.httpsDomainAndPort()
+		srv.Addr = app.config.httpsServAddress()
 		srv.TLSConfig = tlsConf
 
 		// configure and launch http redirect server
 		if *app.config.EnableHttpRedirect {
 			redirectSrv = &http.Server{
-				Addr: app.config.httpDomainAndPort(),
+				Addr: app.config.httpServAddress(),
 				Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					http.Redirect(w, r, "https://"+app.config.httpsDomainAndPort()+r.RequestURI, http.StatusTemporaryRedirect)
+					http.Redirect(w, r, "https://"+app.config.httpsServAddress()+r.RequestURI, http.StatusTemporaryRedirect)
 				}),
 				IdleTimeout:  1 * time.Minute,
 				ReadTimeout:  readTimeout,
 				WriteTimeout: writeTimeout,
 			}
-			app.logger.Infof("starting http redirect on %s", "http://"+app.config.httpDomainAndPort())
+			app.logger.Infof("starting http redirect bound to %s", app.config.httpServAddress())
 			app.shutdownWaitgroup.Add(1)
 			go func() {
 				err := redirectSrv.ListenAndServe()
@@ -98,7 +98,7 @@ func RunLeGoAPI() {
 		}
 
 		// launch https
-		app.logger.Infof("starting lego-certhub (https) on %s", app.baseUrl())
+		app.logger.Infof("starting lego-certhub (https) bound to %s", app.config.httpsServAddress())
 		app.shutdownWaitgroup.Add(1)
 		go func() {
 			err := srv.ListenAndServeTLS("", "")
@@ -111,7 +111,7 @@ func RunLeGoAPI() {
 
 	} else {
 		// if https failed, launch localhost only http server
-		app.logger.Warnf("starting insecure lego-certhub (http) on %s", app.baseUrl())
+		app.logger.Warnf("starting insecure lego-certhub (http) bound to %s", app.config.httpServAddress())
 		app.shutdownWaitgroup.Add(1)
 		go func() {
 			err := srv.ListenAndServe()
