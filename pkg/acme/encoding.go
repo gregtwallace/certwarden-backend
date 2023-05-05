@@ -36,7 +36,11 @@ func encodeInt(integer int) (string, error) {
 		return "", err
 	}
 
-	return encodeString(bytesBuf.Bytes()), nil
+	// trim off left 00s
+	// fixes: https://github.com/gregtwallace/legocerthub-backend/issues/1
+	trimmedInt := bytes.TrimLeft(bytesBuf.Bytes(), "\x00")
+
+	return encodeString(trimmedInt), nil
 }
 
 // encodeBigInt returns the bytes of a bigInt properly encoded (based on the
