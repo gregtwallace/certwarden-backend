@@ -2,12 +2,10 @@ package certificates
 
 import (
 	"encoding/json"
-	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -54,7 +52,8 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 	// id
 	cert, err := service.GetCertificate(payload.ID)
 	if err != nil {
-		return err
+		service.logger.Debug(ErrIdBad)
+		return output.ErrValidationFailed
 	}
 	// name (optional)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
@@ -68,25 +67,23 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 	// challenge method (optional)
-	challengeMethod := challenges.UnknownMethod
-	// if specified, check it
+	// current method
+	challengeMethod := cert.ChallengeMethod
+	// if change specified, check it
 	if payload.ChallengeMethodValue != nil {
-		// if method is specified, set var to new method
 		challengeMethod = service.challenges.MethodByStorageValue(*payload.ChallengeMethodValue)
 		// if method is unknown, invalid
 		if challengeMethod == challenges.UnknownMethod {
 			service.logger.Debug("unknown challenge method")
 			return output.ErrValidationFailed
 		}
-		// if subject is wildcard and method does not support it, fail
-		if strings.HasPrefix(cert.Subject, "*.") && challengeMethod.ChallengeType != acme.ChallengeTypeDns01 {
+		// verify subject is compatible with new method selection
+		// i.e. make sure if wildcard it is using a dns method
+		if !subjectValid(cert.Subject, challengeMethod) {
 			service.logger.Debug("challenge method does not support subject")
 			return output.ErrValidationFailed
 		}
 		// do not check subject alts here, they are checked below
-	} else {
-		// if method is not being changed, set var to existing method
-		challengeMethod = cert.ChallengeMethod
 	}
 	// subject alts (optional)
 	// if new alts are being specified
@@ -96,8 +93,8 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 			return output.ErrValidationFailed
 		}
 
-		// if keeping old alts and they exist (more than 0)
 	} else if len(cert.SubjectAltNames) > 0 {
+		// if keeping old alts and they exist (more than 0)
 		// verify against the challenge method
 		if !subjectAltsValid(cert.SubjectAltNames, challengeMethod) {
 			service.logger.Debug(ErrDomainBad)
