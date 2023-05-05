@@ -15,6 +15,9 @@ const refreshTokenExpiration = 15 * time.Minute
 // const accessTokenExpiration = 10 * time.Second
 // const refreshTokenExpiration = 2 * time.Minute
 
+// const accessTokenExpiration = 5 * time.Second
+// const refreshTokenExpiration = 15 * time.Second
+
 // token types
 type accessToken string
 type refreshToken string

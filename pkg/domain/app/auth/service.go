@@ -19,6 +19,7 @@ const BcryptCost = 12
 type App interface {
 	GetDevMode() bool
 	IsHttps() bool
+	HasCrossOrigins() bool
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 	GetAuthStorage() Storage
@@ -36,6 +37,7 @@ type Service struct {
 	devMode          bool
 	logger           *zap.SugaredLogger
 	https            bool
+	allowCrossOrigin bool
 	output           *output.Service
 	storage          Storage
 	accessJwtSecret  []byte
@@ -59,6 +61,9 @@ func NewService(app App) (*Service, error) {
 
 	// running as https?
 	service.https = app.IsHttps()
+
+	// cross origin allowed?
+	service.allowCrossOrigin = app.HasCrossOrigins()
 
 	// output service
 	service.output = app.GetOutputter()

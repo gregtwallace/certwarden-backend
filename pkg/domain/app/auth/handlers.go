@@ -184,7 +184,7 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err erro
 	response.Status = http.StatusOK
 	response.Message = "logged out"
 	// delete auth cookies (part of response)
-	deleteAuthCookies(w)
+	service.deleteAuthCookies(w)
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {

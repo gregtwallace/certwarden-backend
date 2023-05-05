@@ -3,27 +3,30 @@ package auth
 import (
 	"errors"
 	"net/http"
-	"strconv"
-	"time"
 )
 
 const refreshCookieName = "refresh_token"
-const loggedInCookieName = "logged_in_expiration"
-
 const cookieMaxAge = refreshTokenExpiration
 
 // cookie types
 type refreshCookie http.Cookie
-type loggedInCookie http.Cookie
 
 // createRefreshCookie creates the refresh cookie based on the
 // specified refresh token and maxAge
-func createRefreshCookie(refreshToken refreshToken) *refreshCookie {
+func (service *Service) createRefreshCookie(refreshToken refreshToken) *refreshCookie {
+	// only use same site none mode when cross origin is permitted in config
+	sameSiteMode := http.SameSiteStrictMode
+	if service.allowCrossOrigin {
+		sameSiteMode = http.SameSiteNoneMode
+	}
+
 	return &refreshCookie{
 		Name:     refreshCookieName,
 		Value:    string(refreshToken),
 		MaxAge:   int(cookieMaxAge.Seconds()),
+		Secure:   true,
 		HttpOnly: true,
+		SameSite: sameSiteMode,
 	}
 }
 
@@ -44,16 +47,4 @@ func (cookie *refreshCookie) valid(jwtSecret []byte) (claims *sessionClaims, err
 	}
 
 	return claims, nil
-}
-
-// createLoggedInCookie() creates a javascript accessible cookie with
-// value set to the Unix expiration timestamp.
-func createLoggedInCookie() *loggedInCookie {
-	return &loggedInCookie{
-		Name:     loggedInCookieName,
-		Value:    strconv.Itoa(int(time.Now().Add(cookieMaxAge).Unix())),
-		Path:     "/",
-		MaxAge:   int(cookieMaxAge.Seconds()),
-		HttpOnly: false,
-	}
 }

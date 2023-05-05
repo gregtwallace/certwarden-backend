@@ -5,10 +5,9 @@ import (
 )
 
 type authorization struct {
-	AccessToken    accessToken     `json:"access_token"`
-	SessionClaims  sessionClaims   `json:"session"`
-	refreshCookie  *refreshCookie  `json:"-"`
-	loggedInCookie *loggedInCookie `json:"-"` // not used on backend
+	AccessToken   accessToken    `json:"access_token"`
+	SessionClaims sessionClaims  `json:"session"`
+	refreshCookie *refreshCookie `json:"-"`
 }
 
 // createAuth creates all of the necessary pieces of information
@@ -27,20 +26,13 @@ func (service *Service) createAuth(username string) (auth authorization, err err
 		return authorization{}, err
 	}
 
-	auth.refreshCookie = createRefreshCookie(refreshToken)
-
-	// logged in cookie
-	auth.loggedInCookie = createLoggedInCookie()
+	auth.refreshCookie = service.createRefreshCookie(refreshToken)
 
 	return auth, nil
 }
 
 // writeCookies writes the auth's cookies to the specified ResponseWriter
 func (auth *authorization) writeCookies(w http.ResponseWriter) {
-	// write logged in cookie
-	loggedInCookie := http.Cookie(*auth.loggedInCookie)
-	http.SetCookie(w, &loggedInCookie)
-
 	// write refresh token cookie
 	refreshCookie := http.Cookie(*auth.refreshCookie)
 	http.SetCookie(w, &refreshCookie)
@@ -48,17 +40,9 @@ func (auth *authorization) writeCookies(w http.ResponseWriter) {
 
 // deleteAuthCookies writes dummy cookies with max age -1 (delete now)
 // to the specified ResponseWriter
-func deleteAuthCookies(w http.ResponseWriter) {
-	// logged in cookie
-	loggedIn := createLoggedInCookie()
-	loggedIn.MaxAge = -1
-
-	// write logged in cookie
-	loggedInCookie := http.Cookie(*loggedIn)
-	http.SetCookie(w, &loggedInCookie)
-
+func (service *Service) deleteAuthCookies(w http.ResponseWriter) {
 	// refresh token cookie
-	refresh := createRefreshCookie("")
+	refresh := service.createRefreshCookie("")
 	refresh.MaxAge = -1
 
 	// write refresh token cookie
