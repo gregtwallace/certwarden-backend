@@ -22,7 +22,7 @@ import (
 )
 
 // application version
-const appVersion = "0.7.0"
+const appVersion = "0.8.0"
 
 // data storage root
 const dataStoragePath = "./data"
