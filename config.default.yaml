@@ -7,6 +7,13 @@
 # Additionally, key and certificate downloads via the API key will be disabled
 # if the server is running as http.
 bind_address: ''
+
+# hostname should be the dns resolvable hostname for the backend. It should also
+# match a hostname on the server's 'certificate_name'. If null or undefined the app
+# will try to read the hostname from the OS (though it will be without the domain
+# name). If this fails, 'localhost' is used.
+hostname: null
+
 https_port: 4055
 http_port: 4050
 

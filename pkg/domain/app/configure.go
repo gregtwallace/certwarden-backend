@@ -25,6 +25,7 @@ type config struct {
 	EnableHttpRedirect   *bool             `yaml:"enable_http_redirect"`
 	LogLevel             *string           `yaml:"log_level"`
 	ServeFrontend        *bool             `yaml:"serve_frontend"`
+	Hostname             *string           `yaml:"hostname"`
 	CORSPermittedOrigins []string          `yaml:"cors_permitted_origins"`
 	PrivateKeyName       *string           `yaml:"private_key_name"`
 	CertificateName      *string           `yaml:"certificate_name"`
@@ -72,8 +73,11 @@ func readConfigFile() (cfg *config, err error) {
 // defaultConfig generates the configuration using defaults
 // config.default.yaml should be updated if this func is updated
 func defaultConfig() (cfg *config) {
+	var err error
+
 	cfg = &config{
 		BindAddress:        new(string),
+		Hostname:           new(string),
 		HttpsPort:          new(int),
 		HttpPort:           new(int),
 		EnableHttpRedirect: new(bool),
@@ -112,11 +116,15 @@ func defaultConfig() (cfg *config) {
 	// set default values
 	// http/s server
 	*cfg.BindAddress = ""
+	// try to get hostname, else use localhost
+	*cfg.Hostname, err = os.Hostname()
+	if err != nil {
+		*cfg.Hostname = "localhost"
+	}
 	*cfg.HttpsPort = 4055
 	*cfg.HttpPort = 4050
 
 	*cfg.EnableHttpRedirect = true
-
 	*cfg.LogLevel = defaultLogLevel.String()
 	*cfg.ServeFrontend = true
 	cfg.CORSPermittedOrigins = []string{}
