@@ -254,9 +254,12 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (
 
 	// TODO: Additional password complexity requirements?
 	// verify password is long enough
-	if len(payload.NewPassword) < 10 {
-		service.logger.Infof("change password attempt from %s for '%s' failed (new password did not meet requirements)", r.RemoteAddr, username)
-		return output.ErrValidationFailed
+	// allow terrible passwords if in dev mode
+	if !service.devMode {
+		if len(payload.NewPassword) < 10 {
+			service.logger.Infof("change password attempt from %s for '%s' failed (new password did not meet requirements)", r.RemoteAddr, username)
+			return output.ErrValidationFailed
+		}
 	}
 
 	// generate new password hash
