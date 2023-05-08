@@ -205,6 +205,9 @@ func create(ctx context.Context) (*Application, error) {
 	// logger (zap)
 	app.initZapLogger()
 
+	// startup log
+	app.logger.Infof("starting LeGo CertHub v%s", appVersion)
+
 	// config file error check
 	if err != nil {
 		app.logger.Errorf("failed to read app config file (%s)", err)
