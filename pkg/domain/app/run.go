@@ -8,6 +8,7 @@ import (
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/app/auth"
+	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/download"
@@ -296,6 +297,14 @@ func create(ctx context.Context) (*Application, error) {
 			app.logger.Error("certain functionality (e.g. pem downloads via API keys) will be disabled until the server is run in https mode")
 		}
 		app.httpsCert = nil
+	}
+
+	// app updater service
+	app.updater, err = updater.NewService(app, &app.config.Updater)
+	// nil updater is ok (i.e. disabled)
+	if err != nil {
+		app.logger.Errorf("failed to configure app updater (%s)", err)
+		return nil, err
 	}
 
 	// users service

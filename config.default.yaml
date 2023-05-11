@@ -41,6 +41,11 @@ certificate_name: legocerthub
 # This should NOT be used in production!
 dev_mode: false
 
+# Update checking functionality
+updater:
+  enable: true
+  channel: beta
+
 # Orders configuration
 orders:
   # settings for automatic ordering

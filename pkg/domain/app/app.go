@@ -7,6 +7,7 @@ import (
 	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/app/auth"
+	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/download"
@@ -23,6 +24,10 @@ import (
 
 // application version
 const appVersion = "0.8.0"
+
+// config version
+// increment any time there is a breaking change between versions
+const configVersion = 0
 
 // data storage root
 const dataStoragePath = "./data"
@@ -48,6 +53,7 @@ type Application struct {
 	acmeStaging       *acme.Service
 	challenges        *challenges.Service
 	storage           *sqlite.Storage
+	updater           *updater.Service
 	auth              *auth.Service
 	keys              *private_keys.Service
 	accounts          *acme_accounts.Service
@@ -70,6 +76,14 @@ func (app *Application) CloseStorage() {
 //
 
 // return various app parts which are used as needed by services
+func (app *Application) GetAppVersion() string {
+	return appVersion
+}
+
+func (app *Application) GetConfigVersion() int {
+	return configVersion
+}
+
 func (app *Application) GetDevMode() bool {
 	return *app.config.DevMode
 }

@@ -7,6 +7,7 @@ import (
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
+	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/orders"
 	"log"
 	"os"
@@ -29,6 +30,7 @@ type config struct {
 	PrivateKeyName       *string           `yaml:"private_key_name"`
 	CertificateName      *string           `yaml:"certificate_name"`
 	DevMode              *bool             `yaml:"dev_mode"`
+	Updater              updater.Config    `yaml:"updater"`
 	Orders               orders.Config     `yaml:"orders"`
 	Challenges           challenges.Config `yaml:"challenges"`
 }
@@ -82,6 +84,10 @@ func defaultConfig() (cfg *config) {
 		PrivateKeyName:     new(string),
 		CertificateName:    new(string),
 		DevMode:            new(bool),
+		Updater: updater.Config{
+			Enable:  new(bool),
+			Channel: new(updater.Channel),
+		},
 		Orders: orders.Config{
 			AutomaticOrderingEnable:     new(bool),
 			ValidRemainingDaysThreshold: new(int),
@@ -126,6 +132,10 @@ func defaultConfig() (cfg *config) {
 
 	// dev mode
 	*cfg.DevMode = false
+
+	// updater
+	*cfg.Updater.Enable = true
+	*cfg.Updater.Channel = updater.ChannelBeta
 
 	// orders
 	*cfg.Orders.AutomaticOrderingEnable = true

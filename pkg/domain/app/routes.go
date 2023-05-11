@@ -22,6 +22,11 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/log", app.viewCurrentLogHandler)
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/logs", app.downloadLogsHandler)
 
+	// updater (if enabled)
+	if *app.config.Updater.Enable {
+		app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/new_version", app.updater.GetNewVersionInfo)
+	}
+
 	// private_keys
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/privatekeys", app.keys.GetAllKeys)
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/privatekeys/:id", app.keys.GetOneKey)
