@@ -26,11 +26,10 @@ type Method struct {
 // Define values. These values should be assigned once and NEVER
 // changed to avoid storage issues.
 const (
-	unknownMethodValue MethodValue = ""
-
-	methodValueHttp01Internal  = "http-01-internal"
-	methodValueDns01Manual     = "dns-01-manual"
-	methodValueDns01Cloudflare = "dns-01-cloudflare"
+	unknownMethodValue         MethodValue = ""
+	methodValueHttp01Internal  MethodValue = "http-01-internal"
+	methodValueDns01Manual     MethodValue = "dns-01-manual"
+	methodValueDns01Cloudflare MethodValue = "dns-01-cloudflare"
 )
 
 // UnknownMethod is used when a Method does not match any known Method.
