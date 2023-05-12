@@ -84,6 +84,8 @@ func (service *Service) fetchNewVersion() error {
 		if newer {
 			service.logger.Infof("new version (%s) of app is available", newestVersion.Version)
 			service.newVersionAvailable = true
+		} else {
+			service.newVersionAvailable = false
 		}
 
 		// update newest version info
