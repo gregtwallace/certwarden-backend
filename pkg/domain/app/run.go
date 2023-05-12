@@ -301,8 +301,7 @@ func create(ctx context.Context) (*Application, error) {
 
 	// app updater service
 	app.updater, err = updater.NewService(app, &app.config.Updater)
-	// nil updater is ok (i.e. disabled)
-	if err != nil {
+	if app.updater == nil || err != nil {
 		app.logger.Errorf("failed to configure app updater (%s)", err)
 		return nil, err
 	}

@@ -85,8 +85,8 @@ func defaultConfig() (cfg *config) {
 		CertificateName:    new(string),
 		DevMode:            new(bool),
 		Updater: updater.Config{
-			Enable:  new(bool),
-			Channel: new(updater.Channel),
+			AutoCheck: new(bool),
+			Channel:   new(updater.Channel),
 		},
 		Orders: orders.Config{
 			AutomaticOrderingEnable:     new(bool),
@@ -134,7 +134,7 @@ func defaultConfig() (cfg *config) {
 	*cfg.DevMode = false
 
 	// updater
-	*cfg.Updater.Enable = true
+	*cfg.Updater.AutoCheck = true
 	*cfg.Updater.Channel = updater.ChannelBeta
 
 	// orders

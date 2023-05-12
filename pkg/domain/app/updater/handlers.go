@@ -19,10 +19,16 @@ func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request
 	service.mu.RLock()
 	defer service.mu.RUnlock()
 
+	// does new config version match? if blank, false
+	configMatch := false
+	if service.newVersionInfo != nil {
+		configMatch = service.currentConfigVersion == service.newVersionInfo.ConfigVersion
+	}
+
 	// new version or not?
 	response := getNewVersionInfoResponse{
 		NewVersionAvailable:  service.newVersionAvailable,
-		ConfigVersionMatches: service.currentConfigVersion == service.newVersionInfo.ConfigVersion,
+		ConfigVersionMatches: configMatch,
 		NewVersionInfo:       service.newVersionInfo,
 	}
 

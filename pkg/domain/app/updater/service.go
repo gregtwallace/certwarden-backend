@@ -38,17 +38,12 @@ type Service struct {
 
 // Config holds all of the challenge config
 type Config struct {
-	Enable  *bool    `yaml:"enable"`
-	Channel *Channel `yaml:"channel"`
+	AutoCheck *bool    `yaml:"auto_check"`
+	Channel   *Channel `yaml:"channel"`
 }
 
 // NewService creates a new (local LeGo) users service
 func NewService(app App, cfg *Config) (*Service, error) {
-	// if disabled, return nil and no error
-	if !*cfg.Enable {
-		return nil, nil
-	}
-
 	service := new(Service)
 
 	// logger
@@ -73,8 +68,10 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	// channel to check
 	service.checkChannel = *cfg.Channel
 
-	// start background update check service
-	service.backgroundChecker(app.GetShutdownContext(), app.GetShutdownWaitGroup())
+	// start background auto update check service (if enabled)
+	if *cfg.AutoCheck {
+		service.backgroundChecker(app.GetShutdownContext(), app.GetShutdownWaitGroup())
+	}
 
 	return service, nil
 }

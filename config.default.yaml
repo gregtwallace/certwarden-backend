@@ -43,7 +43,7 @@ dev_mode: false
 
 # Update checking functionality
 updater:
-  enable: true
+  auto_check: true
   channel: beta
 
 # Orders configuration
