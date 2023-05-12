@@ -8,6 +8,7 @@ import (
 // allKeysResponse provides the json response struct
 // to answer a query for a portion of the keys
 type getNewVersionInfoResponse struct {
+	LastCheckedUnixTime  int          `json:"last_checked_time"`
 	NewVersionAvailable  bool         `json:"available"`
 	ConfigVersionMatches bool         `json:"config_version_matches"`
 	NewVersionInfo       *versionInfo `json:"info,omitempty"`
@@ -27,6 +28,8 @@ func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request
 
 	// new version or not?
 	response := getNewVersionInfoResponse{
+		// last checked time -62135596800 (default time.Time value) means never checked
+		LastCheckedUnixTime:  int(service.newVersionLastCheck.Unix()),
 		NewVersionAvailable:  service.newVersionAvailable,
 		ConfigVersionMatches: configMatch,
 		NewVersionInfo:       service.newVersionInfo,

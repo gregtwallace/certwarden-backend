@@ -65,16 +65,15 @@ func (service *Service) fetchNewVersion() error {
 		return errBadChannel
 	}
 
-	// Only update if the data has changed
-	service.mu.RLock()
+	// lock since timestamp updates no matter what
+	service.mu.Lock()
+	defer service.mu.Unlock()
+
 	changed := !reflect.DeepEqual(newestVersion, service.newVersionInfo)
-	service.mu.RUnlock()
+	service.newVersionLastCheck = time.Now()
 
+	// Only update if the data has changed
 	if changed {
-		// changed
-		service.mu.Lock()
-		defer service.mu.Unlock()
-
 		// is the new version actually new?
 		newer, err := newestVersion.isNewerThan(service.currentVersion)
 		if err != nil {

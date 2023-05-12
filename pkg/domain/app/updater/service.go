@@ -6,6 +6,7 @@ import (
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -33,6 +34,7 @@ type Service struct {
 	checkChannel         Channel
 	newVersionAvailable  bool
 	newVersionInfo       *versionInfo
+	newVersionLastCheck  time.Time
 	mu                   sync.RWMutex
 }
 
