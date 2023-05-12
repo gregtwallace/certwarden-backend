@@ -33,3 +33,17 @@ func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request
 
 	return nil
 }
+
+// CheckForNewVersion causes the backend to query the remote update information
+// and then return info about any new version.
+func (service *Service) CheckForNewVersion(w http.ResponseWriter, r *http.Request) (err error) {
+	// update version info from remote
+	err = service.fetchNewVersion()
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// return new version info (same as GET new version)
+	return service.GetNewVersionInfo(w, r)
+}

@@ -25,6 +25,8 @@ func (app *Application) routes() http.Handler {
 	// updater (if enabled)
 	if *app.config.Updater.Enable {
 		app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/new_version", app.updater.GetNewVersionInfo)
+
+		app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/new_version", app.updater.CheckForNewVersion)
 	}
 
 	// private_keys
