@@ -8,8 +8,9 @@ import (
 // allKeysResponse provides the json response struct
 // to answer a query for a portion of the keys
 type getNewVersionInfoResponse struct {
-	NewVersionAvailable bool         `json:"available"`
-	NewVersionInfo      *versionInfo `json:"info,omitempty"`
+	NewVersionAvailable  bool         `json:"available"`
+	ConfigVersionMatches bool         `json:"config_version_matches"`
+	NewVersionInfo       *versionInfo `json:"info,omitempty"`
 }
 
 // GetNewVersionInfo returns if there is a newer known version and if there is
@@ -20,8 +21,9 @@ func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request
 
 	// new version or not?
 	response := getNewVersionInfoResponse{
-		NewVersionAvailable: service.newVersionAvailable,
-		NewVersionInfo:      service.newVersionInfo,
+		NewVersionAvailable:  service.newVersionAvailable,
+		ConfigVersionMatches: service.currentConfigVersion == service.newVersionInfo.ConfigVersion,
+		NewVersionInfo:       service.newVersionInfo,
 	}
 
 	// return response to client
