@@ -16,6 +16,7 @@ type versionInfo struct {
 	Channel       Channel `json:"channel"`
 	Version       string  `json:"version"`
 	ConfigVersion int     `json:"config_version"`
+	URL           string  `json:"url"`
 }
 
 // releaseTag returns the name of the Github Release Tag
