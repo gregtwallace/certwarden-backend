@@ -70,8 +70,7 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 	response := authResponse{}
 	response.Status = http.StatusOK
 	response.Message = "authenticated"
-	response.AccessToken = auth.AccessToken
-	response.SessionClaims = auth.SessionClaims
+	response.authorization = auth
 
 	// write auth cookies (part of response)
 	auth.writeCookies(w)
@@ -127,8 +126,7 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 	response := authResponse{}
 	response.Status = http.StatusOK
 	response.Message = "refreshed"
-	response.AccessToken = auth.AccessToken
-	response.SessionClaims = auth.SessionClaims
+	response.authorization = auth
 	// write auth cookies (part of response)
 	auth.writeCookies(w)
 
