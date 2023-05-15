@@ -2,7 +2,6 @@ package dns01manual
 
 import (
 	"errors"
-	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/datatypes"
 	"os"
 	"os/exec"
@@ -23,7 +22,6 @@ type App interface {
 // Accounts service struct
 type Service struct {
 	logger           *zap.SugaredLogger
-	dnsChecker       *dns_checker.Service
 	shellPath        string
 	createScriptPath string
 	deleteScriptPath string
@@ -38,7 +36,7 @@ type Config struct {
 }
 
 // NewService creates a new service
-func NewService(app App, config *Config, dnsChecker *dns_checker.Service) (*Service, error) {
+func NewService(app App, config *Config) (*Service, error) {
 	var err error
 
 	// if disabled, return nil and no error
@@ -51,12 +49,6 @@ func NewService(app App, config *Config, dnsChecker *dns_checker.Service) (*Serv
 	// logger
 	service.logger = app.GetLogger()
 	if service.logger == nil {
-		return nil, errServiceComponent
-	}
-
-	// dns checker
-	service.dnsChecker = dnsChecker
-	if service.dnsChecker == nil {
 		return nil, errServiceComponent
 	}
 

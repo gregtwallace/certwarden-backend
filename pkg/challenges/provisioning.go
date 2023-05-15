@@ -3,6 +3,7 @@ package challenges
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/challenges/dns_checker"
 	"reflect"
 )
 
@@ -27,6 +28,21 @@ func (service *Service) Provision(identifier acme.Identifier, method Method, key
 	err = service.providers[method.Value].Provision(resourceName, resourceContent)
 	if err != nil {
 		return err
+	}
+
+	// if using dns-01 method, utilize dnsChecker
+	if method.ChallengeType == acme.ChallengeTypeDns01 {
+		// check for propagation
+		propagated, err := service.dnsChecker.CheckTXTWithRetry(resourceName, resourceContent, 10)
+		if err != nil {
+			service.logger.Error(err)
+			return err
+		}
+
+		// if failed to propagate
+		if !propagated {
+			return dns_checker.ErrDnsRecordNotFound
+		}
 	}
 
 	return nil

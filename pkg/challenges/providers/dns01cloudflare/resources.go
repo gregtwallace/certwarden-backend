@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"legocerthub-backend/pkg/challenges/dns_checker"
 	"strings"
 
 	"github.com/cloudflare/cloudflare-go"
@@ -48,18 +47,6 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 	_, err = zone.api.CreateDNSRecord(context.Background(), zone.id, newAcmeRecord(resourceName, resourceContent))
 	if err != nil && !(strings.Contains(err.Error(), "81057") || strings.Contains(err.Error(), "Record already exists")) {
 		return err
-	}
-
-	// check for propagation
-	propagated, err := service.dnsChecker.CheckTXTWithRetry(resourceName, resourceContent, 10)
-	if err != nil {
-		service.logger.Error(err)
-		return err
-	}
-
-	// if failed to propagate
-	if !propagated {
-		return dns_checker.ErrDnsRecordNotFound
 	}
 
 	return nil

@@ -2,7 +2,6 @@ package dns01manual
 
 import (
 	"fmt"
-	"legocerthub-backend/pkg/challenges/dns_checker"
 	"os/exec"
 )
 
@@ -24,18 +23,6 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 		return err
 	}
 	service.logger.Debugf("dns create script output: %s", string(result))
-
-	// check for propagation
-	propagated, err := service.dnsChecker.CheckTXTWithRetry(resourceName, resourceContent, 10)
-	if err != nil {
-		service.logger.Error(err)
-		return err
-	}
-
-	// if failed to propagate
-	if !propagated {
-		return dns_checker.ErrDnsRecordNotFound
-	}
 
 	return nil
 }

@@ -109,7 +109,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	}
 
 	// dns-01 manual external scripts
-	dns01Manual, err := dns01manual.NewService(app, &cfg.ProviderConfigs.Dns01ManualConfig, service.dnsChecker)
+	dns01Manual, err := dns01manual.NewService(app, &cfg.ProviderConfigs.Dns01ManualConfig)
 	if err != nil {
 		service.logger.Errorf("failed to configure dns 01 manual (%s)", err)
 		return nil, err
@@ -119,7 +119,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	}
 
 	// dns-01 cloudflare challenge service
-	dns01Cloudflare, err := dns01cloudflare.NewService(app, &cfg.ProviderConfigs.Dns01CloudflareConfig, service.dnsChecker)
+	dns01Cloudflare, err := dns01cloudflare.NewService(app, &cfg.ProviderConfigs.Dns01CloudflareConfig)
 	if err != nil {
 		service.logger.Errorf("failed to configure dns 01 cloudflare (%s)", err)
 		return nil, err
@@ -129,7 +129,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	}
 
 	// dns-01 acme-dns challenge service
-	dns01AcmeDns, err := dns01acmedns.NewService(app, &cfg.ProviderConfigs.Dns01AcmeDnsConfig, service.dnsChecker)
+	dns01AcmeDns, err := dns01acmedns.NewService(app, &cfg.ProviderConfigs.Dns01AcmeDnsConfig)
 	if err != nil {
 		service.logger.Errorf("failed to configure dns 01 acme-dns (%s)", err)
 		return nil, err

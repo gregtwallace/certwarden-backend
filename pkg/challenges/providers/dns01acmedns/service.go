@@ -2,7 +2,6 @@ package dns01acmedns
 
 import (
 	"errors"
-	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/httpclient"
 
 	"go.uber.org/zap"
@@ -22,7 +21,6 @@ type App interface {
 type Service struct {
 	logger           *zap.SugaredLogger
 	httpClient       *httpclient.Client
-	dnsChecker       *dns_checker.Service
 	acmeDnsAddress   string
 	acmeDnsResources []acmeDnsResource
 }
@@ -35,7 +33,7 @@ type Config struct {
 }
 
 // NewService creates a new service
-func NewService(app App, cfg *Config, dnsChecker *dns_checker.Service) (*Service, error) {
+func NewService(app App, cfg *Config) (*Service, error) {
 	// if disabled, return nil and no error
 	if !*cfg.Enable {
 		return nil, nil
@@ -52,12 +50,6 @@ func NewService(app App, cfg *Config, dnsChecker *dns_checker.Service) (*Service
 	// http client
 	service.httpClient = app.GetHttpClient()
 	if service.httpClient == nil {
-		return nil, errServiceComponent
-	}
-
-	// dns checker
-	service.dnsChecker = dnsChecker
-	if service.dnsChecker == nil {
 		return nil, errServiceComponent
 	}
 

@@ -2,7 +2,6 @@ package dns01cloudflare
 
 import (
 	"errors"
-	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/datatypes"
 
 	"go.uber.org/zap"
@@ -21,13 +20,12 @@ type App interface {
 // Accounts service struct
 type Service struct {
 	logger           *zap.SugaredLogger
-	dnsChecker       *dns_checker.Service
 	knownDomainZones *datatypes.SafeMap
 	dnsRecords       *datatypes.SafeMap
 }
 
 // NewService creates a new service
-func NewService(app App, config *Config, dnsChecker *dns_checker.Service) (*Service, error) {
+func NewService(app App, config *Config) (*Service, error) {
 	// if disabled, return nil and no error
 	if !*config.Enable {
 		return nil, nil
@@ -38,12 +36,6 @@ func NewService(app App, config *Config, dnsChecker *dns_checker.Service) (*Serv
 	// logger
 	service.logger = app.GetLogger()
 	if service.logger == nil {
-		return nil, errServiceComponent
-	}
-
-	// dns checker
-	service.dnsChecker = dnsChecker
-	if service.dnsChecker == nil {
 		return nil, errServiceComponent
 	}
 

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"legocerthub-backend/pkg/challenges/dns_checker"
 	"net/http"
 	"strings"
 )
@@ -99,18 +98,6 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 	// if not status 200
 	if resp.StatusCode != http.StatusOK {
 		return ErrUpdateFailed
-	}
-
-	// check for propagation
-	propagated, err := service.dnsChecker.CheckTXTWithRetry(resourceName, resourceContent, 10)
-	if err != nil {
-		service.logger.Error(err)
-		return err
-	}
-
-	// if failed to propagate
-	if !propagated {
-		return dns_checker.ErrDnsRecordNotFound
 	}
 
 	return nil
