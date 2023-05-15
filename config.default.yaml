@@ -1,3 +1,7 @@
+# Initial login credentials:
+# username: admin
+# password: password
+
 # Bind Address and Ports for API Server
 # If address is blank, server will bind to all available addresses
 # Https will start if there is a valid private_key and certificate
