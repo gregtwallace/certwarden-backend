@@ -2,6 +2,15 @@
 # username: admin
 # password: password
 
+# config version is used indicate when breaking changes are made between
+# versions of LeGo. Error will be logged and the /status endpoint will
+# show mismatch if the version number of the config file and the LeGo binary
+# do not match.
+# If you see this, review the change log to determine what configuration
+# item(s)need to be updated and then manually update the version number to
+# clear the error.
+config_version: 0
+
 # Bind Address and Ports for API Server
 # If address is blank, server will bind to all available addresses
 # Https will start if there is a valid private_key and certificate

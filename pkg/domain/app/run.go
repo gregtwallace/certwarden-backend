@@ -215,6 +215,11 @@ func create(ctx context.Context) (*Application, error) {
 		return nil, err
 	}
 
+	// config file version check
+	if app.config.ConfigVersion != configVersion {
+		app.logger.Errorf("config.yaml config_version (%d) does not match app (%d), review config change log", app.config.ConfigVersion, configVersion)
+	}
+
 	// shutdown context and waitgroup for graceful shutdown
 	app.shutdownContext = ctx
 	app.shutdownWaitgroup = new(sync.WaitGroup)

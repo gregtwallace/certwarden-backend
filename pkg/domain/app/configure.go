@@ -21,6 +21,7 @@ const configFile = dataStoragePath + "/config.yaml"
 
 // config is the configuration structure for app (and subsequently services)
 type config struct {
+	ConfigVersion        int               `yaml:"config_version"`
 	BindAddress          *string           `yaml:"bind_address"`
 	HttpsPort            *int              `yaml:"https_port"`
 	HttpPort             *int              `yaml:"http_port"`
@@ -121,6 +122,10 @@ func defaultConfig() (cfg *config) {
 	}
 
 	// set default values
+	// default config version is always invalid to ensure error if doesn't
+	// exist in config file
+	cfg.ConfigVersion = -1
+
 	// http/s server
 	*cfg.BindAddress = ""
 	*cfg.HttpsPort = 4055

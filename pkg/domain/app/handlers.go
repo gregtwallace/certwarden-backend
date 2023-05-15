@@ -13,10 +13,11 @@ import (
 )
 
 type appStatus struct {
-	Status          string               `json:"status"`
-	DevMode         bool                 `json:"development_mode,omitempty"`
-	Version         string               `json:"version"`
-	AcmeDirectories appStatusDirectories `json:"acme_directories"`
+	Status             string               `json:"status"`
+	DevMode            bool                 `json:"development_mode,omitempty"`
+	Version            string               `json:"version"`
+	ConfigVersionMatch bool                 `json:"config_version_match"`
+	AcmeDirectories    appStatusDirectories `json:"acme_directories"`
 }
 
 type appStatusDirectories struct {
@@ -28,9 +29,10 @@ type appStatusDirectories struct {
 func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (err error) {
 
 	currentStatus := appStatus{
-		Status:  "available",
-		DevMode: *app.config.DevMode,
-		Version: appVersion,
+		Status:             "available",
+		DevMode:            *app.config.DevMode,
+		Version:            appVersion,
+		ConfigVersionMatch: app.config.ConfigVersion == configVersion,
 		AcmeDirectories: appStatusDirectories{
 			Production: acmeProdUrl,
 			Staging:    acmeStagingUrl,
