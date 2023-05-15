@@ -87,6 +87,9 @@ challenges:
     # dns-01 using scripts that are external to LeGo
     dns_01_manual:
       enable: false
+      environment:
+        - "MY_EXPORT_VAR=some_value"
+        - "ANOTHER_EXPORT_ENV=another_value"
       create_script: ./scripts/create-dns.sh
       delete_script: ./scripts/delete-dns.sh
     # dns-01 via LeGo Cloudflare integration

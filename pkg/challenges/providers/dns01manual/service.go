@@ -23,6 +23,7 @@ type App interface {
 type Service struct {
 	logger           *zap.SugaredLogger
 	shellPath        string
+	environmentVars  []string
 	createScriptPath string
 	deleteScriptPath string
 	dnsRecords       *datatypes.SafeMap
@@ -30,9 +31,10 @@ type Service struct {
 
 // Configuration options
 type Config struct {
-	Enable       *bool  `yaml:"enable"`
-	CreateScript string `yaml:"create_script"`
-	DeleteScript string `yaml:"delete_script"`
+	Enable       *bool    `yaml:"enable"`
+	Environment  []string `yaml:"environment"`
+	CreateScript string   `yaml:"create_script"`
+	DeleteScript string   `yaml:"delete_script"`
 }
 
 // NewService creates a new service
@@ -75,6 +77,9 @@ func NewService(app App, config *Config) (*Service, error) {
 			}
 		}
 	}
+
+	// environment vars
+	service.environmentVars = config.Environment
 
 	// verify scripts exist
 	// create
