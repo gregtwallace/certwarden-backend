@@ -51,7 +51,7 @@ func (service *Service) Deprovision(resourceName string, resourceContent string)
 		// do not return
 	}
 
-	// run create script
+	// run delete script
 	args := scriptWithArgs(service.deleteScriptPath, resourceName, resourceContent)
 	result, err := exec.Command(service.shellPath, args...).Output()
 	if err != nil {
