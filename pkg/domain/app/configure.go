@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/challenges/dns_checker"
+	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
@@ -111,6 +112,10 @@ func defaultConfig() (cfg *config) {
 				Dns01CloudflareConfig: dns01cloudflare.Config{
 					Enable: new(bool),
 				},
+				Dns01AcmeDnsConfig: dns01acmedns.Config{
+					Enable:      new(bool),
+					HostAddress: new(string),
+				},
 			},
 		},
 	}
@@ -172,6 +177,9 @@ func defaultConfig() (cfg *config) {
 
 	// dns-01-cloudflare
 	*cfg.Challenges.ProviderConfigs.Dns01CloudflareConfig.Enable = false
+
+	// dns-01-acmedns
+	*cfg.Challenges.ProviderConfigs.Dns01AcmeDnsConfig.Enable = false
 
 	// end challenge providers
 

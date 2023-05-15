@@ -32,6 +32,8 @@ replace legocerthub-backend/pkg/challenges => /pkg/challenges
 
 replace legocerthub-backend/pkg/challenges/dns_checker => /pkg/challenges/dns_checker
 
+replace legocerthub-backend/pkg/challenges/providers/dns01acmedns => /pkg/challenges/providers/dns01acmedns
+
 replace legocerthub-backend/pkg/challenges/providers/dns01cloudflare => /pkg/challenges/providers/dns01cloudflare
 
 replace legocerthub-backend/pkg/challenges/providers/dns01manual => /pkg/challenges/providers/dns01manual

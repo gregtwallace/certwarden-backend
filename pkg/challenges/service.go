@@ -5,9 +5,11 @@ import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges/dns_checker"
+	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
+	"legocerthub-backend/pkg/httpclient"
 	"sync"
 
 	"go.uber.org/zap"
@@ -20,6 +22,7 @@ var (
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
+	GetHttpClient() *httpclient.Client
 	GetAcmeProdService() *acme.Service
 	GetAcmeStagingService() *acme.Service
 	GetDevMode() bool
@@ -38,6 +41,7 @@ type ConfigProviders struct {
 	Http01InternalConfig  http01internal.Config  `yaml:"http_01_internal"`
 	Dns01ManualConfig     dns01manual.Config     `yaml:"dns_01_manual"`
 	Dns01CloudflareConfig dns01cloudflare.Config `yaml:"dns_01_cloudflare"`
+	Dns01AcmeDnsConfig    dns01acmedns.Config    `yaml:"dns_01_acme_dns"`
 }
 
 // Config holds all of the challenge config
@@ -122,6 +126,16 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	}
 	if dns01Cloudflare != nil {
 		service.providers[methodValueDns01Cloudflare] = dns01Cloudflare
+	}
+
+	// dns-01 acme-dns challenge service
+	dns01AcmeDns, err := dns01acmedns.NewService(app, &cfg.ProviderConfigs.Dns01AcmeDnsConfig, service.dnsChecker)
+	if err != nil {
+		service.logger.Errorf("failed to configure dns 01 acme-dns (%s)", err)
+		return nil, err
+	}
+	if dns01AcmeDns != nil {
+		service.providers[methodValueDns01AcmeDns] = dns01AcmeDns
 	}
 	// end challenge providers
 

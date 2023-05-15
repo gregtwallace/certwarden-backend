@@ -50,7 +50,7 @@ func New(userAgent string, devMode bool) (client *Client) {
 }
 
 // newRequest creates an http request for the client to later do
-func (client *Client) newRequest(method string, url string, body io.Reader) (*http.Request, error) {
+func (client *Client) NewRequest(method string, url string, body io.Reader) (*http.Request, error) {
 	request, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func (client *Client) newRequest(method string, url string, body io.Reader) (*ht
 }
 
 // do does the specified request
-func (client *Client) do(request *http.Request) (*http.Response, error) {
+func (client *Client) Do(request *http.Request) (*http.Response, error) {
 	response, err := client.http.Do(request)
 	if err != nil {
 		return nil, err
@@ -78,34 +78,34 @@ func (client *Client) do(request *http.Request) (*http.Response, error) {
 
 // Get does a get request to the specified url
 func (client *Client) Get(url string) (*http.Response, error) {
-	request, err := client.newRequest(http.MethodGet, url, nil)
+	request, err := client.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.do(request)
+	return client.Do(request)
 }
 
 // Head does a head request to the specified url
 // a head request is the same as Get but without the body
 func (client *Client) Head(url string) (*http.Response, error) {
-	request, err := client.newRequest(http.MethodHead, url, nil)
+	request, err := client.NewRequest(http.MethodHead, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.do(request)
+	return client.Do(request)
 }
 
 // Post does a post request using the specified url, content type, and
 // body
 func (client *Client) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
-	request, err := client.newRequest("POST", url, body)
+	request, err := client.NewRequest("POST", url, body)
 	if err != nil {
 		return nil, err
 	}
 
 	request.Header.Set("Content-Type", contentType)
 
-	return client.do(request)
+	return client.Do(request)
 }

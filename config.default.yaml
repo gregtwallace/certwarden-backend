@@ -100,3 +100,19 @@ challenges:
         - api_token: 345def
           zone_names:
             - example4.com
+    # acme-dns server (https://github.com/joohoi/acme-dns)
+    # each name must be pre-registered and configured individually
+    # LeGo only updates the challenge tokens automatically
+    dns_01_acme_dns:
+      enable: false
+      acme_dns_address: http://localhost:8880
+      resources: 
+        # repeat this block as many times as needed
+          # the actual domain you want a certificate for
+        - real_domain: secure-server.example.com
+          # the matching information about the acme-dns domain
+          # that will be updated
+          full_domain: ee29dc47-aaaa-aaaa-aaaa-aaaaaaaaaaaa.decoy.dummy.com
+          username: ee29dc47-bbbb-bbbb-bbbb-bbbbbbbbbbbb
+          password: QWDP...b2Mg
+
