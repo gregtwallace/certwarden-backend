@@ -15,8 +15,8 @@ type ChallengeType string
 const (
 	UnknownChallengeType ChallengeType = ""
 
-	ChallengeTypeHttp01 = "http-01"
-	ChallengeTypeDns01  = "dns-01"
+	ChallengeTypeHttp01 ChallengeType = "http-01"
+	ChallengeTypeDns01  ChallengeType = "dns-01"
 )
 
 // ValidationResource creates the resource name and content that are required
