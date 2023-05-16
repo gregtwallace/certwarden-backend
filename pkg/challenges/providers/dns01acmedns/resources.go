@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -94,6 +95,9 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 	if err != nil {
 		return err
 	}
+	// ready body & close
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
 
 	// if not status 200
 	if resp.StatusCode != http.StatusOK {
@@ -134,6 +138,9 @@ func (service *Service) Deprovision(resourceName string, resourceContent string)
 	if err != nil {
 		return err
 	}
+	// ready body & close
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
 
 	// if not status 200
 	if resp.StatusCode != http.StatusOK {
