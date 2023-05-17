@@ -29,8 +29,9 @@ const (
 	unknownMethodValue         MethodValue = ""
 	methodValueHttp01Internal  MethodValue = "http-01-internal"
 	methodValueDns01Manual     MethodValue = "dns-01-manual"
-	methodValueDns01Cloudflare MethodValue = "dns-01-cloudflare"
 	methodValueDns01AcmeDns    MethodValue = "dns-01-acme-dns"
+	methodValueDns01AcmeSh     MethodValue = "dns-01-acme-sh"
+	methodValueDns01Cloudflare MethodValue = "dns-01-cloudflare"
 )
 
 // UnknownMethod is used when a Method does not match any known Method.
@@ -61,15 +62,21 @@ func (service *Service) configureMethods() error {
 			ChallengeType: acme.ChallengeTypeDns01,
 		},
 		{
-			// create and delete dns records on Cloudflare
-			Value:         methodValueDns01Cloudflare,
-			Name:          "DNS Cloudflare",
-			ChallengeType: acme.ChallengeTypeDns01,
-		},
-		{
 			// updates dns record values on acme-dns
 			Value:         methodValueDns01AcmeDns,
 			Name:          "DNS acme-dns",
+			ChallengeType: acme.ChallengeTypeDns01,
+		},
+		{
+			// updates dns record values using acme.sh script
+			Value:         methodValueDns01AcmeSh,
+			Name:          "DNS acme.sh Script",
+			ChallengeType: acme.ChallengeTypeDns01,
+		},
+		{
+			// create and delete dns records on Cloudflare
+			Value:         methodValueDns01Cloudflare,
+			Name:          "DNS Cloudflare",
 			ChallengeType: acme.ChallengeTypeDns01,
 		},
 	}

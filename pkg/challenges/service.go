@@ -6,6 +6,7 @@ import (
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
+	"legocerthub-backend/pkg/challenges/providers/dns01acmesh"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
@@ -40,8 +41,9 @@ type providerService interface {
 type ConfigProviders struct {
 	Http01InternalConfig  http01internal.Config  `yaml:"http_01_internal"`
 	Dns01ManualConfig     dns01manual.Config     `yaml:"dns_01_manual"`
-	Dns01CloudflareConfig dns01cloudflare.Config `yaml:"dns_01_cloudflare"`
 	Dns01AcmeDnsConfig    dns01acmedns.Config    `yaml:"dns_01_acme_dns"`
+	Dns01AcmeShConfig     dns01acmesh.Config     `yaml:"dns_01_acme_sh"`
+	Dns01CloudflareConfig dns01cloudflare.Config `yaml:"dns_01_cloudflare"`
 }
 
 // Config holds all of the challenge config
@@ -118,6 +120,26 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 		service.providers[methodValueDns01Manual] = dns01Manual
 	}
 
+	// dns-01 acme-dns challenge service
+	dns01AcmeDns, err := dns01acmedns.NewService(app, &cfg.ProviderConfigs.Dns01AcmeDnsConfig)
+	if err != nil {
+		service.logger.Errorf("failed to configure dns 01 acme-dns (%s)", err)
+		return nil, err
+	}
+	if dns01AcmeDns != nil {
+		service.providers[methodValueDns01AcmeDns] = dns01AcmeDns
+	}
+
+	// dns-01 acme.sh script service
+	dns01AcmeSh, err := dns01acmesh.NewService(app, &cfg.ProviderConfigs.Dns01AcmeShConfig)
+	if err != nil {
+		service.logger.Errorf("failed to configure dns 01 acme.sh (%s)", err)
+		return nil, err
+	}
+	if dns01AcmeSh != nil {
+		service.providers[methodValueDns01AcmeSh] = dns01AcmeSh
+	}
+
 	// dns-01 cloudflare challenge service
 	dns01Cloudflare, err := dns01cloudflare.NewService(app, &cfg.ProviderConfigs.Dns01CloudflareConfig)
 	if err != nil {
@@ -128,15 +150,6 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 		service.providers[methodValueDns01Cloudflare] = dns01Cloudflare
 	}
 
-	// dns-01 acme-dns challenge service
-	dns01AcmeDns, err := dns01acmedns.NewService(app, &cfg.ProviderConfigs.Dns01AcmeDnsConfig)
-	if err != nil {
-		service.logger.Errorf("failed to configure dns 01 acme-dns (%s)", err)
-		return nil, err
-	}
-	if dns01AcmeDns != nil {
-		service.providers[methodValueDns01AcmeDns] = dns01AcmeDns
-	}
 	// end challenge providers
 
 	// configure methods (list of all, properly flagged as enabled or not)

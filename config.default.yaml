@@ -101,21 +101,6 @@ challenges:
         - "ANOTHER_EXPORT_ENV=another_value"
       create_script: ./scripts/create-dns.sh
       delete_script: ./scripts/delete-dns.sh
-    # dns-01 via LeGo Cloudflare integration
-    dns_01_cloudflare:
-      enable: false
-      accounts:
-        - email: user@example.com
-          global_api_key: 12345abcde
-      tokens:
-        - api_token: 123abc
-          zone_names:
-            - example.com
-            - example1.com
-            - example2.com
-        - api_token: 345def
-          zone_names:
-            - example4.com
     # acme-dns server (https://github.com/joohoi/acme-dns)
     # each name must be pre-registered and configured individually
     # LeGo only updates the challenge tokens automatically
@@ -131,4 +116,35 @@ challenges:
           full_domain: ee29dc47-aaaa-aaaa-aaaa-aaaaaaaaaaaa.decoy.dummy.com
           username: ee29dc47-bbbb-bbbb-bbbb-bbbbbbbbbbbb
           password: QWDP...b2Mg
+    # acme.sh scripts (https://github.com/acmesh-official/acme.sh)
+    # complete dns-01 challenges with any provider supported by acme.sh
+    # you will need to clone the repo and specify where the files are located
+    dns_01_acme_sh:
+      enable: false
+      # path to the acme.sh script. /dnsapi subfolder must also exist and contain
+      # the script for the relevant dns provider (hook script)
+      acme_sh_path: ./scripts/acme.sh
+      # for needed environment vars, review the relevant hook script
+      # within acme.sh/dnsapi
+      environment:
+        - "MY_EXPORT_VAR=some_value"
+        - "ANOTHER_EXPORT_ENV=another_value"
+      # the --dns hook_name from acme.sh, this will match a filename in the
+      # acme.sh/dnsapi path
+      dns_hook: dns_cf
 
+    # dns-01 via LeGo Cloudflare integration
+    dns_01_cloudflare:
+      enable: false
+      accounts:
+        - email: user@example.com
+          global_api_key: 12345abcde
+      tokens:
+        - api_token: 123abc
+          zone_names:
+            - example.com
+            - example1.com
+            - example2.com
+        - api_token: 345def
+          zone_names:
+            - example4.com
