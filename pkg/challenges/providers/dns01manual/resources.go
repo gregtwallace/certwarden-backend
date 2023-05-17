@@ -2,6 +2,7 @@ package dns01manual
 
 import (
 	"fmt"
+	"os/exec"
 )
 
 // Provision adds the resource to the internal tracking map and provisions
@@ -22,6 +23,11 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 	// run script command
 	result, err := cmd.Output()
 	if err != nil {
+		// try to get detailed err
+		exitErr, ok := err.(*exec.ExitError)
+		if ok {
+			service.logger.Errorf("dns create script std err: %s", exitErr.Stderr)
+		}
 		service.logger.Errorf("dns create script error: %s", err)
 		return err
 	}
@@ -48,6 +54,11 @@ func (service *Service) Deprovision(resourceName string, resourceContent string)
 	// run script command
 	result, err := cmd.Output()
 	if err != nil {
+		// try to get detailed err
+		exitErr, ok := err.(*exec.ExitError)
+		if ok {
+			service.logger.Errorf("dns delete script std err: %s", exitErr.Stderr)
+		}
 		service.logger.Errorf("dns delete script error: %s", err)
 		return err
 	}
