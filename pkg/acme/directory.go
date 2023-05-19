@@ -23,9 +23,10 @@ type directory struct {
 	RevokeCert string `json:"revokeCert"`
 	KeyChange  string `json:"keyChange"`
 	Meta       struct {
-		CaaIdentities  []string `json:"caaIdentities"`
-		TermsOfService string   `json:"termsOfService"`
-		Website        string   `json:"website"`
+		TermsOfService          string   `json:"termsOfService"`
+		Website                 string   `json:"website"`
+		CaaIdentities           []string `json:"caaIdentities"`
+		ExternalAccountRequired bool     `json:"externalAccountRequired"`
 	} `json:"meta"`
 }
 
@@ -64,6 +65,11 @@ func (service *Service) fetchAcmeDirectory() error {
 		fetchedDir.RevokeCert == "" ||
 		fetchedDir.KeyChange == "" {
 		return ErrDirMissingUrl
+	}
+
+	// external account binding not yet supported
+	if fetchedDir.Meta.ExternalAccountRequired {
+		return errors.New("external account binding is required by CA but not yet supported")
 	}
 
 	// Only update if the fetched directory content is different than current
@@ -124,4 +130,9 @@ func (service *Service) backgroundDirManager(ctx context.Context, wg *sync.WaitG
 // TosUrl returns the string for the url where the ToS are located
 func (service *Service) TosUrl() string {
 	return service.dir.Meta.TermsOfService
+}
+
+// DirUrl returns the string for the url where the ACME Directory is located
+func (service *Service) DirUrl() string {
+	return service.dirUri
 }

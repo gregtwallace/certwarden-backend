@@ -34,8 +34,8 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 		Version:            appVersion,
 		ConfigVersionMatch: app.config.ConfigVersion == configVersion,
 		AcmeDirectories: appStatusDirectories{
-			Production: acmeProdUrl,
-			Staging:    acmeStagingUrl,
+			Production: app.acmeProd.DirUrl(),
+			Staging:    app.acmeStaging.DirUrl(),
 		},
 	}
 

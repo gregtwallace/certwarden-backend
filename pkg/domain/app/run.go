@@ -254,7 +254,7 @@ func create(ctx context.Context) (*Application, error) {
 	go func() {
 		defer wg.Done()
 		var err error
-		app.acmeProd, err = acme.NewService(app, acmeProdUrl)
+		app.acmeProd, err = acme.NewService(app, *app.config.AcmeProdDirURL)
 		wgErrors <- err
 	}()
 
@@ -262,7 +262,7 @@ func create(ctx context.Context) (*Application, error) {
 	go func() {
 		defer wg.Done()
 		var err error
-		app.acmeStaging, err = acme.NewService(app, acmeStagingUrl)
+		app.acmeStaging, err = acme.NewService(app, *app.config.AcmeStagingDirURL)
 		wgErrors <- err
 	}()
 

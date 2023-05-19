@@ -16,6 +16,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Directory URLs for Let's Encrypt (default)
+const letsEncryptProdUrl string = "https://acme-v02.api.letsencrypt.org/directory"
+const letsEncryptStagingUrl string = "https://acme-staging-v02.api.letsencrypt.org/directory"
+
 // path to the config file
 const configFile = dataStoragePath + "/config.yaml"
 
@@ -26,6 +30,8 @@ type config struct {
 	HttpsPort            *int              `yaml:"https_port"`
 	HttpPort             *int              `yaml:"http_port"`
 	EnableHttpRedirect   *bool             `yaml:"enable_http_redirect"`
+	AcmeProdDirURL       *string           `yaml:"acme_prod_directory_url"`
+	AcmeStagingDirURL    *string           `yaml:"acme_staging_directory_url"`
 	LogLevel             *string           `yaml:"log_level"`
 	ServeFrontend        *bool             `yaml:"serve_frontend"`
 	CORSPermittedOrigins []string          `yaml:"cors_permitted_origins"`
@@ -72,6 +78,11 @@ func (app *Application) readConfigFile() (err error) {
 		return err
 	}
 
+	// warn about non-default CA
+	if *cfg.AcmeProdDirURL != letsEncryptProdUrl || *cfg.AcmeStagingDirURL != letsEncryptStagingUrl {
+		app.logger.Warn("using ACME directory other than Let's Encrypt and things may not work properly")
+	}
+
 	// success
 	app.config = cfg
 	return nil
@@ -85,6 +96,8 @@ func defaultConfig() (cfg *config) {
 		HttpsPort:          new(int),
 		HttpPort:           new(int),
 		EnableHttpRedirect: new(bool),
+		AcmeProdDirURL:     new(string),
+		AcmeStagingDirURL:  new(string),
 		LogLevel:           new(string),
 		ServeFrontend:      new(bool),
 		PrivateKeyName:     new(string),
@@ -139,6 +152,8 @@ func defaultConfig() (cfg *config) {
 	*cfg.HttpPort = 4050
 
 	*cfg.EnableHttpRedirect = true
+	*cfg.AcmeProdDirURL = letsEncryptProdUrl
+	*cfg.AcmeStagingDirURL = letsEncryptStagingUrl
 	*cfg.LogLevel = defaultLogLevel.String()
 	*cfg.ServeFrontend = true
 	cfg.CORSPermittedOrigins = []string{}

@@ -35,10 +35,6 @@ const dataStoragePath = "./data"
 // api path
 const apiUrlPath = "/api"
 
-// Directory URLs for Let's Encrypt
-const acmeProdUrl string = "https://acme-v02.api.letsencrypt.org/directory"
-const acmeStagingUrl string = "https://acme-staging-v02.api.letsencrypt.org/directory"
-
 // Application is the main app struct
 type Application struct {
 	config            *config

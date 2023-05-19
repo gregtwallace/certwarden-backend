@@ -148,3 +148,14 @@ challenges:
         - api_token: 345def
           zone_names:
             - example4.com
+
+# EXPERIMENTAL AND UNSUPPORTED!!!
+
+# override ACME directory (i.e. use a provider other than Let's Encrypt)
+# This is not officially supported as I haven't tested other providers
+# WARNING: External Binding is not yet implemented, so providers requiring this
+# WILL NOT work.  Also, your database will become a mess if you change this
+# setting and do not start a new database for the newly specified provider.
+# YOU HAVE BEEN WARNED! CHANGE AT YOUR OWN RISK!
+acme_prod_directory_url: "https://acme-v02.api.letsencrypt.org/directory"
+acme_staging_directory_url: "https://acme-staging-v02.api.letsencrypt.org/directory"
