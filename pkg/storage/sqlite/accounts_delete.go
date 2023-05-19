@@ -3,7 +3,6 @@ package sqlite
 import (
 	"context"
 	"legocerthub-backend/pkg/storage"
-	"log"
 )
 
 // AccountHasCerts returns true if the specified accountId matches
@@ -25,7 +24,6 @@ func (store *Storage) AccountHasCerts(accountId int) bool {
 	temp := -2
 
 	err := row.Scan(&temp)
-	log.Println(err)
 	// error means no certs for the account (includes error no rows)
 	return err == nil
 }

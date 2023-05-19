@@ -11,7 +11,6 @@ import (
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/orders"
-	"log"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -50,16 +49,18 @@ func (c config) httpsServAddress() string {
 
 // readConfigFile parses the config yaml file. It also sets default config
 // for any unspecified options
-func readConfigFile() (cfg *config, err error) {
+func (app *Application) readConfigFile() (err error) {
 	// load default config options
-	cfg = defaultConfig()
+	cfg := defaultConfig()
 
 	// open config file, if exists
 	file, err := os.Open(configFile)
 	if err != nil {
-		log.Printf("warn: can't open config file, using defaults (%s)", err)
-		return cfg, nil
+		app.logger.Warnf("can't open config file, using defaults (%s)", err)
+		app.config = cfg
+		return nil
 	}
+	// only needed if file actually opened
 	defer file.Close()
 
 	// decode config over default config
@@ -68,10 +69,12 @@ func readConfigFile() (cfg *config, err error) {
 	decoder := yaml.NewDecoder(file)
 	err = decoder.Decode(cfg)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return cfg, nil
+	// success
+	app.config = cfg
+	return nil
 }
 
 // defaultConfig generates the configuration using defaults

@@ -47,7 +47,7 @@ func (app *Application) initZapLogger() {
 	logLevel := defaultLogLevel
 	var logLevelParseErr error
 
-	// if config is bad, or if devmode, use debug
+	// if config isn't loaded or if devmode, use debug
 	if app.config == nil || *app.config.DevMode {
 		logLevel = zapcore.DebugLevel
 	} else {
@@ -68,5 +68,10 @@ func (app *Application) initZapLogger() {
 		app.logger.Warnf("failed to parse config log level ('%s' not valid)", *app.config.LogLevel)
 	}
 
-	app.logger.Infof("logging started (log level: %s)", logLevel)
+	// log which init this is
+	if app.config == nil {
+		app.logger.Infof("initial logging started (log level: %s)", logLevel)
+	} else {
+		app.logger.Infof("logging started (log level: %s)", logLevel)
+	}
 }

@@ -17,7 +17,6 @@ import (
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -36,6 +35,7 @@ func RunLeGoAPI() {
 	// create the app
 	app, err := create(ctx)
 	if err != nil {
+		app.logger.Errorf("failed to create app (%s)", err)
 		os.Exit(1)
 		return
 	}
@@ -188,32 +188,32 @@ func create(ctx context.Context) (*Application, error) {
 	app := new(Application)
 	var err error
 
+	// logger pre-config reading
+	app.initZapLogger()
+
+	// startup log
+	app.logger.Infof("starting LeGo CertHub v%s", appVersion)
+
 	// make data dir if doesn't exist
 	_, err = os.Stat(dataStoragePath)
 	if errors.Is(err, os.ErrNotExist) {
 		// create data dir
 		err = os.Mkdir(dataStoragePath, 0700)
 		if err != nil {
-			log.Printf("failed to make data storage directory (%s)", err)
-			return nil, err
+			app.logger.Errorf("failed to make data storage directory (%s)", err)
+			return app, err
 		}
 	}
 
 	// parse config file
-	app.config, err = readConfigFile()
-	// defer err check to after logger
-
-	// logger (zap)
-	app.initZapLogger()
-
-	// startup log
-	app.logger.Infof("starting LeGo CertHub v%s", appVersion)
-
-	// config file error check
+	err = app.readConfigFile()
 	if err != nil {
 		app.logger.Errorf("failed to read app config file (%s)", err)
-		return nil, err
+		return app, err
 	}
+
+	// logger (re-init using config settings)
+	app.initZapLogger()
 
 	// config file version check
 	if app.config.ConfigVersion != configVersion {
@@ -239,7 +239,7 @@ func create(ctx context.Context) (*Application, error) {
 	app.output, err = output.NewService(app)
 	if err != nil {
 		app.logger.Errorf("failed to configure app output (%s)", err)
-		return nil, err
+		return app, err
 	}
 
 	// acme services
@@ -273,7 +273,7 @@ func create(ctx context.Context) (*Application, error) {
 	for err = range wgErrors {
 		if err != nil {
 			app.logger.Errorf("failed to configure app acme service(s) (%s)", err)
-			return nil, err
+			return app, err
 		}
 	}
 	// end acme services
@@ -282,14 +282,14 @@ func create(ctx context.Context) (*Application, error) {
 	app.challenges, err = challenges.NewService(app, &app.config.Challenges)
 	if err != nil {
 		app.logger.Errorf("failed to configure app challenges (%s)", err)
-		return nil, err
+		return app, err
 	}
 
 	// storage
 	app.storage, err = sqlite.OpenStorage(app, dataStoragePath)
 	if err != nil {
 		app.logger.Errorf("failed to configure app storage (%s)", err)
-		return nil, err
+		return app, err
 	}
 
 	// get app's tls cert
@@ -308,56 +308,56 @@ func create(ctx context.Context) (*Application, error) {
 	app.updater, err = updater.NewService(app, &app.config.Updater)
 	if app.updater == nil || err != nil {
 		app.logger.Errorf("failed to configure app updater (%s)", err)
-		return nil, err
+		return app, err
 	}
 
 	// users service
 	app.auth, err = auth.NewService(app)
 	if err != nil {
 		app.logger.Errorf("failed to configure app authentication (%s)", err)
-		return nil, err
+		return app, err
 	}
 
 	// keys service
 	app.keys, err = private_keys.NewService(app)
 	if err != nil {
 		app.logger.Errorf("failed to configure app keys (%s)", err)
-		return nil, err
+		return app, err
 	}
 
 	// accounts service
 	app.accounts, err = acme_accounts.NewService(app)
 	if err != nil {
 		app.logger.Errorf("failed to configure app accounts (%s)", err)
-		return nil, err
+		return app, err
 	}
 
 	// authorizations service
 	app.authorizations, err = authorizations.NewService(app)
 	if err != nil {
 		app.logger.Errorf("failed to configure app authorizations (%s)", err)
-		return nil, err
+		return app, err
 	}
 
 	// certificates service
 	app.certificates, err = certificates.NewService(app)
 	if err != nil {
 		app.logger.Errorf("failed to configure app certificates (%s)", err)
-		return nil, err
+		return app, err
 	}
 
 	// orders service
 	app.orders, err = orders.NewService(app, &app.config.Orders)
 	if err != nil {
 		app.logger.Errorf("failed to configure app orders (%s)", err)
-		return nil, err
+		return app, err
 	}
 
 	// download service
 	app.download, err = download.NewService(app)
 	if err != nil {
 		app.logger.Errorf("failed to configure app download (%s)", err)
-		return nil, err
+		return app, err
 	}
 
 	return app, nil
