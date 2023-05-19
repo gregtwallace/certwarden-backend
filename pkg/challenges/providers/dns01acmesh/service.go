@@ -92,7 +92,7 @@ func NewService(app App, config *Config) (*Service, error) {
 			return nil, err
 		}
 	}
-	service.shellScriptPath = path + "/" + acmeShFileName
+	service.shellScriptPath = path + "/" + acmeShFileName + "_" + config.DnsHook + ".sh"
 
 	shellFile, err := os.Create(service.shellScriptPath)
 	if err != nil {
