@@ -149,6 +149,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	}
 
 	// configure dns checker service (if any enabled Method is a DNS method)
+	// Fixes https://github.com/gregtwallace/legocerthub/issues/6
 	for i := range service.methods {
 		if service.methods[i].Enabled && service.methods[i].ChallengeType == acme.ChallengeTypeDns01 {
 			// enable checker
