@@ -3,6 +3,7 @@ package acme
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -151,6 +152,11 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	// if it didn't error, that means an error response WAS decoded
 	if err == nil {
 		return nil, nil, acmeError
+	}
+
+	// verify status code is success (catch all in case acmeError didn't decode somehow)
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		return nil, nil, fmt.Errorf("acme error: status code %d", response.StatusCode)
 	}
 
 	return bodyBytes, response.Header, nil
