@@ -23,7 +23,7 @@ import (
 )
 
 // application version
-const appVersion = "0.9.2"
+const appVersion = "0.9.3"
 
 // config version
 // increment any time there is a breaking change between versions
