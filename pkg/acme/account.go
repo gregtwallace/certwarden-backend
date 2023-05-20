@@ -159,7 +159,7 @@ func (service *Service) DeactivateAccount(accountKey AccountKey) (response Accou
 
 // RolloverAccountKey rolls over the specified account's key to the newKey. This essentially
 // retires the old key from the account and substitutes the new key in its place.
-func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountKey AccountKey) (response Account, err error) {
+func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountKey AccountKey) (err error) {
 	// build payload
 	payload := acmeSignedMessage{}
 
@@ -174,13 +174,13 @@ func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountK
 	// new key's alg
 	innerHeader.Algorithm, err = newKeyAccountKey.signingAlg()
 	if err != nil {
-		return Account{}, err
+		return err
 	}
 
 	// new key's jwk
 	innerHeader.JsonWebKey, err = newKeyAccountKey.jwk()
 	if err != nil {
-		return Account{}, err
+		return err
 	}
 
 	// omit kid
@@ -192,7 +192,7 @@ func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountK
 	// encode and add to payload
 	payload.ProtectedHeader, err = encodeJson(innerHeader)
 	if err != nil {
-		return Account{}, err
+		return err
 	}
 	// end inner (payload's) header
 
@@ -200,7 +200,7 @@ func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountK
 	// old key's jwk
 	oldJwk, err := oldAccountKey.jwk()
 	if err != nil {
-		return Account{}, err
+		return err
 	}
 
 	// build inner payload
@@ -215,28 +215,23 @@ func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountK
 	// encode and add to payload
 	payload.Payload, err = encodeJson(innerPayload)
 	if err != nil {
-		return Account{}, err
+		return err
 	}
 	// end inner (payload's) payload
 
 	// sign inner payload
 	err = payload.Sign(newKeyAccountKey)
 	if err != nil {
-		return Account{}, err
+		return err
 	}
 	// end inner (payload's) signature
 
 	// post key change
-	bodyBytes, headers, err := service.postToUrlSigned(payload, service.dir.KeyChange, oldAccountKey)
+	// no response/headers expected on key roll (see rfc 8555 s 7.3.5)
+	_, _, err = service.postToUrlSigned(payload, service.dir.KeyChange, oldAccountKey)
 	if err != nil {
-		return Account{}, err
+		return err
 	}
 
-	// unmarshal response
-	response, err = unmarshalAccount(bodyBytes, headers)
-	if err != nil {
-		return Account{}, err
-	}
-
-	return response, nil
+	return nil
 }

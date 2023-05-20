@@ -233,9 +233,9 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) (err
 
 	// send the rollover to ACME
 	if account.IsStaging {
-		_, err = service.acmeStaging.RolloverAccountKey(newCryptoKey, oldAcmeAccountKey)
+		err = service.acmeStaging.RolloverAccountKey(newCryptoKey, oldAcmeAccountKey)
 	} else {
-		_, err = service.acmeProd.RolloverAccountKey(newCryptoKey, oldAcmeAccountKey)
+		err = service.acmeProd.RolloverAccountKey(newCryptoKey, oldAcmeAccountKey)
 	}
 	if err != nil {
 		service.logger.Error(err)
