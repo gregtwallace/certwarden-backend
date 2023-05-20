@@ -49,7 +49,7 @@ func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccount) 
 	SET
 		status = $1,
 		email = $2,
-		created_at = $3,
+		created_at = case when $3 is 0 or $3 is null then created_at else $3 end,
 		updated_at = $4,
 		kid = case when $5 is "" or $5 is null then kid else $5 end
 	WHERE

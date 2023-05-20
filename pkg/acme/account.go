@@ -28,8 +28,8 @@ type acmeNewAccountPayload struct {
 type Account struct {
 	Status    string     `json:"status"`
 	Contact   []string   `json:"contact"`
-	CreatedAt timeString `json:"createdAt"`
-	Location  *string    `json:"-"` // omit because it is in the header
+	CreatedAt timeString `json:"createdAt,omitempty"` // non-standard field
+	Location  *string    `json:"-"`                   // omit because it is in the header
 	// -- also available but not in use
 	// JsonWebKey jsonWebKey `json:"key"`
 	// Orders     string     `json:"orders"`
