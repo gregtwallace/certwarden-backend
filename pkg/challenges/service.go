@@ -86,17 +86,6 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 		return nil, errServiceComponent
 	}
 
-	// configure dns checker service (if any dns methods enabled)
-	enableDnsChecker := cfg.ProviderConfigs.Dns01CloudflareConfig.Enable != nil && *cfg.ProviderConfigs.Dns01CloudflareConfig.Enable
-
-	if enableDnsChecker {
-		service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
-		if err != nil {
-			service.logger.Errorf("failed to configure dns checker (%s)", err)
-			return nil, err
-		}
-	}
-
 	// challenge providers
 	service.providers = make(map[MethodValue]providerService)
 
@@ -157,6 +146,20 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	if err != nil {
 		service.logger.Errorf("failed to configure challenge methods (%s)", err)
 		return nil, err
+	}
+
+	// configure dns checker service (if any enabled Method is a DNS method)
+	for i := range service.methods {
+		if service.methods[i].Enabled && service.methods[i].ChallengeType == acme.ChallengeTypeDns01 {
+			// enable checker
+			service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
+			if err != nil {
+				service.logger.Errorf("failed to configure dns checker (%s)", err)
+				return nil, err
+			}
+			// once found one Enabled + DNS, done
+			break
+		}
 	}
 
 	return service, nil
