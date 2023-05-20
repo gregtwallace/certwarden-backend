@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // acmeSignedMessage is the ACME signed message payload
@@ -12,6 +13,12 @@ type acmeSignedMessage struct {
 	Payload         string `json:"payload"`
 	ProtectedHeader string `json:"protected"`
 	Signature       string `json:"signature"`
+}
+
+// dataToSign assembles the byte slice that should be signed by
+// a signing method to create the signature field
+func (asm *acmeSignedMessage) dataToSign() []byte {
+	return []byte(strings.Join([]string{asm.ProtectedHeader, asm.Payload}, "."))
 }
 
 // ProtectedHeader piece of the ACME payload
@@ -89,7 +96,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		}
 
 		// sign
-		message.Signature, err = accountKey.Sign(message)
+		err = message.Sign(accountKey)
 		if err != nil {
 			return nil, nil, err
 		}

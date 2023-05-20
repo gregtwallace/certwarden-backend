@@ -7,10 +7,21 @@ import (
 	"strings"
 )
 
-// NewAccountPayload is the payload used to post to ACME newAccount
+// NewAccountPayload is the payload the caller populates to post a new
+// ACME account. This is NOT the payload that is ACTUALLY posted to ACME
 type NewAccountPayload struct {
-	TosAgreed bool     `json:"termsOfServiceAgreed"`
-	Contact   []string `json:"contact"`
+	Contact                       []string
+	TosAgreed                     bool
+	ExternalAccountBindingKid     string
+	ExternalAccountBindingHmacKey string
+}
+
+// acmeNewAccountPayload is the newAccount payload that is actually posted
+// to ACME
+type acmeNewAccountPayload struct {
+	Contact                []string           `json:"contact"`
+	TosAgreed              bool               `json:"termsOfServiceAgreed"`
+	ExternalAccountBinding *acmeSignedMessage `json:"externalAccountBinding,omitempty"`
 }
 
 // LE response to account data post/update
@@ -64,8 +75,25 @@ func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.
 		Key: privateKey,
 	}
 
+	// url to post to
+	url := service.dir.NewAccount
+
+	// real ACME payload
+	acmePayload := acmeNewAccountPayload{
+		Contact:   payload.Contact,
+		TosAgreed: payload.TosAgreed,
+	}
+
+	// if External Account Binding is present, modify payload accordingly
+	if payload.ExternalAccountBindingKid != "" && payload.ExternalAccountBindingHmacKey != "" {
+		acmePayload.ExternalAccountBinding, err = accountKey.makeExternalAccountBinding(payload.ExternalAccountBindingKid, payload.ExternalAccountBindingHmacKey, url)
+		if err != nil {
+			return Account{}, err
+		}
+	}
+
 	// post new-account
-	bodyBytes, headers, err := service.postToUrlSigned(payload, service.dir.NewAccount, accountKey)
+	bodyBytes, headers, err := service.postToUrlSigned(acmePayload, url, accountKey)
 	if err != nil {
 		return Account{}, err
 	}
@@ -191,8 +219,8 @@ func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountK
 	}
 	// end inner (payload's) payload
 
-	// inner (payload's) signature
-	payload.Signature, err = newKeyAccountKey.Sign(payload)
+	// sign inner payload
+	err = payload.Sign(newKeyAccountKey)
 	if err != nil {
 		return Account{}, err
 	}

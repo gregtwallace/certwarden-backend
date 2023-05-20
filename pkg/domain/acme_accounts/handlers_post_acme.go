@@ -1,6 +1,7 @@
 package acme_accounts
 
 import (
+	"encoding/json"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
 	"net/http"
@@ -10,11 +11,25 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// register payload contains External Account Binding information (if required)
+type registerPayload struct {
+	EabKid     string `json:"eab_kid"`
+	EabHmacKey string `json:"eab_hmac_key"`
+}
+
 // NewAcmeAccount sends the account information to the ACME new-account endpoint
 // which effectively registers the account with ACME
 // endpoint: /api/v1/acmeaccounts/:id/new-account
 func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (err error) {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+
+	// decode body into payload
+	var payload registerPayload
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
 
 	// convert id param to an integer
 	idParam, err := strconv.Atoi(idParamStr)
@@ -42,9 +57,9 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (
 	// send the new-account to ACME
 	var acmeAccount AcmeAccount
 	if account.IsStaging {
-		acmeAccount.Account, err = service.acmeStaging.NewAccount(account.newAccountPayload(), key)
+		acmeAccount.Account, err = service.acmeStaging.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey), key)
 	} else {
-		acmeAccount.Account, err = service.acmeProd.NewAccount(account.newAccountPayload(), key)
+		acmeAccount.Account, err = service.acmeProd.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey), key)
 	}
 	if err != nil {
 		service.logger.Error(err)

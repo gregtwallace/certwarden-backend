@@ -103,10 +103,12 @@ func (account *Account) AcmeAccountKey() (acmeAcctKey acme.AccountKey, err error
 
 // newAccountPayload() generates the payload for ACME to post to the
 // new-account endpoint
-func (account *Account) newAccountPayload() acme.NewAccountPayload {
+func (account *Account) newAccountPayload(eabKid string, eabHmacKey string) acme.NewAccountPayload {
 	return acme.NewAccountPayload{
-		TosAgreed: account.AcceptedTos,
-		Contact:   emailToContact(account.Email),
+		TosAgreed:                     account.AcceptedTos,
+		Contact:                       emailToContact(account.Email),
+		ExternalAccountBindingKid:     eabKid,
+		ExternalAccountBindingHmacKey: eabHmacKey,
 	}
 }
 

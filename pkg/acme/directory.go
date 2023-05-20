@@ -67,11 +67,6 @@ func (service *Service) fetchAcmeDirectory() error {
 		return ErrDirMissingUrl
 	}
 
-	// external account binding not yet supported
-	if fetchedDir.Meta.ExternalAccountRequired {
-		return errors.New("external account binding is required by CA but not yet supported")
-	}
-
 	// Only update if the fetched directory content is different than current
 	if reflect.DeepEqual(fetchedDir, *service.dir) {
 		// directory already up to date
