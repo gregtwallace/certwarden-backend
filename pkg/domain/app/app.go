@@ -6,6 +6,7 @@ import (
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/domain/acme_accounts"
+	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/app/auth"
 	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/authorizations"
@@ -47,6 +48,7 @@ type Application struct {
 	router            *httprouter.Router
 	acmeProd          *acme.Service
 	acmeStaging       *acme.Service
+	acme              *acme_servers.Service
 	challenges        *challenges.Service
 	storage           *sqlite.Storage
 	updater           *updater.Service

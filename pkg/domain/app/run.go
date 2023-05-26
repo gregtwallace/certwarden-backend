@@ -7,6 +7,7 @@ import (
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/acme_accounts"
+	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/app/auth"
 	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/authorizations"
@@ -286,6 +287,13 @@ func create(ctx context.Context) (*Application, error) {
 		}
 	}
 	// end acme services
+
+	// acmeServers
+	app.acme, err = acme_servers.NewService(app, &app.config.AcmeServers)
+	if err != nil {
+		app.logger.Errorf("failed to configure app acme servers (%s)", err)
+		return app, err
+	}
 
 	// challenges
 	app.challenges, err = challenges.NewService(app, &app.config.Challenges)

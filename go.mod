@@ -46,6 +46,8 @@ replace legocerthub-backend/pkg/datatypes => /pkg/datatypes
 
 replace legocerthub-backend/pkg/domain/acme_accounts => /pkg/domain/acme_accounts
 
+replace legocerthub-backend/pkg/domain/acme_servers => /pkg/domain/acme_servers
+
 replace legocerthub-backend/pkg/domain/app => /pkg/domain/app
 
 replace legocerthub-backend/pkg/domain/app/auth => /pkg/domain/app/auth
