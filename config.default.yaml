@@ -1,6 +1,9 @@
 # Initial login credentials:
 # username: admin
 # password: password
+# When you change the password, the new password must be at least 8 characters
+# long. However, this is not enforced in devMode. You should NOT use a password
+# this week.  10+ chars, upper/lower case, & special chars is strongly recommended.
 
 # config version is used indicate when breaking changes are made between
 # versions of LeGo. Error will be logged and the /status endpoint will

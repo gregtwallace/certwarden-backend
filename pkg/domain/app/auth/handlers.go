@@ -8,6 +8,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var (
+	errPasswordTooSimple = output.Error{Status: 400, Message: "new password must be at least 8 characters"}
+)
+
 // authResponse contains the JSON response for both
 // login and refresh (refresh token is in a cookie
 // so the JSON struct doesn't change)
@@ -254,9 +258,9 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (
 	// verify password is long enough
 	// allow terrible passwords if in dev mode
 	if !service.devMode {
-		if len(payload.NewPassword) < 10 {
+		if len(payload.NewPassword) < 8 {
 			service.logger.Infof("change password attempt from %s for '%s' failed (new password did not meet requirements)", r.RemoteAddr, username)
-			return output.ErrValidationFailed
+			return errPasswordTooSimple
 		}
 	}
 
