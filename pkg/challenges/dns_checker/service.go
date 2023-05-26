@@ -34,14 +34,15 @@ type Service struct {
 func NewService(app App, cfg Config) (service *Service, err error) {
 	service = new(Service)
 
-	// shutdown context
-	service.shutdownContext = app.GetShutdownContext()
-
 	// logger
 	service.logger = app.GetLogger()
 	if service.logger == nil {
 		return nil, errServiceComponent
 	}
+	service.logger.Debug("starting dns_checker service")
+
+	// shutdown context
+	service.shutdownContext = app.GetShutdownContext()
 
 	// configure resolvers (unless skipping check)
 	if cfg.SkipCheckWaitSeconds != nil {
