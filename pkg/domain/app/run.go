@@ -17,10 +17,12 @@ import (
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -80,7 +82,14 @@ func RunLeGoAPI() {
 			redirectSrv = &http.Server{
 				Addr: app.config.httpServAddress(),
 				Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					http.Redirect(w, r, "https://"+app.config.httpsServAddress()+r.RequestURI, http.StatusTemporaryRedirect)
+					// get request hostname without port (since changing port)
+					hostName, _, _ := net.SplitHostPort(r.Host)
+					// skip err check, this should never fail
+
+					// build redirect address
+					newAddr := "https://" + hostName + ":" + strconv.Itoa(*app.config.HttpsPort) + r.RequestURI
+
+					http.Redirect(w, r, newAddr, http.StatusTemporaryRedirect)
 				}),
 				IdleTimeout:  1 * time.Minute,
 				ReadTimeout:  readTimeout,
