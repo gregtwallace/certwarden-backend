@@ -48,6 +48,14 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 	return nil
 }
 
+// healthHandler writes some basic info about the status of the Application
+func (app *Application) healthHandler(w http.ResponseWriter, r *http.Request) (err error) {
+	// write 204 (No Content)
+	app.output.WriteEmptyResponse(w, http.StatusNoContent)
+
+	return nil
+}
+
 // logEntry represents the structure of the zap log
 type logEntry struct {
 	Level      string `json:"level"`
