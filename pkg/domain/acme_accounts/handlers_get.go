@@ -87,9 +87,11 @@ func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Requ
 	// account options / info to assist client with new account posting
 	newAccountOptions := newAccountOptions{}
 
-	// tos
-	newAccountOptions.TosUrl = service.acmeProd.TosUrl()
-	newAccountOptions.StagingTosUrl = service.acmeStaging.TosUrl()
+	// acme servers
+	newAccountOptions.AcmeServers, err = service.acmeServerService.ListServersInfo()
+	if err != nil {
+		return err
+	}
 
 	// available private keys
 	keys, err := service.keys.AvailableKeys()

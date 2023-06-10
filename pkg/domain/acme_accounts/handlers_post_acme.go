@@ -55,12 +55,14 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (
 	// end validation
 
 	// send the new-account to ACME
-	var acmeAccount AcmeAccount
-	if account.IsStaging {
-		acmeAccount.Account, err = service.acmeStaging.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey), key)
-	} else {
-		acmeAccount.Account, err = service.acmeProd.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey), key)
+	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
 	}
+
+	var acmeAccount AcmeAccount
+	acmeAccount.Account, err = acmeService.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey), key)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
@@ -136,12 +138,14 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) (err 
 	// end validation
 
 	// send the new-account to ACME
-	var acmeAccount AcmeAccount
-	if account.IsStaging {
-		acmeAccount.Account, err = service.acmeStaging.DeactivateAccount(acmeAccountKey)
-	} else {
-		acmeAccount.Account, err = service.acmeProd.DeactivateAccount(acmeAccountKey)
+	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
 	}
+
+	var acmeAccount AcmeAccount
+	acmeAccount.Account, err = acmeService.DeactivateAccount(acmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal

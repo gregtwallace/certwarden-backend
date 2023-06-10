@@ -14,19 +14,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var errServiceComponent = errors.New("necessary storage service component is missing")
-
 // config for DB
 const dbTimeout = time.Duration(5 * time.Second)
 const dbFilename = "/lego-certhub.db"
 
 var dbOptions = url.Values{
 	"_fk": []string{"true"},
-}
-
-// App interface is for connecting to the main app
-type App interface {
-	GetChallengesService() *challenges.Service
 }
 
 // Storage is the struct that holds data about the connection
@@ -38,15 +31,9 @@ type Storage struct {
 
 // OpenStorage opens an existing sqlite database or creates a new one if needed.
 // It also creates tables. It then returns Storage.
-func OpenStorage(app App, dataPath string) (*Storage, error) {
+func OpenStorage(dataPath string) (*Storage, error) {
 	store := new(Storage)
 	var err error
-
-	// challenges service
-	store.challenges = app.GetChallengesService()
-	if store.challenges == nil {
-		return nil, errServiceComponent
-	}
 
 	// set timeout
 	store.Timeout = dbTimeout
@@ -120,8 +107,58 @@ func (store *Storage) createDBTables() error {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
+	// acme_servers
+	query := `CREATE TABLE acme_servers (
+		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+		name text NOT NULL UNIQUE COLLATE NOCASE,
+		description text NOT NULL,
+		directory_url text NOT NULL,
+		is_staging boolean NOT NULL DEFAULT 0,
+		created_at integer NOT NULL,
+		updated_at integer NOT NULL
+	)`
+
+	_, err := store.Db.ExecContext(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	// add LE acme servers
+	query = `
+		INSERT INTO acme_servers (id, name, description, directory_url, is_staging, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+	`
+
+	// LE Prod
+	_, err = store.Db.ExecContext(ctx, query,
+		0,
+		"Lets_Encrypt",
+		"Let's Encrypt Production Server",
+		"https://acme-v02.api.letsencrypt.org/directory",
+		false,
+		int(time.Now().Unix()),
+		int(time.Now().Unix()),
+	)
+	if err != nil {
+		return err
+	}
+
+	// LE Staging
+	_, err = store.Db.ExecContext(ctx, query,
+		1,
+		"Lets_Encrypt_Staging",
+		"Let's Encrypt Staging Server",
+		"https://acme-staging-v02.api.letsencrypt.org/directory",
+		true,
+		int(time.Now().Unix()),
+		int(time.Now().Unix()),
+	)
+	if err != nil {
+		return err
+	}
+
 	// private_keys
-	query := `CREATE TABLE private_keys (
+	query = `CREATE TABLE private_keys (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		name text NOT NULL UNIQUE COLLATE NOCASE,
 		description text NOT NULL,
@@ -135,7 +172,7 @@ func (store *Storage) createDBTables() error {
 		updated_at integer NOT NULL
 	)`
 
-	_, err := store.Db.ExecContext(ctx, query)
+	_, err = store.Db.ExecContext(ctx, query)
 	if err != nil {
 		return err
 	}
@@ -144,17 +181,21 @@ func (store *Storage) createDBTables() error {
 	query = `CREATE TABLE acme_accounts (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		name text NOT NULL UNIQUE COLLATE NOCASE,
+		acme_server_id integer NOT NULL UNIQUE,
 		private_key_id integer NOT NULL UNIQUE,
 		description text NOT NULL,
 		status text NOT NULL DEFAULT 'unknown',
 		email text NOT NULL,
 		accepted_tos boolean NOT NULL DEFAULT 0,
-		is_staging boolean NOT NULL DEFAULT 0,
 		created_at integer NOT NULL,
 		updated_at integer NOT NULL,
 		kid text NOT NULL,
 		FOREIGN KEY (private_key_id)
 			REFERENCES private_keys (id)
+				ON DELETE RESTRICT
+				ON UPDATE NO ACTION,
+		FOREIGN KEY (acme_server_id)
+			REFERENCES acme_servers (id)
 				ON DELETE RESTRICT
 				ON UPDATE NO ACTION
 	)`

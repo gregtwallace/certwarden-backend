@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/acme_servers"
@@ -252,44 +251,15 @@ func create(ctx context.Context) (*Application, error) {
 		return app, err
 	}
 
-	// acme services
-	// use waitgroup to expedite directory fetching
-	var wg sync.WaitGroup
-	wgSize := 2
-
-	wg.Add(wgSize)
-	wgErrors := make(chan error, wgSize)
-
-	// prod
-	go func() {
-		defer wg.Done()
-		var err error
-		app.acmeProd, err = acme.NewService(app, *app.config.AcmeProdDirURL)
-		wgErrors <- err
-	}()
-
-	// staging
-	go func() {
-		defer wg.Done()
-		var err error
-		app.acmeStaging, err = acme.NewService(app, *app.config.AcmeStagingDirURL)
-		wgErrors <- err
-	}()
-
-	wg.Wait()
-
-	// check for errors
-	close(wgErrors)
-	for err = range wgErrors {
-		if err != nil {
-			app.logger.Errorf("failed to configure app acme service(s) (%s)", err)
-			return app, err
-		}
+	// storage
+	app.storage, err = sqlite.OpenStorage(dataStoragePath)
+	if err != nil {
+		app.logger.Errorf("failed to configure app storage (%s)", err)
+		return app, err
 	}
-	// end acme services
 
 	// acmeServers
-	app.acme, err = acme_servers.NewService(app, &app.config.AcmeServers)
+	app.acmeServers, err = acme_servers.NewService(app)
 	if err != nil {
 		app.logger.Errorf("failed to configure app acme servers (%s)", err)
 		return app, err
@@ -299,13 +269,6 @@ func create(ctx context.Context) (*Application, error) {
 	app.challenges, err = challenges.NewService(app, &app.config.Challenges)
 	if err != nil {
 		app.logger.Errorf("failed to configure app challenges (%s)", err)
-		return app, err
-	}
-
-	// storage
-	app.storage, err = sqlite.OpenStorage(app, dataStoragePath)
-	if err != nil {
-		app.logger.Errorf("failed to configure app storage (%s)", err)
 		return app, err
 	}
 

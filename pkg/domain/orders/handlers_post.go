@@ -155,17 +155,21 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) (err
 	}
 
 	// revoke the certificate with ACME
-	if order.Certificate.CertificateAccount.IsStaging {
-		err = service.acmeStaging.RevokeCertificate(*order.Pem, payload.Reason, key)
-	} else {
-		err = service.acmeProd.RevokeCertificate(*order.Pem, payload.Reason, key)
+	acmeService, err := service.acmeServerService.AcmeService(order.Certificate.CertificateAccount.AcmeServer.ID)
+	if err != nil {
+		service.logger.Error(err)
+		return // done, failed
 	}
+	err = acmeService.RevokeCertificate(*order.Pem, payload.Reason, key)
+	// defer err check **
+
 	// if no error, or error is already revoked, update db
 	acmeErr, isAcmeErr := err.(acme.Error)
 	if err == nil || (isAcmeErr && acmeErr.Type == "urn:ietf:params:acme:error:alreadyRevoked") {
 		err = service.storage.RevokeOrder(orderId)
+		// defer err check **
 	}
-	// checks err for IsStaging, or update to storage (if that condition was met)
+	// any other error from ACME Revoke step** OR if that step was no error, this checks for error from db update step
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal

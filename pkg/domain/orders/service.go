@@ -3,7 +3,7 @@ package orders
 import (
 	"context"
 	"errors"
-	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/output"
@@ -21,8 +21,7 @@ type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 	GetOrderStorage() Storage
-	GetAcmeProdService() *acme.Service
-	GetAcmeStagingService() *acme.Service
+	GetAcmeServerService() *acme_servers.Service
 	GetCertificatesService() *certificates.Service
 	GetAuthsService() *authorizations.Service
 	GetShutdownContext() context.Context
@@ -63,17 +62,16 @@ type Config struct {
 
 // Keys service struct
 type Service struct {
-	shutdownContext context.Context
-	logger          *zap.SugaredLogger
-	output          *output.Service
-	storage         Storage
-	acmeProd        *acme.Service
-	acmeStaging     *acme.Service
-	certificates    *certificates.Service
-	authorizations  *authorizations.Service
-	inProcess       *inProcess
-	highJobs        chan orderJob
-	lowJobs         chan orderJob
+	shutdownContext   context.Context
+	logger            *zap.SugaredLogger
+	output            *output.Service
+	storage           Storage
+	acmeServerService *acme_servers.Service
+	certificates      *certificates.Service
+	authorizations    *authorizations.Service
+	inProcess         *inProcess
+	highJobs          chan orderJob
+	lowJobs           chan orderJob
 }
 
 // NewService creates a new private_key service
@@ -102,12 +100,8 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// acme services
-	service.acmeProd = app.GetAcmeProdService()
-	if service.acmeProd == nil {
-		return nil, errServiceComponent
-	}
-	service.acmeStaging = app.GetAcmeStagingService()
-	if service.acmeStaging == nil {
+	service.acmeServerService = app.GetAcmeServerService()
+	if service.acmeServerService == nil {
 		return nil, errServiceComponent
 	}
 

@@ -2,8 +2,8 @@ package authorizations
 
 import (
 	"errors"
-	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges"
+	"legocerthub-backend/pkg/domain/acme_servers"
 
 	"go.uber.org/zap"
 )
@@ -14,19 +14,17 @@ var errServiceComponent = errors.New("necessary authorizations service component
 type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetChallengesService() *challenges.Service
-	GetAcmeProdService() *acme.Service
-	GetAcmeStagingService() *acme.Service
+	GetAcmeServerService() *acme_servers.Service
 	GetDevMode() bool
 }
 
 // service struct
 type Service struct {
-	logger      *zap.SugaredLogger
-	acmeProd    *acme.Service
-	acmeStaging *acme.Service
-	challenges  *challenges.Service
-	working     *working // tracks auths being worked
-	cache       *cache   // tracks results of auths after worked
+	logger            *zap.SugaredLogger
+	acmeServerService *acme_servers.Service
+	challenges        *challenges.Service
+	working           *working // tracks auths being worked
+	cache             *cache   // tracks results of auths after worked
 }
 
 // NewService creates a new service
@@ -40,12 +38,8 @@ func NewService(app App) (service *Service, err error) {
 	}
 
 	// acme services
-	service.acmeProd = app.GetAcmeProdService()
-	if service.acmeProd == nil {
-		return nil, errServiceComponent
-	}
-	service.acmeStaging = app.GetAcmeStagingService()
-	if service.acmeStaging == nil {
+	service.acmeServerService = app.GetAcmeServerService()
+	if service.acmeServerService == nil {
 		return nil, errServiceComponent
 	}
 

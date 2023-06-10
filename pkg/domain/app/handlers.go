@@ -13,16 +13,10 @@ import (
 )
 
 type appStatus struct {
-	Status             string               `json:"status"`
-	DevMode            bool                 `json:"development_mode,omitempty"`
-	Version            string               `json:"version"`
-	ConfigVersionMatch bool                 `json:"config_version_match"`
-	AcmeDirectories    appStatusDirectories `json:"acme_directories"`
-}
-
-type appStatusDirectories struct {
-	Production string `json:"prod"`
-	Staging    string `json:"staging"`
+	Status             string `json:"status"`
+	DevMode            bool   `json:"development_mode,omitempty"`
+	Version            string `json:"version"`
+	ConfigVersionMatch bool   `json:"config_version_match"`
 }
 
 // statusHandler writes some basic info about the status of the Application
@@ -33,10 +27,6 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 		DevMode:            *app.config.DevMode,
 		Version:            appVersion,
 		ConfigVersionMatch: app.config.ConfigVersion == configVersion,
-		AcmeDirectories: appStatusDirectories{
-			Production: app.acmeProd.DirUrl(),
-			Staging:    app.acmeStaging.DirUrl(),
-		},
 	}
 
 	_, err = app.output.WriteJSON(w, http.StatusOK, currentStatus, "server")

@@ -10,6 +10,7 @@ import (
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
+	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/httpclient"
 	"sync"
 
@@ -24,8 +25,7 @@ var (
 type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetHttpClient() *httpclient.Client
-	GetAcmeProdService() *acme.Service
-	GetAcmeStagingService() *acme.Service
+	GetAcmeServerService() *acme_servers.Service
 	GetDevMode() bool
 	GetShutdownContext() context.Context
 	GetShutdownWaitGroup() *sync.WaitGroup
@@ -54,13 +54,12 @@ type Config struct {
 
 // service struct
 type Service struct {
-	shutdownContext context.Context
-	logger          *zap.SugaredLogger
-	acmeProd        *acme.Service
-	acmeStaging     *acme.Service
-	dnsChecker      *dns_checker.Service
-	providers       map[MethodValue]providerService
-	methods         []Method
+	shutdownContext   context.Context
+	logger            *zap.SugaredLogger
+	acmeServerService *acme_servers.Service
+	dnsChecker        *dns_checker.Service
+	providers         map[MethodValue]providerService
+	methods           []Method
 }
 
 // NewService creates a new service
@@ -77,12 +76,8 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	service.shutdownContext = app.GetShutdownContext()
 
 	// acme services
-	service.acmeProd = app.GetAcmeProdService()
-	if service.acmeProd == nil {
-		return nil, errServiceComponent
-	}
-	service.acmeStaging = app.GetAcmeStagingService()
-	if service.acmeStaging == nil {
+	service.acmeServerService = app.GetAcmeServerService()
+	if service.acmeServerService == nil {
 		return nil, errServiceComponent
 	}
 

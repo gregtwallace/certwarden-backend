@@ -2,6 +2,7 @@ package acme_accounts
 
 import (
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 )
@@ -11,11 +12,11 @@ type Account struct {
 	ID          int
 	Name        string
 	Description string
+	AcmeServer  acme_servers.Server
 	AccountKey  private_keys.Key
 	Status      string
 	Email       string
 	AcceptedTos bool
-	IsStaging   bool
 	CreatedAt   int
 	UpdatedAt   int
 	Kid         string
@@ -24,14 +25,22 @@ type Account struct {
 // AccountSummaryResponse is a JSON response containing only
 // fields desired for the summary
 type AccountSummaryResponse struct {
-	ID          int                       `json:"id"`
-	Name        string                    `json:"name"`
-	Description string                    `json:"description"`
-	AccountKey  AccountKeySummaryResponse `json:"private_key"`
-	Status      string                    `json:"status"`
-	Email       string                    `json:"email"`
-	AcceptedTos bool                      `json:"accepted_tos"`
-	IsStaging   bool                      `json:"is_staging"`
+	ID          int                          `json:"id"`
+	Name        string                       `json:"name"`
+	Description string                       `json:"description"`
+	AcmeServer  AccountServerSummaryResponse `json:"acme_server"`
+	AccountKey  AccountKeySummaryResponse    `json:"private_key"`
+	Status      string                       `json:"status"`
+	Email       string                       `json:"email"`
+	AcceptedTos bool                         `json:"accepted_tos"`
+	IsStaging   bool                         `json:"is_staging"`
+}
+
+type AccountServerSummaryResponse struct {
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	DirectoryURL string `json:"directory_url"`
+	IsStaging    bool   `json:"is_staging"`
 }
 
 type AccountKeySummaryResponse struct {
@@ -44,6 +53,12 @@ func (acct Account) SummaryResponse() AccountSummaryResponse {
 		ID:          acct.ID,
 		Name:        acct.Name,
 		Description: acct.Description,
+		AcmeServer: AccountServerSummaryResponse{
+			ID:           acct.AcmeServer.ID,
+			Name:         acct.AcmeServer.Name,
+			DirectoryURL: acct.AcmeServer.DirectoryURL,
+			IsStaging:    acct.AcmeServer.IsStaging,
+		},
 		AccountKey: AccountKeySummaryResponse{
 			ID:   acct.AccountKey.ID,
 			Name: acct.AccountKey.Name,
@@ -51,7 +66,6 @@ func (acct Account) SummaryResponse() AccountSummaryResponse {
 		Status:      acct.Status,
 		Email:       acct.Email,
 		AcceptedTos: acct.AcceptedTos,
-		IsStaging:   acct.IsStaging,
 	}
 }
 
@@ -115,7 +129,6 @@ func (account *Account) newAccountPayload(eabKid string, eabHmacKey string) acme
 // new account info
 // used to return info about valid options when making a new account
 type newAccountOptions struct {
-	TosUrl        string                            `json:"tos_url"`
-	StagingTosUrl string                            `json:"staging_tos_url"`
-	AvailableKeys []private_keys.KeySummaryResponse `json:"private_keys"`
+	AcmeServers   []acme_servers.ServerInformationResponse `json:"acme_servers"`
+	AvailableKeys []private_keys.KeySummaryResponse        `json:"private_keys"`
 }

@@ -133,12 +133,14 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 	}
 
 	// send the email update to ACME
-	var acmeAccount AcmeAccount
-	if account.IsStaging {
-		acmeAccount.Account, err = service.acmeStaging.UpdateAccount(acmePayload, acmeAccountKey)
-	} else {
-		acmeAccount.Account, err = service.acmeProd.UpdateAccount(acmePayload, acmeAccountKey)
+	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
 	}
+
+	var acmeAccount AcmeAccount
+	acmeAccount.Account, err = acmeService.UpdateAccount(acmePayload, acmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
@@ -232,11 +234,13 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) (err
 	}
 
 	// send the rollover to ACME
-	if account.IsStaging {
-		err = service.acmeStaging.RolloverAccountKey(newCryptoKey, oldAcmeAccountKey)
-	} else {
-		err = service.acmeProd.RolloverAccountKey(newCryptoKey, oldAcmeAccountKey)
+	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
 	}
+
+	err = acmeService.RolloverAccountKey(newCryptoKey, oldAcmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal

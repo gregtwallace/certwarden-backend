@@ -49,6 +49,12 @@ type certificateKeySummaryResponse struct {
 }
 
 type certificateAccountSummaryResponse struct {
+	ID                int                                     `json:"id"`
+	Name              string                                  `json:"name"`
+	CertAccountServer certificateAccountServerSummaryResponse `json:"acme_server"`
+}
+
+type certificateAccountServerSummaryResponse struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	IsStaging bool   `json:"is_staging"`
@@ -64,9 +70,13 @@ func (cert Certificate) summaryResponse() certificateSummaryResponse {
 			Name: cert.CertificateKey.Name,
 		},
 		CertificateAccount: certificateAccountSummaryResponse{
-			ID:        cert.CertificateAccount.ID,
-			Name:      cert.CertificateAccount.Name,
-			IsStaging: cert.CertificateAccount.IsStaging,
+			ID:   cert.CertificateAccount.ID,
+			Name: cert.CertificateAccount.Name,
+			CertAccountServer: certificateAccountServerSummaryResponse{
+				ID:        cert.CertificateAccount.AcmeServer.ID,
+				Name:      cert.CertificateAccount.AcmeServer.Name,
+				IsStaging: cert.CertificateAccount.AcmeServer.IsStaging,
+			},
 		},
 		Subject:         cert.Subject,
 		SubjectAltNames: cert.SubjectAltNames,

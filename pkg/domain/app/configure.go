@@ -9,7 +9,6 @@ import (
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
-	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/orders"
 	"os"
@@ -17,32 +16,25 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Directory URLs for Let's Encrypt (default)
-const letsEncryptProdUrl string = "https://acme-v02.api.letsencrypt.org/directory"
-const letsEncryptStagingUrl string = "https://acme-staging-v02.api.letsencrypt.org/directory"
-
 // path to the config file
 const configFile = dataStoragePath + "/config.yaml"
 
 // config is the configuration structure for app (and subsequently services)
 type config struct {
-	ConfigVersion        int                 `yaml:"config_version"`
-	BindAddress          *string             `yaml:"bind_address"`
-	HttpsPort            *int                `yaml:"https_port"`
-	HttpPort             *int                `yaml:"http_port"`
-	EnableHttpRedirect   *bool               `yaml:"enable_http_redirect"`
-	AcmeProdDirURL       *string             `yaml:"acme_prod_directory_url"`
-	AcmeStagingDirURL    *string             `yaml:"acme_staging_directory_url"`
-	AcmeServers          acme_servers.Config `yaml:"acme_servers"`
-	LogLevel             *string             `yaml:"log_level"`
-	ServeFrontend        *bool               `yaml:"serve_frontend"`
-	CORSPermittedOrigins []string            `yaml:"cors_permitted_origins"`
-	PrivateKeyName       *string             `yaml:"private_key_name"`
-	CertificateName      *string             `yaml:"certificate_name"`
-	DevMode              *bool               `yaml:"dev_mode"`
-	Updater              updater.Config      `yaml:"updater"`
-	Orders               orders.Config       `yaml:"orders"`
-	Challenges           challenges.Config   `yaml:"challenges"`
+	ConfigVersion        int               `yaml:"config_version"`
+	BindAddress          *string           `yaml:"bind_address"`
+	HttpsPort            *int              `yaml:"https_port"`
+	HttpPort             *int              `yaml:"http_port"`
+	EnableHttpRedirect   *bool             `yaml:"enable_http_redirect"`
+	LogLevel             *string           `yaml:"log_level"`
+	ServeFrontend        *bool             `yaml:"serve_frontend"`
+	CORSPermittedOrigins []string          `yaml:"cors_permitted_origins"`
+	PrivateKeyName       *string           `yaml:"private_key_name"`
+	CertificateName      *string           `yaml:"certificate_name"`
+	DevMode              *bool             `yaml:"dev_mode"`
+	Updater              updater.Config    `yaml:"updater"`
+	Orders               orders.Config     `yaml:"orders"`
+	Challenges           challenges.Config `yaml:"challenges"`
 }
 
 // httpAddress() returns formatted http server address string
@@ -80,11 +72,6 @@ func (app *Application) readConfigFile() (err error) {
 		return err
 	}
 
-	// warn about non-default CA
-	if *cfg.AcmeProdDirURL != letsEncryptProdUrl || *cfg.AcmeStagingDirURL != letsEncryptStagingUrl {
-		app.logger.Warn("using ACME directory other than Let's Encrypt and things may not work properly")
-	}
-
 	// success
 	app.config = cfg
 	return nil
@@ -98,17 +85,11 @@ func defaultConfig() (cfg *config) {
 		HttpsPort:          new(int),
 		HttpPort:           new(int),
 		EnableHttpRedirect: new(bool),
-		AcmeProdDirURL:     new(string),
-		AcmeStagingDirURL:  new(string),
-		AcmeServers: acme_servers.Config{
-			EnableLetsEncrypt: new(bool),
-			EnableGoogleCloud: new(bool),
-		},
-		LogLevel:        new(string),
-		ServeFrontend:   new(bool),
-		PrivateKeyName:  new(string),
-		CertificateName: new(string),
-		DevMode:         new(bool),
+		LogLevel:           new(string),
+		ServeFrontend:      new(bool),
+		PrivateKeyName:     new(string),
+		CertificateName:    new(string),
+		DevMode:            new(bool),
 		Updater: updater.Config{
 			AutoCheck: new(bool),
 			Channel:   new(updater.Channel),
@@ -158,13 +139,6 @@ func defaultConfig() (cfg *config) {
 	*cfg.HttpPort = 4050
 
 	*cfg.EnableHttpRedirect = true
-
-	// acme servers
-	*cfg.AcmeProdDirURL = letsEncryptProdUrl
-	*cfg.AcmeStagingDirURL = letsEncryptStagingUrl
-	*cfg.AcmeServers.EnableLetsEncrypt = true
-	*cfg.AcmeServers.EnableGoogleCloud = false
-
 	*cfg.LogLevel = defaultLogLevel.String()
 	*cfg.ServeFrontend = true
 	cfg.CORSPermittedOrigins = []string{}

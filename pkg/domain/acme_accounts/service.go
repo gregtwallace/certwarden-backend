@@ -2,7 +2,7 @@ package acme_accounts
 
 import (
 	"errors"
-	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
@@ -18,8 +18,7 @@ type App interface {
 	GetOutputter() *output.Service
 	GetAccountStorage() Storage
 	GetKeysService() *private_keys.Service
-	GetAcmeProdService() *acme.Service
-	GetAcmeStagingService() *acme.Service
+	GetAcmeServerService() *acme_servers.Service
 }
 
 // Storage interface for storage functions
@@ -43,12 +42,11 @@ type Storage interface {
 
 // Accounts service struct
 type Service struct {
-	logger      *zap.SugaredLogger
-	output      *output.Service
-	storage     Storage
-	keys        *private_keys.Service
-	acmeProd    *acme.Service
-	acmeStaging *acme.Service
+	logger            *zap.SugaredLogger
+	output            *output.Service
+	storage           Storage
+	keys              *private_keys.Service
+	acmeServerService *acme_servers.Service
 }
 
 // NewService creates a new acme_accounts service
@@ -80,12 +78,8 @@ func NewService(app App) (*Service, error) {
 	}
 
 	// acme services
-	service.acmeProd = app.GetAcmeProdService()
-	if service.acmeProd == nil {
-		return nil, errServiceComponent
-	}
-	service.acmeStaging = app.GetAcmeStagingService()
-	if service.acmeStaging == nil {
+	service.acmeServerService = app.GetAcmeServerService()
+	if service.acmeServerService == nil {
 		return nil, errServiceComponent
 	}
 

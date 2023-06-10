@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/domain/acme_accounts"
@@ -46,11 +45,9 @@ type Application struct {
 	httpClient        *httpclient.Client
 	output            *output.Service
 	router            *httprouter.Router
-	acmeProd          *acme.Service
-	acmeStaging       *acme.Service
-	acme              *acme_servers.Service
-	challenges        *challenges.Service
 	storage           *sqlite.Storage
+	acmeServers       *acme_servers.Service
+	challenges        *challenges.Service
 	updater           *updater.Service
 	auth              *auth.Service
 	keys              *private_keys.Service
@@ -119,6 +116,9 @@ func (app *Application) GetAuthStorage() auth.Storage {
 func (app *Application) GetKeyStorage() private_keys.Storage {
 	return app.storage
 }
+func (app *Application) GetAcmeServerStorage() acme_servers.Storage {
+	return app.storage
+}
 func (app *Application) GetAccountStorage() acme_accounts.Storage {
 	return app.storage
 }
@@ -138,12 +138,8 @@ func (app *Application) GetKeysService() *private_keys.Service {
 	return app.keys
 }
 
-func (app *Application) GetAcmeProdService() *acme.Service {
-	return app.acmeProd
-}
-
-func (app *Application) GetAcmeStagingService() *acme.Service {
-	return app.acmeStaging
+func (app *Application) GetAcmeServerService() *acme_servers.Service {
+	return app.acmeServers
 }
 
 func (app *Application) GetAcctsService() *acme_accounts.Service {

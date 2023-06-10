@@ -14,7 +14,7 @@ var (
 // Solve accepts a slice of challenges from an authorization and solves the specific challenge
 // specified by the method. Valid or invalid status is returned.  An error is returned if can't resolve
 // a valid or invalid state.
-func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, method Method, key acme.AccountKey, isStaging bool) (status string, err error) {
+func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, method Method, key acme.AccountKey, acmeServerId int) (status string, err error) {
 	var challenge acme.Challenge
 	found := false
 
@@ -50,12 +50,10 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	// by the server and to subsequently monitor the challenge to be moved to the
 	// valid or invalid state.
 
-	// make pointer for the correct acme.Service (to avoid repeat of if/else)
-	var acmeService *acme.Service
-	if isStaging {
-		acmeService = service.acmeStaging
-	} else {
-		acmeService = service.acmeProd
+	// make pointer for the correct acme.Service (to avoid repeat of logic)
+	acmeService, err := service.acmeServerService.AcmeService(acmeServerId)
+	if err != nil {
+		return "", err
 	}
 
 	// inform ACME that the challenge is ready

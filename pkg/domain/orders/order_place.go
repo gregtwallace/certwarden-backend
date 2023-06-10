@@ -2,7 +2,6 @@ package orders
 
 import (
 	"errors"
-	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
 )
 
@@ -23,12 +22,13 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 	}
 
 	// send the new-order to ACME
-	var acmeResponse acme.Order
-	if cert.CertificateAccount.IsStaging {
-		acmeResponse, err = service.acmeStaging.NewOrder(cert.NewOrderPayload(), key)
-	} else {
-		acmeResponse, err = service.acmeProd.NewOrder(cert.NewOrderPayload(), key)
+	acmeService, err := service.acmeServerService.AcmeService(cert.CertificateAccount.AcmeServer.ID)
+	if err != nil {
+		service.logger.Error(err)
+		return -2, output.ErrInternal
 	}
+
+	acmeResponse, err := acmeService.NewOrder(cert.NewOrderPayload(), key)
 	if err != nil {
 		service.logger.Error(err)
 		return -2, output.ErrInternal

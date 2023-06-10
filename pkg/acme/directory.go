@@ -127,7 +127,7 @@ func (service *Service) TosUrl() string {
 	return service.dir.Meta.TermsOfService
 }
 
-// DirUrl returns the string for the url where the ACME Directory is located
-func (service *Service) DirUrl() string {
-	return service.dirUri
+// RequiresEAB returns if the acme server requires External Account Binding
+func (service *Service) RequiresEAB() bool {
+	return service.dir.Meta.ExternalAccountRequired
 }

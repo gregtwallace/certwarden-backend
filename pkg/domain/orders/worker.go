@@ -95,12 +95,11 @@ func (service *Service) doOrderJob(job orderJob) {
 	// acmeOrder to hold the Order responses and to later update storage
 	var acmeOrder acme.Order
 
-	// acmeService to avoid repeated isStaging logic
-	var acmeService *acme.Service
-	if orderDb.Certificate.CertificateAccount.IsStaging {
-		acmeService = service.acmeStaging
-	} else {
-		acmeService = service.acmeProd
+	// acmeService to avoid repeated logic
+	acmeService, err := service.acmeServerService.AcmeService(orderDb.Certificate.CertificateAccount.AcmeServer.ID)
+	if err != nil {
+		service.logger.Error(err)
+		return // done, failed
 	}
 
 	// Use loop to retry order. Cap retries to avoid indefinite loop.
@@ -126,7 +125,7 @@ fulfillLoop:
 		switch acmeOrder.Status {
 		case "pending": // needs to be authed
 			var authStatus string
-			authStatus, err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, orderDb.Certificate.ChallengeMethod, key, orderDb.Certificate.CertificateAccount.IsStaging)
+			authStatus, err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, orderDb.Certificate.ChallengeMethod, key, orderDb.Certificate.CertificateAccount.AcmeServer.ID)
 			if err != nil {
 				service.logger.Error(err)
 				return // done, failed

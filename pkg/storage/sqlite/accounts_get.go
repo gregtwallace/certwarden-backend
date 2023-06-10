@@ -22,6 +22,8 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 		sortField = "aa.name"
 	case "description":
 		sortField = "aa.description"
+	case "servername":
+		sortField = "aserv.name"
 	case "keyname":
 		sortField = "pk.name"
 	case "status":
@@ -45,8 +47,11 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 	// validated prior to this query being assembled!
 	query := fmt.Sprintf(`
 	SELECT
-		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
+		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos,
 		aa.created_at, aa.updated_at, aa.kid,
+
+		aserv.id, aserv.name, aserv.description, aserv.directory_url, aserv.is_staging, aserv.created_at,
+		aserv.updated_at,
 
 		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_new,
 		pk.api_key_disabled, pk.api_key_via_url, pk.created_at, pk.updated_at,
@@ -54,6 +59,7 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 		count(*) OVER() AS full_count
 	FROM
 		acme_accounts aa
+		LEFT JOIN acme_servers aserv on (aa.acme_server_id = aserv.id)
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
 	ORDER BY
 		%s
@@ -85,10 +91,17 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 			&oneAccount.status,
 			&oneAccount.email,
 			&oneAccount.acceptedTos,
-			&oneAccount.isStaging,
 			&oneAccount.createdAt,
 			&oneAccount.updatedAt,
 			&oneAccount.kid,
+
+			&oneAccount.accountServerDb.id,
+			&oneAccount.accountServerDb.name,
+			&oneAccount.accountServerDb.description,
+			&oneAccount.accountServerDb.directoryUrl,
+			&oneAccount.accountServerDb.isStaging,
+			&oneAccount.accountServerDb.createdAt,
+			&oneAccount.accountServerDb.updatedAt,
 
 			&oneAccount.accountKeyDb.id,
 			&oneAccount.accountKeyDb.name,
@@ -134,13 +147,17 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 
 	query := `
 	SELECT
-		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
+		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos,
 		aa.created_at, aa.updated_at, aa.kid,
+
+		aserv.id, aserv.name, aserv.description, aserv.directory_url, aserv.is_staging, aserv.created_at,
+		aserv.updated_at,
 
 		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_new, 
 		pk.api_key_disabled, pk.api_key_via_url, pk.created_at, pk.updated_at
 	FROM
 		acme_accounts aa
+		LEFT JOIN acme_servers aserv on (aa.acme_server_id = aserv.id)
 		LEFT JOIN private_keys pk on (aa.private_key_id = pk.id)
 	WHERE aa.id = $1 OR aa.name = $2
 	ORDER BY aa.id`
@@ -156,10 +173,17 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 		&oneAccount.status,
 		&oneAccount.email,
 		&oneAccount.acceptedTos,
-		&oneAccount.isStaging,
 		&oneAccount.createdAt,
 		&oneAccount.updatedAt,
 		&oneAccount.kid,
+
+		&oneAccount.accountServerDb.id,
+		&oneAccount.accountServerDb.name,
+		&oneAccount.accountServerDb.description,
+		&oneAccount.accountServerDb.directoryUrl,
+		&oneAccount.accountServerDb.isStaging,
+		&oneAccount.accountServerDb.createdAt,
+		&oneAccount.accountServerDb.updatedAt,
 
 		&oneAccount.accountKeyDb.id,
 		&oneAccount.accountKeyDb.name,

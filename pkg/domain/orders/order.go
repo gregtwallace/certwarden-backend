@@ -56,6 +56,12 @@ type orderCertificateSummaryResponse struct {
 }
 
 type orderCertificateAccountSummaryResponse struct {
+	ID                     int                                          `json:"id"`
+	Name                   string                                       `json:"name"`
+	OrderCertAccountServer orderCertificateAccountServerSummaryResponse `json:"acme_server"`
+}
+
+type orderCertificateAccountServerSummaryResponse struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	IsStaging bool   `json:"is_staging"`
@@ -82,9 +88,13 @@ func (order Order) summaryResponse() orderSummaryResponse {
 			ID:   order.Certificate.ID,
 			Name: order.Certificate.Name,
 			CertificateAccount: orderCertificateAccountSummaryResponse{
-				ID:        order.Certificate.CertificateAccount.ID,
-				Name:      order.Certificate.CertificateAccount.Name,
-				IsStaging: order.Certificate.CertificateAccount.IsStaging,
+				ID:   order.Certificate.CertificateAccount.ID,
+				Name: order.Certificate.CertificateAccount.Name,
+				OrderCertAccountServer: orderCertificateAccountServerSummaryResponse{
+					ID:        order.Certificate.CertificateAccount.AcmeServer.ID,
+					Name:      order.Certificate.CertificateAccount.AcmeServer.Name,
+					IsStaging: order.Certificate.CertificateAccount.AcmeServer.IsStaging,
+				},
 			},
 			Subject:         order.Certificate.Subject,
 			SubjectAltNames: order.Certificate.SubjectAltNames,

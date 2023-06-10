@@ -23,6 +23,8 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 		sortField = "c.name"
 	case "subject":
 		sortField = "c.subject"
+	case "servername":
+		sortField = "aserv.name"
 	case "keyname":
 		sortField = "pk.name"
 	case "accountname":
@@ -49,8 +51,11 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_new,
 		pk.api_key_disabled, pk.api_key_via_url, pk.created_at, pk.updated_at,
 
-		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
+		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos,
 		aa.created_at, aa.updated_at, aa.kid,
+
+		aserv.id, aserv.name, aserv.description, aserv.directory_url, aserv.is_staging, aserv.created_at,
+		aserv.updated_at,
 
 		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_new,
 		ak.api_key_disabled, ak.api_key_via_url, ak.created_at, ak.updated_at,
@@ -60,6 +65,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 		certificates c
 		LEFT JOIN private_keys pk on (c.private_key_id = pk.id)
 		LEFT JOIN acme_accounts aa on (c.acme_account_id = aa.id)
+		LEFT JOIN acme_servers aserv on (aa.acme_server_id = aserv.id)
 		LEFT JOIN private_keys ak on (aa.private_key_id = ak.id)
 	ORDER BY
 		%s
@@ -120,10 +126,17 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 			&oneCert.certificateAccountDb.status,
 			&oneCert.certificateAccountDb.email,
 			&oneCert.certificateAccountDb.acceptedTos,
-			&oneCert.certificateAccountDb.isStaging,
 			&oneCert.certificateAccountDb.createdAt,
 			&oneCert.certificateAccountDb.updatedAt,
 			&oneCert.certificateAccountDb.kid,
+
+			&oneCert.certificateAccountDb.accountServerDb.id,
+			&oneCert.certificateAccountDb.accountServerDb.name,
+			&oneCert.certificateAccountDb.accountServerDb.description,
+			&oneCert.certificateAccountDb.accountServerDb.directoryUrl,
+			&oneCert.certificateAccountDb.accountServerDb.isStaging,
+			&oneCert.certificateAccountDb.accountServerDb.createdAt,
+			&oneCert.certificateAccountDb.accountServerDb.updatedAt,
 
 			&oneCert.certificateAccountDb.accountKeyDb.id,
 			&oneCert.certificateAccountDb.accountKeyDb.name,
@@ -174,8 +187,11 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_new,
 		pk.api_key_disabled, pk.api_key_via_url, pk.created_at, pk.updated_at,
 
-		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos, aa.is_staging,
+		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos,
 		aa.created_at, aa.updated_at, aa.kid,
+
+		aserv.id, aserv.name, aserv.description, aserv.directory_url, aserv.is_staging, aserv.created_at,
+		aserv.updated_at,
 
 		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_new, 
 		ak.api_key_disabled, ak.api_key_via_url, ak.created_at, ak.updated_at
@@ -183,6 +199,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		certificates c
 		LEFT JOIN private_keys pk on (c.private_key_id = pk.id)
 		LEFT JOIN acme_accounts aa on (c.acme_account_id = aa.id)
+		LEFT JOIN acme_servers aserv on (aa.acme_server_id = aserv.id)
 		LEFT JOIN private_keys ak on (aa.private_key_id = ak.id)
 	WHERE 
 		c.id = $1 OR c.name = $2
@@ -229,10 +246,17 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		&oneCert.certificateAccountDb.status,
 		&oneCert.certificateAccountDb.email,
 		&oneCert.certificateAccountDb.acceptedTos,
-		&oneCert.certificateAccountDb.isStaging,
 		&oneCert.certificateAccountDb.createdAt,
 		&oneCert.certificateAccountDb.updatedAt,
 		&oneCert.certificateAccountDb.kid,
+
+		&oneCert.certificateAccountDb.accountServerDb.id,
+		&oneCert.certificateAccountDb.accountServerDb.name,
+		&oneCert.certificateAccountDb.accountServerDb.description,
+		&oneCert.certificateAccountDb.accountServerDb.directoryUrl,
+		&oneCert.certificateAccountDb.accountServerDb.isStaging,
+		&oneCert.certificateAccountDb.accountServerDb.createdAt,
+		&oneCert.certificateAccountDb.accountServerDb.updatedAt,
 
 		&oneCert.certificateAccountDb.accountKeyDb.id,
 		&oneCert.certificateAccountDb.accountKeyDb.name,
