@@ -55,6 +55,21 @@ certificate_name: legocerthub
 
 # Development mode
 # This should NOT be used in production!
+# Specific changes:
+# - Increased web server read/write timeouts
+# - Increased http client timeouts
+# - Allow 404 errors to be returned (in prod, 401 is returned instead of 404
+#   to obfuscate if a route is valid or not)
+# - Set log level to debug
+# - Some functions are disabled until the server is running over https. devMode
+#   enables those functions even when running over http. (e.g. change password,
+#   download keys/certs, & redaction of certain sensitive informaiton before
+#   it is returned to the client)
+# - JSON marshal is indented
+# - No change password complexity requirement
+# - Set frontend to devMode (assuming backend hosts frontend)
+#   see: https://github.com/gregtwallace/legocerthub-frontend/blob/master/src/helpers/environment.js
+#   for more details regarding frontend changes
 dev_mode: false
 
 # Update checking functionality
