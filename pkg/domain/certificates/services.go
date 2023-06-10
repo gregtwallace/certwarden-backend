@@ -110,7 +110,7 @@ func NewService(app App) (*Service, error) {
 
 	// account services
 	service.accounts = app.GetAcctsService()
-	if service.acmeStaging == nil {
+	if service.accounts == nil {
 		return nil, errServiceComponent
 	}
 
