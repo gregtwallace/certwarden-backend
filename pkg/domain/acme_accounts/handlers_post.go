@@ -12,10 +12,10 @@ import (
 type NewPayload struct {
 	Name         *string `json:"name"`
 	Description  *string `json:"description"`
+	AcmeServerID *int    `json:"acme_server_id"`
 	PrivateKeyID *int    `json:"private_key_id"`
 	Status       string  `json:"-"`
 	Email        *string `json:"email"`
-	IsStaging    *bool   `json:"is_staging"`
 	AcceptedTos  *bool   `json:"accepted_tos"`
 	CreatedAt    int     `json:"-"`
 	UpdatedAt    int     `json:"-"`
@@ -56,15 +56,15 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 
-	// is staging (assume staging if not specified)
-	if payload.IsStaging == nil {
-		payload.IsStaging = new(bool)
-		*payload.IsStaging = true
-	}
-
 	// TOS must be accepted
 	if payload.AcceptedTos == nil || !*payload.AcceptedTos {
 		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// ACME Server
+	if payload.AcmeServerID == nil || !service.acmeServerService.AcmeServerValid(*payload.AcmeServerID) {
+		service.logger.Debug("acme_server_id not specified or invalid")
 		return output.ErrValidationFailed
 	}
 

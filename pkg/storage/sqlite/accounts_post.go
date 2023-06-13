@@ -15,7 +15,8 @@ func (store *Storage) PostNewAccount(payload acme_accounts.NewPayload) (id int, 
 
 	// insert the new account
 	query := `
-	INSERT INTO acme_accounts (name, description, private_key_id, status, email, is_staging, accepted_tos, created_at, updated_at, kid)
+	INSERT INTO acme_accounts (name, description, acme_server_id, private_key_id, status, email,
+		accepted_tos, created_at, updated_at, kid)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	RETURNING id
 	`
@@ -23,10 +24,10 @@ func (store *Storage) PostNewAccount(payload acme_accounts.NewPayload) (id int, 
 	err = store.Db.QueryRowContext(ctx, query,
 		payload.Name,
 		payload.Description,
+		payload.AcmeServerID,
 		payload.PrivateKeyID,
 		payload.Status,
 		payload.Email,
-		payload.IsStaging,
 		payload.AcceptedTos,
 		payload.CreatedAt,
 		payload.UpdatedAt,
