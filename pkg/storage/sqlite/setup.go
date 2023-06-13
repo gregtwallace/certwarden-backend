@@ -7,31 +7,47 @@ import (
 	"legocerthub-backend/pkg/domain/app/auth"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // config for DB
 const dbTimeout = time.Duration(5 * time.Second)
 const dbFilename = "/lego-certhub.db"
+const currentUserVersion = 1
 
 var dbOptions = url.Values{
 	"_fk": []string{"true"},
 }
 
+var errServiceComponent = errors.New("necessary storage service component is missing")
+
+type App interface {
+	GetLogger() *zap.SugaredLogger
+}
+
 // Storage is the struct that holds data about the connection
 type Storage struct {
+	logger  *zap.SugaredLogger
 	Db      *sql.DB
 	Timeout time.Duration
 }
 
 // OpenStorage opens an existing sqlite database or creates a new one if needed.
 // It also creates tables. It then returns Storage.
-func OpenStorage(dataPath string) (*Storage, error) {
+func OpenStorage(app App, dataPath string) (*Storage, error) {
 	store := new(Storage)
 	var err error
+
+	// get logger
+	store.logger = app.GetLogger()
+	if store.logger == nil {
+		return nil, errServiceComponent
+	}
 
 	// set timeout
 	store.Timeout = dbTimeout
@@ -44,9 +60,11 @@ func OpenStorage(dataPath string) (*Storage, error) {
 	dbExists := true
 	if _, err := os.Stat(dbWithPath); errors.Is(err, os.ErrNotExist) {
 		dbExists = false
+		store.logger.Warn("database file does not exist, creating a new one")
 		// create db file
 		file, err := os.Create(dbWithPath)
 		if err != nil {
+			store.logger.Errorf("failed to create new database file", err)
 			return nil, err
 		}
 		file.Close()
@@ -60,6 +78,7 @@ func OpenStorage(dataPath string) (*Storage, error) {
 			_ = store.Db.Close()
 			_ = os.Remove(dbWithPath)
 		}
+		store.logger.Errorf("failed to open database file", err)
 		return nil, err
 	}
 
@@ -73,18 +92,54 @@ func OpenStorage(dataPath string) (*Storage, error) {
 			_ = store.Db.Close()
 			_ = os.Remove(dbWithPath)
 		}
+		store.logger.Errorf("failed to ping database file after opening", err)
 		return nil, err
 	}
 
 	// create tables in the database if the file is new
 	if !dbExists {
-		err = store.createDBTables()
+		store.logger.Info("populating new database file")
+		err = store.populateNewDb()
 		if err != nil {
 			// delete new db on error setting it up
 			_ = store.Db.Close()
 			_ = os.Remove(dbWithPath)
+			store.logger.Errorf("failed to populate new database file", err)
 			return nil, err
 		}
+	} else {
+		// check and do db schema upgrades, if needed
+		fileUserVersion := -1
+		// try upgrading until version matches or an error occurs
+		for fileUserVersion != currentUserVersion && err == nil {
+			// get db file user_version
+			query := `PRAGMA user_version`
+			row := store.Db.QueryRowContext(ctx, query)
+			err = row.Scan(
+				&fileUserVersion,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			// take incremental migration action, if needed
+			switch fileUserVersion {
+			case 0:
+				err = store.migrateV0toV1()
+			case currentUserVersion:
+				store.logger.Debugf("database user_version is current (%d)", fileUserVersion)
+				// no-op, loop will end due to version ==
+			default:
+				err = errors.New("unsupported user_version found in db file")
+			}
+		}
+
+		// err check from upgrade loop
+		if err != nil {
+			store.logger.Errorf("failed to update database file to latest user_version (%d), currently %d (%s)", currentUserVersion, fileUserVersion, err)
+			return nil, err
+		}
+
 	}
 
 	return store, nil
@@ -100,197 +155,56 @@ func (store *Storage) Close() error {
 	return nil
 }
 
-// createDBTables creates tables in the event our database is new
-func (store *Storage) createDBTables() error {
+// populateNewDb creates the tables in the db file and sets the db version
+func (store *Storage) populateNewDb() error {
 	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
 	defer cancel()
 
-	// acme_servers
-	query := `CREATE TABLE acme_servers (
-		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-		name text NOT NULL UNIQUE COLLATE NOCASE,
-		description text NOT NULL,
-		directory_url text NOT NULL,
-		is_staging boolean NOT NULL DEFAULT 0,
-		created_at integer NOT NULL,
-		updated_at integer NOT NULL
-	)`
+	// create sql transaction to roll back in the event an error occurs
+	tx, err := store.Db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
-	_, err := store.Db.ExecContext(ctx, query)
+	// set db user_version
+	// No injection protection since const isn't user editable
+	query := `PRAGMA user_version = ` + strconv.Itoa(currentUserVersion)
+
+	_, err = tx.ExecContext(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	// add LE acme servers
-	query = `
-		INSERT INTO acme_servers (id, name, description, directory_url, is_staging, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`
-
-	// LE Prod
-	_, err = store.Db.ExecContext(ctx, query,
-		0,
-		"Lets_Encrypt",
-		"Let's Encrypt Production Server",
-		"https://acme-v02.api.letsencrypt.org/directory",
-		false,
-		int(time.Now().Unix()),
-		int(time.Now().Unix()),
-	)
+	// create tables
+	err = createDBTables(tx)
 	if err != nil {
 		return err
 	}
 
-	// LE Staging
-	_, err = store.Db.ExecContext(ctx, query,
-		1,
-		"Lets_Encrypt_Staging",
-		"Let's Encrypt Staging Server",
-		"https://acme-staging-v02.api.letsencrypt.org/directory",
-		true,
-		int(time.Now().Unix()),
-		int(time.Now().Unix()),
-	)
+	// insert default ACME servers
+	err = insertDefaultAcmeServers(tx)
 	if err != nil {
 		return err
 	}
 
-	// private_keys
-	query = `CREATE TABLE private_keys (
-		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-		name text NOT NULL UNIQUE COLLATE NOCASE,
-		description text NOT NULL,
-		algorithm text NOT NULL,
-		pem text NOT NULL UNIQUE,
-		api_key text NOT NULL,
-		api_key_new text NOT NULL DEFAULT '',
-		api_key_disabled NOT NULL DEFAULT 0 CHECK(api_key_via_url IN (0,1)),
-		api_key_via_url integer NOT NULL DEFAULT 0 CHECK(api_key_via_url IN (0,1)),
-		created_at integer NOT NULL,
-		updated_at integer NOT NULL
-	)`
-
-	_, err = store.Db.ExecContext(ctx, query)
+	// insert default user
+	err = insertDefaultUser(tx)
 	if err != nil {
 		return err
 	}
 
-	// acme_accounts
-	query = `CREATE TABLE acme_accounts (
-		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-		name text NOT NULL UNIQUE COLLATE NOCASE,
-		acme_server_id integer NOT NULL,
-		private_key_id integer NOT NULL UNIQUE,
-		description text NOT NULL,
-		status text NOT NULL DEFAULT 'unknown',
-		email text NOT NULL,
-		accepted_tos boolean NOT NULL DEFAULT 0,
-		created_at integer NOT NULL,
-		updated_at integer NOT NULL,
-		kid text NOT NULL,
-		FOREIGN KEY (private_key_id)
-			REFERENCES private_keys (id)
-				ON DELETE RESTRICT
-				ON UPDATE NO ACTION,
-		FOREIGN KEY (acme_server_id)
-			REFERENCES acme_servers (id)
-				ON DELETE RESTRICT
-				ON UPDATE NO ACTION
-	)`
-
-	_, err = store.Db.ExecContext(ctx, query)
+	// no errors, commit transaction
+	err = tx.Commit()
 	if err != nil {
 		return err
 	}
 
-	// certificates
-	query = `CREATE TABLE certificates (
-		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-		private_key_id integer NOT NULL UNIQUE,
-		acme_account_id integer NOT NULL,
-		name text NOT NULL UNIQUE COLLATE NOCASE,
-		description text NOT NULL,
-		challenge_method text NOT NULL,
-		subject text NOT NULL,
-		subject_alts text NOT NULL,
-		csr_org text NOT NULL,
-		csr_ou text NOT NULL,
-		csr_country text NOT NULL,
-		csr_state text NOT NULL,
-		csr_city text NOT NULL,
-		api_key text NOT NULL,
-		api_key_new text NOT NULL DEFAULT '',
-		api_key_via_url integer NOT NULL DEFAULT 0 CHECK(api_key_via_url IN (0,1)),
-		created_at integer NOT NULL,
-		updated_at integer NOT NULL,
-		FOREIGN KEY (private_key_id)
-			REFERENCES private_keys (id)
-				ON DELETE RESTRICT
-				ON UPDATE NO ACTION,
-		FOREIGN KEY (acme_account_id)
-			REFERENCES acme_accounts (id)
-				ON DELETE RESTRICT
-				ON UPDATE NO ACTION
-	)`
+	return nil
+}
 
-	_, err = store.Db.ExecContext(ctx, query)
-	if err != nil {
-		return err
-	}
-
-	// ACME orders
-	query = `CREATE TABLE acme_orders (
-			id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-			acme_account_id integer NOT NULL,
-			certificate_id integer NOT NULL,
-			acme_location text NOT NULL UNIQUE,
-			status text NOT NULL,
-			known_revoked integer NOT NULL DEFAULT 0 CHECK(known_revoked IN (0,1)),
-			error text,
-			expires integer,
-			dns_identifiers text NOT NULL,
-			authorizations text NOT NULL,
-			finalize text NOT NULL,
-			finalized_key_id integer,
-			certificate_url text,
-			pem text,
-			valid_from integer,
-			valid_to integer,
-			created_at integer NOT NULL,
-			updated_at integer NOT NULL,
-			FOREIGN KEY (acme_account_id)
-				REFERENCES acme_accounts (id)
-					ON DELETE CASCADE
-					ON UPDATE NO ACTION,
-			FOREIGN KEY (finalized_key_id)
-				REFERENCES private_keys (id)
-					ON DELETE SET NULL
-					ON UPDATE NO ACTION,
-			FOREIGN KEY (certificate_id)
-				REFERENCES certificates (id)
-					ON DELETE CASCADE
-					ON UPDATE NO ACTION
-		)`
-
-	_, err = store.Db.ExecContext(ctx, query)
-	if err != nil {
-		return err
-	}
-
-	// users (for login to LeGo)
-	query = `CREATE TABLE users (
-		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-		username text NOT NULL UNIQUE,
-		password_hash NOT NULL,
-		created_at integer NOT NULL,
-		updated_at integer NOT NULL
-	)`
-
-	_, err = store.Db.ExecContext(ctx, query)
-	if err != nil {
-		return err
-	}
-
+// insertDefaultUser inserts the default user with the default password
+func insertDefaultUser(tx *sql.Tx) error {
 	// add default admin user
 	// default username and password
 	defaultUsername := "admin"
@@ -303,7 +217,7 @@ func (store *Storage) createDBTables() error {
 	}
 
 	// insert
-	query = `
+	query := `
 	INSERT INTO
 		users (username, password_hash, created_at, updated_at)
 	VALUES (
@@ -314,7 +228,7 @@ func (store *Storage) createDBTables() error {
 	)
 	`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = tx.Exec(query,
 		defaultUsername,
 		defaultHashedPw,
 		time.Now().Unix(),

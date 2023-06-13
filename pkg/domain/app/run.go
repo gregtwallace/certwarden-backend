@@ -252,7 +252,7 @@ func create(ctx context.Context) (*Application, error) {
 	}
 
 	// storage
-	app.storage, err = sqlite.OpenStorage(dataStoragePath)
+	app.storage, err = sqlite.OpenStorage(app, dataStoragePath)
 	if err != nil {
 		app.logger.Errorf("failed to configure app storage (%s)", err)
 		return app, err
