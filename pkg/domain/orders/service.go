@@ -3,6 +3,7 @@ package orders
 import (
 	"context"
 	"errors"
+	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
@@ -22,6 +23,7 @@ type App interface {
 	GetOutputter() *output.Service
 	GetOrderStorage() Storage
 	GetAcmeServerService() *acme_servers.Service
+	GetChallengesService() *challenges.Service
 	GetCertificatesService() *certificates.Service
 	GetAuthsService() *authorizations.Service
 	GetShutdownContext() context.Context
@@ -67,6 +69,7 @@ type Service struct {
 	output            *output.Service
 	storage           Storage
 	acmeServerService *acme_servers.Service
+	challenges        *challenges.Service
 	certificates      *certificates.Service
 	authorizations    *authorizations.Service
 	inProcess         *inProcess
@@ -102,6 +105,12 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	// acme services
 	service.acmeServerService = app.GetAcmeServerService()
 	if service.acmeServerService == nil {
+		return nil, errServiceComponent
+	}
+
+	// challenges
+	service.challenges = app.GetChallengesService()
+	if service.challenges == nil {
 		return nil, errServiceComponent
 	}
 

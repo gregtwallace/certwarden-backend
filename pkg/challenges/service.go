@@ -60,7 +60,7 @@ type Service struct {
 	acmeServerService *acme_servers.Service
 	dnsChecker        *dns_checker.Service
 	providers         map[MethodValue]providerService
-	methods           []MethodWithStatus
+	methodsWithStatus []MethodWithStatus
 }
 
 // NewService creates a new service
@@ -143,11 +143,11 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	for i := range allMethods {
 		if _, ok := service.providers[allMethods[i].Value]; ok {
 			// enabled
-			service.methods = append(service.methods, allMethods[i].addStatus(true))
+			service.methodsWithStatus = append(service.methodsWithStatus, allMethods[i].AddStatus(true))
 			atLeastOneEnabled = true
 		} else {
 			// disabled
-			service.methods = append(service.methods, allMethods[i].addStatus(false))
+			service.methodsWithStatus = append(service.methodsWithStatus, allMethods[i].AddStatus(false))
 		}
 	}
 	if !atLeastOneEnabled {
@@ -156,8 +156,8 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 
 	// configure dns checker service (if any enabled Method is a DNS method)
 	// Fixes https://github.com/gregtwallace/legocerthub/issues/6
-	for i := range service.methods {
-		if service.methods[i].Enabled && service.methods[i].ChallengeType == acme.ChallengeTypeDns01 {
+	for i := range service.methodsWithStatus {
+		if service.methodsWithStatus[i].Enabled && service.methodsWithStatus[i].ChallengeType == acme.ChallengeTypeDns01 {
 			// enable checker
 			service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
 			if err != nil {

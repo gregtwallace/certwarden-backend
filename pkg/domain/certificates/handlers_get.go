@@ -37,7 +37,7 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) (err
 
 	// populate cert summaries for output
 	for i := range certs {
-		response.Certificates = append(response.Certificates, certs[i].summaryResponse())
+		response.Certificates = append(response.Certificates, certs[i].summaryResponse(service))
 	}
 
 	// return response to client
@@ -73,7 +73,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, cert.detailedResponse(service.https || service.devMode), "certificate")
+	_, err = service.output.WriteJSON(w, http.StatusOK, cert.detailedResponse(service, service.https || service.devMode), "certificate")
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWriteJsonFailed

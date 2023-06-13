@@ -25,11 +25,24 @@ func (method Method) validationResource(identifier acme.Identifier, key acme.Acc
 	return method.ChallengeType.ValidationResource(identifier, key, token)
 }
 
-func (method Method) addStatus(enabled bool) MethodWithStatus {
+func (method Method) AddStatus(enabled bool) MethodWithStatus {
 	return MethodWithStatus{
 		Method:  method,
 		Enabled: enabled,
 	}
+}
+
+// service AddStatus transforms a Method into a MethodWithStatus based on how
+// the challenges service is currently configured (adds enabled/disabled)
+func (service *Service) AddStatus(method Method) MethodWithStatus {
+	for i := range service.methodsWithStatus {
+		if service.methodsWithStatus[i].Value == method.Value {
+			return service.methodsWithStatus[i]
+		}
+	}
+
+	// unknown and disabled
+	return UnknownMethod.AddStatus(false)
 }
 
 // Define values. These values should be assigned once and NEVER
@@ -105,5 +118,5 @@ type MethodWithStatus struct {
 // with an additional field indicating if each is currently enabled in the challenges
 // service.
 func (service *Service) ListOfMethodsWithStatus() []MethodWithStatus {
-	return service.methods
+	return service.methodsWithStatus
 }

@@ -51,7 +51,7 @@ type orderCertificateSummaryResponse struct {
 	CertificateAccount orderCertificateAccountSummaryResponse `json:"acme_account"`
 	Subject            string                                 `json:"subject"`
 	SubjectAltNames    []string                               `json:"subject_alts"`
-	ChallengeMethod    challenges.Method                      `json:"challenge_method"`
+	ChallengeMethod    challenges.MethodWithStatus            `json:"challenge_method"`
 	ApiKeyViaUrl       bool                                   `json:"api_key_via_url"`
 }
 
@@ -72,7 +72,7 @@ type orderKeySummaryResponse struct {
 	Name string `json:"name"`
 }
 
-func (order Order) summaryResponse() orderSummaryResponse {
+func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 	// depends on if FinalizedKey is set yet
 	var finalKey *orderKeySummaryResponse
 	if order.FinalizedKey != nil {
@@ -98,7 +98,7 @@ func (order Order) summaryResponse() orderSummaryResponse {
 			},
 			Subject:         order.Certificate.Subject,
 			SubjectAltNames: order.Certificate.SubjectAltNames,
-			ChallengeMethod: order.Certificate.ChallengeMethod,
+			ChallengeMethod: service.challenges.AddStatus(order.Certificate.ChallengeMethod),
 			ApiKeyViaUrl:    order.Certificate.ApiKeyViaUrl,
 		},
 		Status:         order.Status,

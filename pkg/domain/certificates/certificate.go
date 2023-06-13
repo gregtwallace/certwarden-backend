@@ -39,7 +39,7 @@ type certificateSummaryResponse struct {
 	CertificateAccount certificateAccountSummaryResponse `json:"acme_account"`
 	Subject            string                            `json:"subject"`
 	SubjectAltNames    []string                          `json:"subject_alts"`
-	ChallengeMethod    challenges.Method                 `json:"challenge_method"`
+	ChallengeMethod    challenges.MethodWithStatus       `json:"challenge_method"`
 	ApiKeyViaUrl       bool                              `json:"api_key_via_url"`
 }
 
@@ -60,7 +60,7 @@ type certificateAccountServerSummaryResponse struct {
 	IsStaging bool   `json:"is_staging"`
 }
 
-func (cert Certificate) summaryResponse() certificateSummaryResponse {
+func (cert Certificate) summaryResponse(service *Service) certificateSummaryResponse {
 	return certificateSummaryResponse{
 		ID:          cert.ID,
 		Name:        cert.Name,
@@ -80,7 +80,7 @@ func (cert Certificate) summaryResponse() certificateSummaryResponse {
 		},
 		Subject:         cert.Subject,
 		SubjectAltNames: cert.SubjectAltNames,
-		ChallengeMethod: cert.ChallengeMethod,
+		ChallengeMethod: service.challenges.AddStatus(cert.ChallengeMethod),
 		ApiKeyViaUrl:    cert.ApiKeyViaUrl,
 	}
 }
@@ -100,7 +100,7 @@ type certificateDetailedResponse struct {
 	ApiKeyNew          string `json:"api_key_new,omitempty"`
 }
 
-func (cert Certificate) detailedResponse(withSensitive bool) certificateDetailedResponse {
+func (cert Certificate) detailedResponse(service *Service, withSensitive bool) certificateDetailedResponse {
 	// option to redact sensitive info
 	apiKey := cert.ApiKey
 	apiKeyNew := cert.ApiKeyNew
@@ -113,7 +113,7 @@ func (cert Certificate) detailedResponse(withSensitive bool) certificateDetailed
 	}
 
 	return certificateDetailedResponse{
-		certificateSummaryResponse: cert.summaryResponse(),
+		certificateSummaryResponse: cert.summaryResponse(service),
 		Organization:               cert.Organization,
 		OrganizationalUnit:         cert.OrganizationalUnit,
 		Country:                    cert.Country,
