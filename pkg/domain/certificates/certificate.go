@@ -149,7 +149,7 @@ func (cert *Certificate) NewOrderPayload() acme.NewOrderPayload {
 // new account info
 // used to return info about valid options when making a new account
 type newCertOptions struct {
-	AvailableKeys             []private_keys.KeySummaryResponse      `json:"private_keys"`
-	UsableAccounts            []acme_accounts.AccountSummaryResponse `json:"acme_accounts"`
-	AvailableChallengeMethods []challenges.Method                    `json:"challenge_methods"`
+	AvailableKeys    []private_keys.KeySummaryResponse      `json:"private_keys"`
+	UsableAccounts   []acme_accounts.AccountSummaryResponse `json:"acme_accounts"`
+	ChallengeMethods []challenges.MethodWithStatus          `json:"challenge_methods"`
 }

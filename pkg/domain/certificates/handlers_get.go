@@ -142,7 +142,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	}
 
 	// available challenge methods
-	newCertOptions.AvailableChallengeMethods = service.challenges.ListOfMethods()
+	newCertOptions.ChallengeMethods = service.challenges.ListOfMethodsWithStatus()
 
 	// return response to client
 	_, err = service.output.WriteJSON(w, http.StatusOK, newCertOptions, "certificate_options")

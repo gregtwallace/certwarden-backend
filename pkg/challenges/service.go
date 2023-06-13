@@ -19,6 +19,7 @@ import (
 
 var (
 	errServiceComponent = errors.New("necessary challenges service component is missing")
+	errNoProviders      = errors.New("no challenge providers are properly configured (at least one must be enabled)")
 )
 
 // App interface is for connecting to the main app
@@ -59,7 +60,7 @@ type Service struct {
 	acmeServerService *acme_servers.Service
 	dnsChecker        *dns_checker.Service
 	providers         map[MethodValue]providerService
-	methods           []Method
+	methods           []MethodWithStatus
 }
 
 // NewService creates a new service
@@ -136,11 +137,21 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 
 	// end challenge providers
 
-	// configure methods (list of all, properly flagged as enabled or not)
-	err = service.configureMethods()
-	if err != nil {
-		service.logger.Errorf("failed to configure challenge methods (%s)", err)
-		return nil, err
+	// make array containing service methods and if they're enabled or disabled
+	// fail out if none enabled
+	atLeastOneEnabled := false
+	for i := range allMethods {
+		if _, ok := service.providers[allMethods[i].Value]; ok {
+			// enabled
+			service.methods = append(service.methods, allMethods[i].addStatus(true))
+			atLeastOneEnabled = true
+		} else {
+			// disabled
+			service.methods = append(service.methods, allMethods[i].addStatus(false))
+		}
+	}
+	if !atLeastOneEnabled {
+		return nil, errNoProviders
 	}
 
 	// configure dns checker service (if any enabled Method is a DNS method)
@@ -153,7 +164,8 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 				service.logger.Errorf("failed to configure dns checker (%s)", err)
 				return nil, err
 			}
-			// once found one Enabled + DNS, done
+
+			// no need to continue loop once DNS challenge service is confirmed required
 			break
 		}
 	}

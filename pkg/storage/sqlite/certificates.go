@@ -37,7 +37,7 @@ func (cert certificateDb) toCertificate(store *Storage) certificates.Certificate
 		CertificateAccount: cert.certificateAccountDb.toAccount(),
 		Subject:            cert.subject,
 		SubjectAltNames:    cert.subjectAltNames.toSlice(),
-		ChallengeMethod:    store.challenges.MethodByStorageValue(cert.challengeMethodValue),
+		ChallengeMethod:    challenges.MethodByStorageValue(cert.challengeMethodValue),
 		Organization:       cert.organization,
 		OrganizationalUnit: cert.organizationalUnit,
 		Country:            cert.country,

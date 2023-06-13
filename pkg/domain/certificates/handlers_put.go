@@ -71,7 +71,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 	challengeMethod := cert.ChallengeMethod
 	// if change specified, check it
 	if payload.ChallengeMethodValue != nil {
-		challengeMethod = service.challenges.MethodByStorageValue(*payload.ChallengeMethodValue)
+		challengeMethod = challenges.MethodByStorageValue(*payload.ChallengeMethodValue)
 		// if method is unknown, invalid
 		if challengeMethod == challenges.UnknownMethod {
 			service.logger.Debug("unknown challenge method")
