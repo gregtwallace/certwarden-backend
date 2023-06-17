@@ -28,16 +28,21 @@ type App interface {
 type Storage interface {
 	GetAllAcmeServers(q pagination_sort.Query) ([]Server, int, error)
 	GetOneServerById(acmeServerId int) (Server, error)
+	GetOneServerByName(name string) (Server, error)
+
+	PostNewServer(NewPayload) (acmeServerId int, err error)
 }
 
 // Acme service struct
 type Service struct {
-	logger      *zap.SugaredLogger
-	output      *output.Service
-	storage     Storage
-	httpClient  *httpclient.Client
-	acmeServers map[int]*acme.Service // [id]acmeServer
-	mu          sync.Mutex
+	logger            *zap.SugaredLogger
+	output            *output.Service
+	storage           Storage
+	httpClient        *httpclient.Client
+	shutdownContext   context.Context
+	shutdownWaitgroup *sync.WaitGroup
+	acmeServers       map[int]*acme.Service // [id]acmeServer
+	mu                sync.Mutex
 }
 
 // NewService creates a new service
@@ -65,6 +70,18 @@ func NewService(app App) (*Service, error) {
 	// http client
 	service.httpClient = app.GetHttpClient()
 	if service.httpClient == nil {
+		return nil, errServiceComponent
+	}
+
+	// shutdown context
+	service.shutdownContext = app.GetShutdownContext()
+	if service.shutdownContext == nil {
+		return nil, errServiceComponent
+	}
+
+	// shutdown waitgroup
+	service.shutdownWaitgroup = app.GetShutdownWaitGroup()
+	if service.shutdownWaitgroup == nil {
 		return nil, errServiceComponent
 	}
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"legocerthub-backend/pkg/httpclient"
 	"reflect"
 	"sync"
 	"time"
@@ -30,15 +31,13 @@ type directory struct {
 	} `json:"meta"`
 }
 
-// getAcmeDirectory returns an AcmeDirectory object based on data fetched
-// from an ACME directory URI.
-func (service *Service) fetchAcmeDirectory() error {
-	service.logger.Infof("updating directory from %s", service.dirUri)
-
-	response, err := service.httpClient.Get(service.dirUri)
-
+// FetchAcmeDirectory uses the specified httpclient to fetch the specified
+// dirUri and return a directory object. If the directory fails to fetch or what
+// is fetched is invalid, an error is returned.
+func FetchAcmeDirectory(httpClient *httpclient.Client, dirUri string) (directory, error) {
+	response, err := httpClient.Get(dirUri)
 	if err != nil {
-		return err
+		return directory{}, err
 	}
 	defer response.Body.Close()
 
@@ -47,14 +46,13 @@ func (service *Service) fetchAcmeDirectory() error {
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return err
+		return directory{}, err
 	}
-
 	var fetchedDir directory
 	err = json.Unmarshal(body, &fetchedDir)
 	// check for Unmarshal error
 	if err != nil {
-		return err
+		return directory{}, err
 	}
 
 	// check for missing URLs in response
@@ -64,7 +62,22 @@ func (service *Service) fetchAcmeDirectory() error {
 		// omit NewAuthz as it MUST be omitted if server does not implement pre-authorization
 		fetchedDir.RevokeCert == "" ||
 		fetchedDir.KeyChange == "" {
-		return ErrDirMissingUrl
+		return directory{}, ErrDirMissingUrl
+	}
+
+	return fetchedDir, nil
+}
+
+// upsateAcmeServiceDirectory updates the Service's directory object based on
+// data fetched from the Service's directory URI. If it fails, an error is
+// returned.
+func (service *Service) upsateAcmeServiceDirectory() error {
+	service.logger.Infof("updating directory from %s", service.dirUri)
+
+	// try to fetch the directory
+	fetchedDir, err := FetchAcmeDirectory(service.httpClient, service.dirUri)
+	if err != nil {
+		return err
 	}
 
 	// Only update if the fetched directory content is different than current
@@ -98,7 +111,7 @@ func (service *Service) backgroundDirManager(ctx context.Context, wg *sync.WaitG
 		var waitTime time.Duration
 
 		for {
-			err := service.fetchAcmeDirectory()
+			err := service.upsateAcmeServiceDirectory()
 			if err != nil {
 				service.logger.Errorf("directory update failed, will retry shortly (%v)", err)
 				// if something failed, decrease the wait to try again

@@ -8,7 +8,9 @@ import (
 )
 
 var (
-	ErrIdBad         = errors.New("key id is invalid")
+	ErrIdBad   = errors.New("server id is invalid")
+	ErrNameBad = errors.New("server name is not valid")
+
 	ErrNoAcmeService = errors.New("acme server id exists but doesn't have a service (how did this happen?!)")
 )
 
@@ -49,4 +51,33 @@ func (service *Service) AcmeServerValid(acmeServerId int) bool {
 
 	// if err == nil, valid, otherwise invalid
 	return err == nil
+}
+
+// nameValid returns true if the specified server name is acceptable and
+// false if it is not. This check includes validating specified
+// characters and also confirms the name is not already in use by another
+// server. If an id is specified, the name will also be accepted if the name
+// is already in use by the specified id.
+func (service *Service) nameValid(serverName string, serverId *int) bool {
+	// basic character/length check
+	if !validation.NameValid(serverName) {
+		return false
+	}
+
+	// make sure the name isn't already in use in storage
+	key, err := service.storage.GetOneServerByName(serverName)
+	if err == storage.ErrNoRecord {
+		// no rows means name is not in use
+		return true
+	} else if err != nil {
+		// any other error
+		return false
+	}
+
+	// if the returned server is the server being edited, name is ok
+	if serverId != nil && key.ID == *serverId {
+		return true
+	}
+
+	return false
 }
