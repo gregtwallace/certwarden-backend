@@ -129,6 +129,6 @@ func (account *Account) newAccountPayload(eabKid string, eabHmacKey string) acme
 // new account info
 // used to return info about valid options when making a new account
 type newAccountOptions struct {
-	AcmeServers   []acme_servers.ServerInformationResponse `json:"acme_servers"`
-	AvailableKeys []private_keys.KeySummaryResponse        `json:"private_keys"`
+	AcmeServers   []acme_servers.ServerSummaryResponse `json:"acme_servers"`
+	AvailableKeys []private_keys.KeySummaryResponse    `json:"private_keys"`
 }

@@ -31,49 +31,76 @@ func (service *Service) AcmeService(id int) (*acme.Service, error) {
 	return acmeService, nil
 }
 
-// serverInformationResponse is the struct that holds data about a Server that
-// is returned to a client
-type ServerInformationResponse struct {
-	ID                      int    `json:"id"`
-	Name                    string `json:"name"`
-	Description             string `json:"description"`
-	DirectoryURL            string `json:"directory_url"`
-	IsStaging               bool   `json:"is_staging"`
-	TermsOfService          string `json:"terms_of_service"`
+// serverSummaryResponse contains abbreviated details about an ACME server
+type ServerSummaryResponse struct {
+	// static
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	DirectoryURL string `json:"directory_url"`
+	IsStaging    bool   `json:"is_staging"`
+	// from remote server
 	ExternalAccountRequired bool   `json:"external_account_required"`
+	TermsOfService          string `json:"terms_of_service"`
 }
 
-// ListServersInfo returns a slice of information about all configured Servers
-func (service *Service) ListServersInfo() ([]ServerInformationResponse, error) {
+func (serv Server) summaryResponse(service *Service) (ServerSummaryResponse, error) {
+	acmeService, err := service.AcmeService(serv.ID)
+	if err != nil {
+		return ServerSummaryResponse{}, err
+	}
+
+	return ServerSummaryResponse{
+		ID:                      serv.ID,
+		Name:                    serv.Name,
+		Description:             serv.Description,
+		DirectoryURL:            serv.DirectoryURL,
+		IsStaging:               serv.IsStaging,
+		ExternalAccountRequired: acmeService.RequiresEAB(),
+		TermsOfService:          acmeService.TosUrl(),
+	}, nil
+}
+
+// serverDetailedResponse contains full details about an ACME server
+type serverDetailedResponse struct {
+	ServerSummaryResponse
+	CreatedAt int `json:"created_at"`
+	UpdatedAt int `json:"updated_at"`
+}
+
+func (serv Server) detailedResponse(service *Service) (serverDetailedResponse, error) {
+	summaryResp, err := serv.summaryResponse(service)
+	if err != nil {
+		return serverDetailedResponse{}, err
+	}
+
+	return serverDetailedResponse{
+		ServerSummaryResponse: summaryResp,
+		CreatedAt:             serv.CreatedAt,
+		UpdatedAt:             serv.UpdatedAt,
+	}, nil
+}
+
+// ListAllServersSummaries returns a slice of summaries about all configured Servers
+func (service *Service) ListAllServersSummaries() ([]ServerSummaryResponse, error) {
 	// fetch from storage
 	servers, _, err := service.storage.GetAllAcmeServers(pagination_sort.QueryAll)
 	if err != nil {
 		return nil, err
 	}
 
-	// convert to info response
-	serversInfo := []ServerInformationResponse{}
+	// convert to summary responses
+	serverSummaries := []ServerSummaryResponse{}
 	for i := range servers {
-		// need to access server service for some info
-		service, err := service.AcmeService(servers[i].ID)
+		// populate summary
+		serverSummary, err := servers[i].summaryResponse(service)
 		if err != nil {
 			return nil, err
 		}
 
-		// populate info
-		serverInfo := ServerInformationResponse{
-			ID:                      servers[i].ID,
-			Name:                    servers[i].Name,
-			Description:             servers[i].Description,
-			DirectoryURL:            servers[i].DirectoryURL,
-			IsStaging:               servers[i].IsStaging,
-			TermsOfService:          service.TosUrl(),
-			ExternalAccountRequired: service.RequiresEAB(),
-		}
-
-		// append info
-		serversInfo = append(serversInfo, serverInfo)
+		// append summary
+		serverSummaries = append(serverSummaries, serverSummary)
 	}
 
-	return serversInfo, nil
+	return serverSummaries, nil
 }

@@ -88,7 +88,7 @@ func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Requ
 	newAccountOptions := newAccountOptions{}
 
 	// acme servers
-	newAccountOptions.AcmeServers, err = service.acmeServerService.ListServersInfo()
+	newAccountOptions.AcmeServers, err = service.acmeServerService.ListAllServersSummaries()
 	if err != nil {
 		return err
 	}
