@@ -2,9 +2,11 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/pagination_sort"
+	"legocerthub-backend/pkg/storage"
 )
 
 // GetAllAcmeServers returns a slice of all of the ACME Servers in the database
@@ -86,4 +88,61 @@ func (store *Storage) GetAllAcmeServers(q pagination_sort.Query) (accounts []acm
 	}
 
 	return allServers, totalRows, nil
+}
+
+// GetOneServerById returns a Server based on unique id
+func (store *Storage) GetOneServerById(acmeServerId int) (acme_servers.Server, error) {
+	return store.dbGetOneServer(acmeServerId, "")
+}
+
+// GetOneServerByName returns a Server based on unique name
+func (store *Storage) GetOneServerByName(name string) (acme_servers.Server, error) {
+	return store.dbGetOneServer(-1, name)
+}
+
+// dbGetOneServer returns a Server based on unique id or unique name
+func (store Storage) dbGetOneServer(acmeServerId int, name string) (acme_servers.Server, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	defer cancel()
+
+	query := `
+	SELECT
+		aserv.id, aserv.name, aserv.description, aserv.directory_url, aserv.is_staging, aserv.created_at,
+		aserv.updated_at
+	FROM
+		acme_servers aserv
+	WHERE
+		id = $1
+		OR
+		name = $2
+	`
+
+	row := store.db.QueryRowContext(ctx, query, acmeServerId, name)
+
+	var oneServerDb acmeServerDb
+	err := row.Scan(
+		&oneServerDb.id,
+		&oneServerDb.name,
+		&oneServerDb.description,
+		&oneServerDb.directoryUrl,
+		&oneServerDb.isStaging,
+		&oneServerDb.createdAt,
+		&oneServerDb.updatedAt,
+	)
+
+	if err != nil {
+		// if no record exists
+		if err == sql.ErrNoRows {
+			err = storage.ErrNoRecord
+		}
+		return acme_servers.Server{}, err
+	}
+
+	// convert to Server
+	oneServer := oneServerDb.toServer()
+	if err != nil {
+		return acme_servers.Server{}, err
+	}
+
+	return oneServer, nil
 }

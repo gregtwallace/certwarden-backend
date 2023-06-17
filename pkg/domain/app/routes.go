@@ -30,6 +30,10 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/new-version", app.updater.GetNewVersionInfo)
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/new-version", app.updater.CheckForNewVersion)
 
+	// acme_servers
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/acmeservers", app.acmeServers.GetAllServers)
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/acmeservers/:id", app.acmeServers.GetOneServer)
+
 	// private_keys
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/privatekeys", app.keys.GetAllKeys)
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/privatekeys/:id", app.keys.GetOneKey)

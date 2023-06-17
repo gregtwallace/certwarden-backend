@@ -5,6 +5,7 @@ import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/httpclient"
+	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
 	"sync"
 
@@ -16,6 +17,7 @@ var errServiceComponent = errors.New("necessary acme_servers service component i
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
+	GetOutputter() *output.Service
 	GetAcmeServerStorage() Storage
 	GetHttpClient() *httpclient.Client
 	GetShutdownContext() context.Context
@@ -25,11 +27,13 @@ type App interface {
 // Storage interface for storage functions
 type Storage interface {
 	GetAllAcmeServers(q pagination_sort.Query) ([]Server, int, error)
+	GetOneServerById(acmeServerId int) (Server, error)
 }
 
 // Acme service struct
 type Service struct {
 	logger      *zap.SugaredLogger
+	output      *output.Service
 	storage     Storage
 	httpClient  *httpclient.Client
 	acmeServers map[int]*acme.Service // [id]acmeServer
@@ -43,6 +47,12 @@ func NewService(app App) (*Service, error) {
 	// logger
 	service.logger = app.GetLogger()
 	if service.logger == nil {
+		return nil, errServiceComponent
+	}
+
+	// output service
+	service.output = app.GetOutputter()
+	if service.output == nil {
 		return nil, errServiceComponent
 	}
 
