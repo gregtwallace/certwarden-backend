@@ -9,7 +9,7 @@ import (
 // TODO: refactor to more generic for anything that can be updated??
 func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) (err error) {
 	// database update
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -23,7 +23,7 @@ func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) 
 		id = $4
 	`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.UpdatedAt,
@@ -40,7 +40,7 @@ func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) 
 // PutAcmeAccountResponse populates an account with data that is returned by LE when
 // an account is POSTed to
 func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccount) error {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -55,7 +55,7 @@ func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccount) 
 	WHERE
 		id = $6`
 
-	_, err := store.Db.ExecContext(ctx, query,
+	_, err := store.db.ExecContext(ctx, query,
 		payload.Status,
 		payload.Email(),
 		payload.CreatedAt.ToUnixTime(),
@@ -73,7 +73,7 @@ func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccount) 
 
 // PutNewAccountKey updates the specified account to the new key id
 func (store *Storage) PutNewAccountKey(payload acme_accounts.RolloverKeyPayload) error {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -86,7 +86,7 @@ func (store *Storage) PutNewAccountKey(payload acme_accounts.RolloverKeyPayload)
 		id = $3
 	`
 
-	_, err := store.Db.ExecContext(ctx, query,
+	_, err := store.db.ExecContext(ctx, query,
 		payload.PrivateKeyID,
 		payload.UpdatedAt,
 		payload.ID,

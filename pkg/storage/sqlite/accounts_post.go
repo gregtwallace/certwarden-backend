@@ -7,7 +7,7 @@ import (
 
 // PostNewAccount inserts a new account into the db
 func (store *Storage) PostNewAccount(payload acme_accounts.NewPayload) (id int, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// don't check for in use in storage. main app business logic should
@@ -21,7 +21,7 @@ func (store *Storage) PostNewAccount(payload acme_accounts.NewPayload) (id int, 
 	RETURNING id
 	`
 
-	err = store.Db.QueryRowContext(ctx, query,
+	err = store.db.QueryRowContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.AcmeServerID,

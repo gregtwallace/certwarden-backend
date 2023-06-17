@@ -19,11 +19,11 @@ import (
 func (store *Storage) migrateV0toV1() error {
 	store.logger.Info("updating database user_version from 0 to 1")
 
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// create sql transaction to roll back in the event an error occurs
-	tx, err := store.Db.BeginTx(ctx, nil)
+	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}

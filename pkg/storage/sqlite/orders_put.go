@@ -8,7 +8,7 @@ import (
 // UpdateOrderAcme updates the specified order ID with acme.Order response
 // data
 func (store *Storage) PutOrderAcme(payload orders.UpdateAcmeOrderPayload) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// update existing record
@@ -28,7 +28,7 @@ func (store *Storage) PutOrderAcme(payload orders.UpdateAcmeOrderPayload) (err e
 			id = $9
 		`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		payload.Status,
 		payload.Expires,
 		makeCommaJoinedString(payload.DnsIds),
@@ -51,7 +51,7 @@ func (store *Storage) PutOrderAcme(payload orders.UpdateAcmeOrderPayload) (err e
 
 // PutOrderInvalid updates the specified order ID to the status of 'invalid'.
 func (store *Storage) PutOrderInvalid(orderId int) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// update existing record
@@ -64,7 +64,7 @@ func (store *Storage) PutOrderInvalid(orderId int) (err error) {
 			id = $2
 		`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		"invalid",
 		orderId,
 	)
@@ -80,7 +80,7 @@ func (store *Storage) PutOrderInvalid(orderId int) (err error) {
 
 // UpdateFinalizedKey updates the specified order ID with key id
 func (store *Storage) UpdateFinalizedKey(orderId int, keyId int) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// no checks or validation (shouldn't be needed)
@@ -96,7 +96,7 @@ func (store *Storage) UpdateFinalizedKey(orderId int, keyId int) (err error) {
 			id = $3
 		`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		keyId,
 		timeNow(),
 		orderId,
@@ -113,7 +113,7 @@ func (store *Storage) UpdateFinalizedKey(orderId int, keyId int) (err error) {
 
 // UpdateOrderCert updates the specified order ID with the specified certificate data
 func (store *Storage) UpdateOrderCert(orderId int, payload orders.CertPayload) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// no checks or validation (shouldn't be needed)
@@ -131,7 +131,7 @@ func (store *Storage) UpdateOrderCert(orderId int, payload orders.CertPayload) (
 			id = $5
 		`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		payload.Pem,
 		payload.ValidFrom,
 		payload.ValidTo,
@@ -150,7 +150,7 @@ func (store *Storage) UpdateOrderCert(orderId int, payload orders.CertPayload) (
 
 // RevokeOrder updates the revoked flag in db to true (1)
 func (store *Storage) RevokeOrder(orderId int) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// no checks or validation (shouldn't be needed)
@@ -166,7 +166,7 @@ func (store *Storage) RevokeOrder(orderId int) (err error) {
 			id = $3
 		`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		1, // true
 		timeNow(),
 		orderId,

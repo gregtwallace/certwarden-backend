@@ -30,7 +30,7 @@ func (store *Storage) GetAllAcmeServers(q pagination_sort.Query) (accounts []acm
 	sort := sortField + " " + q.SortDirection()
 
 	// do query
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// WARNING: SQL Injection is possible if the variables are not properly
@@ -51,7 +51,7 @@ func (store *Storage) GetAllAcmeServers(q pagination_sort.Query) (accounts []acm
 		$2
 	`, sort)
 
-	rows, err := store.Db.QueryContext(ctx, query,
+	rows, err := store.db.QueryContext(ctx, query,
 		q.Limit(),
 		q.Offset(),
 	)

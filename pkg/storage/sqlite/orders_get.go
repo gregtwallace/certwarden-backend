@@ -29,7 +29,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 	sort := sortField + " " + q.SortDirection()
 
 	// query
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// WARNING: SQL Injection is possible if the variables are not properly
@@ -101,7 +101,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 		sort)
 
 	// get records
-	rows, err := store.Db.QueryContext(ctx, query,
+	rows, err := store.db.QueryContext(ctx, query,
 		time.Now().Unix(),
 		q.Limit(),
 		q.Offset(),
@@ -240,7 +240,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 	sort := sortField + " " + q.SortDirection()
 
 	// do query
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// WARNING: SQL Injection is possible if the variables are not properly
@@ -298,7 +298,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 		$3
 	`, sort)
 
-	rows, err := store.Db.QueryContext(ctx, query,
+	rows, err := store.db.QueryContext(ctx, query,
 		certId,
 		q.Limit(),
 		q.Offset(),
@@ -418,7 +418,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 
 // GetAllIncompleteOrderIds returns an array of all of the incomplete orders in storage.
 func (store *Storage) GetAllIncompleteOrderIds() (orderIds []int, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -435,7 +435,7 @@ func (store *Storage) GetAllIncompleteOrderIds() (orderIds []int, err error) {
 	`
 
 	// qeuery db
-	rows, err := store.Db.QueryContext(ctx, query)
+	rows, err := store.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -460,7 +460,7 @@ func (store *Storage) GetAllIncompleteOrderIds() (orderIds []int, err error) {
 // than the specified maxTimeRemaining. If a cert does not have a valid order, it is excluded.
 func (store *Storage) GetExpiringCertIds(maxTimeRemaining time.Duration) (certIds []int, err error) {
 	// query
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -490,7 +490,7 @@ func (store *Storage) GetExpiringCertIds(maxTimeRemaining time.Duration) (certId
 	maxExpirationUnix := time.Now().Add(maxTimeRemaining).Unix()
 
 	// get records
-	rows, err := store.Db.QueryContext(ctx, query,
+	rows, err := store.db.QueryContext(ctx, query,
 		time.Now().Unix(),
 		maxExpirationUnix,
 	)
@@ -516,7 +516,7 @@ func (store *Storage) GetExpiringCertIds(maxTimeRemaining time.Duration) (certId
 // GetNewestIncompleteCertOrderId returns the most recent incomplete order for a specified certId,
 // assuming there is one.
 func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -542,7 +542,7 @@ func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, e
 		MAX(expires)
 	`
 
-	row := store.Db.QueryRowContext(ctx, query,
+	row := store.db.QueryRowContext(ctx, query,
 		certId,
 		timeNow(),
 	)
@@ -559,7 +559,7 @@ func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, e
 
 // GetOneOrder fetches a specific Order by ID
 func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -609,7 +609,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		expires DESC
 	`
 
-	row := store.Db.QueryRowContext(ctx, query, orderId)
+	row := store.db.QueryRowContext(ctx, query, orderId)
 
 	var oneOrder orderDb
 
@@ -713,7 +713,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 // GetOrderPemById returns the pem and (certificate) name from the orderId specified. if the
 // certId does not match, no result is returned.
 func (store *Storage) GetOrderPemById(certId int, orderId int) (certName string, orderPem string, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -729,7 +729,7 @@ func (store *Storage) GetOrderPemById(certId int, orderId int) (certName string,
 		ao.id = $2
 	`
 
-	row := store.Db.QueryRowContext(ctx, query,
+	row := store.db.QueryRowContext(ctx, query,
 		certId,
 		orderId,
 	)

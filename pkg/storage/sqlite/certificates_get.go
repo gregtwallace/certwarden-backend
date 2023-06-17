@@ -37,7 +37,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 	sort := sortField + " " + q.SortDirection()
 
 	// do query
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// WARNING: SQL Injection is possible if the variables are not properly
@@ -75,7 +75,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 		$2
 	`, sort)
 
-	rows, err := store.Db.QueryContext(ctx, query,
+	rows, err := store.db.QueryContext(ctx, query,
 		q.Limit(),
 		q.Offset(),
 	)
@@ -175,7 +175,7 @@ func (store *Storage) GetOneCertByName(name string) (cert certificates.Certifica
 
 // getOneCert returns a Cert based on either its unique id or its unique name
 func (store *Storage) getOneCert(id int, name string) (cert certificates.Certificate, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -206,7 +206,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 	ORDER BY c.name
 	`
 
-	row := store.Db.QueryRowContext(ctx, query, id, name)
+	row := store.db.QueryRowContext(ctx, query, id, name)
 
 	var oneCert certificateDb
 
@@ -299,7 +299,7 @@ func (store *Storage) GetCertPemByName(name string) (pem string, err error) {
 // GetCertPem returns the pem for the most recent valid order of the specified
 // cert (id or name)
 func (store *Storage) getCertPem(certId int, inName string) (outName string, pem string, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -329,7 +329,7 @@ func (store *Storage) getCertPem(certId int, inName string) (outName string, pem
 		MAX(valid_to)
 	`
 
-	row := store.Db.QueryRowContext(ctx, query,
+	row := store.db.QueryRowContext(ctx, query,
 		time.Now().Unix(),
 		certId,
 		inName,

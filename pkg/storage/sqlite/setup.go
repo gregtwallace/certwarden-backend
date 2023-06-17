@@ -33,8 +33,8 @@ type App interface {
 // Storage is the struct that holds data about the connection
 type Storage struct {
 	logger  *zap.SugaredLogger
-	Db      *sql.DB
-	Timeout time.Duration
+	db      *sql.DB
+	timeout time.Duration
 }
 
 // OpenStorage opens an existing sqlite database or creates a new one if needed.
@@ -50,7 +50,7 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 	}
 
 	// set timeout
-	store.Timeout = dbTimeout
+	store.timeout = dbTimeout
 
 	// full path and append options to the Dsn for connString
 	dbWithPath := dataPath + dbFilename
@@ -71,25 +71,25 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 	}
 
 	// open db
-	store.Db, err = sql.Open("sqlite3", connString)
+	store.db, err = sql.Open("sqlite3", connString)
 	if err != nil {
 		// if db file is new, delete it on error
 		if !dbExists {
-			_ = store.Db.Close()
+			_ = store.db.Close()
 			_ = os.Remove(dbWithPath)
 		}
 		store.logger.Errorf("failed to open database file", err)
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
-	err = store.Db.PingContext(ctx)
+	err = store.db.PingContext(ctx)
 	if err != nil {
 		// if db file is new, delete it on error
 		if !dbExists {
-			_ = store.Db.Close()
+			_ = store.db.Close()
 			_ = os.Remove(dbWithPath)
 		}
 		store.logger.Errorf("failed to ping database file after opening", err)
@@ -102,7 +102,7 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 		err = store.populateNewDb()
 		if err != nil {
 			// delete new db on error setting it up
-			_ = store.Db.Close()
+			_ = store.db.Close()
 			_ = os.Remove(dbWithPath)
 			store.logger.Errorf("failed to populate new database file", err)
 			return nil, err
@@ -114,7 +114,7 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 		for fileUserVersion != currentUserVersion && err == nil {
 			// get db file user_version
 			query := `PRAGMA user_version`
-			row := store.Db.QueryRowContext(ctx, query)
+			row := store.db.QueryRowContext(ctx, query)
 			err = row.Scan(
 				&fileUserVersion,
 			)
@@ -147,7 +147,7 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 
 // Close() closes the storage database
 func (store *Storage) Close() error {
-	err := store.Db.Close()
+	err := store.db.Close()
 	if err != nil {
 		return err
 	}
@@ -157,11 +157,11 @@ func (store *Storage) Close() error {
 
 // populateNewDb creates the tables in the db file and sets the db version
 func (store *Storage) populateNewDb() error {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// create sql transaction to roll back in the event an error occurs
-	tx, err := store.Db.BeginTx(ctx, nil)
+	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}

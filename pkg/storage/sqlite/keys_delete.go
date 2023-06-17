@@ -8,7 +8,7 @@ import (
 // KeyInUse returns a bool if the specified key is in use, it returns
 // an error if the key does not exist (or any other error)
 func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// check key exists
@@ -19,7 +19,7 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	WHERE id = $1
 	`
 
-	row := store.Db.QueryRowContext(ctx, query, id)
+	row := store.db.QueryRowContext(ctx, query, id)
 	temp := -2
 	row.Scan(&temp)
 	if temp == -2 {
@@ -34,7 +34,7 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	WHERE private_key_id = $1
 	`
 
-	row = store.Db.QueryRowContext(ctx, query, id)
+	row = store.db.QueryRowContext(ctx, query, id)
 	temp = -2
 	row.Scan(&temp)
 	if temp != -2 {
@@ -50,7 +50,7 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	WHERE private_key_id = $1
 	`
 
-	row = store.Db.QueryRowContext(ctx, query, id)
+	row = store.db.QueryRowContext(ctx, query, id)
 	temp = -2
 	row.Scan(&temp)
 	if temp != -2 {
@@ -81,7 +81,7 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	
 	`
 
-	row = store.Db.QueryRowContext(ctx, query, id)
+	row = store.db.QueryRowContext(ctx, query, id)
 	temp = -2
 	row.Scan(&temp)
 	if temp != -2 {
@@ -93,7 +93,7 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 
 // DeleteKey deletes a private key from the database
 func (store *Storage) DeleteKey(id int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// check that delete is safe
@@ -113,7 +113,7 @@ func (store *Storage) DeleteKey(id int) error {
 		id = $1
 	`
 
-	_, err = store.Db.ExecContext(ctx, query, id)
+	_, err = store.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}

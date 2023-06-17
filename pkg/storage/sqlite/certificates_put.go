@@ -10,7 +10,7 @@ import (
 // the details which are provided
 func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) (err error) {
 	// database update
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -33,7 +33,7 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 			id = $13
 		`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.PrivateKeyId,
@@ -58,7 +58,7 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 
 // UpdateCertUpdatedTime sets the specified order's updated_at to now
 func (store *Storage) UpdateCertUpdatedTime(certId int) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -70,7 +70,7 @@ func (store *Storage) UpdateCertUpdatedTime(certId int) (err error) {
 		id = $2
 	`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		time.Now().Unix(),
 		certId,
 	)
@@ -86,7 +86,7 @@ func (store *Storage) UpdateCertUpdatedTime(certId int) (err error) {
 // PutCertNewApiKey sets a cert's new api key and updates the updated at time
 func (store *Storage) PutCertNewApiKey(certId int, newApiKey string, updateTimeUnix int) (err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -99,7 +99,7 @@ func (store *Storage) PutCertNewApiKey(certId int, newApiKey string, updateTimeU
 		id = $3
 	`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		newApiKey,
 		updateTimeUnix,
 		certId,
@@ -115,7 +115,7 @@ func (store *Storage) PutCertNewApiKey(certId int, newApiKey string, updateTimeU
 // PutCertApiKey sets a cert's api key and updates the updated at time
 func (store *Storage) PutCertApiKey(certId int, apiKey string, updateTimeUnix int) (err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -128,7 +128,7 @@ func (store *Storage) PutCertApiKey(certId int, apiKey string, updateTimeUnix in
 		id = $3
 	`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		apiKey,
 		updateTimeUnix,
 		certId,

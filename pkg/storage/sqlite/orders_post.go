@@ -9,11 +9,11 @@ import (
 // PostNewOrder makes a new order in the db. An error is returned if the order
 // location already exists (or any other error)
 func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId int, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// transaction
-	tx, err := store.Db.BeginTx(ctx, nil)
+	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
 		return -2, err
 	}

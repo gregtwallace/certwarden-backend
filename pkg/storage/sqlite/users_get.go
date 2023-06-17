@@ -21,7 +21,7 @@ func (userDb *userDb) dbToUser() (user auth.User) {
 // GetOneUserByName returns a user from the db based on
 // username
 func (store Storage) GetOneUserByName(username string) (auth.User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -33,7 +33,7 @@ func (store Storage) GetOneUserByName(username string) (auth.User, error) {
 		username = $1
 	`
 
-	row := store.Db.QueryRowContext(ctx, query, username)
+	row := store.db.QueryRowContext(ctx, query, username)
 
 	var user userDb
 	err := row.Scan(

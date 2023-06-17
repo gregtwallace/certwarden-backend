@@ -8,7 +8,7 @@ import (
 // PostNewAccount inserts a new cert into the db
 func (store *Storage) PostNewCert(payload certificates.NewPayload) (id int, err error) {
 	// database update
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// don't check for in use in storage. main app business logic should
@@ -22,7 +22,7 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (id int, err 
 	RETURNING id
 	`
 
-	err = store.Db.QueryRowContext(ctx, query,
+	err = store.db.QueryRowContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.PrivateKeyID,

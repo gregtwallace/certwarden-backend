@@ -9,7 +9,7 @@ import (
 // fields specified in the UpdatePayload.
 func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -25,7 +25,7 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (err erro
 		id = $6
 	`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.ApiKeyDisabled,
@@ -43,7 +43,7 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (err erro
 // PutKeyUpdate sets a key's new api key and updates the updated at time
 func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUnix int) (err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -56,7 +56,7 @@ func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUni
 		id = $3
 	`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		newApiKey,
 		updateTimeUnix,
 		keyId,
@@ -72,7 +72,7 @@ func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUni
 // PutKeyApiKey sets a key's api key and updates the updated at time
 func (store *Storage) PutKeyApiKey(keyId int, apiKey string, updateTimeUnix int) (err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -85,7 +85,7 @@ func (store *Storage) PutKeyApiKey(keyId int, apiKey string, updateTimeUnix int)
 		id = $3
 	`
 
-	_, err = store.Db.ExecContext(ctx, query,
+	_, err = store.db.ExecContext(ctx, query,
 		apiKey,
 		updateTimeUnix,
 		keyId,

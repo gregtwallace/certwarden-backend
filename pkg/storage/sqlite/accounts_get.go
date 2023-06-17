@@ -40,7 +40,7 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 	sort := sortField + " " + q.SortDirection()
 
 	// do query
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// WARNING: SQL Injection is possible if the variables are not properly
@@ -69,7 +69,7 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 		$2
 	`, sort)
 
-	rows, err := store.Db.QueryContext(ctx, query,
+	rows, err := store.db.QueryContext(ctx, query,
 		q.Limit(),
 		q.Offset(),
 	)
@@ -142,7 +142,7 @@ func (store *Storage) GetOneAccountByName(name string) (acme_accounts.Account, e
 
 // getOneAccount returns an Account based on either its unique id or its unique name
 func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -162,7 +162,7 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 	WHERE aa.id = $1 OR aa.name = $2
 	ORDER BY aa.id`
 
-	row := store.Db.QueryRowContext(ctx, query, id, name)
+	row := store.db.QueryRowContext(ctx, query, id, name)
 
 	var oneAccount accountDb
 

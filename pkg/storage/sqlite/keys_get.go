@@ -27,7 +27,7 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 	sort := sortField + " " + q.SortDirection()
 
 	// do query
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	// WARNING: SQL Injection is possible if the variables are not properly
@@ -48,7 +48,7 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 		$2
 	`, sort)
 
-	rows, err := store.Db.QueryContext(ctx, query,
+	rows, err := store.db.QueryContext(ctx, query,
 		q.Limit(),
 		q.Offset(),
 	)
@@ -102,7 +102,7 @@ func (store *Storage) GetOneKeyByName(name string) (private_keys.Key, error) {
 
 // dbGetOneKey returns a KeyExtended based on unique id or unique name
 func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -117,7 +117,7 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 		name = $2
 	`
 
-	row := store.Db.QueryRowContext(ctx, query, id, name)
+	row := store.db.QueryRowContext(ctx, query, id, name)
 
 	var oneKeyDb keyDb
 	err := row.Scan(
@@ -154,7 +154,7 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 // GetAvailableKeys returns a slice of private keys that exist but are not already associated
 // with a known ACME account or certificate
 func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -184,7 +184,7 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 		ORDER BY name
 	`
 
-	rows, err := store.Db.QueryContext(ctx, query)
+	rows, err := store.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +232,7 @@ func (store *Storage) GetKeyPemByName(name string) (pem string, err error) {
 
 // dbGetOneKey returns a key from the db based on unique id or unique name
 func (store Storage) getKeyPem(id int, inName string) (outName string, pem string, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.Timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
@@ -248,7 +248,7 @@ func (store Storage) getKeyPem(id int, inName string) (outName string, pem strin
 	`
 
 	// query
-	row := store.Db.QueryRowContext(ctx, query,
+	row := store.db.QueryRowContext(ctx, query,
 		id,
 		inName,
 	)
