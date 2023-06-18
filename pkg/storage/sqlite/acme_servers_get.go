@@ -112,9 +112,9 @@ func (store Storage) dbGetOneServer(acmeServerId int, name string) (acme_servers
 	FROM
 		acme_servers aserv
 	WHERE
-		id = $1
+		aserv.id = $1
 		OR
-		name = $2
+		aserv.name = $2
 	`
 
 	row := store.db.QueryRowContext(ctx, query, acmeServerId, name)
