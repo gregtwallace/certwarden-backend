@@ -41,6 +41,8 @@ func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) (er
 	}
 
 	// delete acme Service
+	service.mu.Lock()
+	defer service.mu.Unlock()
 	delete(service.acmeServers, id)
 
 	// return response to client
