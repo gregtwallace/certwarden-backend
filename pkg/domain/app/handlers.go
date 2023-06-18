@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/storage/sqlite"
 	"net/http"
 	"os"
 	"strings"
@@ -16,6 +17,7 @@ type appStatus struct {
 	Status             string `json:"status"`
 	DevMode            bool   `json:"development_mode,omitempty"`
 	Version            string `json:"version"`
+	DbUserVersion      int    `json:"database_version"`
 	ConfigVersionMatch bool   `json:"config_version_match"`
 }
 
@@ -26,6 +28,7 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 		Status:             "available",
 		DevMode:            *app.config.DevMode,
 		Version:            appVersion,
+		DbUserVersion:      sqlite.DbCurrentUserVersion,
 		ConfigVersionMatch: app.config.ConfigVersion == configVersion,
 	}
 

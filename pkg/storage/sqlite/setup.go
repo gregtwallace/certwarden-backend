@@ -18,7 +18,7 @@ import (
 // config for DB
 const dbTimeout = time.Duration(5 * time.Second)
 const dbFilename = "/lego-certhub.db"
-const currentUserVersion = 1
+const DbCurrentUserVersion = 1
 
 var dbOptions = url.Values{
 	"_fk": []string{"true"},
@@ -111,7 +111,7 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 		// check and do db schema upgrades, if needed
 		fileUserVersion := -1
 		// try upgrading until version matches or an error occurs
-		for fileUserVersion != currentUserVersion && err == nil {
+		for fileUserVersion != DbCurrentUserVersion && err == nil {
 			// get db file user_version
 			query := `PRAGMA user_version`
 			row := store.db.QueryRowContext(ctx, query)
@@ -126,7 +126,7 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 			switch fileUserVersion {
 			case 0:
 				err = store.migrateV0toV1()
-			case currentUserVersion:
+			case DbCurrentUserVersion:
 				store.logger.Debugf("database user_version is current (%d)", fileUserVersion)
 				// no-op, loop will end due to version ==
 			default:
@@ -136,7 +136,7 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 
 		// err check from upgrade loop
 		if err != nil {
-			store.logger.Errorf("failed to update database file to latest user_version (%d), currently %d (%s)", currentUserVersion, fileUserVersion, err)
+			store.logger.Errorf("failed to update database file to latest user_version (%d), currently %d (%s)", DbCurrentUserVersion, fileUserVersion, err)
 			return nil, err
 		}
 
@@ -169,7 +169,7 @@ func (store *Storage) populateNewDb() error {
 
 	// set db user_version
 	// No injection protection since const isn't user editable
-	query := `PRAGMA user_version = ` + strconv.Itoa(currentUserVersion)
+	query := `PRAGMA user_version = ` + strconv.Itoa(DbCurrentUserVersion)
 
 	_, err = tx.ExecContext(ctx, query)
 	if err != nil {
