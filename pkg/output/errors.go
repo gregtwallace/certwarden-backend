@@ -21,6 +21,7 @@ var (
 
 	// validation
 	ErrValidationFailed = Error{Status: 400, Message: "request validation (param or payload) invalid"}
+	ErrBadDirectoryURL  = Error{Status: 400, Message: "specified acme directory url is not https or did not return a valid directory json response"}
 
 	// order
 	ErrOrderInvalid     = Error{Status: 400, Message: "order status is invalid (which cannot be recovered from)"}
