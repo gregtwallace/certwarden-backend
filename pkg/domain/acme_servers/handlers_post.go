@@ -5,7 +5,6 @@ import (
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -44,17 +43,9 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) (e
 	if payload.DirectoryURL == nil {
 		service.logger.Debug("cant post: directory url is missing")
 		return output.ErrValidationFailed
-	} else {
-		// require directory be specified as https://
-		if !strings.HasPrefix(*payload.DirectoryURL, "https://") {
-			return output.ErrBadDirectoryURL
-		}
-		// check that dir actually fetches correctly
-		_, err = acme.FetchAcmeDirectory(service.httpClient, *payload.DirectoryURL)
-		if err != nil {
-			service.logger.Debug(err)
-			return output.ErrBadDirectoryURL
-		}
+	} else if !service.directoryUrlValid(*payload.DirectoryURL) {
+		// if not nil, and validation fails, return error
+		return output.ErrBadDirectoryURL
 	}
 	// is staging (required)
 	if payload.IsStaging == nil {

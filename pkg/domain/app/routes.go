@@ -35,6 +35,7 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/acmeservers/:id", app.acmeServers.GetOneServer)
 
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/acmeservers", app.acmeServers.PostNewServer)
+	app.makeSecureHandle(http.MethodPut, apiUrlPath+"/v1/acmeservers/:id", app.acmeServers.PutServerUpdate)
 	app.makeSecureHandle(http.MethodDelete, apiUrlPath+"/v1/acmeservers/:id", app.acmeServers.DeleteServer)
 
 	// private_keys

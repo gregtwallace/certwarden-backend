@@ -2,9 +2,11 @@ package acme_servers
 
 import (
 	"errors"
+	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
+	"strings"
 )
 
 var (
@@ -80,4 +82,22 @@ func (service *Service) nameValid(serverName string, serverId *int) bool {
 	}
 
 	return false
+}
+
+// directoryUrlValid returns true if the specified acme directory url
+// starts with https and actually returns a valid json ACME directory object
+func (service *Service) directoryUrlValid(dirUrl string) bool {
+	// require directory be specified as https://
+	if !strings.HasPrefix(dirUrl, "https://") {
+		return false
+	}
+
+	// check that dir actually fetches correctly
+	_, err := acme.FetchAcmeDirectory(service.httpClient, dirUrl)
+	if err != nil {
+		service.logger.Debug(err)
+		return false
+	}
+
+	return true
 }
