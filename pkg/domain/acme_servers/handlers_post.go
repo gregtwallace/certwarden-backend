@@ -76,7 +76,7 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) (e
 	service.acmeServers[serverId], err = acme.NewService(service, *payload.DirectoryURL)
 	if err != nil {
 		service.logger.Error(err)
-
+		return output.ErrInternal
 	}
 
 	// return response to client
