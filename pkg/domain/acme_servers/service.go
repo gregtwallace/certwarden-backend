@@ -31,6 +31,9 @@ type Storage interface {
 	GetOneServerByName(name string) (Server, error)
 
 	PostNewServer(NewPayload) (acmeServerId int, err error)
+	DeleteServer(acmeServerId int) error
+
+	ServerHasAccounts(accountId int) (inUse bool)
 }
 
 // Acme service struct
