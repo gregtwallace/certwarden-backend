@@ -154,9 +154,17 @@ challenges:
     # dns-01 via LeGo Cloudflare integration
     dns_01_cloudflare:
       enable: false
+      # you can use any combination of account(s) and/or api tokens. That is, you can
+      # use one, the other, or both.
+      # generally account is discouraged for security reasons
+      # email + global api key will cause LeGo to configure all domains available
+      # on the account
       accounts:
         - email: user@example.com
           global_api_key: 12345abcde
+      # a more secure method is generating tokens that are limited in scope to the
+      # domain(s) you want available. List the token(s) here and corresponding domain
+      # names that those tokens can access and edit.
       tokens:
         - api_token: 123abc
           zone_names:
