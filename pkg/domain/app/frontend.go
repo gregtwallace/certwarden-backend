@@ -69,9 +69,3 @@ func (app *Application) frontendHandler(w http.ResponseWriter, r *http.Request) 
 
 	return nil
 }
-
-// redirectToFrontendHandler redirects to the root of the frontend
-func redirectToFrontendHandler(w http.ResponseWriter, r *http.Request) error {
-	http.Redirect(w, r, frontendUrlPath, http.StatusPermanentRedirect)
-	return nil
-}
