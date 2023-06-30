@@ -78,14 +78,53 @@ func (service *Service) addZonesFromApiInstance(cfApi *cloudflare.API) error {
 	}
 
 	// add all to the known zone list
-	for j := range zoneList {
-		z := zone{
-			id:  zoneList[j].ID,
-			api: cfApi,
+	for i := range zoneList {
+		// verify proper dns edit permission is present
+		editDnsFound := false
+
+		for j := range zoneList[i].Permissions {
+			// only add the zone if the key has proper permissions to edit dns
+			if zoneList[i].Permissions[j] == "#dns_records:edit" {
+
+				editDnsFound = true
+
+				// add zone
+				z := zone{
+					id:  zoneList[i].ID,
+					api: cfApi,
+				}
+				_, _ = service.knownDomainZones.Add(zoneList[i].Name, z)
+				// no error if exists -- will just use whichever token loaded in first
+
+				// break once proper perm found
+				break
+			}
 		}
-		_, _ = service.knownDomainZones.Add(zoneList[j].Name, z)
-		// no error if exists -- will just use whichever token loaded in first
+
+		// log error if a zone exists without the needed permission
+		if !editDnsFound {
+			// redacted key depends on if this was an account or a token API instance
+			if len(cfApi.APIToken) > 0 {
+				service.logger.Warnf("api instance %s does not have #dns_records:edit permission for defined zone %s", redactKey(cfApi.APIToken), zoneList[i].Name)
+			} else if len(cfApi.APIKey) > 0 {
+				service.logger.Warnf("api instance %s does not have #dns_records:edit permission for defined zone %s", redactKey(cfApi.APIKey), zoneList[i].Name)
+			} else {
+				service.logger.Error("cloudflare api instance does not have an APIKey or APIToken -- this should not be possible")
+			}
+		}
 	}
 
 	return nil
+}
+
+// redactKey removes the middle portion of a string and returns only the first and last
+// characters separated by asterisks. if the key is less than or equal to 10 chars only
+// asterisks are returned
+func redactKey(key string) string {
+	if len(key) <= 10 {
+		return "**********"
+	}
+
+	// return first 3 + asterisks + last 3
+	return string(key[:3]) + "**********" + string(key[len(key)-3:])
 }
