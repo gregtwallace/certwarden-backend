@@ -40,7 +40,7 @@ serve_frontend: true
 
 # CORS permitted origins
 # Only needed if the frontend is hosted somewhere other than the backend api server
-# (i.e. at /app). Each entry should be a protocol + hostname or address + port 
+# (i.e. at /app). Each entry should be a protocol + hostname or address + port
 # (e.g. https://localhost:5353 or http://192.168.1.1:5050)
 # In most cases, this should not be used.
 cors_permitted_origins: []
@@ -115,8 +115,8 @@ challenges:
     dns_01_manual:
       enable: false
       environment:
-        - "MY_EXPORT_VAR=some_value"
-        - "ANOTHER_EXPORT_ENV=another_value"
+        - 'MY_EXPORT_VAR=some_value'
+        - 'ANOTHER_EXPORT_ENV=another_value'
       create_script: ./scripts/create-dns.sh
       delete_script: ./scripts/delete-dns.sh
     # acme-dns server (https://github.com/joohoi/acme-dns)
@@ -125,9 +125,9 @@ challenges:
     dns_01_acme_dns:
       enable: false
       acme_dns_address: http://localhost:8880
-      resources: 
+      resources:
         # repeat this block as many times as needed
-          # the actual domain you want a certificate for
+        # the actual domain you want a certificate for
         - real_domain: secure-server.example.com
           # the matching information about the acme-dns domain
           # that will be updated
@@ -145,8 +145,8 @@ challenges:
       # for needed environment vars, review the relevant hook script
       # within acme.sh/dnsapi
       environment:
-        - "MY_EXPORT_VAR=some_value"
-        - "ANOTHER_EXPORT_ENV=another_value"
+        - 'MY_EXPORT_VAR=some_value'
+        - 'ANOTHER_EXPORT_ENV=another_value'
       # the --dns hook_name from acme.sh, this will match a filename in the
       # acme.sh/dnsapi path
       dns_hook: dns_cf
@@ -163,14 +163,8 @@ challenges:
         - email: user@example.com
           global_api_key: 12345abcde
       # a more secure method is generating tokens that are limited in scope to the
-      # domain(s) you want available. List the token(s) here and corresponding domain
-      # names that those tokens can access and edit.
+      # domain(s) you want available. List the token(s) here. LeGo will automatically
+      # query cloudflare to determine which zones are available for a given token.
       api_tokens:
         - api_token: 123abc
-          zone_names:
-            - example.com
-            - example1.com
-            - example2.com
         - api_token: 345def
-          zone_names:
-            - example4.com
