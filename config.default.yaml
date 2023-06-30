@@ -165,7 +165,7 @@ challenges:
       # a more secure method is generating tokens that are limited in scope to the
       # domain(s) you want available. List the token(s) here and corresponding domain
       # names that those tokens can access and edit.
-      tokens:
+      api_tokens:
         - api_token: 123abc
           zone_names:
             - example.com
