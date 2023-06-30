@@ -21,7 +21,6 @@ func (app *Application) setFrontendEnv() error {
 	// api and & app on same server, so use path for api url
 	envFileContent := `
 	window.env = {
-		BASE_PATH_NAME: '` + frontendUrlPath + `',
 		API_URL: '` + apiUrlPath + `',
 		DEV_MODE: ` + strconv.FormatBool(*app.config.DevMode) + `
 	};
