@@ -32,9 +32,6 @@ const configVersion = 0
 // data storage root
 const dataStoragePath = "./data"
 
-// api path
-const apiUrlPath = "/api"
-
 // Application is the main app struct
 type Application struct {
 	config            *config

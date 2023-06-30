@@ -198,3 +198,14 @@ func (app *Application) notFoundHandler(w http.ResponseWriter, r *http.Request) 
 
 	return nil
 }
+
+// redirectApiHandler redirects the old /api routes to the new ones with the
+// base path
+// TODO: Remove eventually?
+func redirectApiHandler(w http.ResponseWriter, r *http.Request) error {
+	// add base path
+	newPath := baseUrlPath + r.URL.Path
+
+	http.Redirect(w, r, newPath, http.StatusPermanentRedirect)
+	return nil
+}

@@ -6,6 +6,15 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// base path
+const baseUrlPath = "/legocerthub"
+
+// backend api path
+const apiUrlPath = baseUrlPath + "/api"
+
+// frontend React app path (e.g. Vite config `base`)
+const frontendUrlPath = baseUrlPath + "/app"
+
 // routes creates the application's router and adds the routes. It also
 // inserts the CORS middleware before returning the routes
 func (app *Application) routes() http.Handler {
@@ -112,9 +121,22 @@ func (app *Application) routes() http.Handler {
 		// redirect root to frontend app
 		app.makeHandle(http.MethodGet, "/", redirectToFrontendHandler)
 
+		// redirect base path to frontend app
+		app.makeHandle(http.MethodGet, baseUrlPath, redirectToFrontendHandler)
+
+		// redirect old app path to app
+		// TODO: Remove eventually?
+		app.makeHandle(http.MethodGet, "/app", redirectToFrontendHandler)
+
 		// add file server route for frontend
 		app.makeHandle(http.MethodGet, frontendUrlPath+"/*anything", app.frontendHandler)
 	}
+
+	// redirect old /api routes to api
+	app.makeHandle(http.MethodGet, "/api/*anything", redirectApiHandler)
+	app.makeHandle(http.MethodPost, "/api/*anything", redirectApiHandler)
+	app.makeHandle(http.MethodPut, "/api/*anything", redirectApiHandler)
+	app.makeHandle(http.MethodDelete, "/api/*anything", redirectApiHandler)
 
 	// invalid route
 	app.router.NotFound = app.makeHandler(app.notFoundHandler)

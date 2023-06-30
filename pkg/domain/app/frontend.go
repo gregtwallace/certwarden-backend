@@ -9,7 +9,6 @@ import (
 
 const frontendBuildDir = "./frontend_build"
 const frontendEnvFile = frontendBuildDir + "/env.js"
-const frontendUrlPath = "/app" // corresponds to react 'homepage'
 
 // setFrontendEnv creates the env.js file in the frontend build. This is used
 // to set variables at server run time
@@ -73,6 +72,6 @@ func (app *Application) frontendHandler(w http.ResponseWriter, r *http.Request) 
 
 // redirectToFrontendHandler redirects to the root of the frontend
 func redirectToFrontendHandler(w http.ResponseWriter, r *http.Request) error {
-	http.Redirect(w, r, frontendUrlPath, http.StatusTemporaryRedirect)
+	http.Redirect(w, r, frontendUrlPath, http.StatusPermanentRedirect)
 	return nil
 }
