@@ -2,6 +2,7 @@ package dns01cloudflare
 
 import (
 	"context"
+	"fmt"
 	"legocerthub-backend/pkg/datatypes"
 
 	"github.com/cloudflare/cloudflare-go"
@@ -34,6 +35,7 @@ func (service *Service) configureCloudflareAPI(config *Config) error {
 		// make api for account
 		apiInstance, err := cloudflare.New(config.Accounts[i].GlobalApiKey, config.Accounts[i].Email)
 		if err != nil {
+			err = fmt.Errorf("failed to create api instance %s (%s)", redactIdentifier(config.Accounts[i].GlobalApiKey), err)
 			service.logger.Error(err)
 			return err
 		}
@@ -52,6 +54,7 @@ func (service *Service) configureCloudflareAPI(config *Config) error {
 		// make api for the token
 		apiInstance, err := cloudflare.NewWithAPIToken(config.ApiTokens[i].APIToken)
 		if err != nil {
+			err = fmt.Errorf("failed to create api instance %s (%s)", redactIdentifier(config.Accounts[i].GlobalApiKey), err)
 			service.logger.Error(err)
 			return err
 		}
@@ -73,6 +76,7 @@ func (service *Service) addZonesFromApiInstance(cfApi *cloudflare.API) error {
 	// fetch list of zones
 	zoneList, err := cfApi.ListZones(context.Background())
 	if err != nil {
+		err = fmt.Errorf("api instance %s failed to list zones (%s)", redactedApiIdentifier(cfApi), err)
 		service.logger.Error(err)
 		return err
 	}
@@ -103,28 +107,46 @@ func (service *Service) addZonesFromApiInstance(cfApi *cloudflare.API) error {
 
 		// log error if a zone exists without the needed permission
 		if !editDnsFound {
-			// redacted key depends on if this was an account or a token API instance
-			if len(cfApi.APIToken) > 0 {
-				service.logger.Warnf("api instance %s does not have #dns_records:edit permission for defined zone %s", redactKey(cfApi.APIToken), zoneList[i].Name)
-			} else if len(cfApi.APIKey) > 0 {
-				service.logger.Warnf("api instance %s does not have #dns_records:edit permission for defined zone %s", redactKey(cfApi.APIKey), zoneList[i].Name)
-			} else {
-				service.logger.Error("cloudflare api instance does not have an APIKey or APIToken -- this should not be possible")
-			}
+			service.logger.Warnf("api instance %s does not have #dns_records:edit permission for defined zone %s", redactedApiIdentifier(cfApi), zoneList[i].Name)
 		}
 	}
 
 	return nil
 }
 
-// redactKey removes the middle portion of a string and returns only the first and last
-// characters separated by asterisks. if the key is less than or equal to 10 chars only
+// redactedIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
+// (depending on which is in use for the API instance) and then redacts it to return
+// the first and last characters of the key separated with asterisks. This is useful
+// for logging issues without saving the full credential to logs.
+func redactedApiIdentifier(cfApi *cloudflare.API) string {
+	identifier := ""
+
+	// select whichever is present
+	if len(cfApi.APIToken) > 0 {
+		identifier = cfApi.APIToken
+	} else if len(cfApi.APIKey) > 0 {
+		identifier = cfApi.APIKey
+	} else if len(cfApi.APIUserServiceKey) > 0 {
+		identifier = cfApi.APIUserServiceKey
+	} else {
+		// none present, return unknown
+		return "unknown"
+	}
+
+	// return redacted
+	return redactIdentifier(identifier)
+}
+
+// redactIdentifier removes the middle portion of a string and returns only the first and last
+// characters separated by asterisks. if the key is less than or equal to 12 chars only
 // asterisks are returned
-func redactKey(key string) string {
-	if len(key) <= 10 {
-		return "**********"
+func redactIdentifier(id string) string {
+	// if the identifier is less than 12 chars in length, return fully redacted
+	// this should never happen but just in case to prevent credential logging
+	if len(id) <= 12 {
+		return "************"
 	}
 
 	// return first 3 + asterisks + last 3
-	return string(key[:3]) + "**********" + string(key[len(key)-3:])
+	return string(id[:3]) + "************" + string(id[len(id)-3:])
 }
