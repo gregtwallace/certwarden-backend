@@ -25,6 +25,8 @@ type DetailsUpdatePayload struct {
 	Country              *string                 `json:"country"`
 	State                *string                 `json:"state"`
 	City                 *string                 `json:"city"`
+	ApiKey               *string                 `json:"api_key"`
+	ApiKeyNew            *string                 `json:"api_key_new"`
 	ApiKeyViaUrl         *bool                   `json:"api_key_via_url"`
 	UpdatedAt            int                     `json:"-"`
 }
@@ -100,6 +102,21 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 			service.logger.Debug(ErrDomainBad)
 			return output.ErrValidationFailed
 		}
+	}
+	// fail if trying to set something sensitive
+	if (payload.ApiKey != nil || payload.ApiKeyNew != nil) && !(service.https || service.devMode) {
+		service.logger.Debug("cant put apikey when not running as https or in devmode")
+		return output.ErrUnavailableHttp
+	}
+	// api key must be at least 10 characters long
+	if payload.ApiKey != nil && len(*payload.ApiKey) < 10 {
+		service.logger.Debug(ErrApiKeyBad)
+		return output.ErrValidationFailed
+	}
+	// api key new must be at least 10 characters long
+	if payload.ApiKeyNew != nil && *payload.ApiKeyNew != "" && len(*payload.ApiKeyNew) < 10 {
+		service.logger.Debug(ErrApiKeyNewBad)
+		return output.ErrValidationFailed
 	}
 	// TODO: Do any validation of CSR components?
 	// end validation

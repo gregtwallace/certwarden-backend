@@ -27,10 +27,12 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 			csr_country = case when $8 is null then csr_country else $8 end,
 			csr_state = case when $9 is null then csr_state else $9 end,
 			csr_city = case when $10 is null then csr_city else $10 end,
-			api_key_via_url = case when $11 is null then api_key_via_url else $11 end,
-			updated_at = $12
+			api_key = case when $11 is null then api_key else $11 end,
+			api_key_new = case when $12 is null then api_key_new else $12 end,
+			api_key_via_url = case when $13 is null then api_key_via_url else $13 end,
+			updated_at = $14
 		WHERE
-			id = $13
+			id = $15
 		`
 
 	_, err = store.db.ExecContext(ctx, query,
@@ -44,6 +46,8 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 		payload.Country,
 		payload.State,
 		payload.City,
+		payload.ApiKey,
+		payload.ApiKeyNew,
 		payload.ApiKeyViaUrl,
 		payload.UpdatedAt,
 		payload.ID,

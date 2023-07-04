@@ -11,6 +11,9 @@ var (
 	ErrIdBad   = errors.New("key id is invalid")
 	ErrNameBad = errors.New("private key name is not valid")
 
+	ErrApiKeyBad    = errors.New("api key is not valid (must be at least 10 chars in length)")
+	ErrApiKeyNewBad = errors.New("api key (new) is not valid (must be at least 10 chars in length)")
+
 	ErrKeyOptionNone     = errors.New("no key option method specified")
 	ErrKeyOptionMultiple = errors.New("multiple key option methods specified")
 )

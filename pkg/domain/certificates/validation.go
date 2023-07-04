@@ -16,6 +16,10 @@ var (
 	// name
 	ErrNameBad = errors.New("certificate name is not valid")
 
+	// api key
+	ErrApiKeyBad    = errors.New("api key is not valid (must be at least 10 chars in length)")
+	ErrApiKeyNewBad = errors.New("api key (new) is not valid (must be at least 10 chars in length)")
+
 	// domain
 	ErrDomainBad = errors.New("domain or subject name not valid")
 )

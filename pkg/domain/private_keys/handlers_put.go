@@ -16,6 +16,8 @@ type UpdatePayload struct {
 	ID             int     `json:"-"`
 	Name           *string `json:"name"`
 	Description    *string `json:"description"`
+	ApiKey         *string `json:"api_key"`
+	ApiKeyNew      *string `json:"api_key_new"`
 	ApiKeyDisabled *bool   `json:"api_key_disabled"`
 	ApiKeyViaUrl   *bool   `json:"api_key_via_url"`
 	UpdatedAt      int     `json:"-"`
@@ -49,6 +51,21 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (er
 	// name (optional - check if not nil)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
 		service.logger.Debug(ErrNameBad)
+		return output.ErrValidationFailed
+	}
+	// fail if trying to set something sensitive
+	if (payload.ApiKey != nil || payload.ApiKeyNew != nil) && !(service.https || service.devMode) {
+		service.logger.Debug("cant put apikey when not running as https or in devmode")
+		return output.ErrUnavailableHttp
+	}
+	// api key must be at least 10 characters long
+	if payload.ApiKey != nil && len(*payload.ApiKey) < 10 {
+		service.logger.Debug(ErrApiKeyBad)
+		return output.ErrValidationFailed
+	}
+	// api key new must be at least 10 characters long
+	if payload.ApiKeyNew != nil && *payload.ApiKeyNew != "" && len(*payload.ApiKeyNew) < 10 {
+		service.logger.Debug(ErrApiKeyNewBad)
 		return output.ErrValidationFailed
 	}
 	// Description, ApiKeyDisabled, and ApiKeyViaUrl do not need validation
