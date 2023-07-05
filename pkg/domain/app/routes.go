@@ -119,10 +119,10 @@ func (app *Application) routes() http.Handler {
 		app.setFrontendEnv()
 
 		// redirect root to frontend app
-		app.makeHandle(http.MethodGet, "/", redirectAddBasePathHandler)
+		app.makeHandle(http.MethodGet, "/", redirectToFrontendRoot)
 
 		// redirect base path to frontend app
-		app.makeHandle(http.MethodGet, baseUrlPath, redirectAddBasePathHandler)
+		app.makeHandle(http.MethodGet, baseUrlPath, redirectToFrontendRoot)
 
 		// redirect old app path to app
 		// TODO: Remove eventually?

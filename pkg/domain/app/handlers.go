@@ -208,3 +208,9 @@ func redirectAddBasePathHandler(w http.ResponseWriter, r *http.Request) error {
 	http.Redirect(w, r, newPath, http.StatusPermanentRedirect)
 	return nil
 }
+
+// redirectToFrontendRoot is a handler that redirects to the frontend app
+func redirectToFrontendRoot(w http.ResponseWriter, r *http.Request) error {
+	http.Redirect(w, r, frontendUrlPath, http.StatusPermanentRedirect)
+	return nil
+}
