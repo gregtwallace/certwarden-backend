@@ -61,8 +61,6 @@ type timeString string
 // ToUnixTime turns an acmeTimeString (acme response formatted time string) into a
 // unix time int. If nil pointer, return nil; if error, return 0.
 func (ats timeString) ToUnixTime() (val int) {
-	// if blank, return blank
-
 	layout := "2006-01-02T15:04:05Z"
 
 	time, err := time.Parse(layout, string(ats))
