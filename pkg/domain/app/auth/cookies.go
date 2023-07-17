@@ -14,17 +14,21 @@ type refreshCookie http.Cookie
 // createRefreshCookie creates the refresh cookie based on the
 // specified refresh token and maxAge
 func (service *Service) createRefreshCookie(refreshToken refreshToken) *refreshCookie {
-	// only use same site none mode when cross origin is permitted in config
+	// strict same site for security, unless configured for cross origins
 	sameSiteMode := http.SameSiteStrictMode
 	if service.allowCrossOrigin {
 		sameSiteMode = http.SameSiteNoneMode
 	}
 
 	return &refreshCookie{
-		Name:     refreshCookieName,
-		Value:    string(refreshToken),
-		MaxAge:   int(cookieMaxAge.Seconds()),
-		Secure:   true,
+		Name:   refreshCookieName,
+		Value:  string(refreshToken),
+		MaxAge: int(cookieMaxAge.Seconds()),
+		// disable secure when server is in http mode
+		// however, if same site is set to None, secure becomes true regardless of what
+		// this value is set to and will require user to log back in every 2 minutes when
+		// server is running in http mode.
+		Secure:   service.https,
 		HttpOnly: true,
 		SameSite: sameSiteMode,
 	}
