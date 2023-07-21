@@ -119,7 +119,8 @@ func defaultConfig() (cfg *config) {
 					HostAddress: new(string),
 				},
 				Dns01AcmeShConfig: dns01acmesh.Config{
-					Enable: new(bool),
+					Enable:     new(bool),
+					AcmeShPath: new(string),
 				},
 				Dns01CloudflareConfig: dns01cloudflare.Config{
 					Enable: new(bool),
@@ -187,11 +188,15 @@ func defaultConfig() (cfg *config) {
 	// dns-01-manual
 	*cfg.Challenges.ProviderConfigs.Dns01ManualConfig.Enable = false
 
+	// dns-01-acme-dns
+	*cfg.Challenges.ProviderConfigs.Dns01AcmeDnsConfig.Enable = false
+
+	// dns-01-acme-sh
+	*cfg.Challenges.ProviderConfigs.Dns01AcmeShConfig.Enable = false
+	*cfg.Challenges.ProviderConfigs.Dns01AcmeShConfig.AcmeShPath = "./scripts/acme.sh"
+
 	// dns-01-cloudflare
 	*cfg.Challenges.ProviderConfigs.Dns01CloudflareConfig.Enable = false
-
-	// dns-01-acmedns
-	*cfg.Challenges.ProviderConfigs.Dns01AcmeDnsConfig.Enable = false
 
 	// end challenge providers
 

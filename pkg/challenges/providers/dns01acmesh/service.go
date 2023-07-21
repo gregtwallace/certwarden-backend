@@ -18,6 +18,7 @@ const (
 
 var (
 	errServiceComponent = errors.New("necessary dns-01 acme.sh component is missing")
+	errNoAcmeShPath     = errors.New("acme.sh path not specified in config")
 	errBashMissing      = errors.New("unable to find bash")
 )
 
@@ -39,7 +40,7 @@ type Service struct {
 // Configuration options
 type Config struct {
 	Enable      *bool    `yaml:"enable"`
-	AcmeShPath  string   `yaml:"acme_sh_path"`
+	AcmeShPath  *string  `yaml:"acme_sh_path"`
 	Environment []string `yaml:"environment"`
 	DnsHook     string   `yaml:"dns_hook"`
 }
@@ -51,6 +52,11 @@ func NewService(app App, config *Config) (*Service, error) {
 	// if disabled, return nil and no error
 	if !*config.Enable {
 		return nil, nil
+	}
+
+	// error if no path
+	if config.AcmeShPath == nil {
+		return nil, errNoAcmeShPath
 	}
 
 	service := new(Service)
@@ -68,7 +74,7 @@ func NewService(app App, config *Config) (*Service, error) {
 	}
 
 	// read in base script
-	acmeSh, err := os.ReadFile(config.AcmeShPath + "/" + acmeShFileName)
+	acmeSh, err := os.ReadFile(*config.AcmeShPath + "/" + acmeShFileName)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +82,7 @@ func NewService(app App, config *Config) (*Service, error) {
 	acmeSh, _, _ = bytes.Cut(acmeSh, []byte{109, 97, 105, 110, 32, 34, 36, 64, 34})
 
 	// read in dns_hook script
-	acmeShDnsHook, err := os.ReadFile(config.AcmeShPath + dnsApiPath + "/" + config.DnsHook + ".sh")
+	acmeShDnsHook, err := os.ReadFile(*config.AcmeShPath + dnsApiPath + "/" + config.DnsHook + ".sh")
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +91,7 @@ func NewService(app App, config *Config) (*Service, error) {
 	shellScript := append(acmeSh, acmeShDnsHook...)
 
 	// store in file to use as source
-	path := config.AcmeShPath + tempScriptPath
+	path := *config.AcmeShPath + tempScriptPath
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		err := os.Mkdir(path, os.ModePerm)
 		if err != nil {
