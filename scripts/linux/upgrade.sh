@@ -1,29 +1,26 @@
-#/bin/bash
+#/bin/sh
 
 # install path and username
-lego_path=/opt/legocerthub
-lego_user=legocerthub
+lego_path="/opt/legocerthub"
+lego_user="legocerthub"
 
-# move to script path
-script_path=$(dirname $0)
-cd $script_path
 
 # Check for root
 if [ "$(id -u)" -ne 0 ]; then echo "Please run as root." >&2; exit 1; fi
+
+# move to script path
+script_path=$(dirname $0)
+cd "$script_path"
 
 # stop LeGo
 systemctl stop legocerthub
 
 # copy new files
-rm -r $lego_path/frontend_build
-cp -R ../* $lego_path
+rm -r "$lego_path"/frontend_build
+cp -R ../* "$lego_path"
 
 # permissions
-chown $lego_user:$lego_user $lego_path -R
-find $lego_path -type d -exec chmod 755 {} \;
-find $lego_path -type f -exec chmod 640 {} \;
-chmod 750 $lego_path/lego-linux-*
-chmod 750 $lego_path/scripts/*.sh
+./set_permissions.sh "$lego_path" "$lego_user"
 
 # allow binding to low port numbers
 case $(uname -m) in

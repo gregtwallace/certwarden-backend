@@ -1,39 +1,30 @@
-#/bin/bash
+#/bin/sh
 
 # install path and username
-lego_path=/opt/legocerthub
-lego_user=legocerthub
+lego_path="/opt/legocerthub"
+lego_user="legocerthub"
 
-# move to script path
-script_path=$(dirname $0)
-cd $script_path
 
 # Check for root
 if [ "$(id -u)" -ne 0 ]; then echo "Please run as root." >&2; exit 1; fi
 
-echo "Enter the ip or hostname for LeGo. This is required to access LeGo"
-echo "from a remote host. Leaving blank or setting to localhost will restrict"
-echo "access to just localhost and will need to be updated in config.yaml later"
-read -p 'Hostname [localhost]: ' hostname
-
-hostname=${hostname:-localhost}
+# move to script path
+script_path=$(dirname $0)
+cd "$script_path"
 
 # create user to run app
-useradd -r -s /bin/false $lego_user
+useradd -r -s /bin/false "$lego_user"
 
 # copy all files to install path
-mkdir $lego_path
-cp -R ../* $lego_path
+mkdir "$lego_path"
+cp -R ../* "$lego_path"
 
-# make config with hostname
-printf "hostname: '$hostname'" > $lego_path/config.yaml
+# make empty config
+mkdir "$lego_path/data"
+touch "$lego_path/data/config.yaml"
 
 # permissions
-chown $lego_user:$lego_user $lego_path -R
-find $lego_path -type d -exec chmod 755 {} \;
-find $lego_path -type f -exec chmod 640 {} \;
-chmod 750 $lego_path/lego-linux-*
-chmod 750 $lego_path/scripts/*.sh
+./set_permissions.sh "$lego_path" "$lego_user"
 
 # allow binding to low port numbers
 case $(uname -m) in
