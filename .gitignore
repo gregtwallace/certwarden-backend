@@ -6,3 +6,6 @@
 
 # vscode files
 /.vscode
+
+# acme.sh temp folder
+/scripts/linux/acme.sh/temp
