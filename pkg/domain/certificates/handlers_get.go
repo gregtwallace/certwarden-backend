@@ -2,6 +2,7 @@ package certificates
 
 import (
 	"fmt"
+	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/validation"
@@ -119,17 +120,6 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	// certificate options / info to assist client with new certificate posting
 	newCertOptions := newCertOptions{}
 
-	// available accounts
-	accounts, err := service.accounts.GetUsableAccounts()
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrStorageGeneric
-	}
-
-	for i := range accounts {
-		newCertOptions.UsableAccounts = append(newCertOptions.UsableAccounts, accounts[i].SummaryResponse())
-	}
-
 	// available private keys
 	keys, err := service.keys.AvailableKeys()
 	if err != nil {
@@ -139,6 +129,20 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 
 	for i := range keys {
 		newCertOptions.AvailableKeys = append(newCertOptions.AvailableKeys, keys[i].SummaryResponse())
+	}
+
+	// available algorithms to generate private keys
+	newCertOptions.KeyAlgorithms = key_crypto.ListOfAlgorithms()
+
+	// available accounts
+	accounts, err := service.accounts.GetUsableAccounts()
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+
+	for i := range accounts {
+		newCertOptions.UsableAccounts = append(newCertOptions.UsableAccounts, accounts[i].SummaryResponse())
 	}
 
 	// available challenge methods
