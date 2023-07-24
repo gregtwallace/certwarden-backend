@@ -48,7 +48,7 @@ func (service *Service) getKey(id int) (Key, error) {
 // characters and also confirms the name is not already in use by another
 // key. If an id is specified, the name will also be accepted if the name
 // is already in use by the specified id.
-func (service *Service) nameValid(keyName string, keyId *int) bool {
+func (service *Service) NameValid(keyName string, keyId *int) bool {
 	// basic character/length check
 	if !validation.NameValid(keyName) {
 		return false

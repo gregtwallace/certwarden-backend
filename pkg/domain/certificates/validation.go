@@ -11,7 +11,13 @@ import (
 
 var (
 	// id
-	ErrIdBad = errors.New("certificate id is invalid")
+	ErrIdBad    = errors.New("certificate id is invalid")
+	ErrKeyIdBad = errors.New("private key id is invalid")
+
+	// new key
+	ErrKeyAlgorithmNone  = errors.New("new key algorithm not specified")
+	ErrKeyIdAndAlgorithm = errors.New("non-new key id and algorithm both specified")
+	ErrKeyNameBad        = errors.New("name is not valid for a new key")
 
 	// name
 	ErrNameBad = errors.New("certificate name is not valid")

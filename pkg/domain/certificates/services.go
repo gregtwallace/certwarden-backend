@@ -39,6 +39,8 @@ type Storage interface {
 	PutCertNewApiKey(certId int, newApiKey string, updateTimeUnix int) (err error)
 
 	DeleteCert(id int) (err error)
+
+	PostNewKey(private_keys.NewPayload) (keyId int, err error)
 }
 
 // Keys service struct

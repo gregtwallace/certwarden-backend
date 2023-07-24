@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"legocerthub-backend/pkg/challenges"
+	"legocerthub-backend/pkg/domain/private_keys"
+	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/randomness"
+	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
 	"time"
@@ -18,6 +21,7 @@ type NewPayload struct {
 	Name                 *string                 `json:"name"`
 	Description          *string                 `json:"description"`
 	PrivateKeyID         *int                    `json:"private_key_id"`
+	NewKeyAlgorithmValue *string                 `json:"algorithm_value"`
 	AcmeAccountID        *int                    `json:"acme_account_id"`
 	ChallengeMethodValue *challenges.MethodValue `json:"challenge_method_value"`
 	Subject              *string                 `json:"subject"`
@@ -57,9 +61,43 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 		payload.Description = new(string)
 	}
 	// private key
-	if payload.PrivateKeyID == nil || !service.privateKeyIdValid(*payload.PrivateKeyID, nil) {
-		service.logger.Debug(err)
+	// if key id not specified
+	if payload.PrivateKeyID == nil {
+		service.logger.Debug(ErrKeyIdBad)
 		return output.ErrValidationFailed
+	}
+	// keep track if new key will be generated and saved
+	generatedKeyPem := ""
+	// if new key id specified
+	if validation.IsIdNew(*payload.PrivateKeyID) {
+		// confirm algorithm is specified
+		if payload.NewKeyAlgorithmValue == nil || *payload.NewKeyAlgorithmValue == "" {
+			service.logger.Debug(ErrKeyAlgorithmNone)
+			return output.ErrValidationFailed
+		}
+		// confirm name is valid for a new key
+		if payload.Name == nil || !service.keys.NameValid(*payload.Name, nil) {
+			service.logger.Debug(ErrKeyNameBad)
+			return output.ErrValidationFailed
+		}
+		// generate new key pem
+		generatedKeyPem, err = key_crypto.AlgorithmByStorageValue(*payload.NewKeyAlgorithmValue).GeneratePrivateKeyPem()
+		if err != nil {
+			service.logger.Debug(err)
+			return output.ErrValidationFailed
+		}
+	} else {
+		// not new key id
+		// error if algorithm value was specified
+		if payload.NewKeyAlgorithmValue != nil && *payload.NewKeyAlgorithmValue != "" {
+			service.logger.Debug(ErrKeyIdAndAlgorithm)
+			return output.ErrValidationFailed
+		}
+		// error if key id is not valid
+		if !service.privateKeyIdValid(*payload.PrivateKeyID, nil) {
+			service.logger.Debug(err)
+			return output.ErrValidationFailed
+		}
 	}
 	// acme account
 	if payload.AcmeAccountID == nil || !service.accounts.AccountUsable(*payload.AcmeAccountID) {
@@ -102,6 +140,35 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 		payload.City = new(string)
 	}
 	// end validation
+
+	// if new key was generated, save it to storage
+	if generatedKeyPem != "" {
+		// create new key payload
+		newKeyPayload := private_keys.NewPayload{
+			Name:           payload.Name,
+			Description:    payload.Description,
+			AlgorithmValue: payload.NewKeyAlgorithmValue,
+			PemContent:     &generatedKeyPem,
+			ApiKeyDisabled: new(bool),
+			ApiKeyViaUrl:   payload.ApiKeyViaUrl,
+		}
+		// set additional new key payload fields
+		newKeyPayload.ApiKey, err = randomness.GenerateApiKey()
+		if err != nil {
+			service.logger.Error(err)
+			return output.ErrInternal
+		}
+		*newKeyPayload.ApiKeyDisabled = false
+		newKeyPayload.CreatedAt = int(time.Now().Unix())
+		newKeyPayload.UpdatedAt = payload.CreatedAt
+
+		// save new key to storage, and set the cert key id based on returned key id
+		*payload.PrivateKeyID, err = service.storage.PostNewKey(newKeyPayload)
+		if err != nil {
+			service.logger.Error(err)
+			return output.ErrStorageGeneric
+		}
+	}
 
 	// add additional details to the payload before saving
 	payload.ApiKey, err = randomness.GenerateApiKey()
