@@ -291,9 +291,9 @@ func (store *Storage) GetCertPemById(id int) (name string, pem string, updatedAt
 
 // GetCertPemByName returns a the pem from the most recent valid order for the specified
 // cert name
-func (store *Storage) GetCertPemByName(name string) (pem string, updatedAt int, err error) {
-	_, pem, updatedAt, err = store.getCertPem(-1, name)
-	return pem, updatedAt, err
+func (store *Storage) GetCertPemByName(name string) (pem string, err error) {
+	_, pem, _, err = store.getCertPem(-1, name)
+	return pem, err
 }
 
 // GetCertPem returns the pem for the most recent valid order of the specified
