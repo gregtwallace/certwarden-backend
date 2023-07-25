@@ -22,7 +22,7 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	GetOneKeyByName(name string) (private_keys.Key, error)
+	GetOneKeyByName(name string) (private_keys.Key, int, error)
 
 	GetOneCertByName(name string) (cert certificates.Certificate, err error)
 	GetCertPemById(certId int) (name string, pem string, err error)

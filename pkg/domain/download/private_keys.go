@@ -5,6 +5,7 @@ import (
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"net/http"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -24,17 +25,13 @@ func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Requ
 	}
 
 	// fetch the key using the apiKey
-	keyPem, err := service.getKeyPem(keyName, apiKey, false)
+	keyPem, modtime, err := service.getKeyPem(keyName, apiKey, false)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, fmt.Sprintf("%s.key.pem", keyName), keyPem)
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWritePemFailed
-	}
+	service.output.WritePemWithCondition(w, r, fmt.Sprintf("%s.key.pem", keyName), keyPem, modtime)
 
 	return nil
 }
@@ -50,17 +47,13 @@ func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request
 	apiKey := getApiKeyFromParams(params)
 
 	// fetch the key using the apiKey
-	keyPem, err := service.getKeyPem(keyName, apiKey, true)
+	keyPem, modtime, err := service.getKeyPem(keyName, apiKey, true)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, fmt.Sprintf("%s.key.pem", keyName), keyPem)
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWritePemFailed
-	}
+	service.output.WritePemWithCondition(w, r, fmt.Sprintf("%s.key.pem", keyName), keyPem, modtime)
 
 	return nil
 }
@@ -68,49 +61,51 @@ func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request
 // getKeyPemFile returns the private key pem if the apiKey matches
 // the requested key. It also checks the apiKeyViaUrl property if
 // the client is making a request with the apiKey in the Url.
-func (service *Service) getKeyPem(keyName string, apiKey string, apiKeyViaUrl bool) (keyPem string, err error) {
+func (service *Service) getKeyPem(keyName string, apiKey string, apiKeyViaUrl bool) (keyPem string, modtime time.Time, err error) {
 	// if not running https, error
 	if !service.https && !service.devMode {
-		return "", output.ErrUnavailableHttp
+		return "", modtime, output.ErrUnavailableHttp
 	}
 
 	// if apiKey is blank, definitely unauthorized
 	if apiKey == "" {
 		service.logger.Debug(errBlankApiKey)
-		return "", output.ErrUnauthorized
+		return "", modtime, output.ErrUnauthorized
 	}
 
 	// get the key from storage
-	key, err := service.storage.GetOneKeyByName(keyName)
+	key, unixtime, err := service.storage.GetOneKeyByName(keyName)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {
 			service.logger.Debug(err)
-			return "", output.ErrNotFound
+			return "", modtime, output.ErrNotFound
 		} else {
 			service.logger.Error(err)
-			return "", output.ErrStorageGeneric
+			return "", modtime, output.ErrStorageGeneric
 		}
 	}
+
+	modtime = time.Unix(int64(unixtime), 0)
 
 	// if key is disabled via API, error
 	if key.ApiKeyDisabled {
 		service.logger.Debug(errApiDisabled)
-		return "", output.ErrUnauthorized
+		return "", modtime, output.ErrUnauthorized
 	}
 
 	// if apiKey came from URL, and key does not support this, error
 	if apiKeyViaUrl && !key.ApiKeyViaUrl {
 		service.logger.Debug(errApiKeyFromUrlDisallowed)
-		return "", output.ErrUnauthorized
+		return "", modtime, output.ErrUnauthorized
 	}
 
 	// verify apikey matches private key's apiKey (new or old)
 	if (apiKey != key.ApiKey) && (apiKey != key.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
-		return "", output.ErrUnauthorized
+		return "", modtime, output.ErrUnauthorized
 	}
 
 	// return pem content
-	return key.Pem, nil
+	return key.Pem, modtime, nil
 }

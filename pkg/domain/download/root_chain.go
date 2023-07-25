@@ -80,7 +80,7 @@ func (service *Service) getCertRootChainPem(certName string, apiKey string, apiK
 	}
 
 	// fetch the full certificate chain
-	certPem, _, err := service.getCertPem(certName, apiKey, true, apiKeyViaUrl)
+	certPem, _, _, err := service.getCertPem(certName, apiKey, true, apiKeyViaUrl)
 	if err != nil {
 		return "", err
 	}

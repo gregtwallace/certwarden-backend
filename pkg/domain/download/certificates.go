@@ -6,6 +6,7 @@ import (
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"net/http"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -25,17 +26,13 @@ func (service *Service) DownloadCertViaHeader(w http.ResponseWriter, r *http.Req
 	}
 
 	// fetch the cert using the apiKey
-	certPem, _, err := service.getCertPem(certName, apiKey, true, false)
+	certPem, _, modtime, err := service.getCertPem(certName, apiKey, true, false)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, fmt.Sprintf("%s.cert.pem", certName), certPem)
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWritePemFailed
-	}
+	service.output.WritePemWithCondition(w, r, fmt.Sprintf("%s.cert.pem", certName), certPem, modtime)
 
 	return nil
 }
@@ -51,17 +48,13 @@ func (service *Service) DownloadCertViaUrl(w http.ResponseWriter, r *http.Reques
 	apiKey := getApiKeyFromParams(params)
 
 	// fetch the cert using the apiKey
-	certPem, _, err := service.getCertPem(certName, apiKey, true, true)
+	certPem, _, modtime, err := service.getCertPem(certName, apiKey, true, true)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, fmt.Sprintf("%s.cert.pem", certName), certPem)
-	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWritePemFailed
-	}
+	service.output.WritePemWithCondition(w, r, fmt.Sprintf("%s.cert.pem", certName), certPem, modtime)
 
 	return nil
 }
@@ -71,16 +64,16 @@ func (service *Service) DownloadCertViaUrl(w http.ResponseWriter, r *http.Reques
 // a request with the apiKey in the Url. The pem is from the most recent valid
 // order for the specified cert. The keyName is the name of the key that corresponds
 // to that order.
-func (service *Service) getCertPem(certName string, apiKey string, fullChain bool, apiKeyViaUrl bool) (certPem string, keyName string, err error) {
+func (service *Service) getCertPem(certName string, apiKey string, fullChain bool, apiKeyViaUrl bool) (certPem string, keyName string, modtime time.Time, err error) {
 	// if not running https, error
 	if !service.https && !service.devMode {
-		return "", "", output.ErrUnavailableHttp
+		return "", "", modtime, output.ErrUnavailableHttp
 	}
 
 	// if apiKey is blank, definitely unauthorized
 	if apiKey == "" {
 		service.logger.Debug(errBlankApiKey)
-		return "", "", output.ErrUnauthorized
+		return "", "", modtime, output.ErrUnauthorized
 	}
 
 	// get the cert from storage
@@ -89,23 +82,23 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 		// special error case for no record found
 		if err == storage.ErrNoRecord {
 			service.logger.Debug(err)
-			return "", "", output.ErrNotFound
+			return "", "", modtime, output.ErrNotFound
 		} else {
 			service.logger.Error(err)
-			return "", "", output.ErrStorageGeneric
+			return "", "", modtime, output.ErrStorageGeneric
 		}
 	}
 
 	// if apiKey came from URL, and cert does not support this, error
 	if apiKeyViaUrl && !cert.ApiKeyViaUrl {
 		service.logger.Debug(errApiKeyFromUrlDisallowed)
-		return "", "", output.ErrUnauthorized
+		return "", "", modtime, output.ErrUnauthorized
 	}
 
 	// verify apikey matches cert apikey (new or old)
 	if (apiKey != cert.ApiKey) && (apiKey != cert.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
-		return "", "", output.ErrUnauthorized
+		return "", "", modtime, output.ErrUnauthorized
 	}
 
 	// get pem of the most recent valid order for the cert
@@ -118,17 +111,17 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 		// there may be an issue for the user to investigate
 		if err == storage.ErrNoRecord {
 			service.logger.Warn(err)
-			return "", "", output.ErrNotFound
+			return "", "", modtime, output.ErrNotFound
 		} else {
 			service.logger.Error(err)
-			return "", "", output.ErrStorageGeneric
+			return "", "", modtime, output.ErrStorageGeneric
 		}
 	}
 
 	// pem cant be blank
 	if certPem == "" {
 		service.logger.Debug(errNoPem)
-		return "", "", output.ErrStorageGeneric
+		return "", "", modtime, output.ErrStorageGeneric
 	}
 
 	// if not fullchain, discard rest of chain
@@ -137,6 +130,8 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 		certPem = string(pem.EncodeToMemory(certBlock))
 	}
 
-	// return pem content and key name
-	return certPem, cert.CertificateKey.Name, nil
+	modtime = time.Unix(int64(cert.CreatedAt), 0)
+
+	// return pem content, key name and modification time
+	return certPem, cert.CertificateKey.Name, modtime, nil
 }

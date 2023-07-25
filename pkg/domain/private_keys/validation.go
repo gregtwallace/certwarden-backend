@@ -55,7 +55,7 @@ func (service *Service) NameValid(keyName string, keyId *int) bool {
 	}
 
 	// make sure the name isn't already in use in storage
-	key, err := service.storage.GetOneKeyByName(keyName)
+	key, _, err := service.storage.GetOneKeyByName(keyName)
 	if err == storage.ErrNoRecord {
 		// no rows means name is not in use
 		return true
