@@ -91,8 +91,9 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 }
 
 // GetOneKeyById returns a KeyExtended based on unique id
-func (store *Storage) GetOneKeyById(id int) (private_keys.Key, int, error) {
-	return store.getOneKey(id, "")
+func (store *Storage) GetOneKeyById(id int) (private_keys.Key, error) {
+	key, _, err := store.getOneKey(id, "")
+	return key, err
 }
 
 // GetOneKeyByName returns a KeyExtended based on unique name

@@ -28,7 +28,7 @@ func (service *Service) getKey(id int) (Key, error) {
 	}
 
 	// get the key from storage
-	key, _, err := service.storage.GetOneKeyById(id)
+	key, err := service.storage.GetOneKeyById(id)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {
