@@ -91,17 +91,17 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 }
 
 // GetOneKeyById returns a KeyExtended based on unique id
-func (store *Storage) GetOneKeyById(id int) (private_keys.Key, error) {
+func (store *Storage) GetOneKeyById(id int) (private_keys.Key, int, error) {
 	return store.getOneKey(id, "")
 }
 
 // GetOneKeyByName returns a KeyExtended based on unique name
-func (store *Storage) GetOneKeyByName(name string) (private_keys.Key, error) {
+func (store *Storage) GetOneKeyByName(name string) (private_keys.Key, int, error) {
 	return store.getOneKey(-1, name)
 }
 
 // dbGetOneKey returns a KeyExtended based on unique id or unique name
-func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
+func (store Storage) getOneKey(id int, name string) (private_keys.Key, int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
@@ -139,16 +139,16 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 		if err == sql.ErrNoRows {
 			err = storage.ErrNoRecord
 		}
-		return private_keys.Key{}, err
+		return private_keys.Key{}, 0, err
 	}
 
 	// convert to KeyExtended
 	oneKeyExt := oneKeyDb.toKey()
 	if err != nil {
-		return private_keys.Key{}, err
+		return private_keys.Key{}, 0, err
 	}
 
-	return oneKeyExt, nil
+	return oneKeyExt, oneKeyDb.createdAt, nil
 }
 
 // GetAvailableKeys returns a slice of private keys that exist but are not already associated

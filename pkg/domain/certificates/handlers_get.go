@@ -99,7 +99,7 @@ func (service *Service) DownloadOneCert(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// get from storage
-	certName, certPem, err := service.storage.GetCertPemById(id)
+	certName, certPem, _, err := service.storage.GetCertPemById(id)
 	if err != nil {
 		return err
 	}

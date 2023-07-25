@@ -98,7 +98,7 @@ func (app *Application) getAppCertFromStorage() (*tls.Certificate, error) {
 		return nil, err
 	}
 
-	certPem, err := app.storage.GetCertPemByName(*app.config.CertificateName)
+	certPem, _, err := app.storage.GetCertPemByName(*app.config.CertificateName)
 	if err != nil {
 		return nil, err
 	}

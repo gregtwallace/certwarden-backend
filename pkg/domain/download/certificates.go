@@ -102,7 +102,7 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 	}
 
 	// get pem of the most recent valid order for the cert
-	_, certPem, err = service.storage.GetCertPemById(cert.ID)
+	_, certPem, updatedAt, err := service.storage.GetCertPemById(cert.ID)
 	if err != nil {
 		// special error case for no record found
 		// of note, this indicates the cert exists but there is no
@@ -130,7 +130,7 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 		certPem = string(pem.EncodeToMemory(certBlock))
 	}
 
-	modtime = time.Unix(int64(cert.CreatedAt), 0)
+	modtime = time.Unix(int64(updatedAt), 0)
 
 	// return pem content, key name and modification time
 	return certPem, cert.CertificateKey.Name, modtime, nil

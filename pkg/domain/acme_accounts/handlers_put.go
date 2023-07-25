@@ -220,7 +220,7 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) (err
 	}
 
 	// fetch new private key
-	newKey, err := service.storage.GetOneKeyById(*payload.PrivateKeyID)
+	newKey, _, err := service.storage.GetOneKeyById(*payload.PrivateKeyID)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric

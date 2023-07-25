@@ -285,27 +285,28 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 
 // GetCertPemById returns a the pem and name from the most recent valid order for the specified
 // cert id
-func (store *Storage) GetCertPemById(id int) (name string, pem string, err error) {
+func (store *Storage) GetCertPemById(id int) (name string, pem string, updatedAt int, err error) {
 	return store.getCertPem(id, "")
 }
 
 // GetCertPemByName returns a the pem from the most recent valid order for the specified
 // cert name
-func (store *Storage) GetCertPemByName(name string) (pem string, err error) {
-	_, pem, err = store.getCertPem(-1, name)
-	return pem, err
+func (store *Storage) GetCertPemByName(name string) (pem string, updatedAt int, err error) {
+	_, pem, updatedAt, err = store.getCertPem(-1, name)
+	return pem, updatedAt, err
 }
 
 // GetCertPem returns the pem for the most recent valid order of the specified
 // cert (id or name)
-func (store *Storage) getCertPem(certId int, inName string) (outName string, pem string, err error) {
+func (store *Storage) getCertPem(certId int, inName string) (outName string, pem string, updatedAt int, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
 	query := `
 	SELECT
 		name,
-		pem
+		pem,
+		ao.updated_at
 	FROM
 		acme_orders ao
 		LEFT JOIN certificates c on (ao.certificate_id = c.id)
@@ -335,10 +336,10 @@ func (store *Storage) getCertPem(certId int, inName string) (outName string, pem
 		inName,
 	)
 
-	err = row.Scan(&outName, &pem)
+	err = row.Scan(&outName, &pem, &updatedAt)
 	if err != nil {
-		return "", "", err
+		return "", "", 0, err
 	}
 
-	return outName, pem, nil
+	return outName, pem, updatedAt, nil
 }

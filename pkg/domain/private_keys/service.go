@@ -22,9 +22,9 @@ type App interface {
 // Storage interface for storage functions
 type Storage interface {
 	GetAllKeys(q pagination_sort.Query) (keys []Key, totalRows int, err error)
-	GetOneKeyById(id int) (Key, error)
+	GetOneKeyById(id int) (Key, int, error)
 	GetOneKeyByName(name string) (Key, int, error)
-	GetKeyPemById(id int) (name string, pem string, createdAt int, err error)
+	GetKeyPemById(id int) (name string, pem string, err error)
 
 	PostNewKey(NewPayload) (keyId int, err error)
 

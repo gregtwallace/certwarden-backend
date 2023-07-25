@@ -37,7 +37,7 @@ type Storage interface {
 
 	AccountHasCerts(accountId int) (inUse bool)
 
-	GetOneKeyById(id int) (private_keys.Key, error)
+	GetOneKeyById(id int) (private_keys.Key, int, error)
 }
 
 // Accounts service struct
