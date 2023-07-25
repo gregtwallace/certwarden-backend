@@ -86,8 +86,6 @@ func (service *Service) getKeyPem(keyName string, apiKey string, apiKeyViaUrl bo
 		}
 	}
 
-	modtime = time.Unix(int64(unixtime), 0)
-
 	// if key is disabled via API, error
 	if key.ApiKeyDisabled {
 		service.logger.Debug(errApiDisabled)
@@ -105,6 +103,8 @@ func (service *Service) getKeyPem(keyName string, apiKey string, apiKeyViaUrl bo
 		service.logger.Debug(errWrongApiKey)
 		return "", modtime, output.ErrUnauthorized
 	}
+
+	modtime = time.Unix(int64(unixtime), 0)
 
 	// return pem content
 	return key.Pem, modtime, nil
