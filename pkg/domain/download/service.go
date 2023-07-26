@@ -27,7 +27,7 @@ type Storage interface {
 
 	GetOneCertByName(name string) (cert certificates.Certificate, err error)
 
-	GetCertNewestValidOrderById(id int) (order orders.Order, err error)
+	GetCertNewestValidOrderByName(certName string) (order orders.Order, err error)
 }
 
 // Keys service struct

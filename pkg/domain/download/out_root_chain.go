@@ -1,14 +1,32 @@
 package download
 
 import (
-	"bytes"
-	"encoding/pem"
 	"fmt"
+	"legocerthub-backend/pkg/domain/orders"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
 )
+
+// rootChain is modified Order to allow implementation of custom pem functions
+// to properly output the desired content
+type rootChain orders.Order
+
+// rootChain Output Pem Methods
+
+// PemFilename is the chain filename
+func (rc rootChain) PemFilename() string {
+	return fmt.Sprintf("%s.chain.pem", rc.Certificate.Name)
+}
+
+// PemContent returns the PemContentChainOnly instead of what order would
+// normally return
+func (rc rootChain) PemContent() string {
+	return orders.Order(rc).PemContentChainOnly()
+}
+
+// end rootChain Output Pem Methods
 
 // DownloadCertRootChainViaHeader is the handler to write just a
 // cert's chain to the client, if the proper apiKey is provided via
@@ -25,14 +43,14 @@ func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r 
 		apiKey = r.Header.Get("apikey")
 	}
 
-	// fetch the cert chain using the apiKey
-	certChainPem, err := service.getCertRootChainPem(certName, apiKey, false)
+	// fetch the cert's newest order using the apiKey, as rootChain type
+	rootChain, err := service.getCertNewestValidRootChain(certName, apiKey, false)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, fmt.Sprintf("%s.chain.pem", certName), certChainPem)
+	_, err = service.output.WritePem(w, r, rootChain)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed
@@ -52,14 +70,14 @@ func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *ht
 
 	apiKey := getApiKeyFromParams(params)
 
-	// fetch the cert chain using the apiKey
-	certChainPem, err := service.getCertRootChainPem(certName, apiKey, true)
+	// fetch the cert's newest order using the apiKey, as rootChain type
+	rootChain, err := service.getCertNewestValidRootChain(certName, apiKey, true)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, fmt.Sprintf("%s.chain.pem", certName), certChainPem)
+	_, err = service.output.WritePem(w, r, rootChain)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed
@@ -68,31 +86,13 @@ func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *ht
 	return nil
 }
 
-// getCertRootChainPem returns the cert's root chain pem if the
-// apiKey matches the requested key. It also checks the apiKeyViaUrl
-// property if the client is making a request with the apiKey in the Url.
-// The pem is from the most recent valid order for the specified cert.
-// TODO: Allow tweaking of root chain components
-func (service *Service) getCertRootChainPem(certName string, apiKey string, apiKeyViaUrl bool) (rootChainPem string, err error) {
-	// if not running https, error
-	if !service.https && !service.devMode {
-		return "", output.ErrUnavailableHttp
-	}
-
-	// fetch the full certificate chain
-	certPem, _, err := service.getCertPem(certName, apiKey, true, apiKeyViaUrl)
+// getCertNewestValidRootChain gets the appropriate order for the requested Cert and sets its type to
+// rootChain so the proper data is outputted
+func (service *Service) getCertNewestValidRootChain(certName string, apiKey string, apiKeyViaUrl bool) (rootChain, error) {
+	order, err := service.getCertNewestValidOrder(certName, apiKey, apiKeyViaUrl)
 	if err != nil {
-		return "", err
+		return rootChain{}, err
 	}
 
-	// decode the first cert in the chain and discard it
-	// this effectively leaves the root chain as the "rest"
-	_, chain := pem.Decode([]byte(certPem))
-
-	// remove any extraneouse chars before the first cert begins
-	beginIndex := bytes.Index(chain, []byte{45}) // ascii code for dash character
-	chain = chain[beginIndex:]
-
-	// return pem content
-	return string(chain), nil
+	return rootChain(order), nil
 }

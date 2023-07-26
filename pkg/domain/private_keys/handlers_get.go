@@ -1,7 +1,6 @@
 package private_keys
 
 import (
-	"fmt"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
@@ -118,7 +117,7 @@ func (service *Service) DownloadOneKey(w http.ResponseWriter, r *http.Request) (
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, fmt.Sprintf("%s.key.pem", key.Name), key.Pem)
+	_, err = service.output.WritePem(w, r, key)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed

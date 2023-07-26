@@ -1,6 +1,9 @@
 package orders
 
 import (
+	"bytes"
+	"encoding/pem"
+	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/certificates"
@@ -112,3 +115,50 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 		UpdatedAt:      order.UpdatedAt,
 	}
 }
+
+// Pem Output Methods
+
+// PemFilename returns the filename that should be sent to the client when Order
+// is sent to the client in Pem format
+func (order Order) PemFilename() string {
+	return fmt.Sprintf("%s.cert.pem", order.Certificate.Name)
+}
+
+// PemContent returns the actual Pem data of the order or an empty string
+// if the Pem does not exist
+func (order Order) PemContent() string {
+	// if Pem is nil, return empty
+	if order.Pem == nil {
+		return ""
+	}
+
+	return *order.Pem
+}
+
+// next two not required for output.Pem interface, but are used by `download` pkg
+
+// PemContentNoChain returns the Pem data for the main certificate but discards the remainder
+// of the certificate chain
+func (order Order) PemContentNoChain() string {
+	// decode first cert and drop the rest
+	certBlock, _ := pem.Decode([]byte(order.PemContent()))
+
+	// return re-encoded pem
+	return string(pem.EncodeToMemory(certBlock))
+}
+
+// PemContentChainOnly returns the Pem data for the certificate chain, but not the actual
+// main cert
+func (order Order) PemContentChainOnly() string {
+	// decode the first cert in the chain and discard it
+	// this effectively leaves the root chain as the "rest"
+	_, chain := pem.Decode([]byte(order.PemContent()))
+
+	// remove any extraneouse chars before the first cert begins (spaces and such)
+	beginIndex := bytes.Index(chain, []byte{45}) // ascii code for dash character
+
+	// return pem content
+	return string(chain[beginIndex:])
+}
+
+// end Pem Output Methods

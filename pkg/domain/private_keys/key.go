@@ -2,6 +2,7 @@ package private_keys
 
 import (
 	"crypto"
+	"fmt"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 )
 
@@ -74,6 +75,21 @@ func (key Key) detailedResponse(withSensitive bool) keyDetailedResponse {
 		UpdatedAt: key.UpdatedAt,
 	}
 }
+
+// Pem Output Methods
+
+// PemFilename returns the filename that should be sent to the client when Key
+// is sent to the client in Pem format
+func (key Key) PemFilename() string {
+	return fmt.Sprintf("%s.key.pem", key.Name)
+}
+
+// PemContent returns the actual Pem data of the private key
+func (key Key) PemContent() string {
+	return key.Pem
+}
+
+// end Pem Output Methods
 
 // new private key options
 // used to return info about valid options when making a new key

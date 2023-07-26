@@ -1,7 +1,6 @@
 package orders
 
 import (
-	"fmt"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/storage"
@@ -145,7 +144,7 @@ func (service *Service) DownloadCertNewestOrder(w http.ResponseWriter, r *http.R
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, fmt.Sprintf("%s.cert.pem", order.Certificate.Name), *order.Pem)
+	_, err = service.output.WritePem(w, r, order)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed
@@ -211,7 +210,7 @@ func (service *Service) DownloadOneOrder(w http.ResponseWriter, r *http.Request)
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, fmt.Sprintf("%s.cert.pem", order.Certificate.Name), *order.Pem)
+	_, err = service.output.WritePem(w, r, order)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed
