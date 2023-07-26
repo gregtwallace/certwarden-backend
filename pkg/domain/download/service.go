@@ -3,6 +3,7 @@ package download
 import (
 	"errors"
 	"legocerthub-backend/pkg/domain/certificates"
+	"legocerthub-backend/pkg/domain/orders"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/output"
 
@@ -25,7 +26,8 @@ type Storage interface {
 	GetOneKeyByName(name string) (private_keys.Key, error)
 
 	GetOneCertByName(name string) (cert certificates.Certificate, err error)
-	GetCertPemById(certId int) (name string, pem string, err error)
+
+	GetCertNewestValidOrderById(id int) (order orders.Order, err error)
 }
 
 // Keys service struct

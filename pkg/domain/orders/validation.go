@@ -9,12 +9,14 @@ import (
 )
 
 var (
-	ErrCertIdBad  = errors.New("certificate id is invalid")
-	ErrOrderIdBad = errors.New("order id is invalid")
-	ErrIdMismatch = errors.New("order id does not match cert")
+	errCertIdBad  = errors.New("certificate id is invalid")
+	errOrderIdBad = errors.New("order id is invalid")
+	errIdMismatch = errors.New("order id does not match cert")
 
-	ErrOrderRetryFinal      = errors.New("can't retry an order that is in a final state (valid or invalid)")
-	ErrOrderRevokeBadReason = errors.New("bad revocation reason code")
+	errNoPemContent = errors.New("order doesnt have pem content")
+
+	errOrderRetryFinal      = errors.New("can't retry an order that is in a final state (valid or invalid)")
+	errOrderRevokeBadReason = errors.New("bad revocation reason code")
 )
 
 // getOrder returns the Order specified by the ids, so long as the Order belongs
@@ -23,11 +25,11 @@ var (
 func (service *Service) getOrder(certId int, orderId int) (Order, error) {
 	// basic check
 	if !validation.IsIdExistingValidRange(certId) {
-		service.logger.Debug(ErrCertIdBad)
+		service.logger.Debug(errCertIdBad)
 		return Order{}, output.ErrValidationFailed
 	}
 	if !validation.IsIdExistingValidRange(orderId) {
-		service.logger.Debug(ErrOrderIdBad)
+		service.logger.Debug(errOrderIdBad)
 		return Order{}, output.ErrValidationFailed
 	}
 
@@ -46,7 +48,7 @@ func (service *Service) getOrder(certId int, orderId int) (Order, error) {
 
 	// check the cert id on the order matches the cert
 	if certId != order.Certificate.ID {
-		service.logger.Debug(ErrIdMismatch)
+		service.logger.Debug(errIdMismatch)
 		return Order{}, output.ErrValidationFailed
 	}
 
@@ -63,7 +65,7 @@ func (service *Service) isOrderRetryable(certId int, orderId int) error {
 
 	// check if order is in a final state (can't retry)
 	if order.Status == "valid" || order.Status == "invalid" {
-		service.logger.Debug(ErrOrderRetryFinal)
+		service.logger.Debug(errOrderRetryFinal)
 		return output.ErrValidationFailed
 	}
 
@@ -97,7 +99,7 @@ func (service *Service) getOrderForRevocation(certId, orderId int) (Order, error
 func (service *Service) validRevocationReason(reasonCode int) error {
 	// valid codes are 0 through 10 inclusive, except 7
 	if reasonCode < 0 || reasonCode == 7 || reasonCode > 10 {
-		service.logger.Debug(ErrOrderRevokeBadReason)
+		service.logger.Debug(errOrderRevokeBadReason)
 		return output.ErrValidationFailed
 	}
 

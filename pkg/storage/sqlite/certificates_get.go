@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/storage"
-	"time"
 
 	"legocerthub-backend/pkg/domain/certificates"
 )
@@ -281,64 +280,4 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 
 	// convert and return
 	return oneCert.toCertificate(store), nil
-}
-
-// GetCertPemById returns a the pem and name from the most recent valid order for the specified
-// cert id
-func (store *Storage) GetCertPemById(id int) (name string, pem string, err error) {
-	return store.getCertPem(id, "")
-}
-
-// GetCertPemByName returns a the pem from the most recent valid order for the specified
-// cert name
-func (store *Storage) GetCertPemByName(name string) (pem string, err error) {
-	_, pem, err = store.getCertPem(-1, name)
-	return pem, err
-}
-
-// GetCertPem returns the pem for the most recent valid order of the specified
-// cert (id or name)
-func (store *Storage) getCertPem(certId int, inName string) (outName string, pem string, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
-	defer cancel()
-
-	query := `
-	SELECT
-		name,
-		pem
-	FROM
-		acme_orders ao
-		LEFT JOIN certificates c on (ao.certificate_id = c.id)
-	WHERE 
-		ao.status = "valid"
-		AND
-		ao.known_revoked = 0
-		AND
-		ao.valid_to > $1
-		AND
-		ao.pem NOT NULL
-		AND
-		(
-			ao.certificate_id = $2
-			OR
-			c.name = $3
-		)
-	GROUP BY
-		certificate_id
-	HAVING
-		MAX(valid_to)
-	`
-
-	row := store.db.QueryRowContext(ctx, query,
-		time.Now().Unix(),
-		certId,
-		inName,
-	)
-
-	err = row.Scan(&outName, &pem)
-	if err != nil {
-		return "", "", err
-	}
-
-	return outName, pem, nil
 }

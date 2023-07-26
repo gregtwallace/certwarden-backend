@@ -3,6 +3,7 @@ package app
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"legocerthub-backend/pkg/datatypes"
 	"time"
 )
@@ -98,12 +99,17 @@ func (app *Application) getAppCertFromStorage() (*tls.Certificate, error) {
 		return nil, err
 	}
 
-	certPem, err := app.storage.GetCertPemByName(*app.config.CertificateName)
+	order, err := app.storage.GetCertNewestValidOrderByName(*app.config.CertificateName)
 	if err != nil {
 		return nil, err
 	}
 
-	tlsCert, err := tls.X509KeyPair([]byte(certPem), []byte(key.Pem))
+	// nil check of pem
+	if order.Pem == nil {
+		return nil, errors.New("tls cert pem is empty")
+	}
+
+	tlsCert, err := tls.X509KeyPair([]byte(*order.Pem), []byte(key.Pem))
 	if err != nil {
 		return nil, err
 	}

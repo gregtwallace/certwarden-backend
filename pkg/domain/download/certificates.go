@@ -109,7 +109,7 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 	}
 
 	// get pem of the most recent valid order for the cert
-	_, certPem, err = service.storage.GetCertPemById(cert.ID)
+	order, err := service.storage.GetCertNewestValidOrderById(cert.ID)
 	if err != nil {
 		// special error case for no record found
 		// of note, this indicates the cert exists but there is no
@@ -126,10 +126,12 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 	}
 
 	// pem cant be blank
-	if certPem == "" {
+	if order.Pem == nil || *order.Pem == "" {
 		service.logger.Debug(errNoPem)
-		return "", "", output.ErrStorageGeneric
+		return "", "", output.ErrNotFound
 	}
+
+	certPem = *order.Pem
 
 	// if not fullchain, discard rest of chain
 	if !fullChain {
@@ -137,6 +139,6 @@ func (service *Service) getCertPem(certName string, apiKey string, fullChain boo
 		certPem = string(pem.EncodeToMemory(certBlock))
 	}
 
-	// return pem content and key name
+	// return pem content and cert name
 	return certPem, cert.CertificateKey.Name, nil
 }

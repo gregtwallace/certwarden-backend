@@ -78,7 +78,6 @@ func (app *Application) routes() http.Handler {
 	// certificates
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/certificates", app.certificates.GetAllCerts)
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/certificates/:certid", app.certificates.GetOneCert)
-	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/certificates/:certid/download", app.certificates.DownloadOneCert)
 
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/certificates", app.certificates.PostNewCert)
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/certificates/:certid/apikey", app.certificates.StageNewApiKey)
@@ -93,6 +92,7 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/certificates/:certid/orders", app.orders.GetCertOrders)
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/certificates/:certid/orders", app.orders.NewOrder)
 
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/certificates/:certid/download", app.orders.DownloadCertNewestOrder)
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/certificates/:certid/orders/:orderid/download", app.orders.DownloadOneOrder)
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/certificates/:certid/orders/:orderid", app.orders.FulfillExistingOrder)
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/certificates/:certid/orders/:orderid/revoke", app.orders.RevokeOrder)
