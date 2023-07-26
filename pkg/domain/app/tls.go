@@ -93,7 +93,7 @@ func (app *Application) newAppCert() (*datatypes.SafeCert, error) {
 // getAppCertFromStorage returns the current key/cert pair for the app
 func (app *Application) getAppCertFromStorage() (*tls.Certificate, error) {
 	// get key and cert for API server
-	keyPem, err := app.storage.GetKeyPemByName(*app.config.PrivateKeyName)
+	key, err := app.storage.GetOneKeyByName(*app.config.PrivateKeyName)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (app *Application) getAppCertFromStorage() (*tls.Certificate, error) {
 		return nil, err
 	}
 
-	tlsCert, err := tls.X509KeyPair([]byte(certPem), []byte(keyPem))
+	tlsCert, err := tls.X509KeyPair([]byte(certPem), []byte(key.Pem))
 	if err != nil {
 		return nil, err
 	}

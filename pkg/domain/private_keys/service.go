@@ -24,7 +24,6 @@ type Storage interface {
 	GetAllKeys(q pagination_sort.Query) (keys []Key, totalRows int, err error)
 	GetOneKeyById(id int) (Key, error)
 	GetOneKeyByName(name string) (Key, error)
-	GetKeyPemById(id int) (name string, pem string, err error)
 
 	PostNewKey(NewPayload) (keyId int, err error)
 

@@ -105,7 +105,7 @@ func (service *Service) DownloadOneKey(w http.ResponseWriter, r *http.Request) (
 	}
 
 	// get the key from storage (and validate id)
-	keyName, keyPem, err := service.storage.GetKeyPemById(id)
+	key, err := service.storage.GetOneKeyById(id)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {
@@ -118,7 +118,7 @@ func (service *Service) DownloadOneKey(w http.ResponseWriter, r *http.Request) (
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, fmt.Sprintf("%s.key.pem", keyName), keyPem)
+	_, err = service.output.WritePem(w, fmt.Sprintf("%s.key.pem", key.Name), key.Pem)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed
