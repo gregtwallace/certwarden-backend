@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"errors"
 	"fmt"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
@@ -145,7 +146,7 @@ func (service *Service) DownloadOneOrder(w http.ResponseWriter, r *http.Request)
 	}
 
 	// get from storage
-	certName, certPem, err := service.storage.GetOrderPemById(certId, orderId)
+	order, err := service.storage.GetOneOrder(orderId)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {
@@ -157,8 +158,20 @@ func (service *Service) DownloadOneOrder(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	// verify cert id matches the order
+	if order.Certificate.ID != certId {
+		service.logger.Debug(errors.New("certificate id does not match order"))
+		return output.ErrNotFound
+	}
+
+	// if user requests an order without pem content, fail
+	if order.Pem == nil {
+		service.logger.Debug(errors.New("order doesnt have pem content"))
+		return output.ErrNotFound
+	}
+
 	// return pem file to client
-	_, err = service.output.WritePem(w, fmt.Sprintf("%s.cert.pem", certName), certPem)
+	_, err = service.output.WritePem(w, fmt.Sprintf("%s.cert.pem", order.Certificate.Name), *order.Pem)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrWritePemFailed

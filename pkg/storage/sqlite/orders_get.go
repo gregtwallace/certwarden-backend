@@ -709,35 +709,3 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 
 	return order, nil
 }
-
-// GetOrderPemById returns the pem and (certificate) name from the orderId specified. if the
-// certId does not match, no result is returned.
-func (store *Storage) GetOrderPemById(certId int, orderId int) (certName string, orderPem string, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
-	defer cancel()
-
-	query := `
-	SELECT
-		c.name,
-		ao.pem
-	FROM
-		acme_orders ao
-		LEFT JOIN certificates c on (ao.certificate_id = c.id)
-	WHERE
-		c.id = $1
-		AND
-		ao.id = $2
-	`
-
-	row := store.db.QueryRowContext(ctx, query,
-		certId,
-		orderId,
-	)
-
-	err = row.Scan(&certName, &orderPem)
-	if err != nil {
-		return "", "", err
-	}
-
-	return certName, orderPem, nil
-}
