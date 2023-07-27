@@ -24,6 +24,9 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 			// access token
 			"authorization",
 
+			// pem download authentication
+			"X-API-Key", "apiKey",
+
 			// conditionals for pem downloads
 			"if-match", "if-modified-since", "if-none-match", "if-unmodified-since",
 
