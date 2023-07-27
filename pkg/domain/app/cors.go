@@ -28,7 +28,7 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 			"X-API-Key", "apiKey",
 
 			// conditionals for pem downloads
-			"if-match", "if-modified-since", "if-none-match", "if-unmodified-since",
+			"if-match", "if-modified-since", "if-none-match", "if-range", "if-unmodified-since",
 
 			// retry tracker for refresh token logic on frontend
 			"x-no-retry",
