@@ -27,7 +27,7 @@ func (service *Service) DownloadCertViaHeader(w http.ResponseWriter, r *http.Req
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, r, order)
+	err = service.output.WritePem(w, r, order)
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (service *Service) DownloadCertViaUrl(w http.ResponseWriter, r *http.Reques
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, r, order)
+	err = service.output.WritePem(w, r, order)
 	if err != nil {
 		return err
 	}

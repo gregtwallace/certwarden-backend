@@ -142,7 +142,7 @@ func (service *Service) DownloadCertNewestOrder(w http.ResponseWriter, r *http.R
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, r, order)
+	err = service.output.WritePem(w, r, order)
 	if err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func (service *Service) DownloadOneOrder(w http.ResponseWriter, r *http.Request)
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, r, order)
+	err = service.output.WritePem(w, r, order)
 	if err != nil {
 		return err
 	}

@@ -49,7 +49,7 @@ func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r 
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, r, rootChain)
+	err = service.output.WritePem(w, r, rootChain)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *ht
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, r, rootChain)
+	err = service.output.WritePem(w, r, rootChain)
 	if err != nil {
 		return err
 	}

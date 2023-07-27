@@ -53,7 +53,7 @@ func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *h
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, r, privCert)
+	err = service.output.WritePem(w, r, privCert)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http
 	}
 
 	// return pem file to client
-	_, err = service.output.WritePem(w, r, privCert)
+	err = service.output.WritePem(w, r, privCert)
 	if err != nil {
 		return err
 	}
