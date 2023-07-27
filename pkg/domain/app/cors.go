@@ -23,12 +23,12 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 
 		// client to server headers
 		// Access-Control-Allow-Origin not mandatory
-		w.Header().Add("Access-Control-Allow-Headers", "authorization, content-type, if-match, if-none-match, x-no-retry")
+		w.Header().Add("Access-Control-Allow-Headers", "authorization, content-type, if-match, if-modified-since, if-none-match, if-unmodified-since, x-no-retry")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Add("Access-Control-Allow-Methods", "DELETE, GET, HEAD, OPTIONS, POST, PUT")
 
 		// server to client headers
-		w.Header().Add("Access-Control-Expose-Headers", "content-disposition, content-type, etag")
+		w.Header().Add("Access-Control-Expose-Headers", "content-disposition, content-type, etag, last-modified")
 
 		next.ServeHTTP(w, r)
 	})

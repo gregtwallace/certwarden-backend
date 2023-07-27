@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"fmt"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
+	"time"
 )
 
 // Key is a single private key with all data
@@ -87,6 +88,19 @@ func (key Key) PemFilename() string {
 // PemContent returns the actual Pem data of the private key
 func (key Key) PemContent() string {
 	return key.Pem
+}
+
+// PemModtime returns the time the key resource was last updated at. Note: it is
+// possible for modtime to become newer without the pem actually changing
+// if other information on the key object was modified. This is acceptable
+// and preferred over other methods I considered to avoid this.
+// For example, since the Key PEM can never be modified, could use the created at
+// time instead. However, if cert's key is changed but the name is renamed back to
+// the name of the first key, the pem has effectively changed and if the 'new' key
+// actually has an older created timestamp this Modtime would be wrong and not signal
+// the need for an update.
+func (key Key) PemModtime() time.Time {
+	return time.Unix(int64(key.UpdatedAt), 0)
 }
 
 // end Pem Output Methods

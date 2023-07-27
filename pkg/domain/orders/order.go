@@ -8,6 +8,7 @@ import (
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/private_keys"
+	"time"
 )
 
 // Order is a single ACME order object
@@ -133,6 +134,22 @@ func (order Order) PemContent() string {
 	}
 
 	return *order.Pem
+}
+
+// PemModtime returns the more recent of the time the order was last updated or the
+// order's certificate resource was last updated at.
+// It is possible for an order updated time to move backward for a "newer" cert resource
+// since a newer order could be revoked or a certificate could be renamed. Due to this
+// also check the certificate's time stamp.
+func (order Order) PemModtime() time.Time {
+	orderModtime := time.Unix(int64(order.UpdatedAt), 0)
+	certModtime := time.Unix(int64(order.Certificate.UpdatedAt), 0)
+
+	// return later of the two
+	if certModtime.After(orderModtime) {
+		return certModtime
+	}
+	return orderModtime
 }
 
 // next two not required for output.Pem interface, but are used by `download` pkg

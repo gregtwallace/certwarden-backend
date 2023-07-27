@@ -6,6 +6,7 @@ import (
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -29,6 +30,27 @@ func (pc privateCertificate) PemContent() string {
 
 	// append key + LF + cert
 	return keyPem + string([]byte{10}) + certPem
+}
+
+// PemModtime compares the modtimes for the private certificate's key and certificate. It returns
+// whichever time is more recent.
+func (pc privateCertificate) PemModtime() time.Time {
+	// if key is nil, return 0 time since Pem output of thie type will fail anyway without a key
+	if pc.FinalizedKey == nil {
+		return time.Time{}
+	}
+
+	// key time
+	keyModtime := pc.FinalizedKey.PemModtime()
+
+	// order (cert) time
+	certModtime := orders.Order(pc).PemModtime()
+
+	// return more recent of the two
+	if keyModtime.After(certModtime) {
+		return keyModtime
+	}
+	return certModtime
 }
 
 // end privateCertificate Output Pem Methods

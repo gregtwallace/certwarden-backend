@@ -13,6 +13,7 @@ import (
 type PemObject interface {
 	PemFilename() string
 	PemContent() string
+	PemModtime() time.Time
 }
 
 // WritePem sends an object supporting PEM output to the client as the appropriate application type
@@ -37,7 +38,7 @@ func (service *Service) WritePem(w http.ResponseWriter, r *http.Request, obj Pem
 	// do not write HTTP Status, ServeContent will handle this
 
 	// ServeContent (technically fielname is not needed here since Content-Type is set explicitly above)
-	http.ServeContent(w, r, filename, time.Time{}, contentReader)
+	http.ServeContent(w, r, filename, obj.PemModtime(), contentReader)
 
 	return nil
 }

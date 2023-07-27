@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/domain/orders"
 	"net/http"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -23,6 +24,12 @@ func (rc rootChain) PemFilename() string {
 // normally return
 func (rc rootChain) PemContent() string {
 	return orders.Order(rc).PemContentChainOnly()
+}
+
+// PemModtime returns the time the rootChain's certificate resource was last updated at.
+func (rc rootChain) PemModtime() time.Time {
+	// use Order default
+	return orders.Order(rc).PemModtime()
 }
 
 // end rootChain Output Pem Methods
