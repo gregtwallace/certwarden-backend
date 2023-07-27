@@ -35,7 +35,7 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 		},
 
 		// allowed methods the client can send to the server
-		AllowedMethods: []string{http.MethodDelete, http.MethodGet, http.MethodHead, http.MethodOptions,
+		AllowedMethods: []string{http.MethodDelete, http.MethodGet, http.MethodHead,
 			http.MethodPost, http.MethodPut},
 
 		// headers for client to expose to the cross origin requester (in server response)
