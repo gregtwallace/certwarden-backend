@@ -1,10 +1,10 @@
 package output
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -24,15 +24,15 @@ func (service *Service) WritePem(w http.ResponseWriter, r *http.Request, obj Pem
 	service.logger.Debugf("writing pem %s to client", filename)
 
 	// get pem content and convert to Reader
-	pemContent := obj.PemContent()
-	contentReader := strings.NewReader(pemContent)
+	pemContent := []byte(obj.PemContent())
+	contentReader := bytes.NewReader(pemContent)
 
 	// Set Content-Type and Content-Disposition headers explicitly
 	w.Header().Set("Content-Type", "application/x-pem-file")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 
 	// calculate sha1 of the PemContent and set as a simplistic ETag
-	etagValue := sha1.Sum([]byte(pemContent))
+	etagValue := sha1.Sum(pemContent)
 	w.Header().Set("ETag", fmt.Sprintf("\"%x\"", etagValue))
 
 	// do not write HTTP Status, ServeContent will handle this
