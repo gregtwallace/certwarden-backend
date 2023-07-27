@@ -28,7 +28,7 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 		w.Header().Add("Access-Control-Allow-Methods", "DELETE, GET, HEAD, OPTIONS, POST, PUT")
 
 		// server to client headers
-		w.Header().Add("Access-Control-Expose-Headers", "content-disposition, content-type")
+		w.Header().Add("Access-Control-Expose-Headers", "content-disposition, content-type, etag")
 
 		next.ServeHTTP(w, r)
 	})
