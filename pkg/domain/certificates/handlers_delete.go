@@ -42,8 +42,7 @@ func (service *Service) DeleteCert(w http.ResponseWriter, r *http.Request) (err 
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil
@@ -96,8 +95,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil

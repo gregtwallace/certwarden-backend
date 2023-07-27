@@ -47,8 +47,7 @@ func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request
 	// return response to client
 	_, err = service.output.WriteJSON(w, http.StatusOK, response, "new_version")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil

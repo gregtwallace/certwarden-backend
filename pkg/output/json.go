@@ -37,7 +37,8 @@ func (service *Service) WriteJSON(w http.ResponseWriter, status int, data interf
 	}
 
 	if err != nil {
-		return "", err
+		service.logger.Errorf("error marshalling json (%s)", err)
+		return "", errWriteJsonError
 	}
 
 	// service.logger.Debugf("writing json to client (%s)", wrap)
@@ -47,7 +48,8 @@ func (service *Service) WriteJSON(w http.ResponseWriter, status int, data interf
 
 	_, err = w.Write(jsonBytes)
 	if err != nil {
-		return "", err
+		service.logger.Errorf("error writing json (%s)", err)
+		return "", errWriteJsonError
 	}
 
 	return string(jsonBytes), nil

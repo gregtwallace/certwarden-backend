@@ -63,8 +63,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) (e
 	// return response to client
 	_, err = service.output.WriteJSON(w, http.StatusOK, response, "all_orders")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil
@@ -106,8 +105,7 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 	// return response to client
 	_, err = service.output.WriteJSON(w, http.StatusOK, response, "valid_current_orders")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 	return nil
 }
@@ -146,8 +144,7 @@ func (service *Service) DownloadCertNewestOrder(w http.ResponseWriter, r *http.R
 	// return pem file to client
 	_, err = service.output.WritePem(w, r, order)
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWritePemFailed
+		return err
 	}
 
 	return nil
@@ -212,8 +209,7 @@ func (service *Service) DownloadOneOrder(w http.ResponseWriter, r *http.Request)
 	// return pem file to client
 	_, err = service.output.WritePem(w, r, order)
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWritePemFailed
+		return err
 	}
 
 	return nil

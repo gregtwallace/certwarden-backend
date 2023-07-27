@@ -43,8 +43,7 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) (err
 	// return response to client
 	_, err = service.output.WriteJSON(w, http.StatusOK, response, "all_certificates")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil
@@ -75,8 +74,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) (err 
 	// return response to client
 	_, err = service.output.WriteJSON(w, http.StatusOK, cert.detailedResponse(service, service.https || service.devMode), "certificate")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil
@@ -119,8 +117,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	// return response to client
 	_, err = service.output.WriteJSON(w, http.StatusOK, newCertOptions, "certificate_options")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil

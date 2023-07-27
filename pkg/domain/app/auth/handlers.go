@@ -81,8 +81,7 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	// log success
@@ -136,8 +135,7 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	// log success
@@ -190,8 +188,7 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err erro
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil
@@ -289,8 +286,7 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (
 
 	_, err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil

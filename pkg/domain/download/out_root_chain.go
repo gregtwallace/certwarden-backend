@@ -3,7 +3,6 @@ package download
 import (
 	"fmt"
 	"legocerthub-backend/pkg/domain/orders"
-	"legocerthub-backend/pkg/output"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -52,8 +51,7 @@ func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r 
 	// return pem file to client
 	_, err = service.output.WritePem(w, r, rootChain)
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWritePemFailed
+		return err
 	}
 
 	return nil
@@ -79,8 +77,7 @@ func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *ht
 	// return pem file to client
 	_, err = service.output.WritePem(w, r, rootChain)
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWritePemFailed
+		return err
 	}
 
 	return nil

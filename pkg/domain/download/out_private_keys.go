@@ -1,7 +1,6 @@
 package download
 
 import (
-	"legocerthub-backend/pkg/output"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -30,8 +29,7 @@ func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Requ
 	// return pem file to client
 	_, err = service.output.WritePem(w, r, key)
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWritePemFailed
+		return err
 	}
 
 	return nil
@@ -56,8 +54,7 @@ func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request
 	// return pem file to client
 	_, err = service.output.WritePem(w, r, key)
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWritePemFailed
+		return err
 	}
 
 	return nil

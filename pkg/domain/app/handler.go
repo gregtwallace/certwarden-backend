@@ -37,7 +37,7 @@ func (app *Application) makeDownloadHandle(method string, path string, handlerFu
 
 		err := handlerFunc(w, r)
 		if err != nil {
-			app.logger.Infof("client %s failed to download %s (%s)", r.RemoteAddr, r.RequestURI, err)
+			app.logger.Infof("client %s error with download %s (%s)", r.RemoteAddr, r.RequestURI, err)
 			return err
 		}
 
@@ -57,7 +57,7 @@ func (handler handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		_, writeErr := handler.output.WriteErrorJSON(w, err)
 		if writeErr != nil {
-			handler.logger.Errorf("%s %s: failed to send error to client (failed to write json: %s)", r.Method, r.URL.Path, writeErr)
+			handler.logger.Errorf("%s %s: failed to send error to client (failed to write error json: %s)", r.Method, r.URL.Path, writeErr)
 		} else {
 			handler.logger.Debugf("%s %s: error sent to client", r.Method, r.URL.Path)
 		}

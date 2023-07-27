@@ -15,9 +15,9 @@ var (
 	ErrDeleteInUse    = Error{Status: 409, Message: "record in use, can't delete"}
 
 	// write
-	ErrWriteJsonFailed = Error{Status: 500, Message: "json response write failed"}
-	ErrWritePemFailed  = Error{Status: 500, Message: "pem write failed"}
-	ErrWriteZipFailed  = Error{Status: 500, Message: "zip write failed"}
+	errWriteJsonError = Error{Status: 500, Message: "json response write error"}
+	errWritePemError  = Error{Status: 500, Message: "pem write error"}
+	errWriteZipError  = Error{Status: 500, Message: "zip write error"}
 
 	// validation
 	ErrValidationFailed = Error{Status: 400, Message: "request validation (param or payload) invalid"}

@@ -34,8 +34,7 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 
 	_, err = app.output.WriteJSON(w, http.StatusOK, currentStatus, "server")
 	if err != nil {
-		app.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil
@@ -90,8 +89,7 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 	// Note: len -1 is to remove the last empty item
 	_, err = app.output.WriteJSON(w, http.StatusOK, logsJson[:len(logsJson)-1], "log_entries")
 	if err != nil {
-		app.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil
@@ -108,7 +106,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	files, err := os.ReadDir(logFilePath)
 	if err != nil {
 		app.logger.Error(err)
-		return output.ErrWriteZipFailed
+		return output.ErrInternal
 	}
 
 	// for each file in the log dir, verify start and end of filename then add it to the zip
@@ -129,21 +127,21 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 				dat, err := os.ReadFile(logFilePath + name)
 				if err != nil {
 					app.logger.Error(err)
-					return output.ErrWriteZipFailed
+					return output.ErrInternal
 				}
 
 				// create file in zip
 				f, err := zipWriter.Create(name)
 				if err != nil {
 					app.logger.Error(err)
-					return output.ErrWriteZipFailed
+					return output.ErrInternal
 				}
 
 				// add file content to the zip file
 				_, err = f.Write(dat)
 				if err != nil {
 					app.logger.Error(err)
-					return output.ErrWriteZipFailed
+					return output.ErrInternal
 				}
 			}
 		}
@@ -153,7 +151,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	err = zipWriter.Close()
 	if err != nil {
 		app.logger.Error(err)
-		return output.ErrWriteZipFailed
+		return output.ErrInternal
 	}
 
 	// make zip filename with timestamp
@@ -162,8 +160,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	// output
 	_, err = app.output.WriteZip(w, zipFilename, zipBuffer)
 	if err != nil {
-		app.logger.Error(err)
-		return output.ErrWriteZipFailed
+		return err
 	}
 
 	return nil
@@ -192,8 +189,7 @@ func (app *Application) notFoundHandler(w http.ResponseWriter, r *http.Request) 
 	// return error
 	_, err = app.output.WriteErrorJSON(w, outError)
 	if err != nil {
-		app.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil

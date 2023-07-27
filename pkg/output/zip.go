@@ -17,7 +17,8 @@ func (service *Service) WriteZip(w http.ResponseWriter, filename string, zipBuff
 
 	bytesWritten, err = w.Write(zipBuffer.Bytes())
 	if err != nil {
-		return -1, err
+		service.logger.Errorf("error writing zip (%s)", err)
+		return -1, errWriteZipError
 	}
 
 	return bytesWritten, nil

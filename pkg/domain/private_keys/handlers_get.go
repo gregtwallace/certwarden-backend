@@ -44,8 +44,7 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) (err 
 	// return response to client
 	_, err = service.output.WriteJSON(w, http.StatusOK, response, "all_private_keys")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil
@@ -75,8 +74,7 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 	// return response to client
 	_, err = service.output.WriteJSON(w, http.StatusOK, key.detailedResponse(service.https || service.devMode), "private_key")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil
@@ -119,8 +117,7 @@ func (service *Service) DownloadOneKey(w http.ResponseWriter, r *http.Request) (
 	// return pem file to client
 	_, err = service.output.WritePem(w, r, key)
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWritePemFailed
+		return err
 	}
 
 	return nil
@@ -134,8 +131,7 @@ func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request)
 	// return response to client
 	_, err := service.output.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
 	if err != nil {
-		service.logger.Error(err)
-		return output.ErrWriteJsonFailed
+		return err
 	}
 
 	return nil

@@ -26,7 +26,8 @@ func (service *Service) WritePem(w http.ResponseWriter, r *http.Request, obj Pem
 
 	bytesWritten, err = w.Write([]byte(obj.PemContent()))
 	if err != nil {
-		return -1, err
+		service.logger.Errorf("error writing pem (%s)", err)
+		return bytesWritten, errWritePemError
 	}
 
 	return bytesWritten, nil
