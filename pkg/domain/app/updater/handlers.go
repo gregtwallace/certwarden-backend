@@ -31,7 +31,7 @@ func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request
 	// does new db version match? if blank, false
 	dbMatch := false
 	if service.newVersionInfo != nil {
-		configMatch = sqlite.DbCurrentUserVersion == service.newVersionInfo.DatabaseVersion
+		dbMatch = sqlite.DbCurrentUserVersion == service.newVersionInfo.DatabaseVersion
 	}
 
 	// new version or not?
