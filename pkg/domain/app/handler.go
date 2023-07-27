@@ -3,6 +3,7 @@ package app
 import (
 	"legocerthub-backend/pkg/output"
 	"net/http"
+	"strings"
 
 	"go.uber.org/zap"
 )
@@ -33,15 +34,27 @@ func (app *Application) makeHandle(method string, path string, handlerFunc custo
 // clients accessing sensitive information
 func (app *Application) makeDownloadHandle(method string, path string, handlerFunc customHandlerFunc) {
 	downloadFunc := func(w http.ResponseWriter, r *http.Request) error {
-		app.logger.Infof("client %s attempting to download %s", r.RemoteAddr, r.RequestURI)
+		// don't directly log RequestURI since it can contain sensitive api keys in Legacy downloads
+		// instead parse the URI to get just the non-sensitive portion
+		// remove before download
+		shortenedURI := r.RequestURI[strings.Index(r.RequestURI, "/download/")+1:]
+		// split on /
+		shortenedURIPieces := strings.SplitN(shortenedURI, "/", 4)
+		// include first 3 pieces only
+		shortenedURI = "/" + shortenedURIPieces[0] + "/" + shortenedURIPieces[1] + "/" + shortenedURIPieces[2]
 
+		// log attempt
+		app.logger.Infof("client %s attempting to download %s", r.RemoteAddr, shortenedURI)
+
+		// handle attempt
 		err := handlerFunc(w, r)
 		if err != nil {
-			app.logger.Infof("client %s error with download %s (%s)", r.RemoteAddr, r.RequestURI, err)
+			app.logger.Infof("client %s error with download %s (%s)", r.RemoteAddr, shortenedURI, err)
 			return err
 		}
 
-		app.logger.Infof("client %s downloaded %s", r.RemoteAddr, r.RequestURI)
+		// log success
+		app.logger.Infof("client %s downloaded %s", r.RemoteAddr, shortenedURI)
 		return nil
 	}
 
