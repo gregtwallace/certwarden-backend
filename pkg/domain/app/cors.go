@@ -2,34 +2,51 @@ package app
 
 import (
 	"net/http"
+
+	"github.com/rs/cors"
 )
 
 // enableCORS applies CORS to an http.Handler and is intended to wrap the router
 func (app *Application) enableCORS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// if additional CORS Permitted Origins are defined, check the origin against
-		// them and add permissive header if match is found
-		if len(app.config.CORSPermittedOrigins) > 0 {
-			actualOrigin := r.Header.Get("Origin")
-			for _, permittedOrigin := range app.config.CORSPermittedOrigins {
-				// match found?
-				if actualOrigin == permittedOrigin {
-					w.Header().Set("Access-Control-Allow-Origin", actualOrigin)
-					// once found, no need to check more
-					break
-				}
-			}
-		}
+	// set up CORS
+	c := cors.New(cors.Options{
+		// permitted cross origins
+		AllowedOrigins: app.config.CORSPermittedOrigins,
 
-		// client to server headers
-		// Access-Control-Allow-Origin not mandatory
-		w.Header().Add("Access-Control-Allow-Headers", "authorization, content-type, if-match, if-modified-since, if-none-match, if-unmodified-since, x-no-retry")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		w.Header().Add("Access-Control-Allow-Methods", "DELETE, GET, HEAD, OPTIONS, POST, PUT")
+		// credentials must be allowed for access to work properly
+		AllowCredentials: true,
 
-		// server to client headers
-		w.Header().Add("Access-Control-Expose-Headers", "content-disposition, content-type, etag, last-modified")
+		// allowed request headers (client can send to server)
+		AllowedHeaders: []string{
+			// general
+			"content-type",
 
-		next.ServeHTTP(w, r)
+			// access token
+			"authorization",
+
+			// conditionals for pem downloads
+			"if-match", "if-modified-since", "if-none-match", "if-unmodified-since",
+
+			// retry tracker for refresh token logic on frontend
+			"x-no-retry",
+		},
+
+		// allowed methods the client can send to the server
+		AllowedMethods: []string{http.MethodDelete, http.MethodGet, http.MethodHead, http.MethodOptions,
+			http.MethodPost, http.MethodPut},
+
+		// headers for client to expose to the cross origin requester (in server response)
+		ExposedHeaders: []string{
+			// general
+			"content-length", "content-type",
+
+			// set name of file when client downloads something (used with pem, zip)
+			"content-disposition",
+
+			// conditionals for pem downloads
+			"last-modified", "etag",
+		},
 	})
+
+	return c.Handler(next)
 }
