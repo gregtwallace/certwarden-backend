@@ -73,10 +73,18 @@ func (acct Account) SummaryResponse() AccountSummaryResponse {
 // fields that can be returned as JSON
 type accountDetailedResponse struct {
 	AccountSummaryResponse
-	AccountKey accountKeyDetailedResponse `json:"private_key"`
-	CreatedAt  int                        `json:"created_at"`
-	UpdatedAt  int                        `json:"updated_at"`
-	Kid        string                     `json:"kid"`
+	AcmeServer accountServerDetailedResponse `json:"acme_server"`
+	AccountKey accountKeyDetailedResponse    `json:"private_key"`
+	CreatedAt  int                           `json:"created_at"`
+	UpdatedAt  int                           `json:"updated_at"`
+	Kid        string                        `json:"kid"`
+}
+
+type accountServerDetailedResponse struct {
+	AccountServerSummaryResponse
+	// from remote server
+	ExternalAccountRequired bool   `json:"external_account_required"`
+	TermsOfService          string `json:"terms_of_service"`
 }
 
 type accountKeyDetailedResponse struct {
@@ -84,9 +92,25 @@ type accountKeyDetailedResponse struct {
 	Algorithm key_crypto.Algorithm `json:"algorithm"`
 }
 
-func (acct Account) detailedResponse() accountDetailedResponse {
+func (acct Account) detailedResponse(service *Service) (accountDetailedResponse, error) {
+	// get acme service for the account
+	acmeService, err := service.acmeServerService.AcmeService(acct.AcmeServer.ID)
+	if err != nil {
+		return accountDetailedResponse{}, err
+	}
+
 	return accountDetailedResponse{
 		AccountSummaryResponse: acct.SummaryResponse(),
+		AcmeServer: accountServerDetailedResponse{
+			AccountServerSummaryResponse: AccountServerSummaryResponse{
+				ID:           acct.AcmeServer.ID,
+				Name:         acct.AcmeServer.Name,
+				DirectoryURL: acct.AcmeServer.DirectoryURL,
+				IsStaging:    acct.AcmeServer.IsStaging,
+			},
+			ExternalAccountRequired: acmeService.RequiresEAB(),
+			TermsOfService:          acmeService.TosUrl(),
+		},
 		AccountKey: accountKeyDetailedResponse{
 			AccountKeySummaryResponse: AccountKeySummaryResponse{
 				ID:   acct.AccountKey.ID,
@@ -97,7 +121,7 @@ func (acct Account) detailedResponse() accountDetailedResponse {
 		CreatedAt: acct.CreatedAt,
 		UpdatedAt: acct.UpdatedAt,
 		Kid:       acct.Kid,
-	}
+	}, nil
 }
 
 // AcmeAccountKey() provides a method to create an ACME AccountKey

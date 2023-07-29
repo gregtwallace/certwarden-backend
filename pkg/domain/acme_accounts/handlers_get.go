@@ -70,8 +70,14 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (e
 		return err
 	}
 
+	// get detailed response
+	response, err := account.detailedResponse(service)
+	if err != nil {
+		return err
+	}
+
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, account.detailedResponse(), "acme_account")
+	_, err = service.output.WriteJSON(w, http.StatusOK, response, "acme_account")
 	if err != nil {
 		return err
 	}
