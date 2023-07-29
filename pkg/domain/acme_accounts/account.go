@@ -28,22 +28,22 @@ type AccountSummaryResponse struct {
 	ID          int                          `json:"id"`
 	Name        string                       `json:"name"`
 	Description string                       `json:"description"`
-	AcmeServer  AccountServerSummaryResponse `json:"acme_server"`
-	AccountKey  AccountKeySummaryResponse    `json:"private_key"`
+	AcmeServer  accountServerSummaryResponse `json:"acme_server"`
+	AccountKey  accountKeySummaryResponse    `json:"private_key"`
 	Status      string                       `json:"status"`
 	Email       string                       `json:"email"`
 	AcceptedTos bool                         `json:"accepted_tos"`
 	IsStaging   bool                         `json:"is_staging"`
 }
 
-type AccountServerSummaryResponse struct {
+type accountServerSummaryResponse struct {
 	ID           int    `json:"id"`
 	Name         string `json:"name"`
 	DirectoryURL string `json:"directory_url"`
 	IsStaging    bool   `json:"is_staging"`
 }
 
-type AccountKeySummaryResponse struct {
+type accountKeySummaryResponse struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
@@ -53,13 +53,13 @@ func (acct Account) SummaryResponse() AccountSummaryResponse {
 		ID:          acct.ID,
 		Name:        acct.Name,
 		Description: acct.Description,
-		AcmeServer: AccountServerSummaryResponse{
+		AcmeServer: accountServerSummaryResponse{
 			ID:           acct.AcmeServer.ID,
 			Name:         acct.AcmeServer.Name,
 			DirectoryURL: acct.AcmeServer.DirectoryURL,
 			IsStaging:    acct.AcmeServer.IsStaging,
 		},
-		AccountKey: AccountKeySummaryResponse{
+		AccountKey: accountKeySummaryResponse{
 			ID:   acct.AccountKey.ID,
 			Name: acct.AccountKey.Name,
 		},
@@ -81,14 +81,14 @@ type accountDetailedResponse struct {
 }
 
 type accountServerDetailedResponse struct {
-	AccountServerSummaryResponse
+	accountServerSummaryResponse
 	// from remote server
 	ExternalAccountRequired bool   `json:"external_account_required"`
 	TermsOfService          string `json:"terms_of_service"`
 }
 
 type accountKeyDetailedResponse struct {
-	AccountKeySummaryResponse
+	accountKeySummaryResponse
 	Algorithm key_crypto.Algorithm `json:"algorithm"`
 }
 
@@ -102,7 +102,7 @@ func (acct Account) detailedResponse(service *Service) (accountDetailedResponse,
 	return accountDetailedResponse{
 		AccountSummaryResponse: acct.SummaryResponse(),
 		AcmeServer: accountServerDetailedResponse{
-			AccountServerSummaryResponse: AccountServerSummaryResponse{
+			accountServerSummaryResponse: accountServerSummaryResponse{
 				ID:           acct.AcmeServer.ID,
 				Name:         acct.AcmeServer.Name,
 				DirectoryURL: acct.AcmeServer.DirectoryURL,
@@ -112,7 +112,7 @@ func (acct Account) detailedResponse(service *Service) (accountDetailedResponse,
 			TermsOfService:          acmeService.TosUrl(),
 		},
 		AccountKey: accountKeyDetailedResponse{
-			AccountKeySummaryResponse: AccountKeySummaryResponse{
+			accountKeySummaryResponse: accountKeySummaryResponse{
 				ID:   acct.AccountKey.ID,
 				Name: acct.AccountKey.Name,
 			},
