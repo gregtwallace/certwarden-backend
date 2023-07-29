@@ -92,13 +92,7 @@ type accountKeyDetailedResponse struct {
 	Algorithm key_crypto.Algorithm `json:"algorithm"`
 }
 
-func (acct Account) detailedResponse(service *Service) (accountDetailedResponse, error) {
-	// get acme service for the account
-	acmeService, err := service.acmeServerService.AcmeService(acct.AcmeServer.ID)
-	if err != nil {
-		return accountDetailedResponse{}, err
-	}
-
+func (acct Account) detailedResponse(as *acme.Service) accountDetailedResponse {
 	return accountDetailedResponse{
 		AccountSummaryResponse: acct.SummaryResponse(),
 		AcmeServer: accountServerDetailedResponse{
@@ -108,8 +102,8 @@ func (acct Account) detailedResponse(service *Service) (accountDetailedResponse,
 				DirectoryURL: acct.AcmeServer.DirectoryURL,
 				IsStaging:    acct.AcmeServer.IsStaging,
 			},
-			ExternalAccountRequired: acmeService.RequiresEAB(),
-			TermsOfService:          acmeService.TosUrl(),
+			ExternalAccountRequired: as.RequiresEAB(),
+			TermsOfService:          as.TosUrl(),
 		},
 		AccountKey: accountKeyDetailedResponse{
 			accountKeySummaryResponse: accountKeySummaryResponse{
@@ -121,7 +115,7 @@ func (acct Account) detailedResponse(service *Service) (accountDetailedResponse,
 		CreatedAt: acct.CreatedAt,
 		UpdatedAt: acct.UpdatedAt,
 		Kid:       acct.Kid,
-	}, nil
+	}
 }
 
 // AcmeAccountKey() provides a method to create an ACME AccountKey
