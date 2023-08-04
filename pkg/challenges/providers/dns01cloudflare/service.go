@@ -20,7 +20,7 @@ type App interface {
 // Accounts service struct
 type Service struct {
 	logger           *zap.SugaredLogger
-	knownDomainZones *datatypes.SafeMap
+	knownDomainZones map[string]zone
 	dnsRecords       *datatypes.SafeMap
 }
 
@@ -46,12 +46,17 @@ func NewService(app App, config *Config) (*Service, error) {
 	}
 
 	// make sure at least one domain configured, or the config is bad
-	if len(service.knownDomainZones.ListKeys()) <= 0 {
+	if len(service.knownDomainZones) <= 0 {
 		return nil, errNoDomains
 	}
 
 	// debug log configured domains
-	service.logger.Infof("dns01cloudflare configured domains: %s", service.knownDomainZones.ListKeys())
+	zoneList := []string{}
+	for zoneName := range service.knownDomainZones {
+		zoneList = append(zoneList, zoneName)
+	}
+
+	service.logger.Infof("dns01cloudflare configured domains: %s", zoneList)
 
 	// map to hold current dnsRecords
 	service.dnsRecords = datatypes.NewSafeMap()

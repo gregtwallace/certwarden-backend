@@ -25,16 +25,11 @@ func zoneName(resourceName string) (domain string) {
 // resourceName
 func (service *Service) getResourceZone(resourceName string) (zone, error) {
 	// get the zone related to the resourceName
-	zoneObj, err := service.knownDomainZones.Read(zoneName(resourceName))
-	if err != nil {
+	z, exists := service.knownDomainZones[zoneName(resourceName)]
+	if !exists {
 		// MAYBE TODO: Check accounts again to see if zone was added. As built, LeGo will
 		// need a restart if zones are added to an account
-		return zone{}, err
-	}
-	// type assertion, should never fail but check anyway
-	z, ok := zoneObj.(zone)
-	if !ok {
-		return zone{}, errors.New("failed to assert zone")
+		return zone{}, errors.New("zone name does not exist in zone map")
 	}
 
 	return z, nil

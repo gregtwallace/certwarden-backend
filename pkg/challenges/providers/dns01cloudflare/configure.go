@@ -3,7 +3,6 @@ package dns01cloudflare
 import (
 	"context"
 	"fmt"
-	"legocerthub-backend/pkg/datatypes"
 
 	"github.com/cloudflare/cloudflare-go"
 )
@@ -27,7 +26,7 @@ type Config struct {
 // not work, configuration is aborted and an error is returned.
 func (service *Service) configureCloudflareAPI(config *Config) error {
 	// make map to store known domain zones
-	service.knownDomainZones = datatypes.NewSafeMap()
+	service.knownDomainZones = make(map[string]zone)
 
 	// configure accounts
 	// create API objects for each account and map all known zones
@@ -97,8 +96,9 @@ func (service *Service) addZonesFromApiInstance(cfApi *cloudflare.API) error {
 					id:  zoneList[i].ID,
 					api: cfApi,
 				}
-				_, _ = service.knownDomainZones.Add(zoneList[i].Name, z)
-				// no error if exists -- will just use whichever token loaded in first
+
+				// may get overwritten if multiple instances support same zone, but doesn't matter
+				service.knownDomainZones[zoneList[i].Name] = z
 
 				// break once proper perm found
 				break
