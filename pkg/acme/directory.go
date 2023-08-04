@@ -71,7 +71,7 @@ func FetchAcmeDirectory(httpClient *httpclient.Client, dirUri string) (directory
 // upsateAcmeServiceDirectory updates the Service's directory object based on
 // data fetched from the Service's directory URI. If it fails, an error is
 // returned.
-func (service *Service) upsateAcmeServiceDirectory() error {
+func (service *Service) updateAcmeServiceDirectory() error {
 	service.logger.Infof("updating directory from %s", service.dirUri)
 
 	// try to fetch the directory
@@ -111,7 +111,7 @@ func (service *Service) backgroundDirManager(ctx context.Context, wg *sync.WaitG
 		var waitTime time.Duration
 
 		for {
-			err := service.upsateAcmeServiceDirectory()
+			err := service.updateAcmeServiceDirectory()
 			if err != nil {
 				service.logger.Errorf("directory update failed, will retry shortly (%v)", err)
 				// if something failed, decrease the wait to try again
