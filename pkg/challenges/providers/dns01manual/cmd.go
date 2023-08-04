@@ -29,6 +29,7 @@ func (service *Service) makeCommand(resourceName string, resourceContent string,
 	args := []string{scriptPath}
 
 	// 1 - Domain (2nd Level + TLD)
+	// DEPRECATED: TODO: Remove this arg
 	domainParts := strings.Split(resourceName, ".")
 	secondAndTLD := domainParts[len(domainParts)-2] + "." + domainParts[len(domainParts)-1]
 	args = append(args, secondAndTLD)
