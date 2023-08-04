@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"legocerthub-backend/pkg/httpclient"
+	"legocerthub-backend/pkg/randomness"
 	"reflect"
 	"sync"
 	"time"
@@ -103,8 +104,8 @@ func (service *Service) backgroundDirManager(ctx context.Context, wg *sync.WaitG
 
 	// service routine
 	go func(service *Service, ctx context.Context, wg *sync.WaitGroup) {
-		// can adjust wait times if desired
-		defaultWaitTime := 24 * time.Hour
+		// run hour and fail wait duration
+		refreshHour := 1 // 1am
 		failWaitTime := 15 * time.Minute
 
 		// loop logic for periodic updates
@@ -114,10 +115,42 @@ func (service *Service) backgroundDirManager(ctx context.Context, wg *sync.WaitG
 			err := service.updateAcmeServiceDirectory()
 			if err != nil {
 				service.logger.Errorf("directory update failed, will retry shortly (%v)", err)
-				// if something failed, decrease the wait to try again
+				// if something failed, use failed wait time
 				waitTime = failWaitTime
 			} else {
-				waitTime = defaultWaitTime
+				// if not failed, schedule next run (omit minute and second for now)
+				nextRunTime := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),
+					refreshHour, 0, 0, 0, time.Local)
+
+				// if today's run already passed, run tomorrow
+				if !nextRunTime.After(time.Now()) {
+					nextRunTime = nextRunTime.Add(24 * time.Hour)
+				}
+
+				// add random minute and second after above calc to avoid duplicate runs on same day
+				// (in event random #s are larger than previous, e.g. run at 5 min then 18 min it would
+				// run at 1:05 and 1:18 the same day)
+				// this randomness also prevents LeGo from updating all directories at the same exact time
+				refreshMinute, err := randomness.GenerateRandomInt(60)
+				if err != nil {
+					// if error, use 16
+					service.logger.Errorf("failed to generate directory refresh random minute integer (%s)", err)
+					refreshMinute = 16
+				}
+				refreshSecond, err := randomness.GenerateRandomInt(60)
+				if err != nil {
+					// if error, use 9
+					service.logger.Errorf("failed to generate directory refresh random second integer (%s)", err)
+					refreshSecond = 9
+				}
+
+				// add minute and second to next run time
+				nextRunTime = nextRunTime.Add(time.Duration(refreshMinute) * time.Minute).Add(time.Duration(refreshSecond) * time.Second)
+
+				service.logger.Debugf("next directory refresh for %s will occur at %s", service.dirUri, nextRunTime.String())
+
+				// set as duration
+				waitTime = time.Until(nextRunTime)
 			}
 
 			// sleep or wait for shutdown context to be done
@@ -129,7 +162,7 @@ func (service *Service) backgroundDirManager(ctx context.Context, wg *sync.WaitG
 				return
 
 			case <-time.After(waitTime):
-				// sleep and retry
+				// sleep until retry
 			}
 		}
 	}(service, ctx, wg)
