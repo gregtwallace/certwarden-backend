@@ -2,6 +2,8 @@ package app
 
 import (
 	"net/http"
+	_ "net/http/pprof"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -109,6 +111,24 @@ func (app *Application) routes() http.Handler {
 	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/certificates/:name/*apiKey", app.download.DownloadCertViaUrl)
 	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/privatecerts/:name/*apiKey", app.download.DownloadPrivateCertViaUrl)
 	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/certrootchains/:name/*apiKey", app.download.DownloadCertRootChainViaUrl)
+
+	// debug pprof
+	if *app.config.DevMode || *app.config.EnablePprof {
+		pprofBasePath := baseUrlPath
+
+		app.makeHandle(http.MethodGet, pprofBasePath+"/debug/*any",
+			func(w http.ResponseWriter, r *http.Request) error {
+				// remove the URL root path
+				r.URL.Path = strings.TrimPrefix(r.URL.Path, pprofBasePath)
+				r.URL.RawPath = strings.TrimPrefix(r.URL.RawPath, pprofBasePath)
+
+				// use default serve mix which pprof registers to
+				http.DefaultServeMux.ServeHTTP(w, r)
+
+				// satisfy customHandlerFunc
+				return nil
+			})
+	}
 
 	// frontend (if enabled)
 	if *app.config.ServeFrontend {

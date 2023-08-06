@@ -32,6 +32,7 @@ type config struct {
 	PrivateKeyName       *string           `yaml:"private_key_name"`
 	CertificateName      *string           `yaml:"certificate_name"`
 	DevMode              *bool             `yaml:"dev_mode"`
+	EnablePprof          *bool             `yaml:"enable_pprof"`
 	Updater              updater.Config    `yaml:"updater"`
 	Orders               orders.Config     `yaml:"orders"`
 	Challenges           challenges.Config `yaml:"challenges"`
@@ -90,6 +91,7 @@ func defaultConfig() (cfg *config) {
 		PrivateKeyName:     new(string),
 		CertificateName:    new(string),
 		DevMode:            new(bool),
+		EnablePprof:        new(bool),
 		Updater: updater.Config{
 			AutoCheck: new(bool),
 			Channel:   new(updater.Channel),
@@ -150,6 +152,7 @@ func defaultConfig() (cfg *config) {
 
 	// dev mode
 	*cfg.DevMode = false
+	*cfg.EnablePprof = false
 
 	// updater
 	*cfg.Updater.AutoCheck = true

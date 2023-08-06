@@ -74,7 +74,12 @@ certificate_name: legocerthub
 # - Set frontend to devMode (assuming backend hosts frontend)
 #   see: https://github.com/gregtwallace/legocerthub-frontend/blob/master/src/helpers/environment.js
 #   for more details regarding frontend changes
+# - Enable pprof regardless of pprof config option
 dev_mode: false
+
+# Enable pprof for debugging. When enabled, pprof is available over insecure
+# routes at the path /legocerthub/debug/pprof
+enable_pprof: false
 
 # Update checking functionality
 updater:
