@@ -2,7 +2,7 @@ package app
 
 import (
 	"net/http"
-	_ "net/http/pprof"
+	"net/http/pprof"
 	"strings"
 )
 
@@ -12,19 +12,27 @@ const pprofUrlPath = pprofBasePath + "/debug/pprof"
 
 // pprofHandler handles all requests related to pprof
 func pprofHandler(w http.ResponseWriter, r *http.Request) error {
-	// if at pprof root, ensure proper redirect (prevents '/pprof' (no trailing slash) from
-	// redirecting incorrectly without base path)
-	if r.URL.Path == pprofUrlPath {
-		// add trailing slash
-		http.Redirect(w, r, pprofUrlPath+"/", http.StatusPermanentRedirect)
-	}
-
-	// remove the URL root path
+	// remove the URL base path
 	r.URL.Path = strings.TrimPrefix(r.URL.Path, pprofBasePath)
 	r.URL.RawPath = strings.TrimPrefix(r.URL.RawPath, pprofBasePath)
 
-	// use default serve mix which pprof registers to
-	http.DefaultServeMux.ServeHTTP(w, r)
+	// pprof route name to determine which pprof func to call
+	pprofName, _ := strings.CutPrefix(r.URL.Path, "/debug/pprof/")
+
+	// serve specific handlers (from pprof.go init(), otherwise default to Index)
+	switch pprofName {
+	case "cmdline":
+		pprof.Cmdline(w, r)
+	case "profile":
+		pprof.Profile(w, r)
+	case "symbol":
+		pprof.Symbol(w, r)
+	case "trace":
+		pprof.Trace(w, r)
+	default:
+		// anything else, serve Index which also handles profiles
+		pprof.Index(w, r)
+	}
 
 	// satisfy customHandlerFunc
 	return nil
