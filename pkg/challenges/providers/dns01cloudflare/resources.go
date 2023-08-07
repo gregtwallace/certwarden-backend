@@ -3,7 +3,6 @@ package dns01cloudflare
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/cloudflare/cloudflare-go"
@@ -23,17 +22,8 @@ func newAcmeRecord(resourceName, resourceContent string) cloudflare.DNSRecord {
 	}
 }
 
-// Provision adds the resource to the internal tracking map and provisions
-// the corresponding DNS record on Cloudflare.
+// Provision adds the corresponding DNS record on Cloudflare.
 func (service *Service) Provision(resourceName string, resourceContent string) error {
-	// add to internal map
-	exists, existingContent := service.dnsRecords.Add(resourceName, resourceContent)
-	// if already exists, but content is different, error
-	if exists && existingContent != resourceContent {
-		return fmt.Errorf("dns-01 (cloudflare) can't add resource (%s), already exists "+
-			"and content does not match", resourceName)
-	}
-
 	// get the relevant zone from known list
 	zone, err := service.getResourceZone(resourceName)
 	if err != nil {
@@ -52,24 +42,14 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 	return nil
 }
 
-// Deprovision removes the resource from the internal tracking map and deletes
-// the corresponding DNS record on Cloudflare.
+// Deprovision deletes the corresponding DNS record on Cloudflare.
 func (service *Service) Deprovision(resourceName string, resourceContent string) error {
-	// remove from internal map
-	err := service.dnsRecords.Delete(resourceName)
-	if err != nil {
-		service.logger.Errorf("dns-01 (cloudflare) could not remove resource (%s) from "+
-			"internal map", resourceName)
-		// do not return
-	}
-
 	// get the relevant zone from known list
 	zone, err := service.getResourceZone(resourceName)
 	if err != nil {
 		return ErrDomainNotConfigured
 	}
 
-	// remove old DNS record
 	// fetch matching record(s) (should only be one)
 	records, err := zone.api.DNSRecords(context.Background(), zone.id, cloudflare.DNSRecord{
 		Type:    "TXT",
@@ -93,7 +73,6 @@ func (service *Service) Deprovision(resourceName string, resourceContent string)
 	if deleteErr != nil {
 		return err
 	}
-	// remove old DNS record - END
 
 	return nil
 }

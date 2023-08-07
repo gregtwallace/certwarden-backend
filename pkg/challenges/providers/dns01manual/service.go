@@ -2,7 +2,6 @@ package dns01manual
 
 import (
 	"errors"
-	"legocerthub-backend/pkg/datatypes"
 	"os"
 	"os/exec"
 
@@ -26,7 +25,6 @@ type Service struct {
 	environmentVars  []string
 	createScriptPath string
 	deleteScriptPath string
-	dnsRecords       *datatypes.SafeMap
 }
 
 // Configuration options
@@ -101,9 +99,6 @@ func NewService(app App, config *Config) (*Service, error) {
 		return nil, errScriptIsDir
 	}
 	service.deleteScriptPath = config.DeleteScript
-
-	// map to hold current dnsRecords
-	service.dnsRecords = datatypes.NewSafeMap()
 
 	return service, nil
 }

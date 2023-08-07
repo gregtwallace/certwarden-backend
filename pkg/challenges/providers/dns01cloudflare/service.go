@@ -2,7 +2,6 @@ package dns01cloudflare
 
 import (
 	"errors"
-	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/httpclient"
 
 	"go.uber.org/zap"
@@ -24,7 +23,6 @@ type Service struct {
 	logger           *zap.SugaredLogger
 	httpClient       *httpclient.Client
 	knownDomainZones map[string]zone
-	dnsRecords       *datatypes.SafeMap
 }
 
 // NewService creates a new service
@@ -63,9 +61,6 @@ func NewService(app App, config *Config) (*Service, error) {
 	}
 
 	service.logger.Infof("dns01cloudflare configured domains: %s", zoneList)
-
-	// map to hold current dnsRecords
-	service.dnsRecords = datatypes.NewSafeMap()
 
 	return service, nil
 }

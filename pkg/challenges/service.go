@@ -55,12 +55,16 @@ type Config struct {
 
 // service struct
 type Service struct {
-	shutdownContext   context.Context
-	logger            *zap.SugaredLogger
-	acmeServerService *acme_servers.Service
-	dnsChecker        *dns_checker.Service
-	providers         map[MethodValue]providerService
-	methodsWithStatus []MethodWithStatus
+	shutdownContext          context.Context
+	logger                   *zap.SugaredLogger
+	acmeServerService        *acme_servers.Service
+	dnsChecker               *dns_checker.Service
+	providers                map[MethodValue]providerService
+	methodsWithStatus        []MethodWithStatus
+	resourceNamesProvisioned struct {
+		names map[string]struct{} // use struct since no memory alloc
+		mu    sync.Mutex
+	}
 }
 
 // NewService creates a new service
@@ -169,6 +173,9 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 			break
 		}
 	}
+
+	// make tracking map
+	service.resourceNamesProvisioned.names = make(map[string]struct{})
 
 	return service, nil
 }

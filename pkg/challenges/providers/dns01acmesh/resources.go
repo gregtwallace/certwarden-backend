@@ -1,21 +1,11 @@
 package dns01acmesh
 
 import (
-	"fmt"
 	"os/exec"
 )
 
-// Provision adds the resource to the internal tracking map and provisions
-// the corresponding DNS record.
+// Provision adds the requested DNS record.
 func (service *Service) Provision(resourceName string, resourceContent string) error {
-	// add to internal map
-	exists, existingContent := service.dnsRecords.Add(resourceName, resourceContent)
-	// if already exists, but content is different, error
-	if exists && existingContent != resourceContent {
-		return fmt.Errorf("dns-01 (acme.sh) can't add resource (%s), already exists "+
-			"and content does not match", resourceName)
-	}
-
 	// run create script
 	// script command
 	cmd := service.makeCreateCommand(resourceName, resourceContent)
@@ -36,17 +26,8 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 	return nil
 }
 
-// Deprovision removes the resource from the internal tracking map and deletes
-// the corresponding DNS record.
+// Deprovision deletes the corresponding DNS record.
 func (service *Service) Deprovision(resourceName string, resourceContent string) error {
-	// remove from internal map
-	err := service.dnsRecords.Delete(resourceName)
-	if err != nil {
-		service.logger.Errorf("dns-01 (acme.sh) could not remove resource (%s) from "+
-			"internal map (%s)", resourceName, err)
-		// do not return
-	}
-
 	// run delete script
 	// script command
 	cmd := service.makeDeleteCommand(resourceName, resourceContent)

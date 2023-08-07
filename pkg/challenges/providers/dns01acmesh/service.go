@@ -3,7 +3,6 @@ package dns01acmesh
 import (
 	"bytes"
 	"errors"
-	"legocerthub-backend/pkg/datatypes"
 	"os"
 	"os/exec"
 	"runtime"
@@ -36,7 +35,6 @@ type Service struct {
 	shellScriptPath string
 	dnsHook         string
 	environmentVars []string
-	dnsRecords      *datatypes.SafeMap
 }
 
 // Configuration options
@@ -123,9 +121,6 @@ func NewService(app App, config *Config) (*Service, error) {
 
 	// environment vars
 	service.environmentVars = config.Environment
-
-	// map to hold current dnsRecords
-	service.dnsRecords = datatypes.NewSafeMap()
 
 	return service, nil
 }

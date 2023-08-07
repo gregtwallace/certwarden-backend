@@ -1,6 +1,6 @@
 package http01internal
 
-// AddToken adds a token to the slice of hosted tokens
+// Provision adds a keyAuth/token pair to those being hosted
 func (service *Service) Provision(token string, keyAuth string) (err error) {
 	// add new entry
 	service.mu.Lock()
@@ -11,8 +11,7 @@ func (service *Service) Provision(token string, keyAuth string) (err error) {
 	return nil
 }
 
-// RemoveToken removes the specified token from the slice of
-// hosted tokens
+// Deprovision removes a keyAuth/token pair to those being hosted
 func (service *Service) Deprovision(token string, keyAuth string) (err error) {
 	// keyAuth is unused in this function
 
