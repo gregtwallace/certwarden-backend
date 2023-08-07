@@ -32,7 +32,7 @@ func (service *Service) configureCloudflareAPI(config *Config) error {
 	// create API objects for each account and map all known zones
 	for i := range config.Accounts {
 		// make api for account
-		apiInstance, err := cloudflare.New(config.Accounts[i].GlobalApiKey, config.Accounts[i].Email)
+		apiInstance, err := cloudflare.New(config.Accounts[i].GlobalApiKey, config.Accounts[i].Email, service.httpClient.AsCloudflareOptions()...)
 		if err != nil {
 			err = fmt.Errorf("failed to create api instance %s (%s)", redactIdentifier(config.Accounts[i].GlobalApiKey), err)
 			service.logger.Error(err)
@@ -51,7 +51,7 @@ func (service *Service) configureCloudflareAPI(config *Config) error {
 	// for each token add the domain -> api mappings to known domains
 	for i := range config.ApiTokens {
 		// make api for the token
-		apiInstance, err := cloudflare.NewWithAPIToken(config.ApiTokens[i].APIToken)
+		apiInstance, err := cloudflare.NewWithAPIToken(config.ApiTokens[i].APIToken, service.httpClient.AsCloudflareOptions()...)
 		if err != nil {
 			err = fmt.Errorf("failed to create api instance %s (%s)", redactIdentifier(config.Accounts[i].GlobalApiKey), err)
 			service.logger.Error(err)

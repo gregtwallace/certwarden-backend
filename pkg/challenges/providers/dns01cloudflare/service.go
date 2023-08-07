@@ -3,6 +3,7 @@ package dns01cloudflare
 import (
 	"errors"
 	"legocerthub-backend/pkg/datatypes"
+	"legocerthub-backend/pkg/httpclient"
 
 	"go.uber.org/zap"
 )
@@ -15,11 +16,13 @@ var (
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
+	GetHttpClient() *httpclient.Client
 }
 
 // Accounts service struct
 type Service struct {
 	logger           *zap.SugaredLogger
+	httpClient       *httpclient.Client
 	knownDomainZones map[string]zone
 	dnsRecords       *datatypes.SafeMap
 }
@@ -38,6 +41,9 @@ func NewService(app App, config *Config) (*Service, error) {
 	if service.logger == nil {
 		return nil, errServiceComponent
 	}
+
+	// http client for api calls
+	service.httpClient = app.GetHttpClient()
 
 	// cloudflare api
 	err := service.configureCloudflareAPI(config)
