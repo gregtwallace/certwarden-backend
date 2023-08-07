@@ -77,9 +77,10 @@ certificate_name: legocerthub
 # - Enable pprof regardless of pprof config option
 dev_mode: false
 
-# Enable pprof for debugging. When enabled, pprof is available over insecure
-# routes at the path /legocerthub/debug/pprof
+# Enable pprof for debugging. When enabled, pprof is available over http
+# at the specified port
 enable_pprof: false
+pprof_port: 4065
 
 # Update checking functionality
 updater:

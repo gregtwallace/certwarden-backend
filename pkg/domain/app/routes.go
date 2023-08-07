@@ -110,15 +110,6 @@ func (app *Application) routes() http.Handler {
 	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/privatecerts/:name/*apiKey", app.download.DownloadPrivateCertViaUrl)
 	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/certrootchains/:name/*apiKey", app.download.DownloadCertRootChainViaUrl)
 
-	// debug pprof (if enabled or dev mode)
-	if *app.config.DevMode || *app.config.EnablePprof {
-		// log availability
-		app.logger.Infof("pprof debugging enabled and available at: %s", pprofUrlPath)
-
-		// handle pprof
-		app.makeHandle(http.MethodGet, pprofUrlPath+"/*any", pprofHandler)
-	}
-
 	// frontend (if enabled)
 	if *app.config.ServeFrontend {
 		// log availability

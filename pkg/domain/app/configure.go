@@ -33,6 +33,7 @@ type config struct {
 	CertificateName      *string           `yaml:"certificate_name"`
 	DevMode              *bool             `yaml:"dev_mode"`
 	EnablePprof          *bool             `yaml:"enable_pprof"`
+	PprofPort            *int              `yaml:"pprof_port"`
 	Updater              updater.Config    `yaml:"updater"`
 	Orders               orders.Config     `yaml:"orders"`
 	Challenges           challenges.Config `yaml:"challenges"`
@@ -46,6 +47,11 @@ func (c config) httpServAddress() string {
 // httpsAddress() returns formatted https server address string
 func (c config) httpsServAddress() string {
 	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.HttpsPort)
+}
+
+// pprofAddress() returns formatted pprov server address string
+func (c config) pprofServAddress() string {
+	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.PprofPort)
 }
 
 // readConfigFile parses the config yaml file. It also sets default config
@@ -92,6 +98,7 @@ func defaultConfig() (cfg *config) {
 		CertificateName:    new(string),
 		DevMode:            new(bool),
 		EnablePprof:        new(bool),
+		PprofPort:          new(int),
 		Updater: updater.Config{
 			AutoCheck: new(bool),
 			Channel:   new(updater.Channel),
@@ -153,6 +160,7 @@ func defaultConfig() (cfg *config) {
 	// dev mode
 	*cfg.DevMode = false
 	*cfg.EnablePprof = false
+	*cfg.PprofPort = 4065
 
 	// updater
 	*cfg.Updater.AutoCheck = true

@@ -28,6 +28,8 @@ import (
 	"time"
 )
 
+const maxShutdownTime = 30 * time.Second
+
 // RunLeGoAPI starts the application
 func RunLeGoAPI() {
 	// app context for shutdown
@@ -43,13 +45,18 @@ func RunLeGoAPI() {
 	}
 	defer app.CloseStorage()
 
+	// start pprof if enabled or in dev mode
+	if *app.config.DevMode || *app.config.EnablePprof {
+		app.startPprof()
+	}
+
 	// configure webserver
 	readTimeout := 5 * time.Second
 	writeTimeout := 10 * time.Second
 	// allow longer timeouts when in development
 	if *app.config.DevMode {
 		readTimeout = 15 * time.Second
-		writeTimeout = 30 * time.Second
+		writeTimeout = 120 * time.Second
 	}
 
 	// http server config
@@ -140,7 +147,6 @@ func RunLeGoAPI() {
 	stop()
 
 	// shutdown the main web server (and redirect server)
-	maxShutdownTime := 30 * time.Second
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), maxShutdownTime)
 		defer cancel()
