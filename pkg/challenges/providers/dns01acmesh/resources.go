@@ -43,7 +43,7 @@ func (service *Service) Deprovision(resourceName string, resourceContent string)
 	err := service.dnsRecords.Delete(resourceName)
 	if err != nil {
 		service.logger.Errorf("dns-01 (acme.sh) could not remove resource (%s) from "+
-			"internal map", resourceName)
+			"internal map (%s)", resourceName, err)
 		// do not return
 	}
 
