@@ -6,6 +6,7 @@ import (
 	"legocerthub-backend/pkg/datatypes"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"go.uber.org/zap"
 )
@@ -20,6 +21,7 @@ var (
 	errServiceComponent = errors.New("necessary dns-01 acme.sh component is missing")
 	errNoAcmeShPath     = errors.New("acme.sh path not specified in config")
 	errBashMissing      = errors.New("unable to find bash")
+	errWindows          = errors.New("acme.sh is not supported in windows, disable it")
 )
 
 // App interface is for connecting to the main app
@@ -52,6 +54,11 @@ func NewService(app App, config *Config) (*Service, error) {
 	// if disabled, return nil and no error
 	if !*config.Enable {
 		return nil, nil
+	}
+
+	// add error and fail for trying to run on windows
+	if runtime.GOOS == "windows" {
+		return nil, errWindows
 	}
 
 	// error if no path
