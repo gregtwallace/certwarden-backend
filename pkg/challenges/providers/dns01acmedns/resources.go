@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	ErrDomainNotConfigured = errors.New("dns01acmedns domain name not configured (restart lego if config was updated)")
-	ErrUpdateFailed        = errors.New("dns01acmedns failed to update domain ")
+	errDomainNotConfigured = errors.New("dns01acmedns domain name not configured (restart lego if config was updated)")
+	errUpdateFailed        = errors.New("dns01acmedns failed to update domain ")
 )
 
 // acmeDnsResource contains the needed configuration to update
@@ -38,9 +38,8 @@ type acmeDnsUpdate struct {
 	Txt       string `json:"txt"`
 }
 
-// updateRequest creates an update request for the adr hosted by the
-// acmeDnsAddress using the new resource content value specified
-func (service *Service) updateRequest(adr *acmeDnsResource, resourceContent string) (*http.Request, error) {
+// postUpdate posts the requested update to the acme dns server
+func (service *Service) postUpdate(adr *acmeDnsResource, resourceContent string) (*http.Response, error) {
 	// body of api call
 	payload := acmeDnsUpdate{
 		SubDomain: adr.subdomain(),
@@ -53,17 +52,18 @@ func (service *Service) updateRequest(adr *acmeDnsResource, resourceContent stri
 		return nil, err
 	}
 
-	// prepare api call to acme-dns to set the txt record
-	req, err := service.httpClient.NewRequest(http.MethodPost, service.acmeDnsAddress+acmeDnsUpdateEndpoint, bytes.NewBuffer(payloadJson))
+	// set auth headers
+	header := make(http.Header)
+	header.Set("X-Api-User", adr.Username)
+	header.Set("X-Api-Key", adr.Password)
+
+	// post to acme dns
+	resp, err := service.httpClient.PostWithHeader(service.acmeDnsAddress+acmeDnsUpdateEndpoint, "application/json", bytes.NewBuffer(payloadJson), header)
 	if err != nil {
 		return nil, err
 	}
 
-	// set auth headers
-	req.Header.Set("X-Api-User", adr.Username)
-	req.Header.Set("X-Api-Key", adr.Password)
-
-	return req, nil
+	return resp, nil
 }
 
 // Provision updates the acme-dns resource record with the correct content
@@ -81,27 +81,22 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 	// this package does not support registering new records, so fail if
 	// record was not found
 	if !found {
-		return ErrDomainNotConfigured
+		return errDomainNotConfigured
 	}
 
-	// make request
-	req, err := service.updateRequest(&adr, resourceContent)
+	// post update
+	resp, err := service.postUpdate(&adr, resourceContent)
 	if err != nil {
 		return err
 	}
 
-	// send request
-	resp, err := service.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-	// ready body & close
+	// read body & close
 	defer resp.Body.Close()
 	_, _ = io.Copy(io.Discard, resp.Body)
 
 	// if not status 200
 	if resp.StatusCode != http.StatusOK {
-		return ErrUpdateFailed
+		return errUpdateFailed
 	}
 
 	return nil
@@ -124,27 +119,22 @@ func (service *Service) Deprovision(resourceName string, resourceContent string)
 	// this package does not support registering new records, so fail if
 	// record was not found
 	if !found {
-		return ErrDomainNotConfigured
+		return errDomainNotConfigured
 	}
 
 	// make request (dummy text value when not in use)
-	req, err := service.updateRequest(&adr, "VOID_____VOID______VOID_______VOID_____VOID")
+	resp, err := service.postUpdate(&adr, "VOID_____VOID______VOID_______VOID_____VOID")
 	if err != nil {
 		return err
 	}
 
-	// send request
-	resp, err := service.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-	// ready body & close
+	// read body & close
 	defer resp.Body.Close()
 	_, _ = io.Copy(io.Discard, resp.Body)
 
 	// if not status 200
 	if resp.StatusCode != http.StatusOK {
-		return ErrUpdateFailed
+		return errUpdateFailed
 	}
 
 	return nil

@@ -59,7 +59,6 @@ certificate_name: legocerthub
 # This should NOT be used in production!
 # Specific changes:
 # - Increased web server read/write timeouts
-# - Increased http client timeouts
 # - Allow 404 errors to be returned (in prod, 401 is returned instead of 404
 #   to obfuscate if a route is valid or not)
 # - Set log level to debug

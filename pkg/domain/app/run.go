@@ -247,7 +247,7 @@ func create(ctx context.Context) (*Application, error) {
 
 	// create http client
 	userAgent := fmt.Sprintf("LeGoCertHub/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
-	app.httpClient = httpclient.New(userAgent, *app.config.DevMode)
+	app.httpClient = httpclient.New(userAgent)
 
 	// output service
 	app.output, err = output.NewService(app)

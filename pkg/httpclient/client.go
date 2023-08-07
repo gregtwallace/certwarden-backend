@@ -2,7 +2,6 @@ package httpclient
 
 import (
 	"io"
-	"net"
 	"net/http"
 	"time"
 )
@@ -14,98 +13,80 @@ type Client struct {
 	userAgent string
 }
 
-// New creates a new http client using the custom struct. It also
-// specifies timeout options so the client behaves sanely.
-func New(userAgent string, devMode bool) (client *Client) {
-	// make default timeouts lower
-	dialTimeout := 5 * time.Second
-	tlsTimeout := 5 * time.Second
-	clientTimeout := 10 * time.Second
-
-	// if development, allow higher timeouts
-	if devMode {
-		dialTimeout = 30 * time.Second
-		tlsTimeout = 30 * time.Second
-		clientTimeout = 30 * time.Second
-	}
-
-	// configure transport
-	transport := &http.Transport{
-		Dial: (&net.Dialer{
-			Timeout: dialTimeout,
-		}).Dial,
-		TLSHandshakeTimeout: tlsTimeout,
-		// raise max connections per host
-		MaxConnsPerHost:     25,
-		MaxIdleConnsPerHost: 25,
-	}
-
+// New creates a new Client.  Client is just an http.Client with some wrapping to
+// add user-agent and accept-language headers
+func New(userAgent string) (client *Client) {
 	// create *Client
-	client = new(Client)
-	client.http.Timeout = clientTimeout
-	client.http.Transport = transport
-	client.userAgent = userAgent
+	client = &Client{
+		http: http.Client{
+			// set client timeout
+			Timeout:   30 * time.Second,
+			Transport: http.DefaultTransport,
+		},
+		userAgent: userAgent,
+	}
 
 	return client
 }
 
-// newRequest creates an http request for the client to later do
-func (client *Client) NewRequest(method string, url string, body io.Reader) (*http.Request, error) {
-	request, err := http.NewRequest(method, url, body)
+// do creates a request with the specified parameters, modifies it in accord with ACME
+// spec and then executes the request
+func (c *Client) do(method string, url string, body io.Reader, addlHeader http.Header) (*http.Response, error) {
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
 	}
 
+	// add any additionally specified headers
+	for k, v := range addlHeader {
+		for _, i := range v {
+			req.Header.Add(k, i)
+		}
+	}
+
+	// use Set below to ensure override of any 'addlHeaders' that may conflict
+
 	// set user agent, required per RFC8555 6.1
-	request.Header.Set("User-Agent", client.userAgent)
+	req.Header.Set("User-Agent", c.userAgent)
 
 	// set preferred language (SHOULD do this per RFC 8555, 6.1)
 	// TODO: Implement user choice?
-	request.Header.Set("Accept-Language", "en-US, en;q=0.8")
+	req.Header.Set("Accept-Language", "en-US, en;q=0.8")
 
-	return request, nil
-}
-
-// do does the specified request
-func (client *Client) Do(request *http.Request) (*http.Response, error) {
-	response, err := client.http.Do(request)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	return response, nil
+	return resp, nil
 }
 
 // Get does a get request to the specified url
-func (client *Client) Get(url string) (*http.Response, error) {
-	request, err := client.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return client.Do(request)
+func (c *Client) Get(url string) (*http.Response, error) {
+	return c.do(http.MethodGet, url, nil, nil)
 }
 
 // Head does a head request to the specified url
 // a head request is the same as Get but without the body
-func (client *Client) Head(url string) (*http.Response, error) {
-	request, err := client.NewRequest(http.MethodHead, url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return client.Do(request)
+func (c *Client) Head(url string) (*http.Response, error) {
+	return c.do(http.MethodHead, url, nil, nil)
 }
 
-// Post does a post request using the specified url, content type, and
-// body
-func (client *Client) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
-	request, err := client.NewRequest("POST", url, body)
-	if err != nil {
-		return nil, err
+// PostWithHeader does a post request using the specified url, content type, body,
+// and additionally specified headers.
+func (c *Client) PostWithHeader(url string, contentType string, body io.Reader, header http.Header) (resp *http.Response, err error) {
+	// if no headers, make empty for Content-Type
+	if header == nil {
+		header = make(http.Header)
 	}
 
-	request.Header.Set("Content-Type", contentType)
+	// explicitly set (override) content type header
+	header.Set("Content-Type", contentType)
 
-	return client.Do(request)
+	return c.do(http.MethodPost, url, body, header)
+}
+
+// Post does a post request using the specified url, content type, and body
+func (c *Client) Post(url string, contentType string, body io.Reader) (resp *http.Response, err error) {
+	return c.PostWithHeader(url, contentType, body, nil)
 }
