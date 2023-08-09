@@ -145,19 +145,24 @@ challenges:
           password: QWDP...b2Mg
     # acme.sh scripts (https://github.com/acmesh-official/acme.sh)
     # complete dns-01 challenges with any provider supported by acme.sh
-    # you will need to clone the repo and specify where the files are located
     dns_01_acme_sh:
+      # enable acme.sh method?
       enable: false
       # path to the acme.sh script. /dnsapi subfolder must also exist and contain
       # the script for the relevant dns provider (hook script)
+      # acme.sh is installed with LeGo by default at the default path so
+      # you should not need to change this
       acme_sh_path: ./scripts/acme.sh
-      # for needed environment vars, review the relevant hook script
-      # within acme.sh/dnsapi
+      # for environment and dns_hook, see:
+      # https://github.com/acmesh-official/acme.sh/wiki/dnsapi
+      # environment vars are the 'export' items listed at the above URL for your
+      # specific dns provider
       environment:
         - 'MY_EXPORT_VAR=some_value'
         - 'ANOTHER_EXPORT_ENV=another_value'
-      # the --dns hook_name from acme.sh, this will match a filename in the
-      # acme.sh/dnsapi path
+      # dns_hook is the text after the '--dns' flag in the command listed after the
+      # text 'let's issue a cert now:' for your specific dns provider at the above
+      # URL
       dns_hook: dns_cf
 
     # dns-01 via LeGo Cloudflare integration
