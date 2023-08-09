@@ -24,12 +24,12 @@ func (service *Service) FulfillAuths(authUrls []string, method challenges.Method
 	// fulfill each auth concurrently
 	// TODO: Add context to cancel everything if any auth fails / invalid?
 	for i := range authUrls {
-		go func(authUrl string, method challenges.Method, key acme.AccountKey, acmeServerId int) {
+		go func(authUrl string) {
 			defer wg.Done()
 			status, err = service.fulfillAuth(authUrl, method, key, acmeServerId)
 			wgStatuses <- status
 			wgErrors <- err
-		}(authUrls[i], method, key, acmeServerId)
+		}(authUrls[i])
 	}
 
 	// wait for all auths to do their thing
@@ -87,12 +87,12 @@ func (service *Service) fulfillAuth(authUrl string, method challenges.Method, ke
 	}
 
 	// defer removing auth once it has been worked
-	defer func(authUrl string, service *Service) {
+	defer func() {
 		err := service.authsBeingWorked.Remove(authUrl)
 		if err != nil {
 			service.logger.Error(err)
 		}
-	}(authUrl, service)
+	}()
 
 	// work the auth
 	status, err = service.authWorker(authUrl, method, key, acmeServerId)
