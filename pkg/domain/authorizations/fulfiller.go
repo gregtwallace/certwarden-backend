@@ -66,7 +66,7 @@ func (service *Service) fulfillAuth(authUrl string, method challenges.Method, ke
 	// block and return the cached result. If the cached result is an error, try to work
 	// the auth again.
 	for {
-		exists, signal := service.working.add(authUrl)
+		exists, signal := service.authsBeingWorked.Add(authUrl)
 		// if doesn't exist (not working) break from loop and call worker
 		if !exists {
 			break
@@ -88,7 +88,7 @@ func (service *Service) fulfillAuth(authUrl string, method challenges.Method, ke
 
 	// defer removing auth once it has been worked
 	defer func(authUrl string, service *Service) {
-		err := service.working.remove(authUrl)
+		err := service.authsBeingWorked.Remove(authUrl)
 		if err != nil {
 			service.logger.Error(err)
 		}

@@ -3,6 +3,7 @@ package authorizations
 import (
 	"errors"
 	"legocerthub-backend/pkg/challenges"
+	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/domain/acme_servers"
 
 	"go.uber.org/zap"
@@ -23,8 +24,8 @@ type Service struct {
 	logger            *zap.SugaredLogger
 	acmeServerService *acme_servers.Service
 	challenges        *challenges.Service
-	working           *working // tracks auths being worked
-	cache             *cache   // tracks results of auths after worked
+	authsBeingWorked  *datatypes.WorkTracker // tracks auths being worked
+	cache             *cache                 // tracks results of auths after worked
 }
 
 // NewService creates a new service
@@ -50,7 +51,7 @@ func NewService(app App) (service *Service, err error) {
 	}
 
 	// initialize working
-	service.working = newWorking()
+	service.authsBeingWorked = datatypes.NewWorkTracker()
 
 	// initialize cache
 	service.cache = newCache()
