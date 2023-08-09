@@ -34,9 +34,11 @@ const dataStoragePath = "./data"
 
 // Application is the main app struct
 type Application struct {
+	restart           bool
 	config            *config
 	logger            *zap.SugaredLogger
 	shutdownContext   context.Context
+	shutdown          func(restart bool)
 	shutdownWaitgroup *sync.WaitGroup
 	httpsCert         *datatypes.SafeCert
 	httpClient        *httpclient.Client
@@ -64,8 +66,6 @@ func (app *Application) CloseStorage() {
 		app.logger.Info("storage closed")
 	}
 }
-
-//
 
 // return various app parts which are used as needed by services
 func (app *Application) GetAppVersion() string {

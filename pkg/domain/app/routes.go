@@ -35,6 +35,13 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/log", app.viewCurrentLogHandler)
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/logs", app.downloadLogsHandler)
 
+	// app control
+	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/shutdown", app.doShutdownHandler)
+	// TODO: Allow restart - there is a go routine leak in lumberjack logger package that makes rebooting
+	// with this method untenable.
+	// see: https://github.com/natefinch/lumberjack/issues/56
+	//app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/restart", app.doRestartHandler)
+
 	// updater
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/new-version", app.updater.GetNewVersionInfo)
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/new-version", app.updater.CheckForNewVersion)

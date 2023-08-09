@@ -30,14 +30,24 @@ import (
 
 const maxShutdownTime = 30 * time.Second
 
-// RunLeGoAPI starts the application
+// RunLeGoAPI starts the application and also contains restart logic
 func RunLeGoAPI() {
-	// app context for shutdown
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+	// run and restart if appropriate
+	for {
+		restart := run()
 
+		if !restart {
+			break
+		}
+	}
+
+	// done, app exit
+}
+
+// run starts an instance of the application
+func run() (restart bool) {
 	// create the app
-	app, err := create(ctx)
+	app, err := create()
 	if err != nil {
 		app.logger.Errorf("failed to create app (%s)", err)
 		os.Exit(1)
@@ -143,9 +153,6 @@ func RunLeGoAPI() {
 	// wait for shutdown context to signal
 	<-app.shutdownContext.Done()
 
-	// disable shutdown context listener (allows for ctrl-c again to force close)
-	stop()
-
 	// shutdown the main web server (and redirect server)
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), maxShutdownTime)
@@ -188,17 +195,25 @@ func RunLeGoAPI() {
 		app.logger.Panic("shutdown procedure failed (timed out)")
 	}
 
-	// close storage
-	app.CloseStorage()
+	// log based on if trying to restart
+	if app.restart {
+		app.logger.Infow("shutdown complete, restarting lego")
+	} else {
+		app.logger.Info("shutdown complete")
+	}
 
-	// done
-	app.logger.Info("shutdown complete")
-	os.Exit(0)
+	// restart return var
+	restart = app.restart
+
+	// nil app
+	app = nil
+
+	return restart
 }
 
 // create creates an app object with logger, storage, and all needed
 // services
-func create(ctx context.Context) (*Application, error) {
+func create() (*Application, error) {
 	app := new(Application)
 	var err error
 
@@ -234,8 +249,40 @@ func create(ctx context.Context) (*Application, error) {
 		app.logger.Errorf("config.yaml config_version (%d) does not match app (%d), review config change log", app.config.ConfigVersion, configVersion)
 	}
 
-	// shutdown context and waitgroup for graceful shutdown
-	app.shutdownContext = ctx
+	// context for shutdown OS signal
+	osSignalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	// wait for the OS signal and then stop listening and call shutdown
+	go func() {
+		<-osSignalCtx.Done()
+
+		// disable shutdown context listener (allows for ctrl-c again to force close)
+		stop()
+
+		app.logger.Info("os signal received for shutdown")
+
+		// do shutdown
+		app.shutdown(false)
+	}()
+
+	// shutdown context with func to call graceful shutdown
+	shutdownContext, doShutdown := context.WithCancel(context.Background())
+	app.shutdownContext = shutdownContext
+	// this func is called to shutdown app
+	app.shutdown = func(restart bool) {
+		if restart {
+			app.logger.Info("graceful restart triggered")
+		} else {
+			app.logger.Info("graceful shutdown triggered")
+		}
+
+		// stop os signal listening
+		stop()
+
+		// shutdown
+		doShutdown()
+	}
+
+	// wait group for graceful shutdown
 	app.shutdownWaitgroup = new(sync.WaitGroup)
 
 	// is the server in development mode?
