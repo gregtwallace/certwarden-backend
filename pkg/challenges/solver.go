@@ -37,7 +37,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	defer func() {
 		err := service.Deprovision(identifier, method, key, challenge.Token)
 		if err != nil {
-			service.logger.Error(err)
+			service.logger.Errorf("challenge solver deprovision failed (%s)", err)
 		}
 	}()
 

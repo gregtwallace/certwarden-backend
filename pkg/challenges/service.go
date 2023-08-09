@@ -10,6 +10,7 @@ import (
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
+	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/httpclient"
 	"sync"
@@ -55,16 +56,13 @@ type Config struct {
 
 // service struct
 type Service struct {
-	shutdownContext          context.Context
-	logger                   *zap.SugaredLogger
-	acmeServerService        *acme_servers.Service
-	dnsChecker               *dns_checker.Service
-	providers                map[MethodValue]providerService
-	methodsWithStatus        []MethodWithStatus
-	resourceNamesProvisioned struct {
-		names map[string]struct{} // use struct since no memory alloc
-		mu    sync.Mutex
-	}
+	shutdownContext    context.Context
+	logger             *zap.SugaredLogger
+	acmeServerService  *acme_servers.Service
+	dnsChecker         *dns_checker.Service
+	providers          map[MethodValue]providerService
+	methodsWithStatus  []MethodWithStatus
+	resourceNamesInUse *datatypes.WorkTracker // tracks all resource names currently in use (regardless of provider)
 }
 
 // NewService creates a new service
@@ -175,7 +173,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	}
 
 	// make tracking map
-	service.resourceNamesProvisioned.names = make(map[string]struct{})
+	service.resourceNamesInUse = datatypes.NewWorkTracker()
 
 	return service, nil
 }

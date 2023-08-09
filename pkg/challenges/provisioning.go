@@ -11,12 +11,12 @@ import (
 var (
 	errUnsupportedMethod = errors.New("unsupported or disabled challenge method")
 	errShutdown          = errors.New("adding challenge record aborted due to shutdown")
-	errUnavailableName   = errors.New("failed to add challenge record due to name availability time out")
+	errNameUnavailable   = errors.New("failed to add challenge record due to resource name never becoming free (timeout)")
 )
 
-// Provision generates the needed ACME challenge resource (to validate
-// the challenge) and then provisions that resource using the Method's
-// provider.
+// Provision generates the needed ACME challenge resource (to validate the challenge) and then provisions that
+// resource using the Method's provider. It also adds the resource name to the tracking map to prevent duplicate
+// resources from attempting to provision at the same time.
 func (service *Service) Provision(identifier acme.Identifier, method Method, key acme.AccountKey, token string) (err error) {
 	// calculate the needed resource
 	resourceName, resourceContent, err := method.validationResource(identifier, key, token)
@@ -24,39 +24,34 @@ func (service *Service) Provision(identifier acme.Identifier, method Method, key
 		return err
 	}
 
-	// exists tracker for loop (start as true which makes loop execute)
-	exists := true
-
-	// retry loop
-	for i := 1; exists; i++ {
-		// lock, read, write if name is available, unlock
-		service.resourceNamesProvisioned.mu.Lock()
-		_, exists = service.resourceNamesProvisioned.names[resourceName]
-		if !exists {
-			service.resourceNamesProvisioned.names[resourceName] = struct{}{}
-		}
-		service.resourceNamesProvisioned.mu.Unlock()
-
-		// if writing succeeded, done with loop
-		if !exists {
+	// loop to add resource name to those currently provisioned and wait if not available
+	// if multiple callers are in the waiting state, it is random which will execute next
+	for {
+		// add resource name to in use
+		alreadyExisted, signal := service.resourceNamesInUse.Add(resourceName)
+		// if didn't already exist, break loop and provision
+		if !alreadyExisted {
+			service.logger.Debugf("added resource name %s to challenge work tracker", resourceName)
 			break
 		}
 
-		// if loop failed 12th time, error out
-		if i >= 12 {
-			service.logger.Error(errUnavailableName)
-			return errUnavailableName
-		}
+		service.logger.Debugf("unable to add resource name %s to challenge work tracker; waiting for name to become free", resourceName)
 
-		// sleep or cancel/error if shutdown is called
+		// block until name is free, timeout, or shutdown is called
 		select {
+		// signal channel close indicating resource name should now be available
+		case <-signal:
+			// continue loop (i.e. retry adding)
+
+		// shutdown - return error
 		case <-service.shutdownContext.Done():
-			// cancel/error if shutting down
 			return errShutdown
 
-		case <-time.After(time.Duration(i) * 15 * time.Second):
-			// sleep and retry
+		// timeout - return error if blocked for an hour (should never happen, but just in case to prevent hang)
+		case <-time.After(1 * time.Hour):
+			return errNameUnavailable
 		}
+
 	}
 
 	// confirm provider is available
@@ -88,7 +83,9 @@ func (service *Service) Provision(identifier acme.Identifier, method Method, key
 	return nil
 }
 
-// Deprovision removes the ACME challenge resource from the Method's provider.
+// Deprovision generates the needed ACME challenge resource (to validate the challenge) and then deprovisions that
+// resource using the Method's provider. It also removes the resource name from the tracking map to indicate the
+// name is now available for re-use.
 func (service *Service) Deprovision(identifier acme.Identifier, method Method, key acme.AccountKey, token string) (err error) {
 	// calculate the needed resource
 	resourceName, resourceContent, err := method.validationResource(identifier, key, token)
@@ -96,12 +93,14 @@ func (service *Service) Deprovision(identifier acme.Identifier, method Method, k
 		return err
 	}
 
-	// delete resource from tracker (after the rest of the func is done)
+	// delete resource name from tracker (after the rest of the deprovisioning steps are done or failed)
 	defer func() {
-		// lock, delete, unlock
-		service.resourceNamesProvisioned.mu.Lock()
-		delete(service.resourceNamesProvisioned.names, resourceName)
-		service.resourceNamesProvisioned.mu.Unlock()
+		err := service.resourceNamesInUse.Remove(resourceName)
+		if err != nil {
+			service.logger.Errorf("failed to remove resource name %s from work tracker (%s)", resourceName, err)
+		} else {
+			service.logger.Debugf("removed resource name %s from challenge work tracker", resourceName)
+		}
 	}()
 
 	// confirm provider is available
