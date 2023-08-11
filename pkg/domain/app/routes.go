@@ -36,8 +36,8 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/logs", app.downloadLogsHandler)
 
 	// app control
-	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/shutdown", app.doShutdownHandler)
-	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/restart", app.doRestartHandler)
+	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/control/shutdown", app.doShutdownHandler)
+	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/control/restart", app.doRestartHandler)
 
 	// updater
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/new-version", app.updater.GetNewVersionInfo)
