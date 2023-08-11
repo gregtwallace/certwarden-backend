@@ -47,12 +47,11 @@ serve_frontend: true
 # In most cases, this should not be used.
 cors_permitted_origins: []
 
-# API Server's key and cert
-# These names should match the 'name' field of the desired key and cert within
-# the application.
-# If not specified (or invalid), a self-signed cert is created on each launch
-# until proper values are specified.
-private_key_name: legocerthub
+# LeGo Server's https certificate
+# The name should match the 'name' field of the desired certificate in the
+# application. They relevant key is deduced based on the certificate.
+# If not specified (or invalid), the application launches over http instead
+# of https.
 certificate_name: legocerthub
 
 # Development mode

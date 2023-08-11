@@ -29,7 +29,6 @@ type config struct {
 	LogLevel             *string           `yaml:"log_level"`
 	ServeFrontend        *bool             `yaml:"serve_frontend"`
 	CORSPermittedOrigins []string          `yaml:"cors_permitted_origins"`
-	PrivateKeyName       *string           `yaml:"private_key_name"`
 	CertificateName      *string           `yaml:"certificate_name"`
 	DevMode              *bool             `yaml:"dev_mode"`
 	EnablePprof          *bool             `yaml:"enable_pprof"`
@@ -94,7 +93,6 @@ func defaultConfig() (cfg *config) {
 		EnableHttpRedirect: new(bool),
 		LogLevel:           new(string),
 		ServeFrontend:      new(bool),
-		PrivateKeyName:     new(string),
 		CertificateName:    new(string),
 		DevMode:            new(bool),
 		EnablePprof:        new(bool),
@@ -153,8 +151,7 @@ func defaultConfig() (cfg *config) {
 	*cfg.ServeFrontend = true
 	cfg.CORSPermittedOrigins = []string{}
 
-	// key/cert
-	*cfg.PrivateKeyName = "legocerthub"
+	// LeGo https certificate name
 	*cfg.CertificateName = "legocerthub"
 
 	// dev mode

@@ -93,23 +93,23 @@ func (app *Application) newAppCert() (*datatypes.SafeCert, error) {
 
 // getAppCertFromStorage returns the current key/cert pair for the app
 func (app *Application) getAppCertFromStorage() (*tls.Certificate, error) {
-	// get key and cert for API server
-	key, err := app.storage.GetOneKeyByName(*app.config.PrivateKeyName)
-	if err != nil {
-		return nil, err
-	}
-
+	// get order for LeGo server
 	order, err := app.storage.GetCertNewestValidOrderByName(*app.config.CertificateName)
 	if err != nil {
 		return nil, err
 	}
 
-	// nil check of pem
+	// nil check of key
+	if order.FinalizedKey == nil {
+		return nil, errors.New("tls key pem is empty")
+	}
+
+	// nil check of cert pem
 	if order.Pem == nil {
 		return nil, errors.New("tls cert pem is empty")
 	}
 
-	tlsCert, err := tls.X509KeyPair([]byte(*order.Pem), []byte(key.Pem))
+	tlsCert, err := tls.X509KeyPair([]byte(*order.Pem), []byte(order.FinalizedKey.Pem))
 	if err != nil {
 		return nil, err
 	}
