@@ -18,7 +18,7 @@ func (app *Application) doShutdownHandler(w http.ResponseWriter, r *http.Request
 		return err
 	}
 
-	app.logger.Infow("client %s triggered graceful shutdown via api", r.RemoteAddr)
+	app.logger.Infof("client %s triggered graceful shutdown via api", r.RemoteAddr)
 	app.shutdown(false)
 
 	return nil
@@ -38,7 +38,7 @@ func (app *Application) doShutdownHandler(w http.ResponseWriter, r *http.Request
 // 		return err
 // 	}
 
-// 	app.logger.Infow("client %s triggered graceful restart via api", r.RemoteAddr)
+// 	app.logger.Infof("client %s triggered graceful restart via api", r.RemoteAddr)
 // 	app.shutdown(true)
 
 // 	return nil
