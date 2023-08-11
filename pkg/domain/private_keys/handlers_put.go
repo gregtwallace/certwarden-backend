@@ -88,7 +88,7 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (er
 		ID:      payload.ID,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}

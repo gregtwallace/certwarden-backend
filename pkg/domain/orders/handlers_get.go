@@ -61,7 +61,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) (e
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, response, "all_orders")
+	err = service.output.WriteJSON(w, http.StatusOK, response, "all_orders")
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, response, "valid_current_orders")
+	err = service.output.WriteJSON(w, http.StatusOK, response, "valid_current_orders")
 	if err != nil {
 		return err
 	}

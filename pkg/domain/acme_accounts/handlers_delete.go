@@ -46,7 +46,7 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) (e
 		ID:      id,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}

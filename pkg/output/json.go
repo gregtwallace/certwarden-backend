@@ -23,22 +23,24 @@ func wrapJSON(data interface{}, wrap string) map[string]interface{} {
 }
 
 // WriteJSON wraps data in the specified wrap, marshals it to json, and then writes the
-// json to the ResponseWriter with the specified status code. The string of json that was
-// written is returned, or an error if writing failed.
-func (service *Service) WriteJSON(w http.ResponseWriter, status int, data interface{}, wrap string) (jsonWritten string, err error) {
+// json to the ResponseWriter with the specified status code. An error is returned if
+// writing failed.
+func (service *Service) WriteJSON(w http.ResponseWriter, status int, data interface{}, wrap string) error {
 	var jsonBytes []byte
+	var err error
 
+	// wrap the data
 	wrappedData := wrapJSON(data, wrap)
 
+	// make it pretty if in dev
 	if service.devMode {
 		jsonBytes, err = json.MarshalIndent(wrappedData, "", "\t")
 	} else {
 		jsonBytes, err = json.Marshal(wrappedData)
 	}
-
 	if err != nil {
 		service.logger.Errorf("error marshalling json (%s)", err)
-		return "", errWriteJsonError
+		return errWriteJsonError
 	}
 
 	return service.WriteMarshalledJSON(w, status, jsonBytes)
@@ -46,25 +48,25 @@ func (service *Service) WriteJSON(w http.ResponseWriter, status int, data interf
 
 // WriteMarshalledJSON assumes the data is already marshalled correctly. It just writes the json
 // to the ResponseWriter with the specified status code.
-// The string of json that was written is returned, or an error if writing failed.
-func (service *Service) WriteMarshalledJSON(w http.ResponseWriter, status int, marshalledData []byte) (jsonWritten string, err error) {
+// An error is returned if writing failed.
+func (service *Service) WriteMarshalledJSON(w http.ResponseWriter, status int, marshalledData []byte) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	_, err = w.Write(marshalledData)
+	_, err := w.Write(marshalledData)
 	if err != nil {
 		service.logger.Errorf("error writing json (%s)", err)
-		return "", errWriteJsonError
+		return errWriteJsonError
 	}
 
-	return string(marshalledData), nil
+	return nil
 }
 
 // WriteErrorJSON marshals the specified error and then writes it to the ResponseWriter.
 // There are some special error types that are addressed on a case by case basis, otherwise
 // there is a generic format.
-// The string of json that was written is returned, or an error if writing failed.
-func (service *Service) WriteErrorJSON(w http.ResponseWriter, err error) (jsonWritten string, writeErr error) {
+// An error is returned if writing failed.
+func (service *Service) WriteErrorJSON(w http.ResponseWriter, err error) error {
 	// special cases for specific error structs
 	switch err := err.(type) {
 	// output Error

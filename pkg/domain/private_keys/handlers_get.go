@@ -42,7 +42,7 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, response, "all_private_keys")
+	err = service.output.WriteJSON(w, http.StatusOK, response, "all_private_keys")
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, key.detailedResponse(service.https || service.devMode), "private_key")
+	err = service.output.WriteJSON(w, http.StatusOK, key.detailedResponse(service.https || service.devMode), "private_key")
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request)
 	newKeyOptions.KeyAlgorithms = key_crypto.ListOfAlgorithms()
 
 	// return response to client
-	_, err := service.output.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
+	err := service.output.WriteJSON(w, http.StatusOK, newKeyOptions, "private_key_options")
 	if err != nil {
 		return err
 	}

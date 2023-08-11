@@ -40,7 +40,7 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) (
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, response, "all_acme_accounts")
+	err = service.output.WriteJSON(w, http.StatusOK, response, "all_acme_accounts")
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (e
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, account.detailedResponse(acmeService), "acme_account")
+	err = service.output.WriteJSON(w, http.StatusOK, account.detailedResponse(acmeService), "acme_account")
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Requ
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, newAccountOptions, "acme_account_options")
+	err = service.output.WriteJSON(w, http.StatusOK, newAccountOptions, "acme_account_options")
 	if err != nil {
 		return err
 	}

@@ -79,7 +79,7 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 	// write auth cookies (part of response)
 	auth.writeCookies(w)
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 	// write auth cookies (part of response)
 	auth.writeCookies(w)
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err erro
 	// delete auth cookies (part of response)
 	service.deleteAuthCookies(w)
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (
 	response.Message = "password changed"
 	response.ID = userId
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}

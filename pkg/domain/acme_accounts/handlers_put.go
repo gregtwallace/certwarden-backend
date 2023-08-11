@@ -71,7 +71,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 		ID:      payload.ID,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}
@@ -163,7 +163,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) (err
 		ID:      id,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}
@@ -261,7 +261,7 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) (err
 		ID:      payload.ID,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}

@@ -52,7 +52,7 @@ func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) (er
 		ID:      id,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}

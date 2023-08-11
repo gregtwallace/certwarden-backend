@@ -44,7 +44,7 @@ func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) (e
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, response, "all_acme_servers")
+	err = service.output.WriteJSON(w, http.StatusOK, response, "all_acme_servers")
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (service *Service) GetOneServer(w http.ResponseWriter, r *http.Request) (er
 	}
 
 	// return response to client
-	_, err = service.output.WriteJSON(w, http.StatusOK, detailedResp, "acme_server")
+	err = service.output.WriteJSON(w, http.StatusOK, detailedResp, "acme_server")
 	if err != nil {
 		return err
 	}

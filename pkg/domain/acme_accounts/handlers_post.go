@@ -96,7 +96,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (
 		ID:      id,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}

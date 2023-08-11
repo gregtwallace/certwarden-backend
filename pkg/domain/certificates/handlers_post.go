@@ -195,7 +195,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 		ID:      id,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}
@@ -247,7 +247,7 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) (
 		Message: "new api key created", // TODO?
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}

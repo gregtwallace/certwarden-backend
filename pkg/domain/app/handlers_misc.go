@@ -25,7 +25,7 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 		ConfigVersionMatch: app.config.ConfigVersion == configVersion,
 	}
 
-	_, err = app.output.WriteJSON(w, http.StatusOK, currentStatus, "server")
+	err = app.output.WriteJSON(w, http.StatusOK, currentStatus, "server")
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (app *Application) notFoundHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// return error
-	_, err = app.output.WriteErrorJSON(w, outError)
+	err = app.output.WriteErrorJSON(w, outError)
 	if err != nil {
 		return err
 	}

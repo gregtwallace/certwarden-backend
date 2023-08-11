@@ -86,7 +86,7 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (
 		ID:      idParam,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) (err 
 		ID:      idParam,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}

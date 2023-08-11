@@ -42,7 +42,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) (err er
 		ID:      orderId,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 		ID:      orderId,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) (err
 		ID:      orderId,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}

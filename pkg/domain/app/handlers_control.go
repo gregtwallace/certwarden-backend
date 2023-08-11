@@ -14,7 +14,7 @@ func (app *Application) doShutdownHandler(w http.ResponseWriter, r *http.Request
 		Message: "lego shutdown triggered",
 	}
 
-	_, err = app.output.WriteJSON(w, http.StatusOK, response, "response")
+	err = app.output.WriteJSON(w, http.StatusOK, response, "response")
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func (app *Application) doRestartHandler(w http.ResponseWriter, r *http.Request)
 		Message: "lego restart triggered",
 	}
 
-	_, err = app.output.WriteJSON(w, http.StatusOK, response, "response")
+	err = app.output.WriteJSON(w, http.StatusOK, response, "response")
 	if err != nil {
 		return err
 	}

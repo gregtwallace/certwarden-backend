@@ -82,7 +82,7 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) (e
 		ID:      serverId,
 	}
 
-	_, err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
 		return err
 	}
