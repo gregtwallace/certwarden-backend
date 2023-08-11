@@ -41,18 +41,23 @@ func (service *Service) WriteJSON(w http.ResponseWriter, status int, data interf
 		return "", errWriteJsonError
 	}
 
-	// service.logger.Debugf("writing json to client (%s)", wrap)
+	return service.WriteMarshalledJSON(w, status, jsonBytes)
+}
 
+// WriteMarshalledJSON assumes the data is already marshalled correctly. It just writes the json
+// to the ResponseWriter with the specified status code.
+// The string of json that was written is returned, or an error if writing failed.
+func (service *Service) WriteMarshalledJSON(w http.ResponseWriter, status int, marshalledData []byte) (jsonWritten string, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	_, err = w.Write(jsonBytes)
+	_, err = w.Write(marshalledData)
 	if err != nil {
 		service.logger.Errorf("error writing json (%s)", err)
 		return "", errWriteJsonError
 	}
 
-	return string(jsonBytes), nil
+	return string(marshalledData), nil
 }
 
 // WriteErrorJSON marshals the specified error and then writes it to the ResponseWriter.

@@ -3,7 +3,6 @@ package app
 import (
 	"archive/zip"
 	"bytes"
-	"encoding/json"
 	"io"
 	"legocerthub-backend/pkg/output"
 	"net/http"
@@ -13,13 +12,13 @@ import (
 )
 
 // logEntry represents the structure of the zap log
-type logEntry struct {
-	Level      string `json:"level"`
-	TimeStamp  string `json:"ts"`
-	Caller     string `json:"caller"`
-	Message    string `json:"msg"`
-	StackTrace string `json:"stacktrace,omitempty"`
-}
+// type logEntry struct {
+// 	Level      string `json:"level"`
+// 	TimeStamp  string `json:"ts"`
+// 	Caller     string `json:"caller"`
+// 	Message    string `json:"msg"`
+// 	StackTrace string `json:"stacktrace,omitempty"`
+// }
 
 // viewLogHandler is a handler that returns the content of the current log file to the client
 func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Request) (err error) {
@@ -32,27 +31,18 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 	defer logFile.Close()
 
 	// read in the log file
-	logBytes, err := io.ReadAll(logFile)
-	if err != nil {
-		app.logger.Error(err)
-		return output.ErrInternal
-	}
-	// manipulate the log to make it proper json
-	jsonBytes := []byte("[")
-	jsonBytes = append(jsonBytes, logBytes...)
-	jsonBytes = append(jsonBytes, []byte("{}]")...) // add empty item because final log ends in ,
-
-	// unmarshal to cleanup the json
-	var logsJson []logEntry
-	err = json.Unmarshal(jsonBytes, &logsJson)
-	if err != nil {
-		app.logger.Error(err)
-		return output.ErrInternal
-	}
+	logBuffer := &bytes.Buffer{}
+	// add opening wrap and bracket for json
+	_, _ = logBuffer.WriteString("{\"log_entries\": [")
+	_, _ = io.Copy(logBuffer, logFile)
+	// remove line break and comma after last log item
+	logBuffer.Truncate(logBuffer.Len() - 2)
+	// add end of json
+	_, _ = logBuffer.WriteString("]}")
 
 	// output
 	// Note: len -1 is to remove the last empty item
-	_, err = app.output.WriteJSON(w, http.StatusOK, logsJson[:len(logsJson)-1], "log_entries")
+	_, err = app.output.WriteMarshalledJSON(w, http.StatusOK, logBuffer.Bytes())
 	if err != nil {
 		return err
 	}
