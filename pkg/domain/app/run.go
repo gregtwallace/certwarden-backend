@@ -49,7 +49,9 @@ func run() (restart bool) {
 		app.logger.Debug("flushing (syncing) logger and closing underlying log file")
 		// log if trying to restart, before closing logger
 		if app.restart {
-			app.logger.Infof("restarting lego")
+			app.logger.Info("restarting lego")
+		} else {
+			app.logger.Info("lego shutdown complete")
 		}
 		app.logger.syncAndClose()
 

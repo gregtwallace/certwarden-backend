@@ -72,7 +72,13 @@ func create() (*Application, error) {
 		// disable shutdown context listener (allows for ctrl-c again to force close)
 		stop()
 
-		app.logger.Info("os signal received for shutdown")
+		// log os signal call unless shutdown was already triggered somewhere else
+		select {
+		case <-app.shutdownContext.Done():
+			// no-op
+		default:
+			app.logger.Info("os signal received for shutdown")
+		}
 
 		// do shutdown
 		app.shutdown(false)
@@ -81,19 +87,25 @@ func create() (*Application, error) {
 	// shutdown context with func to call graceful shutdown
 	shutdownContext, doShutdown := context.WithCancel(context.Background())
 	app.shutdownContext = shutdownContext
-	// this func is called to shutdown app
+	// this func is called to shutdown app, only run once to avoid overwrite of
+	// restart value
+	once := &sync.Once{}
 	app.shutdown = func(restart bool) {
-		if restart {
-			app.logger.Info("graceful restart triggered")
-		} else {
-			app.logger.Info("graceful shutdown triggered")
-		}
+		once.Do(func() {
+			if restart {
+				app.logger.Info("graceful restart triggered")
+			} else {
+				app.logger.Info("graceful shutdown triggered")
+			}
 
-		// stop os signal listening
-		stop()
+			app.restart = restart
 
-		// shutdown
-		doShutdown()
+			// stop os signal listening
+			stop()
+
+			// shutdown
+			doShutdown()
+		})
 	}
 
 	// wait group for graceful shutdown
