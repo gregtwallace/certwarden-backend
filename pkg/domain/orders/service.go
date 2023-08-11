@@ -28,6 +28,9 @@ type App interface {
 	GetAuthsService() *authorizations.Service
 	GetShutdownContext() context.Context
 	GetShutdownWaitGroup() *sync.WaitGroup
+	IsHttps() bool
+	HttpsCertificateName() *string
+	LoadHttpsCertificate() error
 }
 
 // Storage interface for storage functions
@@ -64,17 +67,20 @@ type Config struct {
 
 // Keys service struct
 type Service struct {
-	shutdownContext   context.Context
-	logger            *zap.SugaredLogger
-	output            *output.Service
-	storage           Storage
-	acmeServerService *acme_servers.Service
-	challenges        *challenges.Service
-	certificates      *certificates.Service
-	authorizations    *authorizations.Service
-	inProcess         *inProcess
-	highJobs          chan orderJob
-	lowJobs           chan orderJob
+	shutdownContext       context.Context
+	logger                *zap.SugaredLogger
+	output                *output.Service
+	storage               Storage
+	acmeServerService     *acme_servers.Service
+	challenges            *challenges.Service
+	certificates          *certificates.Service
+	authorizations        *authorizations.Service
+	serverCertificateName *string
+	loadHttpsCertificate  func() error
+	isHttps               bool
+	inProcess             *inProcess
+	highJobs              chan orderJob
+	lowJobs               chan orderJob
 }
 
 // NewService creates a new private_key service
@@ -125,6 +131,11 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	if service.authorizations == nil {
 		return nil, errServiceComponent
 	}
+
+	// server's http cert name and reloader func
+	service.serverCertificateName = app.HttpsCertificateName()
+	service.loadHttpsCertificate = app.LoadHttpsCertificate
+	service.isHttps = app.IsHttps()
 
 	// initialize inProcess (tracker)
 	service.inProcess = newInProcess()

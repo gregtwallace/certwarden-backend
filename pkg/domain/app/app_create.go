@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"legocerthub-backend/pkg/challenges"
+	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/app/auth"
@@ -137,15 +138,18 @@ func create() (*Application, error) {
 		return app, err
 	}
 
-	// get app's tls cert
-	// if fails, set to nil (will disable https)
-	app.httpsCert, err = app.newAppCert()
+	// load app's tls cert
+	// if error, server will instead operate over http
+	app.httpsCert = new(datatypes.SafeCert)
+	err = app.LoadHttpsCertificate()
 	if err != nil {
 		app.logger.Errorf("failed to configure https cert: %s", err)
 		// if not https, and not dev mode, certain functions will be blocked
 		if !*app.config.DevMode {
 			app.logger.Error("certain functionality (e.g. pem downloads via API keys) will be disabled until the server is run in https mode")
 		}
+
+		// failed = not https
 		app.httpsCert = nil
 	}
 

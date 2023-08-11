@@ -216,4 +216,18 @@ fulfillLoop:
 	if err != nil {
 		service.logger.Error(err)
 	}
+
+	// if https & if order success, check if this is app's certificate and if so inform app
+	// to reload the new order
+	if service.isHttps &&
+		service.serverCertificateName != nil &&
+		*service.serverCertificateName == orderDb.Certificate.Name &&
+		acmeOrder.Status == "valid" {
+		err = service.loadHttpsCertificate()
+		if err != nil {
+			service.logger.Errorf("failed to load lego's new https certificate (%s)", err)
+		} else {
+			service.logger.Debugf("new lego https certificate loaded")
+		}
+	}
 }

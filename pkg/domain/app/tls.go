@@ -2,117 +2,61 @@ package app
 
 import (
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
-	"legocerthub-backend/pkg/datatypes"
-	"time"
+	"fmt"
 )
 
-// generate the TLS Config for the app
-func (app *Application) tlsConf() (*tls.Config, error) {
+// tlsConf returns the app's tls Config for an https web server to use.
+func (app *Application) tlsConf() *tls.Config {
 	tlsConf := &tls.Config{
 		// func to return the TLS Cert from app
 		GetCertificate: app.httpsCert.TlsCertFunc(),
 	}
 
-	return tlsConf, nil
+	return tlsConf
 }
 
-// newAppCert creates the application cert struct on app and
-// also starts a refresh go routine
-func (app *Application) newAppCert() (*datatypes.SafeCert, error) {
-	sc := new(datatypes.SafeCert)
-	var err error
+// HttpsCertificateName returns the name of the certificate LeGo is using.
+// This allows orders package to call the refresh function whenever the app's
+// certificate is reordered.
+func (app *Application) HttpsCertificateName() *string {
+	return app.config.CertificateName
+}
 
-	// get cert from storage and set SafeCert
-	cert, err := app.getAppCertFromStorage()
-	if err != nil {
-		return nil, err
+// LoadHttpsCertificate fetches the most recent order for the app's certificate
+// and loads it as the app's https certificate. If there is an error, the app
+// retains its previous certificate.
+func (app *Application) LoadHttpsCertificate() error {
+	// if not running in https, this is no-op
+	// error because this should never be called in http mode
+	if !app.IsHttps() {
+		return errors.New("cannot load https certificate, server is in http mode")
 	}
-	sc.Update(cert)
 
-	// go routine to periodically try to refresh the cert
-	// log start and update wg
-	app.logger.Info("starting https cert refresh service")
-	app.shutdownWaitgroup.Add(1)
-
-	go func() {
-		var parsedCert *x509.Certificate
-		var remainingValidTime time.Duration
-		var sleepFor time.Duration
-		var newCert *tls.Certificate
-
-		for {
-			// determine time to expiration
-			parsedCert, err = x509.ParseCertificate(sc.Read().Certificate[0])
-			if err != nil {
-				app.logger.Panicf("tls certificate error: %s", err)
-			}
-			remainingValidTime = time.Until(parsedCert.NotAfter)
-
-			// sleep duration based on expiration
-			switch {
-			// 45 days + (weekly)
-			case remainingValidTime > (45 * time.Hour * 24):
-				sleepFor = 7 * time.Hour * 24
-			// 35 - 45 days (every other day)
-			case remainingValidTime > (35 * time.Hour * 24):
-				sleepFor = 2 * time.Hour * 24
-			// anything else (daily)
-			default:
-				sleepFor = 1 * time.Hour * 24
-			}
-
-			// sleep or wait for shutdown context to be done
-			select {
-			case <-app.shutdownContext.Done():
-				// close routine
-				app.logger.Info("https cert refresh service shutdown complete")
-				app.shutdownWaitgroup.Done()
-				return
-
-			case <-time.After(sleepFor):
-				// sleep and retry
-			}
-
-			// attempt refresh from storage
-			newCert, err = app.getAppCertFromStorage()
-			if err != nil {
-				// no op
-				app.logger.Error("failed to update lego's certificate")
-			} else {
-				// no error, refresh cert
-				sc.Update(newCert)
-				app.logger.Info("updated lego's certificate")
-			}
-		}
-	}()
-
-	return sc, nil
-}
-
-// getAppCertFromStorage returns the current key/cert pair for the app
-func (app *Application) getAppCertFromStorage() (*tls.Certificate, error) {
 	// get order for LeGo server
 	order, err := app.storage.GetCertNewestValidOrderByName(*app.config.CertificateName)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// nil check of key
 	if order.FinalizedKey == nil {
-		return nil, errors.New("tls key pem is empty")
+		return errors.New("tls key pem is empty")
 	}
 
 	// nil check of cert pem
 	if order.Pem == nil {
-		return nil, errors.New("tls cert pem is empty")
+		return errors.New("tls cert pem is empty")
 	}
 
+	// make tls certificate
 	tlsCert, err := tls.X509KeyPair([]byte(*order.Pem), []byte(order.FinalizedKey.Pem))
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to make x509 key pair (%s)", err)
 	}
 
-	return &tlsCert, nil
+	// update certificate
+	app.httpsCert.Update(&tlsCert)
+
+	return nil
 }

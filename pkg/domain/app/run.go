@@ -65,16 +65,9 @@ func run() (restart bool) {
 
 	// configure and launch https if app succesfully got a cert
 	if app.httpsCert != nil {
-		// make tls config
-		tlsConf, err := app.tlsConf()
-		if err != nil {
-			app.logger.Panicf("tls config problem: %s", err)
-			return
-		}
-
 		// https server config
 		srv.Addr = app.config.httpsServAddress()
-		srv.TLSConfig = tlsConf
+		srv.TLSConfig = app.tlsConf()
 
 		// configure and launch http redirect server
 		if *app.config.EnableHttpRedirect {
