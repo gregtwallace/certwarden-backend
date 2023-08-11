@@ -5,28 +5,57 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
 const maxShutdownTime = 30 * time.Second
 
 // RunLeGoAPI starts the application and also contains restart logic
+// in the event the app calls for a restart after termination
 func RunLeGoAPI() {
-	// run and restart if appropriate
-	for {
-		restart := run()
+	// run LeGo
+	restart := run()
 
-		if !restart {
-			break
+	// if LeGo called restart, execute self before exit
+	if restart {
+		// get path, args, and environment for execution
+		self, err := os.Executable()
+		if err != nil {
+			os.Exit(1)
+		}
+		args := os.Args
+		env := os.Environ()
+
+		// windows does not support syscall.Exec([...]).
+		if runtime.GOOS == "windows" {
+			cmd := exec.Command(self, args[1:]...)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			cmd.Stdin = os.Stdin
+			cmd.Env = env
+
+			// run
+			err = cmd.Run()
+		} else {
+			// run non-Windows
+			err = syscall.Exec(self, args, env)
+		}
+
+		// err check from either run command
+		if err != nil {
+			os.Exit(1)
 		}
 	}
 
-	// done, app exit
+	os.Exit(0)
 }
 
-// run starts an instance of the application
+// run starts an instance of the LeGo application
 func run() (restart bool) {
 	// create the app
 	app, err := create()
