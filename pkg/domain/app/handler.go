@@ -22,7 +22,7 @@ type customHandlerFunc func(w http.ResponseWriter, r *http.Request) error
 
 // handlerFunc converts a customer handeler function into a standard http.Handler
 func (app *Application) makeHandler(handlerFunc customHandlerFunc) http.Handler {
-	return handler{app.logger, app.output, handlerFunc}
+	return handler{app.logger.SugaredLogger, app.output, handlerFunc}
 }
 
 // makeHandle creates a Handle on the app's router using the custom handler function

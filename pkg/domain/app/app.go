@@ -32,11 +32,18 @@ const configVersion = 0
 // data storage root
 const dataStoragePath = "./data"
 
+// appLogger is a SugaredLogger + a close function to sync (flush) the
+// logger and to close the underlying file
+type appLogger struct {
+	*zap.SugaredLogger
+	syncAndClose func()
+}
+
 // Application is the main app struct
 type Application struct {
 	restart           bool
 	config            *config
-	logger            *zap.SugaredLogger
+	logger            *appLogger
 	shutdownContext   context.Context
 	shutdown          func(restart bool)
 	shutdownWaitgroup *sync.WaitGroup
@@ -57,16 +64,6 @@ type Application struct {
 	download          *download.Service
 }
 
-// CloseStorage closes the storage connection
-func (app *Application) CloseStorage() {
-	err := app.storage.Close()
-	if err != nil {
-		app.logger.Errorf("error closing storage: %s", err)
-	} else {
-		app.logger.Info("storage closed")
-	}
-}
-
 // return various app parts which are used as needed by services
 func (app *Application) GetAppVersion() string {
 	return appVersion
@@ -81,7 +78,7 @@ func (app *Application) GetDevMode() bool {
 }
 
 func (app *Application) GetLogger() *zap.SugaredLogger {
-	return app.logger
+	return app.logger.SugaredLogger
 }
 
 // is the server running https or not?

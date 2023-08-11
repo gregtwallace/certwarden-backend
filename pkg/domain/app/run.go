@@ -35,7 +35,27 @@ func run() (restart bool) {
 		os.Exit(1)
 		return
 	}
-	defer app.CloseStorage()
+	// defer storage close, logger close, and app nil
+	defer func() {
+		// close storage
+		err := app.storage.Close()
+		if err != nil {
+			app.logger.Errorf("error closing storage: %s", err)
+		} else {
+			app.logger.Info("storage closed")
+		}
+
+		// flush and close logger
+		app.logger.Debug("flushing (syncing) logger and closing underlying log file")
+		// log if trying to restart, before closing logger
+		if app.restart {
+			app.logger.Infof("restarting lego")
+		}
+		app.logger.syncAndClose()
+
+		// nil app
+		app = nil
+	}()
 
 	// start pprof if enabled or in dev mode
 	if *app.config.DevMode || *app.config.EnablePprof {
@@ -167,21 +187,8 @@ func run() (restart bool) {
 		// continue, normal
 	case <-time.After(maxWait):
 		// timed out
-		app.logger.Panic("shutdown procedure failed (timed out)")
+		app.logger.Panic("graceful shutdown of component(s) failed due to time out, forcing shutdown")
 	}
 
-	// log based on if trying to restart
-	if app.restart {
-		app.logger.Infow("shutdown complete, restarting lego")
-	} else {
-		app.logger.Info("shutdown complete")
-	}
-
-	// restart return var
-	restart = app.restart
-
-	// nil app
-	app = nil
-
-	return restart
+	return app.restart
 }
