@@ -29,6 +29,7 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 		app.logger.Error(err)
 		return output.ErrInternal
 	}
+	defer logFile.Close()
 
 	// read in the log file
 	logBytes, err := io.ReadAll(logFile)
