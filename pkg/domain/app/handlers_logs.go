@@ -63,11 +63,6 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 		return output.ErrInternal
 	}
 
-	// for each file in the log dir, verify start and end of filename then add it to the zip
-	logFileSplit := strings.Split(logFileName, ".")
-	logFilePrefix := logFileSplit[0]
-	logFileSuffix := logFileSplit[len(logFileSplit)-1]
-
 	// range all files in log directory
 	for i := range files {
 		// ignore directories
@@ -75,24 +70,25 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 			name := files[i].Name()
 
 			// confirm prefix and suffix then add
-			if strings.HasPrefix(name, logFilePrefix) && strings.HasSuffix(name, logFileSuffix) {
+			if strings.HasPrefix(name, logFileBaseName) && strings.HasSuffix(name, logFileSuffix) {
 
-				// read file content
-				dat, err := os.ReadFile(logFilePath + name)
+				// open log file
+				logFile, err := os.Open(logFilePath + name)
 				if err != nil {
 					app.logger.Error(err)
 					return output.ErrInternal
 				}
+				defer logFile.Close()
 
 				// create file in zip
-				f, err := zipWriter.Create(name)
+				zipFile, err := zipWriter.Create(name)
 				if err != nil {
 					app.logger.Error(err)
 					return output.ErrInternal
 				}
 
-				// add file content to the zip file
-				_, err = f.Write(dat)
+				// copy log file to zip file
+				_, err = io.Copy(zipFile, logFile)
 				if err != nil {
 					app.logger.Error(err)
 					return output.ErrInternal
@@ -101,7 +97,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	// close zip writer
+	// close zip writer (note: Close() writes the gzip footer and cannot be deferred)
 	err = zipWriter.Close()
 	if err != nil {
 		app.logger.Error(err)
@@ -111,11 +107,8 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	// make zip filename with timestamp
 	zipFilename := logFileName + "." + time.Now().Local().Format(time.RFC3339) + ".zip"
 
-	// make data from byte buffer
-	zipData := zipBuffer.Bytes()
-
 	// output
-	err = app.output.WriteZip(w, r, zipFilename, zipData)
+	err = app.output.WriteZip(w, r, zipFilename, zipBuffer.Bytes())
 	if err != nil {
 		return err
 	}
