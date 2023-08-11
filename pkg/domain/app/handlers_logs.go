@@ -41,7 +41,6 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 	_, _ = logBuffer.WriteString("]}")
 
 	// output
-	// Note: len -1 is to remove the last empty item
 	err = app.output.WriteMarshalledJSON(w, http.StatusOK, logBuffer.Bytes())
 	if err != nil {
 		return err
