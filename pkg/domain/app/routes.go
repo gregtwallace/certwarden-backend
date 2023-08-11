@@ -20,28 +20,28 @@ const frontendUrlPath = baseUrlPath + "/app"
 func (app *Application) routes() http.Handler {
 	app.router = httprouter.New()
 
-	// auth - insecure
-	app.makeHandle(http.MethodPost, apiUrlPath+"/v1/auth/login", app.auth.Login)
-	app.makeHandle(http.MethodPost, apiUrlPath+"/v1/auth/refresh", app.auth.Refresh)
-	app.makeHandle(http.MethodPost, apiUrlPath+"/v1/auth/logout", app.auth.Logout)
-	app.makeHandle(http.MethodPut, apiUrlPath+"/v1/auth/changepassword", app.auth.ChangePassword)
+	// app auth - insecure
+	app.makeHandle(http.MethodPost, apiUrlPath+"/v1/app/auth/login", app.auth.Login)
+	app.makeHandle(http.MethodPost, apiUrlPath+"/v1/app/auth/refresh", app.auth.Refresh)
+	app.makeHandle(http.MethodPost, apiUrlPath+"/v1/app/auth/logout", app.auth.Logout)
+	app.makeHandle(http.MethodPut, apiUrlPath+"/v1/app/auth/changepassword", app.auth.ChangePassword)
 
-	// health check (HEAD or GET) - insecure
+	// status & health check (HEAD or GET) - insecure
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/status", app.statusHandler)
 	app.makeHandle(http.MethodHead, apiUrlPath+"/health", app.healthHandler)
 	app.makeHandle(http.MethodGet, apiUrlPath+"/health", app.healthHandler)
 
 	// app
-	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/status", app.statusHandler)
-	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/log", app.viewCurrentLogHandler)
-	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/logs", app.downloadLogsHandler)
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/log", app.viewCurrentLogHandler)
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/logs", app.downloadLogsHandler)
 
 	// app control
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/control/shutdown", app.doShutdownHandler)
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/control/restart", app.doRestartHandler)
 
-	// updater
-	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/new-version", app.updater.GetNewVersionInfo)
-	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/new-version", app.updater.CheckForNewVersion)
+	// app updater
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/updater/new-version", app.updater.GetNewVersionInfo)
+	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/updater/new-version", app.updater.CheckForNewVersion)
 
 	// acme_servers
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/acmeservers", app.acmeServers.GetAllServers)
