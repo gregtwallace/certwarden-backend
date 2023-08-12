@@ -53,19 +53,24 @@ func encodeBigInt(bigInt *big.Int, keyBitSize int) (encodedProp string) {
 	return encodeString(bigInt.FillBytes(bytesBuf))
 }
 
-// acmeTimeString is a string that has a method to convert to unix time
-// this allows convenient conversion to unix time from various acme
-// responses
+// timeString is a string in the date format defined in RFC3339 (which is
+// what RFC8555 says to use)
 type timeString string
 
-// ToUnixTime turns an acmeTimeString (acme response formatted time string) into a
-// unix time int. If nil pointer, return nil; if error, return 0.
-func (ats timeString) ToUnixTime() (val int) {
+// ToUnixTime returns the unix time for a timeString. If the timeString is
+// nil or fails to parse, 0 is returned.
+func (ats *timeString) ToUnixTime() (unixTime int) {
+	if ats == nil {
+		return 0
+	}
+
+	// RFC3339
 	layout := "2006-01-02T15:04:05Z"
 
-	time, err := time.Parse(layout, string(ats))
+	// Parse
+	time, err := time.Parse(layout, string(*ats))
 	if err != nil {
-		return val
+		return 0
 	}
 
 	return int(time.Unix())

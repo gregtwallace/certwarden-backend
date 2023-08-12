@@ -39,8 +39,8 @@ type Order struct {
 	Authorizations []string        `json:"authorizations"`
 	Finalize       string          `json:"finalize"`
 	Certificate    *string         `json:"certificate,omitempty"`
-	NotBefore      timeString      `json:"notBefore,omitempty"`
-	NotAfter       timeString      `json:"notAfter,omitempty"`
+	NotBefore      *timeString     `json:"notBefore,omitempty"`
+	NotAfter       *timeString     `json:"notAfter,omitempty"`
 	Location       string          `json:"-"` // omit because it is in the header
 }
 
