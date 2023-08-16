@@ -56,7 +56,7 @@ func (app *Application) initZapLogger() {
 	// manually log to file for initial start up to avoid this leak
 	// this may lead to log not rotating at the exact correct time, but that's
 	// fine, as it is a relatively minimal number of log lines for initial start
-	var writer interface{}
+	var writer interface{ io.Writer }
 	useFile := true
 	// for closing the underlying log file later
 	closeFileFunc := func() error { return nil }
@@ -75,7 +75,7 @@ func (app *Application) initZapLogger() {
 
 	} else {
 		// not init run, make lumber jack
-		writer = &lumberjack.Logger{
+		lumberjackLogger := &lumberjack.Logger{
 			Filename: logFilePath + logFileName,
 			MaxSize:  1,   // megabytes
 			MaxAge:   364, // days
@@ -84,12 +84,9 @@ func (app *Application) initZapLogger() {
 			Compress:  false,
 		}
 
-		closeFileFunc = writer.(*lumberjack.Logger).Close
+		writer = lumberjackLogger
+		closeFileFunc = lumberjackLogger.Close
 	}
-
-	// assert io.Writer, don't use file if fails to assert
-	ioWriter, useFile := writer.(io.Writer)
-
 	// end file writer
 
 	// console
@@ -104,7 +101,7 @@ func (app *Application) initZapLogger() {
 	// if file writing, Tee it on
 	if useFile {
 		// add sync
-		writeSyncer := zapcore.AddSync(ioWriter)
+		writeSyncer := zapcore.AddSync(writer)
 
 		core = zapcore.NewTee(
 			zapcore.NewCore(fileEncoder, writeSyncer, logLevel),
