@@ -2,83 +2,87 @@ package datatypes
 
 import (
 	"errors"
-	"reflect"
 	"sync"
 )
 
 // errors
-var errMapElementDoesntExist = errors.New("specified map element does not exist")
+var errMapElementDoesntExist = errors.New("specified map key does not exist")
 
 // SafeMap is a map with a mutex
-type SafeMap struct {
-	Map map[string]interface{}
-	sync.RWMutex
+type SafeMap[V any] struct {
+	m  map[string]V
+	mu sync.RWMutex
 }
 
-// newMap creates a new SafeMap
-func NewSafeMap() *SafeMap {
-	return &SafeMap{
-		Map: make(map[string]interface{}),
+// NewSafeMap creates a new SafeMap
+func NewSafeMap[V any]() *SafeMap[V] {
+	return &SafeMap[V]{
+		m: make(map[string]V),
 	}
 }
 
-// Read returns the data from the specified elementName. If the element
+// Read returns the value from the specified key. If the key
 // does not exist, an error is returned.
-func (safeMap *SafeMap) Read(elementName string) (data interface{}, err error) {
-	safeMap.RLock()
-	defer safeMap.RUnlock()
+func (sm *SafeMap[V]) Read(key string) (value V, err error) {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
 
 	// read data
-	data, exists := safeMap.Map[elementName]
+	value, exists := sm.m[key]
 	if !exists {
-		return nil, errMapElementDoesntExist
+		return value, errMapElementDoesntExist
 	}
 
-	return data, nil
+	return value, nil
 }
 
-// Add creates the named element and insert the specified data
-// if the element already exists, true and the existing data are
+// Add creates the named key and inserts the specified value.
+// If the key already exists, true and the existing value are
 // returned instead.
-func (safeMap *SafeMap) Add(elementName string, data interface{}) (alreadyExists bool, existingData interface{}) {
-	safeMap.Lock()
-	defer safeMap.Unlock()
+func (sm *SafeMap[V]) Add(key string, value V) (alreadyExists bool, exisingValue V) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
 
-	// if element exists, return true and the existing data
-	// check if already working, if so return the signal channel
-	existingData, exists := safeMap.Map[elementName]
+	// if key exists, return true and the existing value
+	exisingValue, exists := sm.m[key]
 	if exists {
-		return true, existingData
+		return true, exisingValue
 	}
 
-	// if not, add the element and data
-	safeMap.Map[elementName] = data
+	// if not, add the key and value
+	sm.m[key] = value
 
-	return false, nil
+	return false, value
 }
 
-// Delete deletes the specified elementName from the map.
-// If no such element exists, an error is returned.
-func (safeMap *SafeMap) Delete(elementName string) (err error) {
-	safeMap.Lock()
-	defer safeMap.Unlock()
+// DeleteKey deletes the specified key from the map.
+// If no such key exists, an error is returned.
+func (sm *SafeMap[V]) DeleteKey(key string) (err error) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
 
-	// if element was not found, error
-	_, exists := safeMap.Map[elementName]
+	// if key was not found, error
+	_, exists := sm.m[key]
 	if !exists {
 		return errMapElementDoesntExist
 	}
 
-	// delete the element
-	delete(safeMap.Map, elementName)
+	// delete the key
+	delete(sm.m, key)
 
 	return nil
 }
 
-// ListKeys returns an array of all of the keys within the map.
-func (safeMap *SafeMap) ListKeys() []reflect.Value {
-	safeMap.RLock()
-	defer safeMap.RUnlock()
+// DeleteFunc deletes any key/value pairs where the function passed in
+// returns true
+func (sm *SafeMap[V]) DeleteFunc(delFunc func(key string, value V) bool) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
 
-	return reflect.ValueOf(safeMap.Map).MapKeys()
+	// range through map and delete if delFunc returns true
+	for key, v := range sm.m {
+		if delFunc(key, v) {
+			delete(sm.m, key)
+		}
+	}
 }
