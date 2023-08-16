@@ -111,7 +111,14 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 		return output.ErrUnauthorized
 	}
 
-	// refresh token verified, make new auth
+	// verify session is still valid
+	_, err = service.sessionManager.sessions.Read(oldClaims.UUID.String())
+	if err != nil {
+		service.logger.Infof("refresh attempt from %s failed (session no longer valid - %s)", r.RemoteAddr, err)
+		return output.ErrUnauthorized
+	}
+
+	// refresh token & session verified, make new auth
 	auth, err := service.createAuth(oldClaims.Subject)
 	if err != nil {
 		service.logger.Errorf("refresh attempt from %s failed due to internal error (%s)", r.RemoteAddr, err)
