@@ -23,7 +23,7 @@ func NewSafeMap[V any]() *SafeMap[V] {
 
 // Read returns the value from the specified key. If the key
 // does not exist, an error is returned.
-func (sm *SafeMap[V]) Read(key string) (value V, err error) {
+func (sm *SafeMap[V]) Read(key string) (V, error) {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
@@ -39,7 +39,7 @@ func (sm *SafeMap[V]) Read(key string) (value V, err error) {
 // Add creates the named key and inserts the specified value.
 // If the key already exists, true and the existing value are
 // returned instead.
-func (sm *SafeMap[V]) Add(key string, value V) (alreadyExists bool, exisingValue V) {
+func (sm *SafeMap[V]) Add(key string, value V) (bool, V) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -57,7 +57,7 @@ func (sm *SafeMap[V]) Add(key string, value V) (alreadyExists bool, exisingValue
 
 // DeleteKey deletes the specified key from the map.
 // If no such key exists, an error is returned.
-func (sm *SafeMap[V]) DeleteKey(key string) (err error) {
+func (sm *SafeMap[V]) DeleteKey(key string) error {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
