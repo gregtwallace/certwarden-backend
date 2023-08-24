@@ -34,10 +34,10 @@ func (service *Service) startServer(port int, ctx context.Context, wg *sync.Wait
 	srv.SetKeepAlivesEnabled(false)
 
 	// launch webserver
-	service.logger.Infof("starting http-01 challenge server on %s.", servAddr)
+	service.logger.Infof("starting http-01 challenge server on %s for domains %s.", servAddr, service.AvailableDomains())
 	if port != 80 {
-		service.logger.Warnf("http-01 challenge server is not running on port 80; internet "+
-			"facing port 80 must be proxied to port %d to function.", port)
+		service.logger.Warnf("http-01 challenge server for domains %s is not running on port 80; internet "+
+			"facing port 80 must be proxied to port %d to function.", service.AvailableDomains(), port)
 	}
 	wg.Add(1)
 
@@ -46,7 +46,7 @@ func (service *Service) startServer(port int, ctx context.Context, wg *sync.Wait
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			service.logger.Panic(err)
 		}
-		service.logger.Info("http-01 challenge server shutdown complete")
+		service.logger.Infof("http-01 challenge server (%s) shutdown complete", service.AvailableDomains())
 		wg.Done()
 	}()
 
@@ -60,7 +60,7 @@ func (service *Service) startServer(port int, ctx context.Context, wg *sync.Wait
 
 		err = srv.Shutdown(ctx)
 		if err != nil {
-			service.logger.Errorf("error shutting down http-01 challenge server")
+			service.logger.Errorf("error shutting down http-01 challenge server (%s)", service.AvailableDomains())
 		}
 	}()
 

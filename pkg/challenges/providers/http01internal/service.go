@@ -3,6 +3,8 @@ package http01internal
 import (
 	"context"
 	"errors"
+	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/datatypes"
 	"sync"
 
 	"go.uber.org/zap"
@@ -23,23 +25,23 @@ type App interface {
 
 // Accounts service struct
 type Service struct {
-	devMode bool
-	logger  *zap.SugaredLogger
-	tokens  map[string]string
-	mu      sync.RWMutex // added mutex due to unsafe if add and remove token both run
+	devMode              bool
+	logger               *zap.SugaredLogger
+	domains              []string
+	provisionedResources *datatypes.SafeMap[[]byte]
 }
 
 // Configuration options
 type Config struct {
-	Enable *bool `yaml:"enable"`
-	Port   *int  `yaml:"port"`
+	Domains []string `yaml:"domains"`
+	Port    *int     `yaml:"port"`
 }
 
 // NewService creates a new service
-func NewService(app App, config *Config) (*Service, error) {
-	// if disabled, return nil and no error
-	if !*config.Enable {
-		return nil, nil
+func NewService(app App, cfg *Config) (*Service, error) {
+	// if no config or no domains, error
+	if cfg == nil || len(cfg.Domains) <= 0 {
+		return nil, errServiceComponent
 	}
 
 	service := new(Service)
@@ -53,17 +55,25 @@ func NewService(app App, config *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// allocate token map
-	service.tokens = make(map[string]string, 50)
+	// set supported domains from config
+	service.domains = append(service.domains, cfg.Domains...)
+
+	// allocate resources map
+	service.provisionedResources = datatypes.NewSafeMap[[]byte]()
 
 	// start web server for http01 challenges
-	if config.Port == nil {
+	if cfg.Port == nil {
 		return nil, errConfigComponent
 	}
-	err := service.startServer(*config.Port, app.GetShutdownContext(), app.GetShutdownWaitGroup())
+	err := service.startServer(*cfg.Port, app.GetShutdownContext(), app.GetShutdownWaitGroup())
 	if err != nil {
 		return nil, err
 	}
 
 	return service, nil
+}
+
+// ChallengeType returns the ACME Challenge Type this provider uses, which is http-01
+func (service *Service) AcmeChallengeType() acme.ChallengeType {
+	return acme.ChallengeTypeHttp01
 }

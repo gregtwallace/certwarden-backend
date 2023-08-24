@@ -1,47 +1,43 @@
 package http01internal
 
 import (
+	"bytes"
 	"net/http"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
 
 // challengeHandler responds to the ACME http-01 challenge path. If the requested
-// token exists in this service's tokens, the expected token content is sent back to
-// the client. If the token is not in the service's tokens, a 404 reply is sent.
+// resourceName exists in this service's resources, the resourceValue is sent back to
+// the client. If the resourceName is not in the service's resources, a 404 reply is sent.
 func (service *Service) challengeHandler(w http.ResponseWriter, r *http.Request) {
-	var keyAuth string
-	var exists bool
-	var err error
+	// resourceName from the client request
+	resourceName := httprouter.ParamsFromContext(r.Context()).ByName("resourcename")
 
-	// token from the client request
-	token := httprouter.ParamsFromContext(r.Context()).ByName("token")
+	// try to read resource
+	resourceValue, err := service.provisionedResources.Read(resourceName)
 
-	// lock tokens for reading
-	service.mu.RLock()
-	defer service.mu.RUnlock()
+	// resource not available, 404
+	if err != nil {
+		service.logger.Debugf("http-01 challenge resource %s not found", resourceName)
 
-	// check token existence, if no token, write error 404 and return
-	if keyAuth, exists = service.tokens[token]; !exists {
-		service.logger.Debugf("http-01 challenge token not found: %s", token)
-
+		// write status 404
 		w.WriteHeader(http.StatusNotFound)
-		_, err = w.Write([]byte("404 page not found"))
-		if err != nil {
-			service.logger.Errorf("failed to write http-01 404 error: %s", err)
-		}
 
 		// done / exit
 		return
 	}
 
 	// token was found, write it
-	service.logger.Debugf("writing challenge token to http-01 client: %s", token)
+	service.logger.Debugf("writing resource (name: %s) to http-01 client", resourceName)
 
+	// convert value to content reader for output
+	contentReader := bytes.NewReader(resourceValue)
+
+	// Set Content-Type explicitly
 	w.Header().Set("Content-Type", "application/octet-stream")
-	w.WriteHeader(http.StatusOK)
-	_, err = w.Write([]byte(keyAuth))
-	if err != nil {
-		service.logger.Errorf("failed to write http-01 token: %s", err)
-	}
+
+	// ServeContent (filename is not needed here since Content-Type is set explicitly above)
+	http.ServeContent(w, r, "", time.Time{}, contentReader)
 }

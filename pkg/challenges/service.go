@@ -100,15 +100,30 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	wg.Add(wgSize)
 	wgErrors := make(chan error, wgSize)
 
-	// // http-01 internal challenge server
-	// http01Internal, err := http01internal.NewService(app, &cfg.ProviderConfigs.Http01InternalConfig)
-	// if err != nil {
-	// 	service.logger.Errorf("failed to configure http 01 internal (%s)", err)
-	// 	return nil, err
-	// }
-	// if http01Internal != nil {
-	// 	service.providers[methodValueHttp01Internal] = http01Internal
-	// }
+	// http-01 internal challenge servers
+	for i := range cfg.ProviderConfigs.Http01InternalConfigs {
+		go func(i int) {
+			// done after func
+			defer wg.Done()
+
+			// make service
+			http01Internal, err := http01internal.NewService(app, &cfg.ProviderConfigs.Http01InternalConfigs[i])
+			if err != nil {
+				wgErrors <- err
+				return
+			}
+
+			// add each domain name to providers map
+			domainNames := http01Internal.AvailableDomains()
+			for _, domain := range domainNames {
+				exists, _ := service.domainProviders.Add(domain, http01Internal)
+				if exists {
+					wgErrors <- errMultipleSameDomain(domain)
+					return
+				}
+			}
+		}(i)
+	}
 
 	// // dns-01 manual external scripts
 	// dns01Manual, err := dns01manual.NewService(app, &cfg.ProviderConfigs.Dns01ManualConfig)
