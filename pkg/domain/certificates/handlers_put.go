@@ -2,7 +2,6 @@ package certificates
 
 import (
 	"encoding/json"
-	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
@@ -14,21 +13,20 @@ import (
 // DetailsUpdatePayload is the struct for editing an existing cert. A number of
 // fields can be updated by the client on the fly (without ACME interaction).
 type DetailsUpdatePayload struct {
-	ID                   int                     `json:"-"`
-	Name                 *string                 `json:"name"`
-	Description          *string                 `json:"description"`
-	PrivateKeyId         *int                    `json:"private_key_id"`
-	ChallengeMethodValue *challenges.MethodValue `json:"challenge_method_value"`
-	SubjectAltNames      []string                `json:"subject_alts"`
-	Organization         *string                 `json:"organization"`
-	OrganizationalUnit   *string                 `json:"organizational_unit"`
-	Country              *string                 `json:"country"`
-	State                *string                 `json:"state"`
-	City                 *string                 `json:"city"`
-	ApiKey               *string                 `json:"api_key"`
-	ApiKeyNew            *string                 `json:"api_key_new"`
-	ApiKeyViaUrl         *bool                   `json:"api_key_via_url"`
-	UpdatedAt            int                     `json:"-"`
+	ID                 int      `json:"-"`
+	Name               *string  `json:"name"`
+	Description        *string  `json:"description"`
+	PrivateKeyId       *int     `json:"private_key_id"`
+	SubjectAltNames    []string `json:"subject_alts"`
+	Organization       *string  `json:"organization"`
+	OrganizationalUnit *string  `json:"organizational_unit"`
+	Country            *string  `json:"country"`
+	State              *string  `json:"state"`
+	City               *string  `json:"city"`
+	ApiKey             *string  `json:"api_key"`
+	ApiKeyNew          *string  `json:"api_key_new"`
+	ApiKeyViaUrl       *bool    `json:"api_key_via_url"`
+	UpdatedAt          int      `json:"-"`
 }
 
 // PutDetailsCert is a handler that sets various details about a cert and saves
@@ -68,29 +66,10 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
-	// challenge method (optional)
-	// current method
-	challengeMethod := cert.ChallengeMethod
-	// if change specified, check it
-	if payload.ChallengeMethodValue != nil {
-		challengeMethod = challenges.MethodByStorageValue(*payload.ChallengeMethodValue)
-		// if method is unknown, invalid
-		if challengeMethod == challenges.UnknownMethod {
-			service.logger.Debug("unknown challenge method")
-			return output.ErrValidationFailed
-		}
-		// verify subject is compatible with new method selection
-		// i.e. make sure if wildcard it is using a dns method
-		if !subjectValid(cert.Subject, challengeMethod) {
-			service.logger.Debug("challenge method does not support subject")
-			return output.ErrValidationFailed
-		}
-		// do not check subject alts here, they are checked below
-	}
 	// subject alts (optional)
 	// if new alts are being specified
 	if payload.SubjectAltNames != nil {
-		if !subjectAltsValid(payload.SubjectAltNames, challengeMethod) {
+		if !subjectAltsValid(payload.SubjectAltNames) {
 			service.logger.Debug(ErrDomainBad)
 			return output.ErrValidationFailed
 		}
@@ -98,7 +77,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 	} else if len(cert.SubjectAltNames) > 0 {
 		// if keeping old alts and they exist (more than 0)
 		// verify against the challenge method
-		if !subjectAltsValid(cert.SubjectAltNames, challengeMethod) {
+		if !subjectAltsValid(cert.SubjectAltNames) {
 			service.logger.Debug(ErrDomainBad)
 			return output.ErrValidationFailed
 		}

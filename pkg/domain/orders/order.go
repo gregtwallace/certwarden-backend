@@ -5,7 +5,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/certificates"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"time"
@@ -55,7 +54,6 @@ type orderCertificateSummaryResponse struct {
 	CertificateAccount orderCertificateAccountSummaryResponse `json:"acme_account"`
 	Subject            string                                 `json:"subject"`
 	SubjectAltNames    []string                               `json:"subject_alts"`
-	ChallengeMethod    challenges.MethodWithStatus            `json:"challenge_method"`
 	ApiKeyViaUrl       bool                                   `json:"api_key_via_url"`
 }
 
@@ -102,7 +100,6 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 			},
 			Subject:         order.Certificate.Subject,
 			SubjectAltNames: order.Certificate.SubjectAltNames,
-			ChallengeMethod: service.challenges.AddStatus(order.Certificate.ChallengeMethod),
 			ApiKeyViaUrl:    order.Certificate.ApiKeyViaUrl,
 		},
 		Status:         order.Status,

@@ -20,26 +20,24 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 			name = case when $1 is null then name else $1 end,
 			description = case when $2 is null then description else $2 end,
 			private_key_id = case when $3 is null then private_key_id else $3 end,
-			challenge_method = case when $4 is null then challenge_method else $4 end,
-			subject_alts = case when $5 is null then subject_alts else $5 end,
-			csr_org = case when $6 is null then csr_org else $6 end,
-			csr_ou = case when $7 is null then csr_ou else $7 end,
-			csr_country = case when $8 is null then csr_country else $8 end,
-			csr_state = case when $9 is null then csr_state else $9 end,
-			csr_city = case when $10 is null then csr_city else $10 end,
-			api_key = case when $11 is null then api_key else $11 end,
-			api_key_new = case when $12 is null then api_key_new else $12 end,
-			api_key_via_url = case when $13 is null then api_key_via_url else $13 end,
-			updated_at = $14
+			subject_alts = case when $4 is null then subject_alts else $4 end,
+			csr_org = case when $5 is null then csr_org else $5 end,
+			csr_ou = case when $6 is null then csr_ou else $6 end,
+			csr_country = case when $7 is null then csr_country else $7 end,
+			csr_state = case when $8 is null then csr_state else $8 end,
+			csr_city = case when $9 is null then csr_city else $9 end,
+			api_key = case when $10 is null then api_key else $10 end,
+			api_key_new = case when $11 is null then api_key_new else $11 end,
+			api_key_via_url = case when $12 is null then api_key_via_url else $12 end,
+			updated_at = $13
 		WHERE
-			id = $15
+			id = $14
 		`
 
 	_, err = store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.PrivateKeyId,
-		payload.ChallengeMethodValue,
 		makeCommaJoinedString(payload.SubjectAltNames),
 		payload.Organization,
 		payload.OrganizationalUnit,

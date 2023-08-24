@@ -111,9 +111,6 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 		newCertOptions.UsableAccounts = append(newCertOptions.UsableAccounts, accounts[i].SummaryResponse())
 	}
 
-	// available challenge methods
-	newCertOptions.ChallengeMethods = service.challenges.ListOfMethodsWithStatus()
-
 	// return response to client
 	err = service.output.WriteJSON(w, http.StatusOK, newCertOptions, "certificate_options")
 	if err != nil {

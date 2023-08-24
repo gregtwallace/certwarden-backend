@@ -18,7 +18,7 @@ import (
 // config for DB
 const dbTimeout = time.Duration(5 * time.Second)
 const dbFilename = "/lego-certhub.db"
-const DbCurrentUserVersion = 1
+const DbCurrentUserVersion = 2
 
 var dbOptions = url.Values{
 	"_fk": []string{"true"},
@@ -126,6 +126,8 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 			switch fileUserVersion {
 			case 0:
 				err = store.migrateV0toV1()
+			case 1:
+				err = store.migrateV1toV2()
 			case DbCurrentUserVersion:
 				store.logger.Debugf("database user_version is current (%d)", fileUserVersion)
 				// no-op, loop will end due to version ==

@@ -8,27 +8,8 @@ import (
 // NewOrderPayload is the payload to post to ACME newOrder
 type NewOrderPayload struct {
 	// notBefore and notAfter are optional and not implemented
-	Identifiers []Identifier `json:"identifiers"`
+	Identifiers IdentifierSlice `json:"identifiers"`
 }
-
-// ACME identifier object
-type Identifier struct {
-	Type  identifierType `json:"type"`
-	Value string         `json:"value"`
-}
-
-// Define ACME identifier types (per RFC 8555 9.7.7)
-type identifierType string
-
-const (
-	UnknownIdentifierType identifierType = ""
-
-	identifierTypeDns = "dns"
-)
-
-// a slice of identifiers
-// allows writing a method for an array of them
-type IdentifierSlice []Identifier
 
 // LE response with order information
 type Order struct {
@@ -42,20 +23,6 @@ type Order struct {
 	NotBefore      *timeString     `json:"notBefore,omitempty"`
 	NotAfter       *timeString     `json:"notAfter,omitempty"`
 	Location       string          `json:"-"` // omit because it is in the header
-}
-
-// dnsIdentifiers returns a slice of the value strings for a response's
-// array of identifier objects that are of type 'dns'
-func (ids *IdentifierSlice) DnsIdentifiers() []string {
-	var s []string
-
-	for _, id := range *ids {
-		if id.Type == identifierTypeDns {
-			s = append(s, id.Value)
-		}
-	}
-
-	return s
 }
 
 // Account response decoder

@@ -3,6 +3,7 @@ package challenges
 import (
 	"context"
 	"errors"
+	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
@@ -19,8 +20,11 @@ import (
 )
 
 var (
-	errServiceComponent = errors.New("necessary challenges service component is missing")
-	errNoProviders      = errors.New("no challenge providers are properly configured (at least one must be enabled)")
+	errServiceComponent   = errors.New("necessary challenges service component is missing")
+	errNoProviders        = errors.New("no challenge providers are properly configured (at least one must be enabled)")
+	errMultipleSameDomain = func(domainName string) error {
+		return fmt.Errorf("failed to configure domain, each domain can only be configured once", domainName)
+	}
 )
 
 // App interface is for connecting to the main app
@@ -35,23 +39,25 @@ type App interface {
 
 // interface for any provider service
 type providerService interface {
-	Provision(resourceName string, resourceContent string) (err error)
-	Deprovision(resourceName string, resourceContent string) (err error)
+	AcmeChallengeType() acme.ChallengeType
+	AvailableDomains() []string
+	Provision(domainName, resourceName, resourceContent string) (err error)
+	Deprovision(domainName, resourceName, resourceContent string) (err error)
 }
 
-// ConfigProviders holds the challenge provider configs
-type ConfigProviders struct {
-	Http01InternalConfig  http01internal.Config  `yaml:"http_01_internal"`
-	Dns01ManualConfig     dns01manual.Config     `yaml:"dns_01_manual"`
-	Dns01AcmeDnsConfig    dns01acmedns.Config    `yaml:"dns_01_acme_dns"`
-	Dns01AcmeShConfig     dns01acmesh.Config     `yaml:"dns_01_acme_sh"`
-	Dns01CloudflareConfig dns01cloudflare.Config `yaml:"dns_01_cloudflare"`
+// ProviderConfigs holds the challenge provider configs
+type ProviderConfigs struct {
+	Http01InternalConfigs  []http01internal.Config  `yaml:"http_01_internal"`
+	Dns01ManualConfigs     []dns01manual.Config     `yaml:"dns_01_manual"`
+	Dns01AcmeDnsConfigs    []dns01acmedns.Config    `yaml:"dns_01_acme_dns"`
+	Dns01AcmeShConfigs     []dns01acmesh.Config     `yaml:"dns_01_acme_sh"`
+	Dns01CloudflareConfigs []dns01cloudflare.Config `yaml:"dns_01_cloudflare"`
 }
 
 // Config holds all of the challenge config
 type Config struct {
 	DnsCheckerConfig dns_checker.Config `yaml:"dns_checker"`
-	ProviderConfigs  ConfigProviders    `yaml:"providers"`
+	ProviderConfigs  ProviderConfigs    `yaml:"providers"`
 }
 
 // service struct
@@ -60,9 +66,8 @@ type Service struct {
 	logger             *zap.SugaredLogger
 	acmeServerService  *acme_servers.Service
 	dnsChecker         *dns_checker.Service
-	providers          map[MethodValue]providerService
-	methodsWithStatus  []MethodWithStatus
-	resourceNamesInUse *datatypes.WorkTracker // tracks all resource names currently in use (regardless of provider)
+	domainProviders    map[string]providerService // domain_name[providerService]
+	resourceNamesInUse *datatypes.WorkTracker     // tracks all resource names currently in use (regardless of provider)
 }
 
 // NewService creates a new service
@@ -85,81 +90,73 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	}
 
 	// challenge providers
-	service.providers = make(map[MethodValue]providerService)
+	service.domainProviders = make(map[string]providerService)
 
-	// http-01 internal challenge server
-	http01Internal, err := http01internal.NewService(app, &cfg.ProviderConfigs.Http01InternalConfig)
-	if err != nil {
-		service.logger.Errorf("failed to configure http 01 internal (%s)", err)
-		return nil, err
-	}
-	if http01Internal != nil {
-		service.providers[methodValueHttp01Internal] = http01Internal
-	}
+	// // http-01 internal challenge server
+	// http01Internal, err := http01internal.NewService(app, &cfg.ProviderConfigs.Http01InternalConfig)
+	// if err != nil {
+	// 	service.logger.Errorf("failed to configure http 01 internal (%s)", err)
+	// 	return nil, err
+	// }
+	// if http01Internal != nil {
+	// 	service.providers[methodValueHttp01Internal] = http01Internal
+	// }
 
-	// dns-01 manual external scripts
-	dns01Manual, err := dns01manual.NewService(app, &cfg.ProviderConfigs.Dns01ManualConfig)
-	if err != nil {
-		service.logger.Errorf("failed to configure dns 01 manual (%s)", err)
-		return nil, err
-	}
-	if dns01Manual != nil {
-		service.providers[methodValueDns01Manual] = dns01Manual
-	}
+	// // dns-01 manual external scripts
+	// dns01Manual, err := dns01manual.NewService(app, &cfg.ProviderConfigs.Dns01ManualConfig)
+	// if err != nil {
+	// 	service.logger.Errorf("failed to configure dns 01 manual (%s)", err)
+	// 	return nil, err
+	// }
+	// if dns01Manual != nil {
+	// 	service.providers[methodValueDns01Manual] = dns01Manual
+	// }
 
-	// dns-01 acme-dns challenge service
-	dns01AcmeDns, err := dns01acmedns.NewService(app, &cfg.ProviderConfigs.Dns01AcmeDnsConfig)
-	if err != nil {
-		service.logger.Errorf("failed to configure dns 01 acme-dns (%s)", err)
-		return nil, err
-	}
-	if dns01AcmeDns != nil {
-		service.providers[methodValueDns01AcmeDns] = dns01AcmeDns
-	}
+	// // dns-01 acme-dns challenge service
+	// dns01AcmeDns, err := dns01acmedns.NewService(app, &cfg.ProviderConfigs.Dns01AcmeDnsConfig)
+	// if err != nil {
+	// 	service.logger.Errorf("failed to configure dns 01 acme-dns (%s)", err)
+	// 	return nil, err
+	// }
+	// if dns01AcmeDns != nil {
+	// 	service.providers[methodValueDns01AcmeDns] = dns01AcmeDns
+	// }
 
-	// dns-01 acme.sh script service
-	dns01AcmeSh, err := dns01acmesh.NewService(app, &cfg.ProviderConfigs.Dns01AcmeShConfig)
-	if err != nil {
-		service.logger.Errorf("failed to configure dns 01 acme.sh (%s)", err)
-		return nil, err
-	}
-	if dns01AcmeSh != nil {
-		service.providers[methodValueDns01AcmeSh] = dns01AcmeSh
-	}
+	// // dns-01 acme.sh script service
+	// dns01AcmeSh, err := dns01acmesh.NewService(app, &cfg.ProviderConfigs.Dns01AcmeShConfig)
+	// if err != nil {
+	// 	service.logger.Errorf("failed to configure dns 01 acme.sh (%s)", err)
+	// 	return nil, err
+	// }
+	// if dns01AcmeSh != nil {
+	// 	service.providers[methodValueDns01AcmeSh] = dns01AcmeSh
+	// }
 
-	// dns-01 cloudflare challenge service
-	dns01Cloudflare, err := dns01cloudflare.NewService(app, &cfg.ProviderConfigs.Dns01CloudflareConfig)
-	if err != nil {
-		service.logger.Errorf("failed to configure dns 01 cloudflare (%s)", err)
-		return nil, err
-	}
-	if dns01Cloudflare != nil {
-		service.providers[methodValueDns01Cloudflare] = dns01Cloudflare
+	// dns-01 cloudflare challenge services
+	for i := range cfg.ProviderConfigs.Dns01CloudflareConfigs {
+		cloudflareProvider, err := dns01cloudflare.NewService(app, &cfg.ProviderConfigs.Dns01CloudflareConfigs[i])
+		if err != nil || cloudflareProvider == nil {
+			service.logger.Errorf("failed to configure cloudflare challenge provider instance (%s)", err)
+			return nil, err
+		}
+
+		// add each domain name to providers map
+		domainNames := cloudflareProvider.AvailableDomains()
+		for _, domain := range domainNames {
+			service.domainProviders[domain] = cloudflareProvider
+		}
 	}
 
 	// end challenge providers
 
-	// make array containing service methods and if they're enabled or disabled
-	// fail out if none enabled
-	atLeastOneEnabled := false
-	for i := range allMethods {
-		if _, ok := service.providers[allMethods[i].Value]; ok {
-			// enabled
-			service.methodsWithStatus = append(service.methodsWithStatus, allMethods[i].AddStatus(true))
-			atLeastOneEnabled = true
-		} else {
-			// disabled
-			service.methodsWithStatus = append(service.methodsWithStatus, allMethods[i].AddStatus(false))
-		}
-	}
-	if !atLeastOneEnabled {
+	// verify at least one domain / provider exists
+	if len(service.domainProviders) <= 0 {
 		return nil, errNoProviders
 	}
 
-	// configure dns checker service (if any enabled Method is a DNS method)
-	// Fixes https://github.com/gregtwallace/legocerthub/issues/6
-	for i := range service.methodsWithStatus {
-		if service.methodsWithStatus[i].Enabled && service.methodsWithStatus[i].ChallengeType == acme.ChallengeTypeDns01 {
+	// configure dns checker service (if any domain uses a dns-01 provider)
+	for _, provider := range service.domainProviders {
+		if provider.AcmeChallengeType() == acme.ChallengeTypeDns01 {
 			// enable checker
 			service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
 			if err != nil {
@@ -167,7 +164,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 				return nil, err
 			}
 
-			// no need to continue loop once DNS challenge service is confirmed required
+			// no need to continue loop once DNS checker service is confirmed required
 			break
 		}
 	}

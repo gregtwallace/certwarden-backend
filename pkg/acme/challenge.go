@@ -5,6 +5,16 @@ import (
 	"net/http"
 )
 
+// Define challenge types (per RFC 8555)
+type ChallengeType string
+
+const (
+	UnknownChallengeType ChallengeType = ""
+
+	ChallengeTypeHttp01 ChallengeType = "http-01"
+	ChallengeTypeDns01  ChallengeType = "dns-01"
+)
+
 // ACME challenge object
 type Challenge struct {
 	Type      ChallengeType `json:"type"`

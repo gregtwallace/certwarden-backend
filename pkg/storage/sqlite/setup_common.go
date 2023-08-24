@@ -80,7 +80,6 @@ func createDBTables(tx *sql.Tx) error {
 		acme_account_id integer NOT NULL,
 		name text NOT NULL UNIQUE COLLATE NOCASE,
 		description text NOT NULL,
-		challenge_method text NOT NULL,
 		subject text NOT NULL,
 		subject_alts text NOT NULL,
 		csr_org text NOT NULL,

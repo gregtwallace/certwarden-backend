@@ -125,7 +125,7 @@ fulfillLoop:
 		switch acmeOrder.Status {
 		case "pending": // needs to be authed
 			var authStatus string
-			authStatus, err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, orderDb.Certificate.ChallengeMethod, key, orderDb.Certificate.CertificateAccount.AcmeServer.ID)
+			authStatus, err = service.authorizations.FulfillAuths(acmeOrder.Authorizations, key, acmeService)
 			if err != nil {
 				service.logger.Error(err)
 				return // done, failed

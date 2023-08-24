@@ -10,6 +10,17 @@ import (
 
 var ErrDomainNotConfigured = errors.New("dns01cloudflare domain name not configured (restart lego if zone was just added to an account)")
 
+// AvailableDomains returns all of the domains that this instance of Cloudflare can
+// provision records for.
+func (service *Service) AvailableDomains() []string {
+	domainList := []string{}
+	for domainName := range service.domainIDs {
+		domainList = append(domainList, domainName)
+	}
+
+	return domainList
+}
+
 // acmeRecord returns the cloudflare dns record for a given acme resource
 // name and content
 func newAcmeRecord(resourceName, resourceContent string) cloudflare.DNSRecord {
@@ -23,18 +34,12 @@ func newAcmeRecord(resourceName, resourceContent string) cloudflare.DNSRecord {
 }
 
 // Provision adds the corresponding DNS record on Cloudflare.
-func (service *Service) Provision(resourceName string, resourceContent string) error {
-	// get the relevant zone from known list
-	zone, err := service.getResourceZone(resourceName)
-	if err != nil {
-		return ErrDomainNotConfigured
-	}
-
+func (service *Service) Provision(domainName, resourceName, resourceContent string) error {
 	// no need to delete, just handle already exists error (which in theory isn't possible
 	// anyway because resourceContent should always change)
 
 	// create DNS record on cloudflare for the ACME resource
-	_, err = zone.api.CreateDNSRecord(context.Background(), zone.id, newAcmeRecord(resourceName, resourceContent))
+	_, err := service.cloudflareApi.CreateDNSRecord(context.Background(), service.domainIDs[domainName], newAcmeRecord(resourceName, resourceContent))
 	if err != nil && !(strings.Contains(err.Error(), "81057") || strings.Contains(err.Error(), "Record already exists")) {
 		return err
 	}
@@ -43,15 +48,12 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 }
 
 // Deprovision deletes the corresponding DNS record on Cloudflare.
-func (service *Service) Deprovision(resourceName string, resourceContent string) error {
-	// get the relevant zone from known list
-	zone, err := service.getResourceZone(resourceName)
-	if err != nil {
-		return ErrDomainNotConfigured
-	}
+func (service *Service) Deprovision(domainName, resourceName, resourceContent string) error {
+	// zoneID
+	zoneID := service.domainIDs[domainName]
 
 	// fetch matching record(s) (should only be one)
-	records, err := zone.api.DNSRecords(context.Background(), zone.id, cloudflare.DNSRecord{
+	records, err := service.cloudflareApi.DNSRecords(context.Background(), zoneID, cloudflare.DNSRecord{
 		Type:    "TXT",
 		Name:    resourceName,
 		Content: resourceContent,
@@ -63,7 +65,7 @@ func (service *Service) Deprovision(resourceName string, resourceContent string)
 	// delete all records with the name and content (should only ever be one)
 	var deleteErr error
 	for i := range records {
-		err = zone.api.DeleteDNSRecord(context.Background(), zone.id, records[i].ID)
+		err = service.cloudflareApi.DeleteDNSRecord(context.Background(), zoneID, records[i].ID)
 		if err != nil {
 			deleteErr = err
 			service.logger.Error(err)

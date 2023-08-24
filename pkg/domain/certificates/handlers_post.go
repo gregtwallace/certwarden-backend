@@ -3,7 +3,6 @@ package certificates
 import (
 	"encoding/json"
 	"errors"
-	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
@@ -18,23 +17,22 @@ import (
 
 // NewPayload is the struct for creating a new certificate
 type NewPayload struct {
-	Name                 *string                 `json:"name"`
-	Description          *string                 `json:"description"`
-	PrivateKeyID         *int                    `json:"private_key_id"`
-	NewKeyAlgorithmValue *string                 `json:"algorithm_value"`
-	AcmeAccountID        *int                    `json:"acme_account_id"`
-	ChallengeMethodValue *challenges.MethodValue `json:"challenge_method_value"`
-	Subject              *string                 `json:"subject"`
-	SubjectAltNames      []string                `json:"subject_alts"`
-	Organization         *string                 `json:"organization"`
-	OrganizationalUnit   *string                 `json:"organizational_unit"`
-	Country              *string                 `json:"country"`
-	State                *string                 `json:"state"`
-	City                 *string                 `json:"city"`
-	ApiKey               string                  `json:"-"`
-	ApiKeyViaUrl         bool                    `json:"-"`
-	CreatedAt            int                     `json:"-"`
-	UpdatedAt            int                     `json:"-"`
+	Name                 *string  `json:"name"`
+	Description          *string  `json:"description"`
+	PrivateKeyID         *int     `json:"private_key_id"`
+	NewKeyAlgorithmValue *string  `json:"algorithm_value"`
+	AcmeAccountID        *int     `json:"acme_account_id"`
+	Subject              *string  `json:"subject"`
+	SubjectAltNames      []string `json:"subject_alts"`
+	Organization         *string  `json:"organization"`
+	OrganizationalUnit   *string  `json:"organizational_unit"`
+	Country              *string  `json:"country"`
+	State                *string  `json:"state"`
+	City                 *string  `json:"city"`
+	ApiKey               string   `json:"-"`
+	ApiKeyViaUrl         bool     `json:"-"`
+	CreatedAt            int      `json:"-"`
+	UpdatedAt            int      `json:"-"`
 }
 
 // PostNewCert creates a new certificate object in storage. No actual encryption certificate
@@ -104,20 +102,14 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
-	// challenge method
-	challMethod := challenges.MethodByStorageValue(*payload.ChallengeMethodValue)
-	if payload.ChallengeMethodValue == nil || challMethod == challenges.UnknownMethod {
-		service.logger.Debug("unknown challenge method")
-		return output.ErrValidationFailed
-	}
 	// subject
-	if payload.Subject == nil || !subjectValid(*payload.Subject, challMethod) {
+	if payload.Subject == nil || !subjectValid(*payload.Subject) {
 		service.logger.Debug(ErrDomainBad)
 		return output.ErrValidationFailed
 	}
 	// subject alts
 	// blank is okay, skip validation if not specified
-	if payload.SubjectAltNames != nil && !subjectAltsValid(payload.SubjectAltNames, challMethod) {
+	if payload.SubjectAltNames != nil && !subjectAltsValid(payload.SubjectAltNames) {
 		service.logger.Debug(ErrDomainBad)
 		return output.ErrValidationFailed
 	}

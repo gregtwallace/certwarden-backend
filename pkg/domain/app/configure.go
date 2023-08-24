@@ -4,11 +4,6 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/challenges/dns_checker"
-	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
-	"legocerthub-backend/pkg/challenges/providers/dns01acmesh"
-	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
-	"legocerthub-backend/pkg/challenges/providers/dns01manual"
-	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/orders"
 	"os"
@@ -112,27 +107,6 @@ func defaultConfig() (cfg *config) {
 				// skip_check_wait_seconds defaults to nil
 				// servers are a slice, no need to call new()
 			},
-			ProviderConfigs: challenges.ConfigProviders{
-				Http01InternalConfig: http01internal.Config{
-					Enable: new(bool),
-					Port:   new(int),
-				},
-				Dns01ManualConfig: dns01manual.Config{
-					Enable: new(bool),
-					// script paths don't have a default
-				},
-				Dns01AcmeDnsConfig: dns01acmedns.Config{
-					Enable:      new(bool),
-					HostAddress: new(string),
-				},
-				Dns01AcmeShConfig: dns01acmesh.Config{
-					Enable:     new(bool),
-					AcmeShPath: new(string),
-				},
-				Dns01CloudflareConfig: dns01cloudflare.Config{
-					Enable: new(bool),
-				},
-			},
 		},
 	}
 
@@ -187,26 +161,6 @@ func defaultConfig() (cfg *config) {
 			Secondary: "8.8.4.4",
 		},
 	}
-
-	// challenge providers
-	// http-01-internal
-	*cfg.Challenges.ProviderConfigs.Http01InternalConfig.Enable = true
-	*cfg.Challenges.ProviderConfigs.Http01InternalConfig.Port = 4060
-
-	// dns-01-manual
-	*cfg.Challenges.ProviderConfigs.Dns01ManualConfig.Enable = false
-
-	// dns-01-acme-dns
-	*cfg.Challenges.ProviderConfigs.Dns01AcmeDnsConfig.Enable = false
-
-	// dns-01-acme-sh
-	*cfg.Challenges.ProviderConfigs.Dns01AcmeShConfig.Enable = false
-	*cfg.Challenges.ProviderConfigs.Dns01AcmeShConfig.AcmeShPath = "./scripts/acme.sh"
-
-	// dns-01-cloudflare
-	*cfg.Challenges.ProviderConfigs.Dns01CloudflareConfig.Enable = false
-
-	// end challenge providers
 
 	return cfg
 }

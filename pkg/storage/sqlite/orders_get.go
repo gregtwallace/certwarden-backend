@@ -44,7 +44,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 		ao.updated_at, 
 
 		/* order's cert */
-		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
+		c.id, c.name, c.description, c.subject, c.subject_alts,
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url,
 		
@@ -140,7 +140,6 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			&oneOrder.certificate.description,
 			&oneOrder.certificate.subject,
 			&oneOrder.certificate.subjectAltNames,
-			&oneOrder.certificate.challengeMethodValue,
 			&oneOrder.certificate.organization,
 			&oneOrder.certificate.organizationalUnit,
 			&oneOrder.certificate.country,
@@ -255,7 +254,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 		ao.updated_at, 
 
 		/* order's cert */
-		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
+		c.id, c.name, c.description, c.subject, c.subject_alts,
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url,
 		
@@ -338,7 +337,6 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			&oneOrder.certificate.description,
 			&oneOrder.certificate.subject,
 			&oneOrder.certificate.subjectAltNames,
-			&oneOrder.certificate.challengeMethodValue,
 			&oneOrder.certificate.organization,
 			&oneOrder.certificate.organizationalUnit,
 			&oneOrder.certificate.country,
@@ -572,7 +570,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		ao.updated_at, 
 
 		/* order's cert */
-		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
+		c.id, c.name, c.description, c.subject, c.subject_alts,
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url,
 		
@@ -637,7 +635,6 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		&oneOrder.certificate.description,
 		&oneOrder.certificate.subject,
 		&oneOrder.certificate.subjectAltNames,
-		&oneOrder.certificate.challengeMethodValue,
 		&oneOrder.certificate.organization,
 		&oneOrder.certificate.organizationalUnit,
 		&oneOrder.certificate.country,
@@ -741,7 +738,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		ao.updated_at, 
 
 		/* order's cert */
-		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
+		c.id, c.name, c.description, c.subject, c.subject_alts,
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url,
 		
@@ -825,7 +822,6 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		&oneOrder.certificate.description,
 		&oneOrder.certificate.subject,
 		&oneOrder.certificate.subjectAltNames,
-		&oneOrder.certificate.challengeMethodValue,
 		&oneOrder.certificate.organization,
 		&oneOrder.certificate.organizationalUnit,
 		&oneOrder.certificate.country,

@@ -1,7 +1,6 @@
 package sqlite
 
 import (
-	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/certificates"
 )
 
@@ -15,7 +14,6 @@ type certificateDb struct {
 	certificateAccountDb accountDb
 	subject              string
 	subjectAltNames      commaJoinedStrings
-	challengeMethodValue challenges.MethodValue
 	organization         string
 	organizationalUnit   string
 	country              string
@@ -37,7 +35,6 @@ func (cert certificateDb) toCertificate(store *Storage) certificates.Certificate
 		CertificateAccount: cert.certificateAccountDb.toAccount(),
 		Subject:            cert.subject,
 		SubjectAltNames:    cert.subjectAltNames.toSlice(),
-		ChallengeMethod:    challenges.MethodByStorageValue(cert.challengeMethodValue),
 		Organization:       cert.organization,
 		OrganizationalUnit: cert.organizationalUnit,
 		Country:            cert.country,

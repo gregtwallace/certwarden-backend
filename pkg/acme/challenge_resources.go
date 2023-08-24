@@ -1,35 +1,23 @@
 package acme
 
-import (
-	"errors"
-)
+import "errors"
 
 var (
 	errUnsupportedChallengeType = errors.New("unsupported challenge type")
 	errWrongIdentifierType      = errors.New("acme identifier is not of type dns")
 )
 
-// Define challenge types (per RFC 8555)
-type ChallengeType string
-
-const (
-	UnknownChallengeType ChallengeType = ""
-
-	ChallengeTypeHttp01 ChallengeType = "http-01"
-	ChallengeTypeDns01  ChallengeType = "dns-01"
-)
-
-// ValidationResource creates the resource name and content that are required
+// ValidationResource creates the resource name and resource content that are required
 // to succesfully validate an ACME Challenge.
-func (challType ChallengeType) ValidationResource(identifier Identifier, key AccountKey, token string) (name string, content string, err error) {
+func (chall Challenge) ValidationResource(id Identifier, key AccountKey) (name string, content string, err error) {
 	// resource name
-	name, err = challType.validationResourceName(identifier, token)
+	name, err = chall.validationResourceName(id)
 	if err != nil {
 		return "", "", err
 	}
 
 	// resource content
-	content, err = challType.validationResourceContent(identifier, key, token)
+	content, err = chall.validationResourceContent(id, key)
 	if err != nil {
 		return "", "", err
 	}
@@ -39,24 +27,24 @@ func (challType ChallengeType) ValidationResource(identifier Identifier, key Acc
 
 // ValidationResourceName returns the resource name that is required to
 // validate the specified identifier
-func (challType ChallengeType) validationResourceName(identifier Identifier, token string) (name string, err error) {
+func (chall Challenge) validationResourceName(id Identifier) (name string, err error) {
 	// verify identifier is the proper type (only dns identifiers are supported)
-	if identifier.Type != identifierTypeDns {
+	if id.Type != IdentifierTypeDns {
 		return "", errWrongIdentifierType
 	}
 
 	// return resource name based on challenge type
-	switch challType {
+	switch chall.Type {
 	// http-01 (HTTP Challenge - RFC 8555 8.3), http-01 uses the token as
 	// the resource name
 	case ChallengeTypeHttp01:
-		name = token
+		name = chall.Token
 
 	// dns-01 (DNS Challenge - RFC 8555 8.4)
 	case ChallengeTypeDns01:
 		// dns-01 uses "_acme-challenge." prepended to the dns identifier value
 		// (e.g. "_acme-challenge.idendifier.example.com") as the resource name
-		name = "_acme-challenge." + identifier.Value
+		name = "_acme-challenge." + id.Value
 
 	// any other type is error
 	default:
@@ -68,23 +56,23 @@ func (challType ChallengeType) validationResourceName(identifier Identifier, tok
 
 // validationResourceContent returns the resource content that is required to
 // validate the specified identifier
-func (challType ChallengeType) validationResourceContent(identifier Identifier, key AccountKey, token string) (content string, err error) {
+func (chall Challenge) validationResourceContent(id Identifier, key AccountKey) (content string, err error) {
 	// verify identifier is the proper type (only dns identifiers are supported)
-	if identifier.Type != identifierTypeDns {
+	if id.Type != IdentifierTypeDns {
 		return "", errWrongIdentifierType
 	}
 
 	// return resource info based on challenge type
-	switch challType {
+	switch chall.Type {
 	// http-01 (HTTP Challenge - RFC 8555 8.3)
 	// http-01 uses the keyAuth as the resource content
 	case ChallengeTypeHttp01:
-		content, err = key.keyAuthorization(token)
+		content, err = key.keyAuthorization(chall.Token)
 
 	// dns-01 (DNS Challenge - RFC 8555 8.4)
 	// dns-01 uses the keyAuth's SHA-256 Encoded Hash as the resource content.
 	case ChallengeTypeDns01:
-		content, err = key.keyAuthorizationEndodedSHA256(token)
+		content, err = key.keyAuthorizationEndodedSHA256(chall.Token)
 
 	// any other type is error
 	default:

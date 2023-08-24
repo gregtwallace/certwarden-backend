@@ -43,7 +43,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 	// validated prior to this query being assembled!
 	query := fmt.Sprintf(`
 	SELECT 
-		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
+		c.id, c.name, c.description, c.subject, c.subject_alts, 
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url,
 		
@@ -95,7 +95,6 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 			&oneCert.description,
 			&oneCert.subject,
 			&oneCert.subjectAltNames,
-			&oneCert.challengeMethodValue,
 			&oneCert.organization,
 			&oneCert.organizationalUnit,
 			&oneCert.country,
@@ -179,7 +178,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 
 	query := `
 	SELECT
-		c.id, c.name, c.description, c.subject, c.subject_alts, c.challenge_method, 
+		c.id, c.name, c.description, c.subject, c.subject_alts,
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url,
 		
@@ -215,7 +214,6 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		&oneCert.description,
 		&oneCert.subject,
 		&oneCert.subjectAltNames,
-		&oneCert.challengeMethodValue,
 		&oneCert.organization,
 		&oneCert.organizationalUnit,
 		&oneCert.country,

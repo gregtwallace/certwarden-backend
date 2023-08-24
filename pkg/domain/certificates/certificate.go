@@ -2,7 +2,6 @@ package certificates
 
 import (
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
@@ -17,7 +16,6 @@ type Certificate struct {
 	CertificateAccount acme_accounts.Account
 	Subject            string
 	SubjectAltNames    []string
-	ChallengeMethod    challenges.Method
 	Organization       string
 	OrganizationalUnit string
 	Country            string
@@ -40,7 +38,6 @@ type certificateSummaryResponse struct {
 	CertificateAccount certificateAccountSummaryResponse `json:"acme_account"`
 	Subject            string                            `json:"subject"`
 	SubjectAltNames    []string                          `json:"subject_alts"`
-	ChallengeMethod    challenges.MethodWithStatus       `json:"challenge_method"`
 	ApiKeyViaUrl       bool                              `json:"api_key_via_url"`
 }
 
@@ -81,7 +78,6 @@ func (cert Certificate) summaryResponse(service *Service) certificateSummaryResp
 		},
 		Subject:         cert.Subject,
 		SubjectAltNames: cert.SubjectAltNames,
-		ChallengeMethod: service.challenges.AddStatus(cert.ChallengeMethod),
 		ApiKeyViaUrl:    cert.ApiKeyViaUrl,
 	}
 }
@@ -150,8 +146,7 @@ func (cert *Certificate) NewOrderPayload() acme.NewOrderPayload {
 // new account info
 // used to return info about valid options when making a new account
 type newCertOptions struct {
-	AvailableKeys    []private_keys.KeySummaryResponse      `json:"private_keys"`
-	KeyAlgorithms    []key_crypto.Algorithm                 `json:"key_algorithms"`
-	UsableAccounts   []acme_accounts.AccountSummaryResponse `json:"acme_accounts"`
-	ChallengeMethods []challenges.MethodWithStatus          `json:"challenge_methods"`
+	AvailableKeys  []private_keys.KeySummaryResponse      `json:"private_keys"`
+	KeyAlgorithms  []key_crypto.Algorithm                 `json:"key_algorithms"`
+	UsableAccounts []acme_accounts.AccountSummaryResponse `json:"acme_accounts"`
 }

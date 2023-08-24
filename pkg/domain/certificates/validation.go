@@ -2,8 +2,6 @@ package certificates
 
 import (
 	"errors"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
 	"legocerthub-backend/pkg/validation"
@@ -109,19 +107,16 @@ func (service *Service) privateKeyIdValid(keyId int, certId *int) bool {
 
 // subjectValid validates domain name and if it is a wildcard
 // domain name it also verifies the method is dns-01
-func subjectValid(domain string, challMethod challenges.Method) bool {
-	// wild is only valid for Dns challenges
-	wildOk := challMethod.ChallengeType == acme.ChallengeTypeDns01
-
+func subjectValid(domain string) bool {
 	// check domain is valid
-	return validation.DomainValid(domain, wildOk)
+	return validation.DomainValid(domain, true)
 }
 
 // subjectAltsValid validates each domain contained in the slice
 // of subject alt domain names
-func subjectAltsValid(alts []string, challMethod challenges.Method) bool {
+func subjectAltsValid(alts []string) bool {
 	for _, altName := range alts {
-		if !subjectValid(altName, challMethod) {
+		if !subjectValid(altName) {
 			return false
 		}
 	}

@@ -2,25 +2,54 @@ package challenges
 
 import (
 	"errors"
+	"fmt"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/challenges/dns_checker"
+	"strings"
 	"time"
 )
 
 var (
+	errWrongIdentifierType       = errors.New("acme identifier is not dns type (challenges pkg can only solve dns type)")
 	errChallengeRetriesExhausted = errors.New("challenge failed (out of retries)")
-	errChallengeTypeNotFound     = errors.New("intended challenge type not found")
+	errChallengeTypeNotFound     = errors.New("provider's challenge type not found in challenges array")
 )
 
-// Solve accepts a slice of challenges from an authorization and solves the specific challenge
-// specified by the method. Valid or invalid status is returned.  An error is returned if can't resolve
-// a valid or invalid state.
-func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, method Method, key acme.AccountKey, acmeServerId int) (status string, err error) {
-	var challenge acme.Challenge
+// Solve accepts an ACME identifier and a slice of challenges and then solves the challenge using a provider
+// for the specific domain. If no provider exists or solving otherwise fails, an error is returned.
+func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, key acme.AccountKey, acmeService *acme.Service) (status string, err error) {
+	// confirm Type is correct (only dns is supported)
+	if identifier.Type != acme.IdentifierTypeDns {
+		return "", errWrongIdentifierType
+	}
+
+	// find domain and provider for identifier value
+	var provider providerService
+	domainName := ""
 	found := false
 
-	// range to the correct challenge to solve based on Type
+	for serviceDomainName := range service.domainProviders {
+		// check suffix to account for multi part domains (e.g. some-name.in.ua)
+		// as opposed to just checking the end of a resource name
+		if strings.HasSuffix(identifier.Value, serviceDomainName) {
+			domainName = serviceDomainName
+			found = true
+			provider = service.domainProviders[domainName]
+			break
+		}
+	}
+
+	if !found {
+		return "", fmt.Errorf("could not find a challenge provider for the specified identifier (%s; %s)", identifier.Type, identifier.Value)
+	}
+
+	// range to the correct challenge to solve based on ACME Challenge Type (from provider)
+	providerChallengeType := provider.AcmeChallengeType()
+	var challenge acme.Challenge
+	found = false
+
 	for i := range challenges {
-		if challenges[i].Type == method.ChallengeType {
+		if challenges[i].Type == providerChallengeType {
 			found = true
 			challenge = challenges[i]
 		}
@@ -29,13 +58,19 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		return "", errChallengeTypeNotFound
 	}
 
+	// create resource name and value
+	resourceName, resourceContent, err := challenge.ValidationResource(identifier, key)
+	if err != nil {
+		return "", err
+	}
+
 	// provision the needed resource for validation and defer deprovisioning
-	err = service.Provision(identifier, method, key, challenge.Token)
+	err = service.Provision(domainName, resourceName, resourceContent, provider)
 	// do error check after Deprovision to ensure any records that were created
-	// get cleaned up, even if Provisioning errored.
+	// get cleaned up, even if Provision errored.
 
 	defer func() {
-		err := service.Deprovision(identifier, method, key, challenge.Token)
+		err := service.Deprovision(domainName, resourceName, resourceContent, provider)
 		if err != nil {
 			service.logger.Errorf("challenge solver deprovision failed (%s)", err)
 		}
@@ -46,15 +81,24 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		return "", err
 	}
 
+	// if using dns-01 provider, utilize dnsChecker
+	if providerChallengeType == acme.ChallengeTypeDns01 {
+		// check for propagation
+		propagated, err := service.dnsChecker.CheckTXTWithRetry(resourceName, resourceContent, 10)
+		if err != nil {
+			service.logger.Error(err)
+			return "", err
+		}
+
+		// if failed to propagate
+		if !propagated {
+			return "", dns_checker.ErrDnsRecordNotFound
+		}
+	}
+
 	// Below this point is to inform ACME the challenge is ready to be validated
 	// by the server and to subsequently monitor the challenge to be moved to the
 	// valid or invalid state.
-
-	// make pointer for the correct acme.Service (to avoid repeat of logic)
-	acmeService, err := service.acmeServerService.AcmeService(acmeServerId)
-	if err != nil {
-		return "", err
-	}
 
 	// inform ACME that the challenge is ready
 	_, err = acmeService.ValidateChallenge(challenge.Url, key)

@@ -2,139 +2,106 @@ package dns01cloudflare
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/cloudflare/cloudflare-go"
 )
 
-// Configuration options
+var (
+	errAccountAndTokenSpecified = errors.New("cloudflare provider config should have either an account or an api token, not both")
+	errMissingConfigInfo        = errors.New("cloudflare config missing an account (email and global key) or api token")
+)
+
+// Configuration options for an instance of Cloudflare provider
 type Config struct {
-	Enable   *bool `yaml:"enable"`
-	Accounts []struct {
-		Email        string `yaml:"email"`
-		GlobalApiKey string `yaml:"global_api_key"`
-	} `yaml:"accounts"`
-	// TODO: Simplify this to not be nested, however, config version number will need
-	// to change as this will break configs.
-	ApiTokens []struct {
-		APIToken string `yaml:"api_token"`
-	} `yaml:"api_tokens"`
+	Domains []string `yaml:"domains"`
+	// Account
+	Account struct {
+		Email        *string `yaml:"email"`
+		GlobalApiKey *string `yaml:"global_api_key"`
+	} `yaml:"account"`
+	// -- OR --
+	// Token
+	ApiToken *string `yaml:"api_token"`
 }
 
 // configureCloudflareAPI configures the service to use the API Tokens
 // and Accounts specified within the config. If any of the config does
 // not work, configuration is aborted and an error is returned.
-func (service *Service) configureCloudflareAPI(config *Config) error {
-	// make map to store known domain zones
-	service.knownDomainZones = make(map[string]zone)
-
-	// configure accounts
-	// create API objects for each account and map all known zones
-	for i := range config.Accounts {
-		// make api for account
-		apiInstance, err := cloudflare.New(config.Accounts[i].GlobalApiKey, config.Accounts[i].Email, service.httpClient.AsCloudflareOptions()...)
-		if err != nil {
-			err = fmt.Errorf("failed to create api instance %s (%s)", redactIdentifier(config.Accounts[i].GlobalApiKey), err)
-			service.logger.Error(err)
-			return err
-		}
-
-		// add zones from api
-		err = service.addZonesFromApiInstance(apiInstance)
-		if err != nil {
-			return err
-		}
+func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
+	// if both account and token are specified, error
+	if (cfg.Account.Email != nil || cfg.Account.GlobalApiKey != nil) && cfg.ApiToken != nil {
+		return errAccountAndTokenSpecified
 	}
-	// configure accounts - END
 
-	// configure domains specified by tokens
-	// for each token add the domain -> api mappings to known domains
-	for i := range config.ApiTokens {
+	// if using apiToken
+	if cfg.ApiToken != nil {
 		// make api for the token
-		apiInstance, err := cloudflare.NewWithAPIToken(config.ApiTokens[i].APIToken, service.httpClient.AsCloudflareOptions()...)
+		service.cloudflareApi, err = cloudflare.NewWithAPIToken(*cfg.ApiToken, service.httpClient.AsCloudflareOptions()...)
 		if err != nil {
-			err = fmt.Errorf("failed to create api instance %s (%s)", redactIdentifier(config.Accounts[i].GlobalApiKey), err)
+			err = fmt.Errorf("failed to create api instance %s (%s)", redactIdentifier(*cfg.ApiToken), err)
 			service.logger.Error(err)
 			return err
 		}
 
-		// add zones from api
-		err = service.addZonesFromApiInstance(apiInstance)
+	} else if cfg.Account.Email != nil && cfg.Account.GlobalApiKey != nil {
+		// else if using Account
+		service.cloudflareApi, err = cloudflare.New(*cfg.Account.GlobalApiKey, *cfg.Account.Email, service.httpClient.AsCloudflareOptions()...)
 		if err != nil {
+			err = fmt.Errorf("failed to create api instance %s - %s (%s)", redactIdentifier(*cfg.Account.GlobalApiKey), *cfg.Account.Email, err)
+			service.logger.Error(err)
 			return err
 		}
+
+	} else {
+		// else incomplete config
+		return errMissingConfigInfo
 	}
-	// configure domains specified by tokens - END
 
-	return nil
-}
-
-// addZonesFromApiInstance fetches available zones from a cloudflare API and
-// then adds those zones to the Service available list
-func (service *Service) addZonesFromApiInstance(cfApi *cloudflare.API) error {
 	// fetch list of zones
-	zoneList, err := cfApi.ListZones(context.Background())
+	availableZones, err := service.cloudflareApi.ListZones(context.Background())
 	if err != nil {
-		err = fmt.Errorf("api instance %s failed to list zones (%s)", redactedApiIdentifier(cfApi), err)
+		err = fmt.Errorf("api instance %s failed to list zones (%s)", service.redactedApiIdentifier(), err)
 		service.logger.Error(err)
 		return err
 	}
 
-	// add all to the known zone list
-	for i := range zoneList {
-		// verify proper dns edit permission is present
-		editDnsFound := false
+	// verify configured domains are actually available on the api instance and save their zone IDs
+	// for use later in provision/deprovision
+	for _, configDomain := range cfg.Domains {
+		// found tracks if the domain is found and has the proper permission
+		found := false
 
-		for j := range zoneList[i].Permissions {
-			// only add the zone if the key has proper permissions to edit dns
-			if zoneList[i].Permissions[j] == "#dns_records:edit" {
+		for _, zone := range availableZones {
+			// find domain on api instance
+			if configDomain == zone.Name {
+				// verify proper permission
+				for _, permission := range zone.Permissions {
+					// only add the zone if the key has proper permissions to edit dns
+					if permission == "#dns_records:edit" {
+						// found with proper permission
+						found = true
 
-				editDnsFound = true
+						// save zone ID in domain map
+						service.domainIDs[configDomain] = zone.ID
 
-				// add zone
-				z := zone{
-					id:  zoneList[i].ID,
-					api: cfApi,
+						// break, don't need to keep checking permissions once found
+						break
+					}
 				}
 
-				// may get overwritten if multiple instances support same zone, but doesn't matter
-				service.knownDomainZones[zoneList[i].Name] = z
-
-				// break once proper perm found
+				// break once domain found, even if permission was wrong
 				break
 			}
 		}
 
-		// log error if a zone exists without the needed permission
-		if !editDnsFound {
-			service.logger.Warnf("api instance %s does not have #dns_records:edit permission for defined zone %s", redactedApiIdentifier(cfApi), zoneList[i].Name)
+		if !found {
+			return fmt.Errorf("cloudflare domain %s is either not available or missing the proper permission using the specified api credential", configDomain)
 		}
 	}
 
 	return nil
-}
-
-// redactedIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
-// (depending on which is in use for the API instance) and then redacts it to return
-// the first and last characters of the key separated with asterisks. This is useful
-// for logging issues without saving the full credential to logs.
-func redactedApiIdentifier(cfApi *cloudflare.API) string {
-	identifier := ""
-
-	// select whichever is present
-	if len(cfApi.APIToken) > 0 {
-		identifier = cfApi.APIToken
-	} else if len(cfApi.APIKey) > 0 {
-		identifier = cfApi.APIKey
-	} else if len(cfApi.APIUserServiceKey) > 0 {
-		identifier = cfApi.APIUserServiceKey
-	} else {
-		// none present, return unknown
-		return "unknown"
-	}
-
-	// return redacted
-	return redactIdentifier(identifier)
 }
 
 // redactIdentifier removes the middle portion of a string and returns only the first and last
@@ -149,4 +116,27 @@ func redactIdentifier(id string) string {
 
 	// return first 3 + asterisks + last 3
 	return string(id[:3]) + "************" + string(id[len(id)-3:])
+}
+
+// redactedIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
+// (depending on which is in use for the API instance) and then redacts it to return
+// the first and last characters of the key separated with asterisks. This is useful
+// for logging issues without saving the full credential to logs.
+func (service *Service) redactedApiIdentifier() string {
+	identifier := ""
+
+	// select whichever is present
+	if len(service.cloudflareApi.APIToken) > 0 {
+		identifier = service.cloudflareApi.APIToken
+	} else if len(service.cloudflareApi.APIKey) > 0 {
+		identifier = service.cloudflareApi.APIKey
+	} else if len(service.cloudflareApi.APIUserServiceKey) > 0 {
+		identifier = service.cloudflareApi.APIUserServiceKey
+	} else {
+		// none present, return unknown
+		return "unknown"
+	}
+
+	// return redacted
+	return redactIdentifier(identifier)
 }

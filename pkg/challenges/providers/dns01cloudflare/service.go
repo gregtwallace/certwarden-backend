@@ -2,14 +2,15 @@ package dns01cloudflare
 
 import (
 	"errors"
+	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/httpclient"
 
+	"github.com/cloudflare/cloudflare-go"
 	"go.uber.org/zap"
 )
 
 var (
 	errServiceComponent = errors.New("necessary dns-01 cloudflare challenge service component is missing")
-	errNoDomains        = errors.New("cloudflare config error: no domains (zones) found")
 )
 
 // App interface is for connecting to the main app
@@ -20,16 +21,18 @@ type App interface {
 
 // Accounts service struct
 type Service struct {
-	logger           *zap.SugaredLogger
-	httpClient       *httpclient.Client
-	knownDomainZones map[string]zone
+	logger        *zap.SugaredLogger
+	httpClient    *httpclient.Client
+	cloudflareApi *cloudflare.API
+	domainIDs     map[string]string // domain_name[zone_id]
 }
 
-// NewService creates a new service
-func NewService(app App, config *Config) (*Service, error) {
-	// if disabled, return nil and no error
-	if !*config.Enable {
-		return nil, nil
+// NewService creates a new instance of the Cloudflare provider service. Service
+// contains one Cloudflare API instance.
+func NewService(app App, cfg *Config) (*Service, error) {
+	// if no config or no domains, error
+	if cfg == nil || len(cfg.Domains) <= 0 {
+		return nil, errServiceComponent
 	}
 
 	service := new(Service)
@@ -43,24 +46,22 @@ func NewService(app App, config *Config) (*Service, error) {
 	// http client for api calls
 	service.httpClient = app.GetHttpClient()
 
+	// make map for domains
+	service.domainIDs = make(map[string]string)
+
 	// cloudflare api
-	err := service.configureCloudflareAPI(config)
+	err := service.configureCloudflareAPI(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	// make sure at least one domain configured, or the config is bad
-	if len(service.knownDomainZones) <= 0 {
-		return nil, errNoDomains
-	}
-
 	// debug log configured domains
-	zoneList := []string{}
-	for zoneName := range service.knownDomainZones {
-		zoneList = append(zoneList, zoneName)
-	}
-
-	service.logger.Infof("dns01cloudflare configured domains: %s", zoneList)
+	service.logger.Infof("cloudflare instance %s configured domains: %s", service.redactedApiIdentifier(), service.AvailableDomains())
 
 	return service, nil
+}
+
+// ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
+func (service *Service) AcmeChallengeType() acme.ChallengeType {
+	return acme.ChallengeTypeDns01
 }
