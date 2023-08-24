@@ -92,6 +92,14 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	// challenge providers
 	service.domainProviders = datatypes.NewSafeMap[providerService]()
 
+	// configure providers async
+	var wg sync.WaitGroup
+	wgSize := len(cfg.ProviderConfigs.Dns01AcmeDnsConfigs) + len(cfg.ProviderConfigs.Dns01AcmeShConfigs) +
+		len(cfg.ProviderConfigs.Dns01CloudflareConfigs) + len(cfg.ProviderConfigs.Dns01ManualConfigs) + len(cfg.ProviderConfigs.Http01InternalConfigs)
+
+	wg.Add(wgSize)
+	wgErrors := make(chan error, wgSize)
+
 	// // http-01 internal challenge server
 	// http01Internal, err := http01internal.NewService(app, &cfg.ProviderConfigs.Http01InternalConfig)
 	// if err != nil {
@@ -134,19 +142,38 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 
 	// dns-01 cloudflare challenge services
 	for i := range cfg.ProviderConfigs.Dns01CloudflareConfigs {
-		cloudflareProvider, err := dns01cloudflare.NewService(app, &cfg.ProviderConfigs.Dns01CloudflareConfigs[i])
-		if err != nil || cloudflareProvider == nil {
-			service.logger.Errorf("failed to configure cloudflare challenge provider instance (%s)", err)
-			return nil, err
-		}
+		go func(i int) {
+			// done after func
+			defer wg.Done()
 
-		// add each domain name to providers map
-		domainNames := cloudflareProvider.AvailableDomains()
-		for _, domain := range domainNames {
-			exists, _ := service.domainProviders.Add(domain, cloudflareProvider)
-			if exists {
-				return nil, errMultipleSameDomain(domain)
+			// make service
+			cloudflareProvider, err := dns01cloudflare.NewService(app, &cfg.ProviderConfigs.Dns01CloudflareConfigs[i])
+			if err != nil {
+				wgErrors <- err
+				return
 			}
+
+			// add each domain name to providers map
+			domainNames := cloudflareProvider.AvailableDomains()
+			for _, domain := range domainNames {
+				exists, _ := service.domainProviders.Add(domain, cloudflareProvider)
+				if exists {
+					wgErrors <- errMultipleSameDomain(domain)
+					return
+				}
+			}
+		}(i)
+	}
+
+	// wait for all
+	wg.Wait()
+
+	// check for errors
+	close(wgErrors)
+	for err := range wgErrors {
+		if err != nil {
+			service.logger.Errorf("failed to configure challenge provider(s) (%s)", err)
+			return nil, err
 		}
 	}
 
