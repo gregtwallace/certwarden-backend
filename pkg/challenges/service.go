@@ -23,7 +23,7 @@ var (
 	errServiceComponent   = errors.New("necessary challenges service component is missing")
 	errNoProviders        = errors.New("no challenge providers are properly configured (at least one must be enabled)")
 	errMultipleSameDomain = func(domainName string) error {
-		return fmt.Errorf("failed to configure domain, each domain can only be configured once", domainName)
+		return fmt.Errorf("failed to configure domain %s, each domain can only be configured once", domainName)
 	}
 )
 
@@ -66,8 +66,8 @@ type Service struct {
 	logger             *zap.SugaredLogger
 	acmeServerService  *acme_servers.Service
 	dnsChecker         *dns_checker.Service
-	domainProviders    map[string]providerService // domain_name[providerService]
-	resourceNamesInUse *datatypes.WorkTracker     // tracks all resource names currently in use (regardless of provider)
+	domainProviders    *datatypes.SafeMap[providerService] // domain_name[providerService]
+	resourceNamesInUse *datatypes.WorkTracker              // tracks all resource names currently in use (regardless of provider)
 }
 
 // NewService creates a new service
@@ -90,7 +90,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	}
 
 	// challenge providers
-	service.domainProviders = make(map[string]providerService)
+	service.domainProviders = datatypes.NewSafeMap[providerService]()
 
 	// // http-01 internal challenge server
 	// http01Internal, err := http01internal.NewService(app, &cfg.ProviderConfigs.Http01InternalConfig)
@@ -143,29 +143,31 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 		// add each domain name to providers map
 		domainNames := cloudflareProvider.AvailableDomains()
 		for _, domain := range domainNames {
-			service.domainProviders[domain] = cloudflareProvider
+			exists, _ := service.domainProviders.Add(domain, cloudflareProvider)
+			if exists {
+				return nil, errMultipleSameDomain(domain)
+			}
 		}
 	}
 
 	// end challenge providers
 
 	// verify at least one domain / provider exists
-	if len(service.domainProviders) <= 0 {
+	if service.domainProviders.Len() <= 0 {
 		return nil, errNoProviders
 	}
 
 	// configure dns checker service (if any domain uses a dns-01 provider)
-	for _, provider := range service.domainProviders {
-		if provider.AcmeChallengeType() == acme.ChallengeTypeDns01 {
-			// enable checker
-			service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
-			if err != nil {
-				service.logger.Errorf("failed to configure dns checker (%s)", err)
-				return nil, err
-			}
+	checkDns01ProviderFunc := func(p providerService) bool {
+		return p.AcmeChallengeType() == acme.ChallengeTypeDns01
+	}
 
-			// no need to continue loop once DNS checker service is confirmed required
-			break
+	if service.domainProviders.CheckValuesForFunc(checkDns01ProviderFunc) {
+		// enable checker
+		service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
+		if err != nil {
+			service.logger.Errorf("failed to configure dns checker (%s)", err)
+			return nil, err
 		}
 	}
 

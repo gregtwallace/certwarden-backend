@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges/dns_checker"
-	"strings"
 	"time"
 )
 
@@ -24,29 +23,15 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// find domain and provider for identifier value
-	var provider providerService
-	domainName := ""
-	found := false
-
-	for serviceDomainName := range service.domainProviders {
-		// check suffix to account for multi part domains (e.g. some-name.in.ua)
-		// as opposed to just checking the end of a resource name
-		if strings.HasSuffix(identifier.Value, serviceDomainName) {
-			domainName = serviceDomainName
-			found = true
-			provider = service.domainProviders[domainName]
-			break
-		}
-	}
-
-	if !found {
+	domainName, provider, err := service.domainProviders.ReadSuffix(identifier.Value)
+	if err != nil {
 		return "", fmt.Errorf("could not find a challenge provider for the specified identifier (%s; %s)", identifier.Type, identifier.Value)
 	}
 
 	// range to the correct challenge to solve based on ACME Challenge Type (from provider)
 	providerChallengeType := provider.AcmeChallengeType()
 	var challenge acme.Challenge
-	found = false
+	found := false
 
 	for i := range challenges {
 		if challenges[i].Type == providerChallengeType {
