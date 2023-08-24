@@ -11,7 +11,7 @@ import (
 var (
 	errWrongIdentifierType       = errors.New("acme identifier is not dns type (challenges pkg can only solve dns type)")
 	errChallengeRetriesExhausted = errors.New("challenge failed (out of retries)")
-	errChallengeTypeNotFound     = errors.New("provider's challenge type not found in challenges array")
+	errChallengeTypeNotFound     = errors.New("provider's challenge type not found in challenges array (possibly trying to use a wildcard with http-01)")
 )
 
 // Solve accepts an ACME identifier and a slice of challenges and then solves the challenge using a provider
