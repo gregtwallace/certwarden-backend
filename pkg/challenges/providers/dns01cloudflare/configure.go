@@ -79,12 +79,15 @@ func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 	}
 
 	// add all available zones, even if not being used (configured in cfg.Domains)
+	allZoneNames := []string{}
 	for i := range availableZones {
 		// verify proper permission
 		if zoneValid(&availableZones[i]) {
+			allZoneNames = append(allZoneNames, availableZones[i].Name)
 			service.domainIDs[availableZones[i].Name] = availableZones[i].ID
 		}
 	}
+	service.logger.Debugf("cloudflare instance %s all available zones: %s", service.redactedApiIdentifier(), allZoneNames)
 
 	// verify all domains in cfg.Domains are available zones (if not wildcard provider)
 	if !(len(cfg.Domains) == 1 && cfg.Domains[0] == "*") {
