@@ -1,0 +1,241 @@
+# This file details configuration fields and what they do including some
+# variance from defaults.
+
+# Initial login credentials:
+# username: admin
+# password: password
+# When you change the password, the new password must be at least 8 characters
+# long. However, this is not enforced in devMode. You should NOT use a password
+# this week.  10+ chars, upper/lower case, & special chars is strongly recommended.
+
+# config version is used indicate when breaking changes are made between
+# versions of LeGo. Error will be logged and the /status endpoint will
+# show mismatch if the version number of the config file and the LeGo binary
+# do not match.
+# If you see this, review the change log to determine what configuration
+# item(s)need to be updated and then manually update the version number to
+# clear the error.
+'config_version': 1
+
+# Bind Address and Ports for API Server
+# If address is blank, server will bind to all available addresses
+# Https will start if there is a valid private_key and certificate
+# pair specified below. If not, http starts.
+# WARNING: You should obtain a valid certificate immediately to avoid loss
+# of data confidentiality.
+# Additionally, key and certificate downloads via the API key will be disabled
+# if the server is running as http.
+'bind_address': '0.0.0.0'
+# Docker: Do not change default ports. Health check will break.
+'https_port': 443
+'http_port': 80
+
+# enable http redirect - if this is enabled, when server is running
+# https it will also start a server on the http port that will redirect
+# the client to https
+# Docker: Do not disable. Health check will break.
+'enable_http_redirect': false
+
+# Server logging level (valid levels are: debug, info, warn, error, dpanic,
+# panic, and fatal)
+'log_level': 'debug'
+
+# Should the server also host the frontend?
+'serve_frontend': true
+
+# CORS permitted origins
+# Only needed if the frontend is hosted somewhere other than the backend api server
+# Each entry should be a protocol + hostname or address + port
+# (e.g. https://localhost:5353 or http://192.168.1.1:5050)
+# In most cases, this should not be used.
+'cors_permitted_origins':
+  - 'http://localhost:5173'
+  - 'https://frontend.example.com:8099'
+
+# LeGo Server's https certificate
+# The name should match the 'name' field of the desired certificate in the
+# application. They relevant key is deduced based on the certificate.
+# If not specified (or invalid), the application launches over http instead
+# of https.
+'certificate_name': 'mylego.example.com'
+
+# Development mode
+# This should NOT be used in production!
+# Specific changes:
+# - Increased web server read/write timeouts
+# - Allow 404 errors to be returned (in prod, 401 is returned instead of 404
+#   to obfuscate if a route is valid or not)
+# - Set log level to debug
+# - Some functions are disabled until the server is running over https. devMode
+#   enables those functions even when running over http. (e.g. change password,
+#   download keys/certs, & redaction of certain sensitive informaiton before
+#   it is returned to the client)
+# - API Key manual editing is not allowed until running over https. devMode
+#   overrides this restriction.
+# - JSON marshal is indented
+# - No change password complexity requirement
+# - Set frontend to devMode (assuming backend hosts frontend)
+#   see: https://github.com/gregtwallace/legocerthub-frontend/blob/master/src/helpers/environment.js
+#   for more details regarding frontend changes
+# - Enable pprof regardless of pprof config option
+'dev_mode': true
+
+# Enable pprof for debugging. When enabled, pprof is available over http
+# at the specified port
+'enable_pprof': true
+'pprof_port': 8065
+
+# LeGo update checking functionality to alert you when new versions are available
+'updater':
+  'auto_check': true
+  # currently beta is the only channel
+  'channel': 'beta'
+
+# Orders configuration
+'orders':
+  # settings for automatic ordering when certs are close to expiring
+  'auto_order_enable': true
+  # auto order certs with less than this number of days remaining of validity
+  'valid_remaining_days_threshold': 20
+  # time for the daily ordering to occur
+  'refresh_time_hour': 1
+  'refresh_time_minute': 35
+
+# Challenge Providers
+'challenges':
+  # DNS Checker allows LeGo to verify DNS records have propagated before informing
+  # the ACME server the challenge is ready. If no providers are configured that
+  # use DNS, this functionality is automatically disabled.
+  'dns_checker':
+    # specifying skip check wait disables dns record validation and instead
+    # sleeps for the specified number of seconds and then assumes the record
+    # is fully propagated
+    'skip_check_wait_seconds': 90
+    # services to use if checker is not disabled
+    # Note: these are defined here, but because the check wait seconds are defined
+    # if this were an actual deployment, this part of dns_checker config would be
+    # ignored.
+    'dns_services':
+      # generally you do NOT want these to be internal dns servers
+      # internal dns usually has long cache and doesn't truly check propagation
+      # if you don't want external dns checking, use skip_check above
+      # primary and secondary should be for the same provider
+      - 'primary_ip': '208.67.222.222'
+        'secondary_ip': '208.67.220.220'
+      - 'primary_ip': '45.90.28.0'
+        'secondary_ip': '45.90.28.255'
+
+  # Providers are critical to LeGo's function. These are how you verify control over
+  # the domains you issue certificates for. You must have at least one provider.
+  # If you only use one provider (or otherwise want to fall back to one for any domain
+  # not explicitly configured) you can specify a single domain for the provider as '*'
+  # and it will function as a catch all. If you only need one provider, you can also use
+  # this to avoid having to list every domain manually.
+  'providers':
+    # Each provider can have multiple instances, the configs are array objects
+
+    # "domains" are always the domains that will be routed to the provider for validation
+
+    # http-01 internal server(s)
+    'http_01_internal':
+      - 'domains':
+          - 'somedomain.com'
+        # port to run the http challenge server on
+        'port': 4060
+      # another instance of http-01 internal (if for some odd reason you wanted 2)
+      - 'domains':
+          - 'somedomain2.com'
+        'port': 4099
+
+    # dns-01 manual uses custom scripts you must write (or otherwise source). It calls
+    # the scripts at the specified path and uses the specified environment variables.
+    'dns_01_manual':
+      - 'domains':
+          - 'example.com'
+        'environment':
+          - 'MY_EXPORT_VAR=some_value'
+          - 'ANOTHER_EXPORT_ENV=another_value'
+        # example scripts can be found in the /scripts folder
+        'create_script': './scripts/create-dns.sh'
+        'delete_script': './scripts/delete-dns.sh'
+    # as with all providers, you could specify multiple instances if you had different
+    # scripts for different domains
+
+    # acme-dns server (https://github.com/joohoi/acme-dns)
+    # each name must be pre-registered and configured individually
+    # LeGo only updates the challenge tokens automatically
+    'dns_01_acme_dns':
+      - 'domains':
+          - 'domain.com'
+        'acme_dns_address': 'http://localhost:8880'
+        'resources':
+          # repeat this block as many times as needed
+          # the actual domain you want a certificate for
+          # this is by far the most lengthy provider to configure since every hostname
+          # will need a resource
+          - 'real_domain': 'secure-server.example.com'
+            # the matching information about the acme-dns domain
+            # that will be updated
+            'full_domain': 'ee29dc47-aaaa-aaaa-aaaa-aaaaaaaaaaaa.decoy.dummy.com'
+            'username': 'ee29dc47-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+            'password': 'QWDP...b2Mg'
+          # another resource record
+          - 'real_domain': 'other-server.example.com'
+            'full_domain': 'ee29dc47-bbbb-bbbb-bbbb-aaaaaaaaaaaa.decoy.dummy.com'
+            'username': 'ee29dc47-dddd-dddd-dddd-bbbbbbbbbbbb'
+            'password': 'QWDd...rrSg'
+    # again, multiple providers are supported if you had more than one acme-dns server
+
+    # acme.sh scripts (https://github.com/acmesh-official/acme.sh)
+    # complete dns-01 challenges with any provider supported by acme.sh
+    # this one could be particularly useful to have multiple provider definitions as
+    # different domains may use different providers and/or credentials
+    # DOES NOT WORK IN WINDOWS
+    'dns_01_acme_sh':
+      - 'domains':
+          - 'another.net'
+        # path to the acme.sh script. /dnsapi subfolder must also exist and contain
+        # the script for the relevant dns provider (hook script)
+        # acme.sh is installed with LeGo by default at the default path so
+        # you should not need to change this
+        'acme_sh_path': './scripts/acme.sh'
+        # for environment and dns_hook, see:
+        # https://github.com/acmesh-official/acme.sh/wiki/dnsapi
+        # environment vars are the 'export' items listed at the above URL for your
+        # specific dns provider
+        'environment':
+          - 'MY_EXPORT_VAR=some_value'
+          - 'ANOTHER_EXPORT_ENV=another_value'
+        # dns_hook is the text after the '--dns' flag in the command listed after the
+        # text 'let's issue a cert now:' for your specific dns provider at the above
+        # URL
+        'dns_hook': 'dns_cf'
+      # another acme.sh instance
+      - 'domains':
+          - 'another2.net'
+        'acme_sh_path': './scripts/acme.sh'
+        'environment':
+          - 'MY_EXPORT_VAR=some_other_value'
+          - 'ANOTHER_EXPORT_ENV=another_value'
+        'dns_hook': 'dns_gd'
+
+    # native Cloudflare support baked into LeGo
+    # multiple instances can be created for various different keys and/or accounts
+    'dns_01_cloudflare':
+      # you can use an account OR
+      #   an api token for any given instance.
+      # If you need more than one account or api token, make multiple instances
+
+      # the more secure method is generating tokens that are limited in scope to the
+      # domain(s) you want available.
+      - 'domains':
+          - 'mydomain.org'
+          - 'myotherdomain.org'
+        'api_token': '123abc'
+
+      # another instance but with an account and setting it as the wild card provider
+      - 'domains':
+          - '*'
+        'account':
+          'email': 'user@example.com'
+          'global_api_key': '12345abcde'

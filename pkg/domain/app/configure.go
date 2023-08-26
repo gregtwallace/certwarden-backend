@@ -102,12 +102,6 @@ func defaultConfig() (cfg *config) {
 			RefreshTimeHour:             new(int),
 			RefreshTimeMinute:           new(int),
 		},
-		Challenges: challenges.Config{
-			DnsCheckerConfig: dns_checker.Config{
-				// skip_check_wait_seconds defaults to nil
-				// servers are a slice, no need to call new()
-			},
-		},
 	}
 
 	// set default values
@@ -123,7 +117,6 @@ func defaultConfig() (cfg *config) {
 	*cfg.EnableHttpRedirect = true
 	*cfg.LogLevel = defaultLogLevel.String()
 	*cfg.ServeFrontend = true
-	cfg.CORSPermittedOrigins = []string{}
 
 	// LeGo https certificate name
 	*cfg.CertificateName = "legocerthub"
