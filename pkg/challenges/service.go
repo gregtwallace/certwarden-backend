@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges/dns_checker"
+	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
 	"legocerthub-backend/pkg/challenges/providers/dns01acmesh"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
@@ -101,7 +102,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 		}(i)
 	}
 
-	// dns-01 manual external scripts
+	// dns-01 manual external script services
 	for i := range cfg.ProviderConfigs.Dns01ManualConfigs {
 		go func(i int) {
 			// done after func
@@ -119,15 +120,23 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 		}(i)
 	}
 
-	// // dns-01 acme-dns challenge service
-	// dns01AcmeDns, err := dns01acmedns.NewService(app, &cfg.ProviderConfigs.Dns01AcmeDnsConfig)
-	// if err != nil {
-	// 	service.logger.Errorf("failed to configure dns 01 acme-dns (%s)", err)
-	// 	return nil, err
-	// }
-	// if dns01AcmeDns != nil {
-	// 	service.providers[methodValueDns01AcmeDns] = dns01AcmeDns
-	// }
+	// dns-01 acme-dns challenge services
+	for i := range cfg.ProviderConfigs.Dns01AcmeDnsConfigs {
+		go func(i int) {
+			// done after func
+			defer wg.Done()
+
+			// make service
+			dns01AcmeDns, err := dns01acmedns.NewService(app, &cfg.ProviderConfigs.Dns01AcmeDnsConfigs[i])
+			if err != nil {
+				wgErrors <- err
+				return
+			}
+
+			// add each domain name to providers map
+			wgErrors <- service.addDomains(dns01AcmeDns)
+		}(i)
+	}
 
 	// dns-01 acme.sh script services
 	for i := range cfg.ProviderConfigs.Dns01AcmeShConfigs {

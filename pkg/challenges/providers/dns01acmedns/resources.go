@@ -3,16 +3,17 @@ package dns01acmedns
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 )
 
-var (
-	errDomainNotConfigured = errors.New("dns01acmedns domain name not configured (restart lego if config was updated)")
-	errUpdateFailed        = errors.New("dns01acmedns failed to update domain ")
-)
+// AvailableDomains returns all of the domains that this provider instance can
+// provision records for.
+func (service *Service) AvailableDomains() []string {
+	return service.domains
+}
 
 // acmeDnsResource contains the needed configuration to update
 // and acme-dns record and also the corresponding 'real' domain
@@ -24,12 +25,6 @@ type acmeDnsResource struct {
 	Password   string `yaml:"password"`
 }
 
-// subdomain returns just the first piece of the subdomain of FullDomain
-func (adr *acmeDnsResource) subdomain() string {
-	fd := strings.Split(adr.FullDomain, ".")
-	return fd[0]
-}
-
 // acme-dns update endpoint
 const acmeDnsUpdateEndpoint = "/update"
 
@@ -38,18 +33,19 @@ type acmeDnsUpdate struct {
 	Txt       string `json:"txt"`
 }
 
-// postUpdate posts the requested update to the acme dns server
-func (service *Service) postUpdate(adr *acmeDnsResource, resourceContent string) (*http.Response, error) {
+// postUpdate updates the acmeDnsResource to the specified content value on
+// the acme-dns server
+func (service *Service) postUpdate(adr *acmeDnsResource, resourceContent string) error {
 	// body of api call
 	payload := acmeDnsUpdate{
-		SubDomain: adr.subdomain(),
+		SubDomain: strings.Split(adr.FullDomain, ".")[0], // expected subdomain value for acme-dns
 		Txt:       resourceContent,
 	}
 
 	// marshal for posting
 	payloadJson, err := json.Marshal(payload)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// set auth headers
@@ -60,33 +56,6 @@ func (service *Service) postUpdate(adr *acmeDnsResource, resourceContent string)
 	// post to acme dns
 	resp, err := service.httpClient.PostWithHeader(service.acmeDnsAddress+acmeDnsUpdateEndpoint, "application/json", bytes.NewBuffer(payloadJson), header)
 	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-// Provision updates the acme-dns resource record with the correct content
-func (service *Service) Provision(resourceName string, resourceContent string) error {
-	// check if resource exists
-	adr := acmeDnsResource{}
-	found := false
-	for _, r := range service.acmeDnsResources {
-		if "_acme-challenge."+r.RealDomain == resourceName {
-			adr = r
-			found = true
-			break
-		}
-	}
-	// this package does not support registering new records, so fail if
-	// record was not found
-	if !found {
-		return errDomainNotConfigured
-	}
-
-	// post update
-	resp, err := service.postUpdate(&adr, resourceContent)
-	if err != nil {
 		return err
 	}
 
@@ -94,47 +63,65 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 	defer resp.Body.Close()
 	_, _ = io.Copy(io.Discard, resp.Body)
 
-	// if not status 200
+	// if not status 200, error
 	if resp.StatusCode != http.StatusOK {
-		return errUpdateFailed
+		return fmt.Errorf("acme-dns failed to update %s (%d)", adr.FullDomain, resp.StatusCode)
 	}
 
 	return nil
 }
 
-// Derovision updates the acme-dns resource record with blank content. This probably
-// isn't really needed and this could be an empty stub. Clearing the data doesn't
-// hurt though.
-func (service *Service) Deprovision(resourceName string, resourceContent string) error {
-	// check if resource exists
-	adr := acmeDnsResource{}
-	found := false
-	for _, r := range service.acmeDnsResources {
-		if "_acme-challenge."+r.RealDomain == resourceName {
-			adr = r
-			found = true
-			break
+// getAcmeDnsResource returns the acme dns resource for resourceName. If no
+// record exists, an error is returned instead
+func (service *Service) getAcmeDnsResource(resourceName string) (*acmeDnsResource, error) {
+	// remove prepended _acme-challenge. string from resource name
+	resourceNameRealDomain := strings.TrimPrefix(resourceName, "_acme-challenge.")
+
+	for i := range service.acmeDnsResources {
+		if resourceNameRealDomain == service.acmeDnsResources[i].RealDomain {
+			return &service.acmeDnsResources[i], nil
 		}
 	}
-	// this package does not support registering new records, so fail if
-	// record was not found
-	if !found {
-		return errDomainNotConfigured
-	}
 
-	// make request (dummy text value when not in use)
-	resp, err := service.postUpdate(&adr, "VOID_____VOID______VOID_______VOID_____VOID")
+	return nil, fmt.Errorf("acme-dns resource not found for %s", resourceName)
+}
+
+// Provision updates the acme-dns resource corresponding to resourceName with
+// the resourceContent
+func (service *Service) Provision(domain, resourceName, resourceContent string) error {
+	// domain is not used
+
+	// get acme-dns resource
+	adr, err := service.getAcmeDnsResource(resourceName)
 	if err != nil {
 		return err
 	}
 
-	// read body & close
-	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, resp.Body)
+	// post update
+	err = service.postUpdate(adr, resourceContent)
+	if err != nil {
+		return err
+	}
 
-	// if not status 200
-	if resp.StatusCode != http.StatusOK {
-		return errUpdateFailed
+	return nil
+}
+
+// Derovision updates the acme-dns resource corresponding to resourceName with
+// a dummy value. This probably isn't really needed and this function could just
+// be an empty stub, but clearing the data doesn't hurt.
+func (service *Service) Deprovision(domain, resourceName, resourceContent string) error {
+	// domain & resourceContent are not used
+
+	// get acme-dns resource
+	adr, err := service.getAcmeDnsResource(resourceName)
+	if err != nil {
+		return err
+	}
+
+	// post update (dummy value when not in use)
+	err = service.postUpdate(adr, "__VOID__")
+	if err != nil {
+		return err
 	}
 
 	return nil
