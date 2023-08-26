@@ -122,8 +122,8 @@ func redactIdentifier(id string) string {
 		return "************"
 	}
 
-	// return first 3 + asterisks + last 3
-	return string(id[:3]) + "************" + string(id[len(id)-3:])
+	// return first 2 + asterisks + last 1
+	return string(id[:2]) + "************" + string(id[len(id)-1:])
 }
 
 // redactedIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
