@@ -52,13 +52,12 @@ func (c config) pprofServAddress() string {
 // for any unspecified options
 func (app *Application) readConfigFile() (err error) {
 	// load default config options
-	cfg := defaultConfig()
+	app.config = defaultConfig()
 
 	// open config file, if exists
 	file, err := os.Open(configFile)
 	if err != nil {
 		app.logger.Warnf("can't open config file, using defaults (%s)", err)
-		app.config = cfg
 		return nil
 	}
 	// only needed if file actually opened
@@ -68,13 +67,12 @@ func (app *Application) readConfigFile() (err error) {
 	// this will overwrite default values, but only for options that exist
 	// in the config file
 	decoder := yaml.NewDecoder(file)
-	err = decoder.Decode(cfg)
+	err = decoder.Decode(app.config)
 	if err != nil {
 		return err
 	}
 
 	// success
-	app.config = cfg
 	return nil
 }
 
