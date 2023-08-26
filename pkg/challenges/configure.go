@@ -33,8 +33,8 @@ type Config struct {
 	ProviderConfigs  ProvidersConfigs   `yaml:"providers"`
 }
 
-// addDomains adds all of the available domains from a provider to the domains
-// configured in challenges
+// addDomains adds all of the available domains from a provider to the
+// challenges service
 func (service *Service) addDomains(provider providerService) error {
 	// add each domain name to providers map
 	domainNames := provider.AvailableDomains()

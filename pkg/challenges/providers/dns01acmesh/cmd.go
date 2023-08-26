@@ -27,8 +27,6 @@ func (service *Service) makeCommand(resourceName string, resourceContent string,
 	// `-c`
 	args := []string{"-c"}
 
-	service.logger.Debugf("resource name: %s", resourceName)
-
 	// actual command  `source [path] ; [func] [args]`
 	args = append(args, "source "+service.shellScriptPath+" ; "+funcName+" "+resourceName+" "+resourceContent)
 
@@ -36,8 +34,7 @@ func (service *Service) makeCommand(resourceName string, resourceContent string,
 	cmd := exec.Command(service.shellPath, args...)
 
 	// set command environment
-	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, service.environmentVars...)
+	cmd.Env = append(os.Environ(), service.environmentVars...)
 
 	return cmd
 }

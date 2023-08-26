@@ -3,6 +3,7 @@ package dns01acmesh
 import (
 	"bytes"
 	"errors"
+	"legocerthub-backend/pkg/acme"
 	"os"
 	"os/exec"
 	"runtime"
@@ -31,6 +32,7 @@ type App interface {
 // Accounts service struct
 type Service struct {
 	logger          *zap.SugaredLogger
+	domains         []string
 	shellPath       string
 	shellScriptPath string
 	dnsHook         string
@@ -39,28 +41,26 @@ type Service struct {
 
 // Configuration options
 type Config struct {
-	Enable      *bool    `yaml:"enable"`
+	Domains     []string `yaml:"domains"`
 	AcmeShPath  *string  `yaml:"acme_sh_path"`
 	Environment []string `yaml:"environment"`
 	DnsHook     string   `yaml:"dns_hook"`
 }
 
 // NewService creates a new service
-func NewService(app App, config *Config) (*Service, error) {
-	var err error
-
-	// if disabled, return nil and no error
-	if !*config.Enable {
-		return nil, nil
-	}
-
-	// add error and fail for trying to run on windows
+func NewService(app App, cfg *Config) (*Service, error) {
+	// error and fail if trying to run on windows
 	if runtime.GOOS == "windows" {
 		return nil, errWindows
 	}
 
+	// if no config or no domains, error
+	if cfg == nil || len(cfg.Domains) <= 0 {
+		return nil, errServiceComponent
+	}
+
 	// error if no path
-	if config.AcmeShPath == nil {
+	if cfg.AcmeShPath == nil {
 		return nil, errNoAcmeShPath
 	}
 
@@ -72,14 +72,18 @@ func NewService(app App, config *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
+	// set supported domains from config
+	service.domains = append(service.domains, cfg.Domains...)
+
 	// bash is required
+	var err error
 	service.shellPath, err = exec.LookPath("bash")
 	if err != nil {
 		return nil, errBashMissing
 	}
 
 	// read in base script
-	acmeSh, err := os.ReadFile(*config.AcmeShPath + "/" + acmeShFileName)
+	acmeSh, err := os.ReadFile(*cfg.AcmeShPath + "/" + acmeShFileName)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +91,7 @@ func NewService(app App, config *Config) (*Service, error) {
 	acmeSh, _, _ = bytes.Cut(acmeSh, []byte{109, 97, 105, 110, 32, 34, 36, 64, 34})
 
 	// read in dns_hook script
-	acmeShDnsHook, err := os.ReadFile(*config.AcmeShPath + dnsApiPath + "/" + config.DnsHook + ".sh")
+	acmeShDnsHook, err := os.ReadFile(*cfg.AcmeShPath + dnsApiPath + "/" + cfg.DnsHook + ".sh")
 	if err != nil {
 		return nil, err
 	}
@@ -96,14 +100,14 @@ func NewService(app App, config *Config) (*Service, error) {
 	shellScript := append(acmeSh, acmeShDnsHook...)
 
 	// store in file to use as source
-	path := *config.AcmeShPath + tempScriptPath
+	path := *cfg.AcmeShPath + tempScriptPath
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		err := os.Mkdir(path, os.ModePerm)
 		if err != nil {
 			return nil, err
 		}
 	}
-	service.shellScriptPath = path + "/" + acmeShFileName + "_" + config.DnsHook + ".sh"
+	service.shellScriptPath = path + "/" + acmeShFileName + "_" + cfg.DnsHook + ".sh"
 
 	shellFile, err := os.Create(service.shellScriptPath)
 	if err != nil {
@@ -117,10 +121,15 @@ func NewService(app App, config *Config) (*Service, error) {
 	}
 
 	// hook name (needed for funcs)
-	service.dnsHook = config.DnsHook
+	service.dnsHook = cfg.DnsHook
 
 	// environment vars
-	service.environmentVars = config.Environment
+	service.environmentVars = cfg.Environment
 
 	return service, nil
+}
+
+// ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
+func (service *Service) AcmeChallengeType() acme.ChallengeType {
+	return acme.ChallengeTypeDns01
 }

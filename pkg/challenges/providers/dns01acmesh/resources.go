@@ -4,8 +4,16 @@ import (
 	"os/exec"
 )
 
+// AvailableDomains returns all of the domains that this provider instance can
+// provision records for.
+func (service *Service) AvailableDomains() []string {
+	return service.domains
+}
+
 // Provision adds the requested DNS record.
-func (service *Service) Provision(resourceName string, resourceContent string) error {
+func (service *Service) Provision(domain, resourceName, resourceContent string) error {
+	// domain is not used
+
 	// run create script
 	// script command
 	cmd := service.makeCreateCommand(resourceName, resourceContent)
@@ -27,7 +35,9 @@ func (service *Service) Provision(resourceName string, resourceContent string) e
 }
 
 // Deprovision deletes the corresponding DNS record.
-func (service *Service) Deprovision(resourceName string, resourceContent string) error {
+func (service *Service) Deprovision(domain, resourceName, resourceContent string) error {
+	// domain is not used
+
 	// run delete script
 	// script command
 	cmd := service.makeDeleteCommand(resourceName, resourceContent)
