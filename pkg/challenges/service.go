@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges/dns_checker"
-	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
-	"legocerthub-backend/pkg/challenges/providers/dns01acmesh"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
@@ -43,21 +41,6 @@ type providerService interface {
 	AvailableDomains() []string
 	Provision(domainName, resourceName, resourceContent string) (err error)
 	Deprovision(domainName, resourceName, resourceContent string) (err error)
-}
-
-// ProviderConfigs holds the challenge provider configs
-type ProviderConfigs struct {
-	Http01InternalConfigs  []http01internal.Config  `yaml:"http_01_internal"`
-	Dns01ManualConfigs     []dns01manual.Config     `yaml:"dns_01_manual"`
-	Dns01AcmeDnsConfigs    []dns01acmedns.Config    `yaml:"dns_01_acme_dns"`
-	Dns01AcmeShConfigs     []dns01acmesh.Config     `yaml:"dns_01_acme_sh"`
-	Dns01CloudflareConfigs []dns01cloudflare.Config `yaml:"dns_01_cloudflare"`
-}
-
-// Config holds all of the challenge config
-type Config struct {
-	DnsCheckerConfig dns_checker.Config `yaml:"dns_checker"`
-	ProviderConfigs  ProviderConfigs    `yaml:"providers"`
 }
 
 // service struct
@@ -114,26 +97,27 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 			}
 
 			// add each domain name to providers map
-			domainNames := http01Internal.AvailableDomains()
-			for _, domain := range domainNames {
-				exists, _ := service.domainProviders.Add(domain, http01Internal)
-				if exists {
-					wgErrors <- errMultipleSameDomain(domain)
-					return
-				}
-			}
+			wgErrors <- service.addDomains(http01Internal)
 		}(i)
 	}
 
-	// // dns-01 manual external scripts
-	// dns01Manual, err := dns01manual.NewService(app, &cfg.ProviderConfigs.Dns01ManualConfig)
-	// if err != nil {
-	// 	service.logger.Errorf("failed to configure dns 01 manual (%s)", err)
-	// 	return nil, err
-	// }
-	// if dns01Manual != nil {
-	// 	service.providers[methodValueDns01Manual] = dns01Manual
-	// }
+	// dns-01 manual external scripts
+	for i := range cfg.ProviderConfigs.Dns01ManualConfigs {
+		go func(i int) {
+			// done after func
+			defer wg.Done()
+
+			// make service
+			dns01Manual, err := dns01manual.NewService(app, &cfg.ProviderConfigs.Dns01ManualConfigs[i])
+			if err != nil {
+				wgErrors <- err
+				return
+			}
+
+			// add each domain name to providers map
+			wgErrors <- service.addDomains(dns01Manual)
+		}(i)
+	}
 
 	// // dns-01 acme-dns challenge service
 	// dns01AcmeDns, err := dns01acmedns.NewService(app, &cfg.ProviderConfigs.Dns01AcmeDnsConfig)
@@ -169,14 +153,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 			}
 
 			// add each domain name to providers map
-			domainNames := cloudflareProvider.AvailableDomains()
-			for _, domain := range domainNames {
-				exists, _ := service.domainProviders.Add(domain, cloudflareProvider)
-				if exists {
-					wgErrors <- errMultipleSameDomain(domain)
-					return
-				}
-			}
+			wgErrors <- service.addDomains(cloudflareProvider)
 		}(i)
 	}
 

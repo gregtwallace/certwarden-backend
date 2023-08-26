@@ -2,6 +2,7 @@ package dns01manual
 
 import (
 	"errors"
+	"legocerthub-backend/pkg/acme"
 	"os"
 	"os/exec"
 
@@ -21,6 +22,7 @@ type App interface {
 // Accounts service struct
 type Service struct {
 	logger           *zap.SugaredLogger
+	domains          []string
 	shellPath        string
 	environmentVars  []string
 	createScriptPath string
@@ -29,19 +31,17 @@ type Service struct {
 
 // Configuration options
 type Config struct {
-	Enable       *bool    `yaml:"enable"`
+	Domains      []string `yaml:"domains"`
 	Environment  []string `yaml:"environment"`
 	CreateScript string   `yaml:"create_script"`
 	DeleteScript string   `yaml:"delete_script"`
 }
 
 // NewService creates a new service
-func NewService(app App, config *Config) (*Service, error) {
-	var err error
-
-	// if disabled, return nil and no error
-	if !*config.Enable {
-		return nil, nil
+func NewService(app App, cfg *Config) (*Service, error) {
+	// if no config or no domains, error
+	if cfg == nil || len(cfg.Domains) <= 0 {
+		return nil, errServiceComponent
 	}
 
 	service := new(Service)
@@ -52,8 +52,12 @@ func NewService(app App, config *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
+	// set supported domains from config
+	service.domains = append(service.domains, cfg.Domains...)
+
 	// determine shell (os dependent)
 	// powershell
+	var err error
 	service.shellPath, err = exec.LookPath("powershell.exe")
 	if err != nil {
 		service.logger.Debugf("unable to find powershell (%s)", err)
@@ -77,28 +81,32 @@ func NewService(app App, config *Config) (*Service, error) {
 	}
 
 	// environment vars
-	service.environmentVars = config.Environment
+	service.environmentVars = cfg.Environment
 
-	// verify scripts exist
-	// create
-	fileInfo, err := os.Stat(config.CreateScript)
+	// verify create script exists
+	fileInfo, err := os.Stat(cfg.CreateScript)
 	if err != nil {
 		return nil, err
 	}
 	if fileInfo.IsDir() {
 		return nil, errScriptIsDir
 	}
-	service.createScriptPath = config.CreateScript
+	service.createScriptPath = cfg.CreateScript
 
-	// delete
-	fileInfo, err = os.Stat(config.DeleteScript)
+	// verify delete script exists
+	fileInfo, err = os.Stat(cfg.DeleteScript)
 	if err != nil {
 		return nil, err
 	}
 	if fileInfo.IsDir() {
 		return nil, errScriptIsDir
 	}
-	service.deleteScriptPath = config.DeleteScript
+	service.deleteScriptPath = cfg.DeleteScript
 
 	return service, nil
+}
+
+// ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
+func (service *Service) AcmeChallengeType() acme.ChallengeType {
+	return acme.ChallengeTypeDns01
 }
