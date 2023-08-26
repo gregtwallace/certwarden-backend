@@ -3,6 +3,7 @@ package nonces
 import (
 	"errors"
 	"io"
+	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/httpclient"
 )
 
@@ -10,7 +11,7 @@ import (
 type Manager struct {
 	httpClient  *httpclient.Client
 	newNonceUrl *string
-	nonces      *ringBuffer
+	nonces      *datatypes.RingBuffer[string]
 }
 
 // Manager buffer size
@@ -22,7 +23,7 @@ func NewManager(client *httpclient.Client, nonceUrl *string) *Manager {
 
 	manager.httpClient = client
 	manager.newNonceUrl = nonceUrl
-	manager.nonces = newRingBuffer(bufferSize)
+	manager.nonces = datatypes.NewRingBuffer[string](bufferSize)
 
 	return manager
 }
@@ -56,7 +57,7 @@ func (manager *Manager) fetchNonce() (nonce string, err error) {
 // fetching from the newNonceUrl
 func (manager *Manager) Nonce() (nonce string, err error) {
 	// try to read, if error fetch new
-	nonce, err = manager.nonces.read()
+	nonce, err = manager.nonces.Read()
 
 	// if read failed, fetch from url
 	if err != nil {
@@ -66,24 +67,20 @@ func (manager *Manager) Nonce() (nonce string, err error) {
 	return nonce, err
 }
 
-// SaveNonce saves the nonce string to the nonces buffer.
-// if the buffer is full, the oldest nonce is evicted and the new
-// nonce is saved
+// SaveNonce saves the nonce string to the nonces buffer. If the
+// buffer is full, the oldest nonce is evicted and the new nonce
+// is saved.
 func (manager *Manager) SaveNonce(nonce string) (err error) {
 	// if nonce is empty, don't save
 	if nonce == "" {
 		return errors.New("cannot save empty nonce")
 	}
 
-	// lock nonces
-	manager.nonces.mu.Lock()
-	defer manager.nonces.mu.Unlock()
-
-	// if full, evict (read) a nonce. Ring is FIFO so the oldest
-	// nonce will be read and discarded.
-	if manager.nonces.isFull {
-		_, err = manager.nonces.readUnsafe()
+	// write new nonce and evict oldest if buffer is full
+	err = manager.nonces.Write(nonce, true)
+	if err != nil {
+		return err
 	}
 
-	return manager.nonces.writeUnsafe(nonce)
+	return nil
 }
