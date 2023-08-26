@@ -11,7 +11,7 @@ func (service *Service) AvailableDomains() []string {
 }
 
 // Provision adds the requested DNS record.
-func (service *Service) Provision(domain, resourceName, resourceContent string) error {
+func (service *Service) Provision(resourceName, resourceContent string) error {
 	// domain is not used
 
 	// run create script
@@ -35,10 +35,7 @@ func (service *Service) Provision(domain, resourceName, resourceContent string) 
 }
 
 // Deprovision deletes the corresponding DNS record.
-func (service *Service) Deprovision(domain, resourceName, resourceContent string) error {
-	// domain is not used
-
-	// run delete script
+func (service *Service) Deprovision(resourceName, resourceContent string) error {
 	// script command
 	cmd := service.makeDeleteCommand(resourceName, resourceContent)
 

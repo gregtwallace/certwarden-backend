@@ -11,9 +11,7 @@ func (service *Service) AvailableDomains() []string {
 }
 
 // Provision adds a resource to host
-func (service *Service) Provision(domainName, resourceName, resourceValue string) error {
-	// domainName is unused but is needed to satisfy an interface in challenges package
-
+func (service *Service) Provision(resourceName, resourceValue string) error {
 	// add new entry
 	exists, _ := service.provisionedResources.Add(resourceName, []byte(resourceValue))
 
@@ -29,8 +27,8 @@ func (service *Service) Provision(domainName, resourceName, resourceValue string
 }
 
 // Deprovision removes a removes a resource from those being hosted
-func (service *Service) Deprovision(domainName, resourceName, resourceValue string) error {
-	// domainName & resourceValue are unused but is needed to satisfy an interface in challenges
+func (service *Service) Deprovision(resourceName, resourceValue string) error {
+	// resourceValue is unused but is needed to satisfy an interface in challenges
 
 	// delete entry
 	err := service.provisionedResources.DeleteKey(resourceName)

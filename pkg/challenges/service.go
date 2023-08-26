@@ -41,8 +41,8 @@ type App interface {
 type providerService interface {
 	AcmeChallengeType() acme.ChallengeType
 	AvailableDomains() []string
-	Provision(domainName, resourceName, resourceContent string) (err error)
-	Deprovision(domainName, resourceName, resourceContent string) (err error)
+	Provision(resourceName, resourceContent string) (err error)
+	Deprovision(resourceName, resourceContent string) (err error)
 }
 
 // service struct

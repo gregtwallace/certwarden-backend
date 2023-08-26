@@ -11,10 +11,10 @@ func (service *Service) AvailableDomains() []string {
 }
 
 // Provision adds the corresponding DNS record using the script.
-func (service *Service) Provision(domainName, resourceName, resourceContent string) error {
+func (service *Service) Provision(resourceName, resourceContent string) error {
 	// run create script
 	// script command
-	cmd := service.makeCreateCommand(domainName, resourceName, resourceContent)
+	cmd := service.makeCreateCommand(resourceName, resourceContent)
 
 	// run script command
 	result, err := cmd.Output()
@@ -33,10 +33,10 @@ func (service *Service) Provision(domainName, resourceName, resourceContent stri
 }
 
 // Deprovision deletes the corresponding DNS record using the script.
-func (service *Service) Deprovision(domainName, resourceName, resourceContent string) error {
+func (service *Service) Deprovision(resourceName, resourceContent string) error {
 	// run delete script
 	// script command
-	cmd := service.makeDeleteCommand(domainName, resourceName, resourceContent)
+	cmd := service.makeDeleteCommand(resourceName, resourceContent)
 
 	// run script command
 	result, err := cmd.Output()

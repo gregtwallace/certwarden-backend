@@ -26,6 +26,17 @@ type Config struct {
 	ApiToken *string `yaml:"api_token"`
 }
 
+// zoneValid checks for the proper Cloudflare permission to edit dns on the
+// specified zone
+func zoneValid(z *cloudflare.Zone) bool {
+	for _, permission := range z.Permissions {
+		if permission == "#dns_records:edit" {
+			return true
+		}
+	}
+	return false
+}
+
 // configureCloudflareAPI configures the service to use the API Tokens
 // and Accounts specified within the config. If any of the config does
 // not work, configuration is aborted and an error is returned.
@@ -67,37 +78,31 @@ func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 		return err
 	}
 
-	// verify configured domains are actually available on the api instance and save their zone IDs
-	// for use later in provision/deprovision
-	for _, configDomain := range cfg.Domains {
-		// found tracks if the domain is found and has the proper permission
-		found := false
-
-		for _, zone := range availableZones {
-			// find domain on api instance
-			if configDomain == zone.Name {
-				// verify proper permission
-				for _, permission := range zone.Permissions {
-					// only add the zone if the key has proper permissions to edit dns
-					if permission == "#dns_records:edit" {
-						// found with proper permission
-						found = true
-
-						// save zone ID in domain map
-						service.domainIDs[configDomain] = zone.ID
-
-						// break, don't need to keep checking permissions once found
-						break
-					}
-				}
-
-				// break once domain found, even if permission was wrong
-				break
-			}
+	// add all available zones, even if not being used (configured in cfg.Domains)
+	for i := range availableZones {
+		// verify proper permission
+		if zoneValid(&availableZones[i]) {
+			service.domainIDs[availableZones[i].Name] = availableZones[i].ID
 		}
+	}
 
-		if !found {
-			return fmt.Errorf("cloudflare domain %s is either not available or missing the proper permission using the specified api credential", configDomain)
+	// verify all domains in cfg.Domains are available zones (if not wildcard provider)
+	if !(len(cfg.Domains) == 1 && cfg.Domains[0] == "*") {
+		for i := range cfg.Domains {
+			found := false
+			for serviceDomain := range service.domainIDs {
+				if cfg.Domains[i] == serviceDomain {
+					found = true
+					break
+				}
+			}
+			if !found {
+				// if wildcard domain, error is different
+				if cfg.Domains[i] == "*" {
+					return errors.New("when using wildcard domain * it must be the only specified domain on the provider")
+				}
+				return fmt.Errorf("cloudflare domain %s is either not available or missing the proper permission using the specified api credential", cfg.Domains[i])
+			}
 		}
 	}
 

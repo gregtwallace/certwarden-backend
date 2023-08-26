@@ -88,9 +88,7 @@ func (service *Service) getAcmeDnsResource(resourceName string) (*acmeDnsResourc
 
 // Provision updates the acme-dns resource corresponding to resourceName with
 // the resourceContent
-func (service *Service) Provision(domain, resourceName, resourceContent string) error {
-	// domain is not used
-
+func (service *Service) Provision(resourceName, resourceContent string) error {
 	// get acme-dns resource
 	adr, err := service.getAcmeDnsResource(resourceName)
 	if err != nil {
@@ -109,9 +107,7 @@ func (service *Service) Provision(domain, resourceName, resourceContent string) 
 // Derovision updates the acme-dns resource corresponding to resourceName with
 // a dummy value. This probably isn't really needed and this function could just
 // be an empty stub, but clearing the data doesn't hurt.
-func (service *Service) Deprovision(domain, resourceName, resourceContent string) error {
-	// domain & resourceContent are not used
-
+func (service *Service) Deprovision(resourceName, resourceContent string) error {
 	// get acme-dns resource
 	adr, err := service.getAcmeDnsResource(resourceName)
 	if err != nil {

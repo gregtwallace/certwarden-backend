@@ -24,6 +24,7 @@ type Service struct {
 	logger        *zap.SugaredLogger
 	httpClient    *httpclient.Client
 	cloudflareApi *cloudflare.API
+	domains       []string
 	domainIDs     map[string]string // domain_name[zone_id]
 }
 
@@ -45,6 +46,9 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 	// http client for api calls
 	service.httpClient = app.GetHttpClient()
+
+	// set supported domains from config
+	service.domains = append(service.domains, cfg.Domains...)
 
 	// make map for domains
 	service.domainIDs = make(map[string]string)

@@ -22,10 +22,14 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		return "", errWrongIdentifierType
 	}
 
-	// find domain and provider for identifier value
-	domainName, provider, err := service.domainProviders.ReadSuffix(identifier.Value)
+	// find provider for identifier value
+	_, provider, err := service.domainProviders.ReadSuffix(identifier.Value)
 	if err != nil {
-		return "", fmt.Errorf("could not find a challenge provider for the specified identifier (%s; %s)", identifier.Type, identifier.Value)
+		// if domain not explicitly found, check for wildcard fallback provider
+		provider, err = service.domainProviders.Read("*")
+		if err != nil {
+			return "", fmt.Errorf("could not find a challenge provider for the specified identifier (%s; %s)", identifier.Type, identifier.Value)
+		}
 	}
 
 	// range to the correct challenge to solve based on ACME Challenge Type (from provider)
@@ -50,12 +54,12 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// provision the needed resource for validation and defer deprovisioning
-	err = service.Provision(domainName, resourceName, resourceContent, provider)
+	err = service.Provision(resourceName, resourceContent, provider)
 	// do error check after Deprovision to ensure any records that were created
 	// get cleaned up, even if Provision errored.
 
 	defer func() {
-		err := service.Deprovision(domainName, resourceName, resourceContent, provider)
+		err := service.Deprovision(resourceName, resourceContent, provider)
 		if err != nil {
 			service.logger.Errorf("challenge solver deprovision failed (%s)", err)
 		}
