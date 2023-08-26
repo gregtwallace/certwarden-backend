@@ -3,7 +3,6 @@ package dns01manual
 import (
 	"os"
 	"os/exec"
-	"strings"
 )
 
 // makeCreateCommand creates the command to make a dns record
@@ -28,17 +27,10 @@ func (service *Service) makeCommand(resourceName, resourceContent string, delete
 	// 0 - script name (e.g. /path/to/script.sh)
 	args := []string{scriptPath}
 
-	// 1 - Domain (2nd Level + TLD)
-	// doesn't function properly for multi part domains (e.g. something.in.ua)
-	// DEPRECATED: TODO: Remove this arg
-	domainParts := strings.Split(resourceName, ".")
-	secondAndTLD := domainParts[len(domainParts)-2] + "." + domainParts[len(domainParts)-1]
-	args = append(args, secondAndTLD)
-
-	// 2 - RecordName (e.g. _acme-challenge.www.example.com)
+	// 1 - RecordName (e.g. _acme-challenge.www.example.com)
 	args = append(args, resourceName)
 
-	// 3 - RecordValue (e.g. XKrxpRBosdIKFzxW_CT3KLZNf6q0HG9i01zxXp5CPBs)
+	// 2 - RecordValue (e.g. XKrxpRBosdIKFzxW_CT3KLZNf6q0HG9i01zxXp5CPBs)
 	args = append(args, resourceContent)
 
 	// make command
