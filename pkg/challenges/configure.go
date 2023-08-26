@@ -9,8 +9,8 @@ import (
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 )
 
-// ProviderConfigs holds the challenge provider configs
-type ProviderConfigs struct {
+// ProviderConfigs provides structure for all provider config types
+type ProvidersConfigs struct {
 	Http01InternalConfigs  []http01internal.Config  `yaml:"http_01_internal"`
 	Dns01ManualConfigs     []dns01manual.Config     `yaml:"dns_01_manual"`
 	Dns01AcmeDnsConfigs    []dns01acmedns.Config    `yaml:"dns_01_acme_dns"`
@@ -18,10 +18,19 @@ type ProviderConfigs struct {
 	Dns01CloudflareConfigs []dns01cloudflare.Config `yaml:"dns_01_cloudflare"`
 }
 
+// Len returns the total number of Provider Configs, regardless of type.
+func (cfg ProvidersConfigs) Len() int {
+	return len(cfg.Dns01AcmeDnsConfigs) +
+		len(cfg.Dns01AcmeShConfigs) +
+		len(cfg.Dns01CloudflareConfigs) +
+		len(cfg.Dns01ManualConfigs) +
+		len(cfg.Http01InternalConfigs)
+}
+
 // Config holds all of the challenge config
 type Config struct {
 	DnsCheckerConfig dns_checker.Config `yaml:"dns_checker"`
-	ProviderConfigs  ProviderConfigs    `yaml:"providers"`
+	ProviderConfigs  ProvidersConfigs   `yaml:"providers"`
 }
 
 // addDomains adds all of the available domains from a provider to the domains

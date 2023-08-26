@@ -77,8 +77,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 
 	// configure providers async
 	var wg sync.WaitGroup
-	wgSize := len(cfg.ProviderConfigs.Dns01AcmeDnsConfigs) + len(cfg.ProviderConfigs.Dns01AcmeShConfigs) +
-		len(cfg.ProviderConfigs.Dns01CloudflareConfigs) + len(cfg.ProviderConfigs.Dns01ManualConfigs) + len(cfg.ProviderConfigs.Http01InternalConfigs)
+	wgSize := cfg.ProviderConfigs.Len()
 
 	wg.Add(wgSize)
 	wgErrors := make(chan error, wgSize)
