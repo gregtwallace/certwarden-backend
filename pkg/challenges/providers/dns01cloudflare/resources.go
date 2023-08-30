@@ -28,7 +28,7 @@ func (service *Service) getZoneId(resourceName string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("could not find domain supporting resource name %s", resourceName)
+	return "", fmt.Errorf("dns01cloudflare could not find domain supporting resource name %s", resourceName)
 }
 
 // acmeRecord returns the cloudflare dns record for a given acme resource
