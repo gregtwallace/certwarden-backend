@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/challenges/dns_checker"
+	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/orders"
 	"os"
@@ -182,5 +183,16 @@ func (app *Application) setDefaultConfigValues() {
 				Secondary: "8.8.4.4",
 			},
 		}
+	}
+
+	// challenge provider
+	if app.config.Challenges.ProviderConfigs.Len() <= 0 {
+		http01Port := new(int)
+		*http01Port = 4060
+
+		app.config.Challenges.ProviderConfigs.Http01InternalConfigs = []http01internal.Config{{
+			Domains: []string{"*"},
+			Port:    http01Port,
+		}}
 	}
 }

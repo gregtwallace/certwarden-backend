@@ -43,4 +43,8 @@
       - 'primary_ip': '8.8.8.8'
         'secondary_ip': '8.8.4.4'
   'providers':
-    # None set
+    # If any provider is configured, the default will not be
+    'http_01_internal':
+      - 'domains':
+          - '*'
+        'port': 4060
