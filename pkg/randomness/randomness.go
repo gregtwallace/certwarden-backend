@@ -34,7 +34,7 @@ func generateRandomString(charSet string, length int) (string, error) {
 // GenerateApiKey generates a cryptographically secure API key
 func GenerateApiKey() (string, error) {
 	const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	const length = 48
+	const length = 32
 
 	return generateRandomString(chars, length)
 }
