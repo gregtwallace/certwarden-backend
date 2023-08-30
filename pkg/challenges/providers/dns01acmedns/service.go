@@ -29,9 +29,9 @@ type Service struct {
 
 // Configuration options
 type Config struct {
-	Domains     []string          `yaml:"domains"`
-	HostAddress *string           `yaml:"acme_dns_address"`
-	Resources   []acmeDnsResource `yaml:"resources"`
+	Domains     []string          `yaml:"domains" json:"domains"`
+	HostAddress *string           `yaml:"acme_dns_address" json:"acme_dns_address"`
+	Resources   []acmeDnsResource `yaml:"resources" json:"resources"`
 }
 
 // NewService creates a new service

@@ -43,6 +43,9 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/updater/new-version", app.updater.GetNewVersionInfo)
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/updater/new-version", app.updater.CheckForNewVersion)
 
+	// challenges (config)
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers", app.challenges.GetProvidersConfigs)
+
 	// acme_servers
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/acmeservers", app.acmeServers.GetAllServers)
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/acmeservers/:id", app.acmeServers.GetOneServer)

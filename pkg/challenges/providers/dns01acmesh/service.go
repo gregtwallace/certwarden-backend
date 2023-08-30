@@ -41,10 +41,10 @@ type Service struct {
 
 // Configuration options
 type Config struct {
-	Domains     []string `yaml:"domains"`
-	AcmeShPath  *string  `yaml:"acme_sh_path"`
-	Environment []string `yaml:"environment"`
-	DnsHook     string   `yaml:"dns_hook"`
+	Domains     []string `yaml:"domains" json:"domains"`
+	AcmeShPath  *string  `yaml:"acme_sh_path" json:"acme_sh_path"`
+	Environment []string `yaml:"environment" json:"environment"`
+	DnsHook     string   `yaml:"dns_hook" json:"dns_hook"`
 }
 
 // NewService creates a new service

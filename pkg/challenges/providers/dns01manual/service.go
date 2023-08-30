@@ -31,10 +31,10 @@ type Service struct {
 
 // Configuration options
 type Config struct {
-	Domains      []string `yaml:"domains"`
-	Environment  []string `yaml:"environment"`
-	CreateScript string   `yaml:"create_script"`
-	DeleteScript string   `yaml:"delete_script"`
+	Domains      []string `yaml:"domains" json:"domains"`
+	Environment  []string `yaml:"environment" json:"environment"`
+	CreateScript string   `yaml:"create_script" json:"create_script"`
+	DeleteScript string   `yaml:"delete_script" json:"delete_script"`
 }
 
 // NewService creates a new service

@@ -13,6 +13,7 @@ import (
 	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/httpclient"
+	"legocerthub-backend/pkg/output"
 	"sync"
 
 	"go.uber.org/zap"
@@ -27,6 +28,7 @@ var (
 type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetHttpClient() *httpclient.Client
+	GetOutputter() *output.Service
 	GetAcmeServerService() *acme_servers.Service
 	GetDevMode() bool
 	GetShutdownContext() context.Context
@@ -45,6 +47,7 @@ type providerService interface {
 type Service struct {
 	shutdownContext    context.Context
 	logger             *zap.SugaredLogger
+	output             *output.Service
 	acmeServerService  *acme_servers.Service
 	dnsChecker         *dns_checker.Service
 	domainProviders    *domainProviderMap     // holds both domain names and providers
@@ -61,6 +64,9 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 		return nil, errServiceComponent
 	}
 
+	// output
+	service.output = app.GetOutputter()
+
 	// shutdown context
 	service.shutdownContext = app.GetShutdownContext()
 
@@ -71,7 +77,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	}
 
 	// challenge providers - begin
-	service.domainProviders = newDomainProviderMap()
+	service.domainProviders = newDomainProviderMap(cfg.ProviderConfigs)
 
 	// configure providers async
 	var wg sync.WaitGroup

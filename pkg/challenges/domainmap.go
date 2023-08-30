@@ -8,25 +8,26 @@ import (
 	"sync"
 )
 
-// domainMap is a bi directional map that challenges uses since sometimes
-// domains need to be looked up and other times a provider needs to be
-// looked up
+// domainMap is a bi directional map of all domains and providers, it also
+// contains all of the provider configs
 type domainProviderMap struct {
-	dP map[string]providerService
-	pD map[providerService][]string
-	mu sync.RWMutex
+	configs ProvidersConfigs
+	dP      map[string]providerService
+	pD      map[providerService][]string
+	mu      sync.RWMutex
 }
 
 // newDomainProviderMap creates a domainProviderMap to store domains and
 // providerServices
-func newDomainProviderMap() *domainProviderMap {
+func newDomainProviderMap(cfgs ProvidersConfigs) *domainProviderMap {
 	return &domainProviderMap{
-		dP: make(map[string]providerService),
-		pD: make(map[providerService][]string),
+		configs: cfgs,
+		dP:      make(map[string]providerService),
+		pD:      make(map[providerService][]string),
 	}
 }
 
-// CountDomains returns the number of domains contained in domainProviderMap
+// countDomains returns the number of domains contained in domainProviderMap
 func (dpm *domainProviderMap) countDomains() int {
 	dpm.mu.RLock()
 	defer dpm.mu.RUnlock()
@@ -49,7 +50,15 @@ func (dpm *domainProviderMap) hasDnsProvider() bool {
 	return false
 }
 
-// Add adds the domain to the domainProviderMap and sets its value to the
+// getConfigs returns all of the current providers' configurations
+func (dpm *domainProviderMap) getConfigs() ProvidersConfigs {
+	dpm.mu.RLock()
+	defer dpm.mu.RUnlock()
+
+	return dpm.configs
+}
+
+// add adds the domain to the domainProviderMap and sets its value to the
 // providerService specified. If the domain already exists, an error is
 // returned.
 func (dpm *domainProviderMap) add(domain string, p providerService) error {

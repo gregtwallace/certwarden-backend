@@ -33,8 +33,8 @@ type Service struct {
 
 // Configuration options
 type Config struct {
-	Domains []string `yaml:"domains"`
-	Port    *int     `yaml:"port"`
+	Domains []string `yaml:"domains" json:"domains"`
+	Port    *int     `yaml:"port" json:"port"`
 }
 
 // NewService creates a new service

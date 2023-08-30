@@ -15,15 +15,15 @@ var (
 
 // Configuration options for an instance of Cloudflare provider
 type Config struct {
-	Domains []string `yaml:"domains"`
+	Domains []string `yaml:"domains" json:"domains"`
 	// Account
 	Account struct {
-		Email        *string `yaml:"email"`
-		GlobalApiKey *string `yaml:"global_api_key"`
-	} `yaml:"account"`
+		Email        *string `yaml:"email" json:"email"`
+		GlobalApiKey *string `yaml:"global_api_key" json:"global_api_key"`
+	} `yaml:"account" json:"account"`
 	// -- OR --
 	// Token
-	ApiToken *string `yaml:"api_token"`
+	ApiToken *string `yaml:"api_token" json:"api_token"`
 }
 
 // zoneValid checks for the proper Cloudflare permission to edit dns on the

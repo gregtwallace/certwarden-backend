@@ -19,10 +19,10 @@ func (service *Service) AvailableDomains() []string {
 // and acme-dns record and also the corresponding 'real' domain
 // that will have a certificate issued for it.
 type acmeDnsResource struct {
-	RealDomain string `yaml:"real_domain"`
-	FullDomain string `yaml:"full_domain"`
-	Username   string `yaml:"username"`
-	Password   string `yaml:"password"`
+	RealDomain string `yaml:"real_domain" json:"real_domain"`
+	FullDomain string `yaml:"full_domain" json:"full_domain"`
+	Username   string `yaml:"username" json:"username"`
+	Password   string `yaml:"password" json:"password"`
 }
 
 // acme-dns update endpoint
