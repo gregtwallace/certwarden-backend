@@ -74,16 +74,6 @@ func (app *Application) notFoundHandler(w http.ResponseWriter, r *http.Request) 
 	return nil
 }
 
-// redirectAddBasePathHandler adds the baseUrlPath to the request and then redirects
-// TODO: Remove eventually?
-func redirectAddBasePathHandler(w http.ResponseWriter, r *http.Request) error {
-	// add base path
-	newPath := baseUrlPath + r.URL.Path
-
-	http.Redirect(w, r, newPath, http.StatusPermanentRedirect)
-	return nil
-}
-
 // redirectToFrontendRoot is a handler that redirects to the frontend app
 func redirectToFrontendRoot(w http.ResponseWriter, r *http.Request) error {
 	http.Redirect(w, r, frontendUrlPath, http.StatusPermanentRedirect)

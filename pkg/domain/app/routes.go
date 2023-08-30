@@ -132,20 +132,9 @@ func (app *Application) routes() http.Handler {
 		// redirect base path to frontend app
 		app.makeHandle(http.MethodGet, baseUrlPath, redirectToFrontendRoot)
 
-		// redirect old app path to app
-		// TODO: Remove eventually?
-		app.makeHandle(http.MethodGet, "/app/*anything", redirectAddBasePathHandler)
-
 		// add file server route for frontend
 		app.makeHandle(http.MethodGet, frontendUrlPath+"/*anything", app.frontendHandler)
 	}
-
-	// redirect old /api routes to api
-	// TODO: Remove eventually?
-	app.makeHandle(http.MethodGet, "/api/*anything", redirectAddBasePathHandler)
-	app.makeHandle(http.MethodPost, "/api/*anything", redirectAddBasePathHandler)
-	app.makeHandle(http.MethodPut, "/api/*anything", redirectAddBasePathHandler)
-	app.makeHandle(http.MethodDelete, "/api/*anything", redirectAddBasePathHandler)
 
 	// invalid route
 	app.router.NotFound = app.makeHandler(app.notFoundHandler)
