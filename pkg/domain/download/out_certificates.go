@@ -14,11 +14,7 @@ func (service *Service) DownloadCertViaHeader(w http.ResponseWriter, r *http.Req
 	certName := params.ByName("name")
 
 	// get apiKey from header
-	apiKey := r.Header.Get("X-API-Key")
-	// try to get from apikey header if X-API-Key was empty
-	if apiKey == "" {
-		apiKey = r.Header.Get("apikey")
-	}
+	apiKey := getApiKeyFromHeader(w, r)
 
 	// fetch the cert's newest order using the apiKey
 	order, err := service.getCertNewestValidOrder(certName, apiKey, false)

@@ -43,11 +43,7 @@ func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r 
 	certName := params.ByName("name")
 
 	// get apiKey from header
-	apiKey := r.Header.Get("X-API-Key")
-	// try to get from apikey header if X-API-Key was empty
-	if apiKey == "" {
-		apiKey = r.Header.Get("apikey")
-	}
+	apiKey := getApiKeyFromHeader(w, r)
 
 	// fetch the cert's newest order using the apiKey, as rootChain type
 	rootChain, err := service.getCertNewestValidRootChain(certName, apiKey, false)

@@ -14,11 +14,7 @@ func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Requ
 	keyName := params.ByName("name")
 
 	// get apiKey from header
-	apiKey := r.Header.Get("X-API-Key")
-	// try to get from apikey header if X-API-Key was empty
-	if apiKey == "" {
-		apiKey = r.Header.Get("apikey")
-	}
+	apiKey := getApiKeyFromHeader(w, r)
 
 	// fetch the key using the apiKey
 	key, err := service.getKey(keyName, apiKey, false)

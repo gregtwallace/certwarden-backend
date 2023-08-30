@@ -62,11 +62,7 @@ func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *h
 	certName := params.ByName("name")
 
 	// get apiKey from header
-	apiKeysCombined := r.Header.Get("X-API-Key")
-	// try to get from apikey header if X-API-Key was empty
-	if apiKeysCombined == "" {
-		apiKeysCombined = r.Header.Get("apikey")
-	}
+	apiKeysCombined := getApiKeyFromHeader(w, r)
 
 	// fetch the private cert
 	privCert, err := service.getCertNewestValidPrivateCert(certName, apiKeysCombined, false)
