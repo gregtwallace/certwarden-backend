@@ -16,13 +16,17 @@ type appStatus struct {
 
 // statusHandler writes some basic info about the status of the Application
 func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (err error) {
+	cfgVerMatch := false
+	if app.config.ConfigVersion != nil && *app.config.ConfigVersion == configVersion {
+		cfgVerMatch = true
+	}
 
 	currentStatus := appStatus{
 		Status:             "available",
 		DevMode:            *app.config.DevMode,
 		Version:            appVersion,
 		DbUserVersion:      sqlite.DbCurrentUserVersion,
-		ConfigVersionMatch: app.config.ConfigVersion == configVersion,
+		ConfigVersionMatch: cfgVerMatch,
 	}
 
 	err = app.output.WriteJSON(w, http.StatusOK, currentStatus, "server")

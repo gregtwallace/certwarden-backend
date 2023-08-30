@@ -16,15 +16,15 @@ const configFile = dataStoragePath + "/config.yaml"
 
 // config is the configuration structure for app (and subsequently services)
 type config struct {
-	ConfigVersion        int               `yaml:"config_version"`
+	ConfigVersion        *int              `yaml:"config_version"`
 	BindAddress          *string           `yaml:"bind_address"`
 	HttpsPort            *int              `yaml:"https_port"`
 	HttpPort             *int              `yaml:"http_port"`
 	EnableHttpRedirect   *bool             `yaml:"enable_http_redirect"`
-	LogLevel             *string           `yaml:"log_level"`
 	ServeFrontend        *bool             `yaml:"serve_frontend"`
 	CORSPermittedOrigins []string          `yaml:"cors_permitted_origins"`
 	CertificateName      *string           `yaml:"certificate_name"`
+	LogLevel             *string           `yaml:"log_level"`
 	DevMode              *bool             `yaml:"dev_mode"`
 	EnablePprof          *bool             `yaml:"enable_pprof"`
 	PprofPort            *int              `yaml:"pprof_port"`
@@ -51,107 +51,136 @@ func (c config) pprofServAddress() string {
 // readConfigFile parses the config yaml file. It also sets default config
 // for any unspecified options
 func (app *Application) readConfigFile() (err error) {
-	// load default config options
-	app.config = defaultConfig()
-
 	// open config file, if exists
 	file, err := os.Open(configFile)
 	if err != nil {
 		app.logger.Warnf("can't open config file, using defaults (%s)", err)
+		app.setDefaultConfigValues()
 		return nil
 	}
 	// only needed if file actually opened
 	defer file.Close()
 
-	// decode config over default config
-	// this will overwrite default values, but only for options that exist
-	// in the config file
+	// decode config
+	app.config = new(config)
 	decoder := yaml.NewDecoder(file)
 	err = decoder.Decode(app.config)
 	if err != nil {
+		app.logger.Errorf("failed to read config file (%s)", err)
 		return err
 	}
+
+	// set defaults on anything that wasn't specified
+	app.setDefaultConfigValues()
 
 	// success
 	return nil
 }
 
-// defaultConfig generates the configuration using defaults
-// config.default.yaml should be updated if this func is updated
-func defaultConfig() (cfg *config) {
-	cfg = &config{
-		BindAddress:        new(string),
-		HttpsPort:          new(int),
-		HttpPort:           new(int),
-		EnableHttpRedirect: new(bool),
-		LogLevel:           new(string),
-		ServeFrontend:      new(bool),
-		CertificateName:    new(string),
-		DevMode:            new(bool),
-		EnablePprof:        new(bool),
-		PprofPort:          new(int),
-		Updater: updater.Config{
-			AutoCheck: new(bool),
-			Channel:   new(updater.Channel),
-		},
-		Orders: orders.Config{
-			AutomaticOrderingEnable:     new(bool),
-			ValidRemainingDaysThreshold: new(int),
-			RefreshTimeHour:             new(int),
-			RefreshTimeMinute:           new(int),
-		},
+// setDefaultConfigValues checks each field of the config that has a default
+// value and if the value is not set it sets the default
+func (app *Application) setDefaultConfigValues() {
+	if app.config == nil {
+		app.config = new(config)
 	}
 
-	// set default values
 	// default config version is always invalid to ensure error if doesn't
 	// exist in config file
-	cfg.ConfigVersion = -1
-
-	// http/s server
-	*cfg.BindAddress = ""
-	*cfg.HttpsPort = 4055
-	*cfg.HttpPort = 4050
-
-	*cfg.EnableHttpRedirect = true
-	*cfg.LogLevel = defaultLogLevel.String()
-	*cfg.ServeFrontend = true
-
-	// LeGo https certificate name
-	*cfg.CertificateName = "legocerthub"
-
-	// dev mode
-	*cfg.DevMode = false
-	*cfg.EnablePprof = false
-	*cfg.PprofPort = 4065
-
-	// updater
-	*cfg.Updater.AutoCheck = true
-	*cfg.Updater.Channel = updater.ChannelBeta
-
-	// orders
-	*cfg.Orders.AutomaticOrderingEnable = true
-	*cfg.Orders.ValidRemainingDaysThreshold = 40
-	*cfg.Orders.RefreshTimeHour = 3
-	*cfg.Orders.RefreshTimeMinute = 12
-
-	// challenge dns checker services
-	cfg.Challenges.DnsCheckerConfig.DnsServices = []dns_checker.DnsServiceIPPair{
-		// Cloudflare
-		{
-			Primary:   "1.1.1.1",
-			Secondary: "1.0.0.1",
-		},
-		// Quad9
-		{
-			Primary:   "9.9.9.9",
-			Secondary: "149.112.112.112",
-		},
-		// Google
-		{
-			Primary:   "8.8.8.8",
-			Secondary: "8.8.4.4",
-		},
+	if app.config.ConfigVersion == nil {
+		app.config.ConfigVersion = new(int)
+		*app.config.ConfigVersion = -1
 	}
 
-	return cfg
+	// http/s server
+	if app.config.BindAddress == nil {
+		app.config.BindAddress = new(string)
+		*app.config.BindAddress = ""
+	}
+	if app.config.HttpsPort == nil {
+		app.config.HttpsPort = new(int)
+		*app.config.HttpsPort = 4055
+	}
+	if app.config.HttpPort == nil {
+		app.config.HttpPort = new(int)
+		*app.config.HttpPort = 4050
+	}
+	if app.config.EnableHttpRedirect == nil {
+		app.config.EnableHttpRedirect = new(bool)
+		*app.config.EnableHttpRedirect = true
+	}
+	if app.config.ServeFrontend == nil {
+		app.config.ServeFrontend = new(bool)
+		*app.config.ServeFrontend = true
+	}
+	if app.config.CertificateName == nil {
+		app.config.CertificateName = new(string)
+		*app.config.CertificateName = "legocerthub"
+	}
+
+	// debug and dev stuff
+	if app.config.LogLevel == nil {
+		app.config.LogLevel = new(string)
+		*app.config.LogLevel = defaultLogLevel.String()
+	}
+	if app.config.DevMode == nil {
+		app.config.DevMode = new(bool)
+		*app.config.DevMode = false
+	}
+	if app.config.EnablePprof == nil {
+		app.config.EnablePprof = new(bool)
+		*app.config.EnablePprof = false
+	}
+	if app.config.PprofPort == nil {
+		app.config.PprofPort = new(int)
+		*app.config.PprofPort = 4065
+	}
+
+	// updater
+	if app.config.Updater.AutoCheck == nil {
+		app.config.Updater.AutoCheck = new(bool)
+		*app.config.Updater.AutoCheck = true
+	}
+	if app.config.Updater.Channel == nil {
+		app.config.Updater.Channel = new(updater.Channel)
+		*app.config.Updater.Channel = updater.ChannelBeta
+	}
+
+	// orders
+	if app.config.Orders.AutomaticOrderingEnable == nil {
+		app.config.Orders.AutomaticOrderingEnable = new(bool)
+		*app.config.Orders.AutomaticOrderingEnable = true
+	}
+	if app.config.Orders.ValidRemainingDaysThreshold == nil {
+		app.config.Orders.ValidRemainingDaysThreshold = new(int)
+		*app.config.Orders.ValidRemainingDaysThreshold = 40
+	}
+	if app.config.Orders.RefreshTimeHour == nil {
+		app.config.Orders.RefreshTimeHour = new(int)
+		*app.config.Orders.RefreshTimeHour = 3
+	}
+	if app.config.Orders.RefreshTimeMinute == nil {
+		app.config.Orders.RefreshTimeMinute = new(int)
+		*app.config.Orders.RefreshTimeMinute = 12
+	}
+
+	// challenge dns checker services
+	if app.config.Challenges.DnsCheckerConfig.DnsServices == nil || len(app.config.Challenges.DnsCheckerConfig.DnsServices) <= 0 {
+		app.config.Challenges.DnsCheckerConfig.DnsServices = []dns_checker.DnsServiceIPPair{
+			// Cloudflare
+			{
+				Primary:   "1.1.1.1",
+				Secondary: "1.0.0.1",
+			},
+			// Quad9
+			{
+				Primary:   "9.9.9.9",
+				Secondary: "149.112.112.112",
+			},
+			// Google
+			{
+				Primary:   "8.8.8.8",
+				Secondary: "8.8.4.4",
+			},
+		}
+	}
 }
