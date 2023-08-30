@@ -2,15 +2,13 @@ package datatypes
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 )
 
 // errors
-var (
-	errMapKeyDoesntExist       = errors.New("specified map key does not exist")
-	errMapKeySuffixDoesntExist = errors.New("could not find map key satisfying suffix")
-)
+var errMapKeyDoesntExist = errors.New("specified map key does not exist")
 
 // SafeMap is a map with a mutex
 type SafeMap[V any] struct {
@@ -37,7 +35,7 @@ func (sm *SafeMap[V]) Read(key string) (V, error) {
 		return value, errMapKeyDoesntExist
 	}
 
-	return value, nil
+	return *new(V), nil
 }
 
 // ReadSuffix searches the map for a key that is the Suffix of the specified
@@ -53,7 +51,7 @@ func (sm *SafeMap[V]) ReadSuffix(s string) (key string, value V, err error) {
 		}
 	}
 
-	return "", value, errMapKeySuffixDoesntExist
+	return "", *new(V), fmt.Errorf("could not find map key that is the suffix of %s", s)
 }
 
 // Add creates the named key and inserts the specified value.
@@ -100,8 +98,8 @@ func (sm *SafeMap[V]) DeleteFunc(delFunc func(key string, value V) bool) {
 	defer sm.mu.Unlock()
 
 	// range through map and delete if delFunc returns true
-	for key, v := range sm.m {
-		if delFunc(key, v) {
+	for key, val := range sm.m {
+		if delFunc(key, val) {
 			delete(sm.m, key)
 		}
 	}
@@ -123,8 +121,8 @@ func (sm *SafeMap[V]) CheckValuesForFunc(checkValueFunc func(value V) bool) bool
 	defer sm.mu.RUnlock()
 
 	// range through map and return true if any checkValueFunc returns true
-	for _, v := range sm.m {
-		if checkValueFunc(v) {
+	for _, val := range sm.m {
+		if checkValueFunc(val) {
 			return true
 		}
 	}
