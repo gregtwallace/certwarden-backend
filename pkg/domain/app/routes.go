@@ -9,8 +9,9 @@ import (
 // base path
 const baseUrlPath = "/legocerthub"
 
-// backend api path
+// backend api paths
 const apiUrlPath = baseUrlPath + "/api"
+const apiDownloadUrlPath = apiUrlPath + "/v1/download"
 
 // frontend React app path (e.g. Vite config `base`)
 const frontendUrlPath = baseUrlPath + "/app"
@@ -105,17 +106,17 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/certificates/:certid/orders/:orderid/revoke", app.orders.RevokeOrder)
 
 	// download keys and certs
-	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/privatekeys/:name", app.download.DownloadKeyViaHeader)
-	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/certificates/:name", app.download.DownloadCertViaHeader)
-	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/privatecerts/:name", app.download.DownloadPrivateCertViaHeader)
-	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/certrootchains/:name", app.download.DownloadCertRootChainViaHeader)
+	app.makeDownloadHandle(http.MethodGet, apiDownloadUrlPath+"/privatekeys/:name", app.download.DownloadKeyViaHeader)
+	app.makeDownloadHandle(http.MethodGet, apiDownloadUrlPath+"/certificates/:name", app.download.DownloadCertViaHeader)
+	app.makeDownloadHandle(http.MethodGet, apiDownloadUrlPath+"/privatecerts/:name", app.download.DownloadPrivateCertViaHeader)
+	app.makeDownloadHandle(http.MethodGet, apiDownloadUrlPath+"/certrootchains/:name", app.download.DownloadCertRootChainViaHeader)
 
 	// download keys and certs - via URL routes
 	// include
-	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/privatekeys/:name/*apiKey", app.download.DownloadKeyViaUrl)
-	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/certificates/:name/*apiKey", app.download.DownloadCertViaUrl)
-	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/privatecerts/:name/*apiKey", app.download.DownloadPrivateCertViaUrl)
-	app.makeDownloadHandle(http.MethodGet, apiUrlPath+"/v1/download/certrootchains/:name/*apiKey", app.download.DownloadCertRootChainViaUrl)
+	app.makeDownloadHandle(http.MethodGet, apiDownloadUrlPath+"/privatekeys/:name/*apiKey", app.download.DownloadKeyViaUrl)
+	app.makeDownloadHandle(http.MethodGet, apiDownloadUrlPath+"/certificates/:name/*apiKey", app.download.DownloadCertViaUrl)
+	app.makeDownloadHandle(http.MethodGet, apiDownloadUrlPath+"/privatecerts/:name/*apiKey", app.download.DownloadPrivateCertViaUrl)
+	app.makeDownloadHandle(http.MethodGet, apiDownloadUrlPath+"/certrootchains/:name/*apiKey", app.download.DownloadCertRootChainViaUrl)
 
 	// frontend (if enabled)
 	if *app.config.ServeFrontend {

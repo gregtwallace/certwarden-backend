@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"fmt"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
+	"legocerthub-backend/pkg/output"
 	"time"
 )
 
@@ -60,10 +61,10 @@ func (key Key) detailedResponse(withSensitive bool) keyDetailedResponse {
 	apiKey := key.ApiKey
 	apiKeyNew := key.ApiKeyNew
 	if !withSensitive {
-		apiKey = "[redacted]"
-		// redact new key, if it exists
+		apiKey = output.RedactString(apiKey)
+		// only redact new key if it exists
 		if apiKeyNew != "" {
-			apiKeyNew = "[redacted]"
+			apiKeyNew = output.RedactString(apiKeyNew)
 		}
 	}
 
