@@ -64,7 +64,7 @@ func (manager *Manager) Nonce() (nonce string, err error) {
 		return manager.fetchNonce()
 	}
 
-	return nonce, err
+	return nonce, nil
 }
 
 // SaveNonce saves the nonce string to the nonces buffer. If the
