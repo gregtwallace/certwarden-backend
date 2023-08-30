@@ -59,8 +59,8 @@ func create() (*Application, error) {
 	app.initZapLogger()
 
 	// config file version check
-	if app.config.ConfigVersion == nil || *app.config.ConfigVersion != configVersion {
-		app.logger.Errorf("config.yaml config_version (%d) does not match app (%d), review config change log", app.config.ConfigVersion, configVersion)
+	if *app.config.ConfigVersion != configVersion {
+		app.logger.Errorf("config.yaml config_version (%d) does not match app (%d), review config change log", *app.config.ConfigVersion, configVersion)
 	}
 
 	// context for shutdown OS signal
