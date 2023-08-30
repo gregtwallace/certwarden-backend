@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"legocerthub-backend/pkg/output"
 
 	"github.com/cloudflare/cloudflare-go"
 )
@@ -24,6 +25,24 @@ type Config struct {
 	// -- OR --
 	// Token
 	ApiToken *string `yaml:"api_token" json:"api_token"`
+}
+
+func (cfg *Config) redactedIdentifier() string {
+	// if token specified
+	if cfg.ApiToken != nil {
+		return output.RedactString(*cfg.ApiToken)
+	}
+
+	// if global api key
+	if cfg.Account.GlobalApiKey != nil {
+		id := output.RedactString(*cfg.Account.GlobalApiKey)
+		if cfg.Account.Email != nil {
+			id = id + " - " + *cfg.Account.Email
+		}
+		return id
+	}
+
+	return "unknown"
 }
 
 // zoneValid checks for the proper Cloudflare permission to edit dns on the
@@ -50,24 +69,21 @@ func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 	if cfg.ApiToken != nil {
 		// make api for the token
 		service.cloudflareApi, err = cloudflare.NewWithAPIToken(*cfg.ApiToken, service.httpClient.AsCloudflareOptions()...)
-		if err != nil {
-			err = fmt.Errorf("failed to create api instance %s (%s)", redactIdentifier(*cfg.ApiToken), err)
-			service.logger.Error(err)
-			return err
-		}
-
+		// defer to common err check
 	} else if cfg.Account.Email != nil && cfg.Account.GlobalApiKey != nil {
 		// else if using Account
 		service.cloudflareApi, err = cloudflare.New(*cfg.Account.GlobalApiKey, *cfg.Account.Email, service.httpClient.AsCloudflareOptions()...)
-		if err != nil {
-			err = fmt.Errorf("failed to create api instance %s - %s (%s)", redactIdentifier(*cfg.Account.GlobalApiKey), *cfg.Account.Email, err)
-			service.logger.Error(err)
-			return err
-		}
-
+		// defer to common err check
 	} else {
 		// else incomplete config
 		return errMissingConfigInfo
+	}
+
+	// common err check
+	if err != nil {
+		err = fmt.Errorf("failed to create api instance %s (%s)", cfg.redactedIdentifier(), err)
+		service.logger.Error(err)
+		return err
 	}
 
 	// fetch list of zones
@@ -112,20 +128,6 @@ func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 	return nil
 }
 
-// redactIdentifier removes the middle portion of a string and returns only the first and last
-// characters separated by asterisks. if the key is less than or equal to 12 chars only
-// asterisks are returned
-func redactIdentifier(id string) string {
-	// if the identifier is less than 12 chars in length, return fully redacted
-	// this should never happen but just in case to prevent credential logging
-	if len(id) <= 12 {
-		return "************"
-	}
-
-	// return first 2 + asterisks + last 1
-	return string(id[:2]) + "************" + string(id[len(id)-1:])
-}
-
 // redactedIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
 // (depending on which is in use for the API instance) and then redacts it to return
 // the first and last characters of the key separated with asterisks. This is useful
@@ -146,5 +148,5 @@ func (service *Service) redactedApiIdentifier() string {
 	}
 
 	// return redacted
-	return redactIdentifier(identifier)
+	return output.RedactString(identifier)
 }
