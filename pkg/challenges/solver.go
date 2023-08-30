@@ -16,7 +16,7 @@ var (
 // for the specific domain. If no provider exists or solving otherwise fails, an error is returned.
 func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, key acme.AccountKey, acmeService *acme.Service) (status string, err error) {
 	// get provider for identifier
-	provider, err := service.domainProviders.getProvider(identifier)
+	provider, err := service.providers.provider(identifier)
 	if err != nil {
 		return "", err
 	}
