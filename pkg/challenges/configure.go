@@ -44,9 +44,9 @@ func (service *Service) addDomains(provider providerService) error {
 
 	// check if provider is wild provider, if so, add wild card
 	if len(domainNames) == 1 && domainNames[0] == "*" {
-		exists, _ := service.domainProviders.Add(domainNames[0], provider)
-		if exists {
-			return errors.New("multiple wild card providers configured (only one permitted")
+		err := service.domainProviders.add(domainNames[0], provider)
+		if err != nil {
+			return err
 		}
 
 		// done
@@ -65,9 +65,9 @@ func (service *Service) addDomains(provider providerService) error {
 			return fmt.Errorf("domain %s is not a validly formatted domain", domain)
 		}
 
-		exists, _ := service.domainProviders.Add(domain, provider)
-		if exists {
-			return errMultipleSameDomain(domain)
+		err := service.domainProviders.add(domain, provider)
+		if err != nil {
+			return err
 		}
 	}
 

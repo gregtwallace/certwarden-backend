@@ -3,7 +3,6 @@ package challenges
 import (
 	"context"
 	"errors"
-	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
@@ -20,11 +19,8 @@ import (
 )
 
 var (
-	errServiceComponent   = errors.New("necessary challenges service component is missing")
-	errNoProviders        = errors.New("no challenge providers are properly configured (at least one must be enabled)")
-	errMultipleSameDomain = func(domainName string) error {
-		return fmt.Errorf("failed to configure domain %s, each domain can only be configured once", domainName)
-	}
+	errServiceComponent = errors.New("necessary challenges service component is missing")
+	errNoProviders      = errors.New("no challenge providers are properly configured (at least one must be enabled)")
 )
 
 // App interface is for connecting to the main app
@@ -51,8 +47,8 @@ type Service struct {
 	logger             *zap.SugaredLogger
 	acmeServerService  *acme_servers.Service
 	dnsChecker         *dns_checker.Service
-	domainProviders    *datatypes.SafeMap[providerService] // domain_name[providerService]
-	resourceNamesInUse *datatypes.WorkTracker              // tracks all resource names currently in use (regardless of provider)
+	domainProviders    *domainProviderMap     // holds both domain names and providers
+	resourceNamesInUse *datatypes.WorkTracker // tracks all resource names currently in use (regardless of provider)
 }
 
 // NewService creates a new service
@@ -75,7 +71,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	}
 
 	// challenge providers - begin
-	service.domainProviders = datatypes.NewSafeMap[providerService]()
+	service.domainProviders = newDomainProviderMap()
 
 	// configure providers async
 	var wg sync.WaitGroup
@@ -189,16 +185,12 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	// challenge providers - end
 
 	// verify at least one domain / provider exists
-	if service.domainProviders.Len() <= 0 {
+	if service.domainProviders.countDomains() <= 0 {
 		return nil, errNoProviders
 	}
 
-	// configure dns checker service (if any domain uses a dns-01 provider)
-	checkDns01ProviderFunc := func(p providerService) bool {
-		return p.AcmeChallengeType() == acme.ChallengeTypeDns01
-	}
-
-	if service.domainProviders.CheckValuesForFunc(checkDns01ProviderFunc) {
+	// configure dns checker service if any provider uses dns-01
+	if service.domainProviders.hasDnsProvider() {
 		// enable checker
 		service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
 		if err != nil {

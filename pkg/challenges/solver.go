@@ -2,14 +2,12 @@ package challenges
 
 import (
 	"errors"
-	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"time"
 )
 
 var (
-	errWrongIdentifierType       = errors.New("acme identifier is not dns type (challenges pkg can only solve dns type)")
 	errChallengeRetriesExhausted = errors.New("challenge failed (out of retries)")
 	errChallengeTypeNotFound     = errors.New("provider's challenge type not found in challenges array (possibly trying to use a wildcard with http-01)")
 )
@@ -17,19 +15,10 @@ var (
 // Solve accepts an ACME identifier and a slice of challenges and then solves the challenge using a provider
 // for the specific domain. If no provider exists or solving otherwise fails, an error is returned.
 func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, key acme.AccountKey, acmeService *acme.Service) (status string, err error) {
-	// confirm Type is correct (only dns is supported)
-	if identifier.Type != acme.IdentifierTypeDns {
-		return "", errWrongIdentifierType
-	}
-
-	// find provider for identifier value
-	_, provider, err := service.domainProviders.ReadSuffix(identifier.Value)
+	// get provider for identifier
+	provider, err := service.domainProviders.getProvider(identifier)
 	if err != nil {
-		// if domain not explicitly found, check for wildcard fallback provider
-		provider, err = service.domainProviders.Read("*")
-		if err != nil {
-			return "", fmt.Errorf("could not find a challenge provider for the specified identifier (%s; %s)", identifier.Type, identifier.Value)
-		}
+		return "", err
 	}
 
 	// range to the correct challenge to solve based on ACME Challenge Type (from provider)

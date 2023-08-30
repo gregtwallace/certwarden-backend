@@ -2,8 +2,6 @@ package datatypes
 
 import (
 	"errors"
-	"fmt"
-	"strings"
 	"sync"
 )
 
@@ -36,22 +34,6 @@ func (sm *SafeMap[V]) Read(key string) (V, error) {
 	}
 
 	return *new(V), nil
-}
-
-// ReadSuffix searches the map for a key that is the Suffix of the specified
-// string. If one is found, the key/value pair is returned. If no key satisfies
-// this constraint, an error is returned.
-func (sm *SafeMap[V]) ReadSuffix(s string) (key string, value V, err error) {
-	sm.mu.RLock()
-	defer sm.mu.RUnlock()
-
-	for key = range sm.m {
-		if strings.HasSuffix(s, key) {
-			return key, sm.m[key], nil
-		}
-	}
-
-	return "", *new(V), fmt.Errorf("could not find map key that is the suffix of %s", s)
 }
 
 // Add creates the named key and inserts the specified value.
@@ -103,29 +85,4 @@ func (sm *SafeMap[V]) DeleteFunc(delFunc func(key string, value V) bool) {
 			delete(sm.m, key)
 		}
 	}
-}
-
-// Len returns the length of the map (i.e. the number of key/value pairs)
-func (sm *SafeMap[V]) Len() int {
-	sm.mu.RLock()
-	defer sm.mu.RUnlock()
-
-	return len(sm.m)
-}
-
-// CheckValuesForFunc runs the specified against each value in the map until
-// one of the value returns true. If one returns true, true is returned. If
-// none of the values return true, then false is returned.
-func (sm *SafeMap[V]) CheckValuesForFunc(checkValueFunc func(value V) bool) bool {
-	sm.mu.RLock()
-	defer sm.mu.RUnlock()
-
-	// range through map and return true if any checkValueFunc returns true
-	for _, val := range sm.m {
-		if checkValueFunc(val) {
-			return true
-		}
-	}
-
-	return false
 }
