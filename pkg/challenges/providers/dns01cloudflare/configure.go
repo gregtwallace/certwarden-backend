@@ -19,23 +19,25 @@ type Config struct {
 	Domains []string `yaml:"domains" json:"domains"`
 	// Account
 	Account struct {
-		Email        *string `yaml:"email" json:"email"`
-		GlobalApiKey *string `yaml:"global_api_key" json:"global_api_key"`
+		Email        *string                `yaml:"email" json:"email"`
+		GlobalApiKey *output.RedactedString `yaml:"global_api_key" json:"global_api_key"`
 	} `yaml:"account" json:"account"`
 	// -- OR --
 	// Token
-	ApiToken *string `yaml:"api_token" json:"api_token"`
+	ApiToken *output.RedactedString `yaml:"api_token" json:"api_token"`
 }
 
+// redactedIdentifier selects the correct identifier field and then returns the identifier
+// in its redacted form
 func (cfg *Config) redactedIdentifier() string {
 	// if token specified
 	if cfg.ApiToken != nil {
-		return output.RedactString(*cfg.ApiToken)
+		return output.RedactString(string(*cfg.ApiToken))
 	}
 
 	// if global api key
 	if cfg.Account.GlobalApiKey != nil {
-		id := output.RedactString(*cfg.Account.GlobalApiKey)
+		id := output.RedactString(string(*cfg.Account.GlobalApiKey))
 		if cfg.Account.Email != nil {
 			id = id + " - " + *cfg.Account.Email
 		}
@@ -68,11 +70,11 @@ func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 	// if using apiToken
 	if cfg.ApiToken != nil {
 		// make api for the token
-		service.cloudflareApi, err = cloudflare.NewWithAPIToken(*cfg.ApiToken, service.httpClient.AsCloudflareOptions()...)
+		service.cloudflareApi, err = cloudflare.NewWithAPIToken(string(*cfg.ApiToken), service.httpClient.AsCloudflareOptions()...)
 		// defer to common err check
 	} else if cfg.Account.Email != nil && cfg.Account.GlobalApiKey != nil {
 		// else if using Account
-		service.cloudflareApi, err = cloudflare.New(*cfg.Account.GlobalApiKey, *cfg.Account.Email, service.httpClient.AsCloudflareOptions()...)
+		service.cloudflareApi, err = cloudflare.New(string(*cfg.Account.GlobalApiKey), *cfg.Account.Email, service.httpClient.AsCloudflareOptions()...)
 		// defer to common err check
 	} else {
 		// else incomplete config
@@ -126,27 +128,4 @@ func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 	}
 
 	return nil
-}
-
-// redactedIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
-// (depending on which is in use for the API instance) and then redacts it to return
-// the first and last characters of the key separated with asterisks. This is useful
-// for logging issues without saving the full credential to logs.
-func (service *Service) redactedApiIdentifier() string {
-	identifier := ""
-
-	// select whichever is present
-	if len(service.cloudflareApi.APIToken) > 0 {
-		identifier = service.cloudflareApi.APIToken
-	} else if len(service.cloudflareApi.APIKey) > 0 {
-		identifier = service.cloudflareApi.APIKey
-	} else if len(service.cloudflareApi.APIUserServiceKey) > 0 {
-		identifier = service.cloudflareApi.APIUserServiceKey
-	} else {
-		// none present, return unknown
-		return "unknown"
-	}
-
-	// return redacted
-	return output.RedactString(identifier)
 }

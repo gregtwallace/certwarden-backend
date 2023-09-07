@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/output"
 	"os"
 	"os/exec"
 	"runtime"
@@ -45,10 +46,10 @@ func (service *Service) Start() error { return nil }
 
 // Configuration options
 type Config struct {
-	Domains     []string `yaml:"domains" json:"domains"`
-	AcmeShPath  *string  `yaml:"acme_sh_path" json:"acme_sh_path"`
-	Environment []string `yaml:"environment" json:"environment"`
-	DnsHook     string   `yaml:"dns_hook" json:"dns_hook"`
+	Domains     []string                         `yaml:"domains" json:"domains"`
+	AcmeShPath  *string                          `yaml:"acme_sh_path" json:"acme_sh_path"`
+	Environment output.RedactedEnvironmentParams `yaml:"environment" json:"environment"`
+	DnsHook     string                           `yaml:"dns_hook" json:"dns_hook"`
 }
 
 // NewService creates a new service
@@ -128,7 +129,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	service.dnsHook = cfg.DnsHook
 
 	// environment vars
-	service.environmentVars = cfg.Environment
+	service.environmentVars = cfg.Environment.Unredacted()
 
 	return service, nil
 }

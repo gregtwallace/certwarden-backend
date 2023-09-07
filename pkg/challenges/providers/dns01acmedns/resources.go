@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strings"
 )
@@ -19,10 +20,10 @@ func (service *Service) AvailableDomains() []string {
 // and acme-dns record and also the corresponding 'real' domain
 // that will have a certificate issued for it.
 type acmeDnsResource struct {
-	RealDomain string `yaml:"real_domain" json:"real_domain"`
-	FullDomain string `yaml:"full_domain" json:"full_domain"`
-	Username   string `yaml:"username" json:"username"`
-	Password   string `yaml:"password" json:"password"`
+	RealDomain string                `yaml:"real_domain" json:"real_domain"`
+	FullDomain string                `yaml:"full_domain" json:"full_domain"`
+	Username   output.RedactedString `yaml:"username" json:"username"`
+	Password   output.RedactedString `yaml:"password" json:"password"`
 }
 
 // acme-dns update endpoint
@@ -50,8 +51,8 @@ func (service *Service) postUpdate(adr *acmeDnsResource, resourceContent string)
 
 	// set auth headers
 	header := make(http.Header)
-	header.Set("X-Api-User", adr.Username)
-	header.Set("X-Api-Key", adr.Password)
+	header.Set("X-Api-User", adr.Username.Unredacted())
+	header.Set("X-Api-Key", adr.Password.Unredacted())
 
 	// post to acme dns
 	resp, err := service.httpClient.PostWithHeader(service.acmeDnsAddress+acmeDnsUpdateEndpoint, "application/json", bytes.NewBuffer(payloadJson), header)

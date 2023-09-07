@@ -4,6 +4,7 @@ import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/httpclient"
+	"legocerthub-backend/pkg/output"
 
 	"github.com/cloudflare/cloudflare-go"
 	"go.uber.org/zap"
@@ -72,4 +73,27 @@ func NewService(app App, cfg *Config) (*Service, error) {
 // ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
 func (service *Service) AcmeChallengeType() acme.ChallengeType {
 	return acme.ChallengeTypeDns01
+}
+
+// redactedIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
+// (depending on which is in use for the API instance) and then redacts it to return
+// the first and last characters of the key separated with asterisks. This is useful
+// for logging issues without saving the full credential to logs.
+func (service *Service) redactedApiIdentifier() string {
+	identifier := ""
+
+	// select whichever is present
+	if len(service.cloudflareApi.APIToken) > 0 {
+		identifier = service.cloudflareApi.APIToken
+	} else if len(service.cloudflareApi.APIKey) > 0 {
+		identifier = service.cloudflareApi.APIKey
+	} else if len(service.cloudflareApi.APIUserServiceKey) > 0 {
+		identifier = service.cloudflareApi.APIUserServiceKey
+	} else {
+		// none present, return unknown
+		return "unknown"
+	}
+
+	// return redacted
+	return output.RedactString(identifier)
 }
