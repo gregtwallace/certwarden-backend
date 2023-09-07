@@ -36,8 +36,8 @@ func (service *Service) AcmeChallengeType() acme.ChallengeType {
 // NewService creates a new instance of the Cloudflare provider service. Service
 // contains one Cloudflare API instance.
 func NewService(app App, cfg *Config) (*Service, error) {
-	// if no config or no domains, error
-	if cfg == nil || len(cfg.Doms) <= 0 {
+	// if no config, error
+	if cfg == nil {
 		return nil, errServiceComponent
 	}
 

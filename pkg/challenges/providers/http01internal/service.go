@@ -53,8 +53,8 @@ func (cfg *Config) Domains() []string {
 
 // NewService creates a new service
 func NewService(app App, cfg *Config) (*Service, error) {
-	// if no config or no domains, error
-	if cfg == nil || len(cfg.Doms) <= 0 {
+	// if no config, error
+	if cfg == nil {
 		return nil, errServiceComponent
 	}
 

@@ -16,6 +16,11 @@ func (mgr *Manager) unsafeValidateDomains(cfg providerConfig, p *provider) error
 	// and also verify all domains are available in manager
 	domains := cfg.Domains()
 
+	// if there are none, invalid
+	if len(domains) <= 0 {
+		return errors.New("provider config doesn't have any domains (must have at least 1)")
+	}
+
 	// validate domain names
 	for _, domain := range domains {
 		// check validity -or- wildcard
