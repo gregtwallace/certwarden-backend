@@ -32,32 +32,12 @@ type Service struct {
 	stopServerFunc       context.CancelFunc
 	stopErrChan          chan error
 	port                 int
-	domains              []string
 	provisionedResources *datatypes.SafeMap[[]byte]
 }
 
-// Stop stops the http server
-func (service *Service) Stop() error {
-	// shutdown http server
-	service.stopServerFunc()
-
-	// wait for result of server shutdown
-	err := <-service.stopErrChan
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Start starts the http server
-func (service *Service) Start() error {
-	err := service.startServer()
-	if err != nil {
-		return err
-	}
-
-	return nil
+// ChallengeType returns the ACME Challenge Type this provider uses, which is http-01
+func (service *Service) AcmeChallengeType() acme.ChallengeType {
+	return acme.ChallengeTypeHttp01
 }
 
 // Configuration options
@@ -89,9 +69,6 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// set supported domains from config
-	service.domains = append(service.domains, cfg.Doms...)
-
 	// allocate resources map
 	service.provisionedResources = datatypes.NewSafeMap[[]byte]()
 
@@ -116,7 +93,33 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	return service, nil
 }
 
-// ChallengeType returns the ACME Challenge Type this provider uses, which is http-01
-func (service *Service) AcmeChallengeType() acme.ChallengeType {
-	return acme.ChallengeTypeHttp01
+// Update Service updates the Service to use the new config
+func (service *Service) UpdateService(app App, cfg *Config) error {
+	// old Service http server must be stopped before new service is created
+	service.stopServerFunc()
+
+	// wait for result of server shutdown
+	err := <-service.stopErrChan
+	if err != nil {
+		return err
+	}
+
+	// make new service
+	newServ, err := NewService(app, cfg)
+	if err != nil {
+		// if failed to make, restart old server
+		errRestart := service.startServer()
+		if errRestart != nil {
+			service.logger.Fatalf("failed to restart http 01 server leaving http 01 internal provider in an unstable state")
+			// ^ app terminates
+			return errRestart
+		}
+		return err
+	}
+
+	// set content of old pointer so anything with the pointer calls the
+	// updated service
+	*service = *newServ
+
+	return nil
 }

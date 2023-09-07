@@ -23,16 +23,16 @@ type App interface {
 // provider Service struct
 type Service struct {
 	logger           *zap.SugaredLogger
-	domains          []string
 	shellPath        string
 	environmentVars  []string
 	createScriptPath string
 	deleteScriptPath string
 }
 
-// Stop/Start is not needed for this provider. Nothing needs to be stopped or started.
-func (service *Service) Stop() error  { return nil }
-func (service *Service) Start() error { return nil }
+// ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
+func (service *Service) AcmeChallengeType() acme.ChallengeType {
+	return acme.ChallengeTypeDns01
+}
 
 // Configuration options
 type Config struct {
@@ -61,9 +61,6 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	if service.logger == nil {
 		return nil, errServiceComponent
 	}
-
-	// set supported domains from config
-	service.domains = append(service.domains, cfg.Doms...)
 
 	// determine shell (os dependent)
 	// powershell
@@ -116,7 +113,17 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	return service, nil
 }
 
-// ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
-func (service *Service) AcmeChallengeType() acme.ChallengeType {
-	return acme.ChallengeTypeDns01
+// Update Service updates the Service to use the new config
+func (service *Service) UpdateService(app App, cfg *Config) error {
+	// don't need to do anything with "old" Service, just set a new one
+	newServ, err := NewService(app, cfg)
+	if err != nil {
+		return err
+	}
+
+	// set content of old pointer so anything with the pointer calls the
+	// updated service
+	*service = *newServ
+
+	return nil
 }

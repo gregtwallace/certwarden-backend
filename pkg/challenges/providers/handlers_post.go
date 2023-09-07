@@ -55,9 +55,8 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrValidationFailed
 	}
 
-	var id int
-
 	// try to add the specified provider (actual action)
+	var id int
 	if payload.Http01InternalConfig != nil {
 		id, err = mgr.unsafeAddProvider(payload.Http01InternalConfig)
 

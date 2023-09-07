@@ -50,7 +50,7 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.Providers.GetOneProvider)
 
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/challenges/providers/services", app.challenges.Providers.CreateProvider)
-
+	app.makeSecureHandle(http.MethodPut, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.Providers.ModifyProvider)
 	app.makeSecureHandle(http.MethodDelete, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.Providers.DeleteProvider)
 
 	// acme_servers

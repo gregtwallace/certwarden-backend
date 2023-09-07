@@ -25,13 +25,13 @@ type Service struct {
 	logger        *zap.SugaredLogger
 	httpClient    *httpclient.Client
 	cloudflareApi *cloudflare.API
-	domains       []string
 	domainIDs     map[string]string // domain_name[zone_id]
 }
 
-// Stop/Start is not needed for this provider. Nothing needs to be stopped or started.
-func (service *Service) Stop() error  { return nil }
-func (service *Service) Start() error { return nil }
+// ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
+func (service *Service) AcmeChallengeType() acme.ChallengeType {
+	return acme.ChallengeTypeDns01
+}
 
 // NewService creates a new instance of the Cloudflare provider service. Service
 // contains one Cloudflare API instance.
@@ -52,9 +52,6 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	// http client for api calls
 	service.httpClient = app.GetHttpClient()
 
-	// set supported domains from config
-	service.domains = append(service.domains, cfg.Doms...)
-
 	// make map for domains
 	service.domainIDs = make(map[string]string)
 
@@ -65,14 +62,24 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// debug log configured domains
-	service.logger.Infof("cloudflare instance %s configured domains: %s", service.redactedApiIdentifier(), service.AvailableDomains())
+	service.logger.Infof("cloudflare instance %s configured domains: %s", service.redactedApiIdentifier(), cfg.Doms)
 
 	return service, nil
 }
 
-// ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
-func (service *Service) AcmeChallengeType() acme.ChallengeType {
-	return acme.ChallengeTypeDns01
+// Update Service updates the Service to use the new config
+func (service *Service) UpdateService(app App, cfg *Config) error {
+	// don't need to do anything with "old" Service, just set a new one
+	newServ, err := NewService(app, cfg)
+	if err != nil {
+		return err
+	}
+
+	// set content of old pointer so anything with the pointer calls the
+	// updated service
+	*service = *newServ
+
+	return nil
 }
 
 // redactedIdentifier selects either the APIKey, APIUserServiceKey, or APIToken

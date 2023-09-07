@@ -11,13 +11,6 @@ import (
 
 var ErrDomainNotConfigured = errors.New("dns01cloudflare domain name not configured (restart lego if zone was just added to an account)")
 
-// AvailableDomains returns all of the domains that this instance of Cloudflare can
-// provision records for. This is separate from all possible supported domains as
-// challenges may not actually want to use this provider for all possible domains.
-func (service *Service) AvailableDomains() []string {
-	return service.domains
-}
-
 // getZoneId returns the zone ID for a specified resourceName. If a matching
 // zone isn't found, an error is returned.
 func (service *Service) getZoneId(resourceName string) (string, error) {

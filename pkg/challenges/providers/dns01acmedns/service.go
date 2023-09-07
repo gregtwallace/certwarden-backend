@@ -22,14 +22,14 @@ type App interface {
 type Service struct {
 	logger           *zap.SugaredLogger
 	httpClient       *httpclient.Client
-	domains          []string
 	acmeDnsAddress   string
 	acmeDnsResources []acmeDnsResource
 }
 
-// Stop/Start is not needed for this provider. Nothing needs to be stopped or started.
-func (service *Service) Stop() error  { return nil }
-func (service *Service) Start() error { return nil }
+// ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
+func (service *Service) AcmeChallengeType() acme.ChallengeType {
+	return acme.ChallengeTypeDns01
+}
 
 // Configuration options
 type Config struct {
@@ -64,9 +64,6 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// set supported domains from config
-	service.domains = cfg.Doms
-
 	// acme-dns host address
 	service.acmeDnsAddress = *cfg.HostAddress
 
@@ -76,7 +73,17 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	return service, nil
 }
 
-// ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
-func (service *Service) AcmeChallengeType() acme.ChallengeType {
-	return acme.ChallengeTypeDns01
+// Update Service updates the Service to use the new config
+func (service *Service) UpdateService(app App, cfg *Config) error {
+	// don't need to do anything with "old" Service, just set a new one
+	newServ, err := NewService(app, cfg)
+	if err != nil {
+		return err
+	}
+
+	// set content of old pointer so anything with the pointer calls the
+	// updated service
+	*service = *newServ
+
+	return nil
 }

@@ -41,16 +41,17 @@ func (service *Service) startServer() (err error) {
 	srv.SetKeepAlivesEnabled(false)
 
 	// launch webserver
-	service.logger.Infof("starting http-01 challenge server on %s.", servAddr)
+	service.logger.Infof("attempting to start http-01 challenge server on %s.", servAddr)
 	if service.port != 80 {
-		service.logger.Warnf("http-01 challenge server is not running on port 80; internet "+
+		service.logger.Warnf("http-01 challenge server is not configured on port 80; internet "+
 			"facing port 80 must be proxied to port %d to function.", service.port)
 	}
 
 	// create listener for web server
 	ln, err := net.Listen("tcp", servAddr)
 	if err != nil {
-		return fmt.Errorf("http01internal server cannot bind to %s (%s)", servAddr, err)
+		service.logger.Error(fmt.Errorf("failed to start http-01 challenge server, cannot bind to %s (%s)", servAddr, err))
+		return err
 	}
 
 	// start server

@@ -18,7 +18,7 @@ var (
 type Config struct {
 	Doms []string `yaml:"domains" json:"domains"`
 	// Account
-	Account struct {
+	Account *struct {
 		Email        *string                `yaml:"email" json:"email"`
 		GlobalApiKey *output.RedactedString `yaml:"global_api_key" json:"global_api_key"`
 	} `yaml:"account,omitempty" json:"account,omitempty"`
@@ -68,7 +68,7 @@ func zoneValid(z *cloudflare.Zone) bool {
 // not work, configuration is aborted and an error is returned.
 func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 	// if both account and token are specified, error
-	if (cfg.Account.Email != nil || cfg.Account.GlobalApiKey != nil) && cfg.ApiToken != nil {
+	if cfg.Account != nil && cfg.ApiToken != nil {
 		return errAccountAndTokenSpecified
 	}
 
@@ -77,7 +77,7 @@ func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 		// make api for the token
 		service.cloudflareApi, err = cloudflare.NewWithAPIToken(string(*cfg.ApiToken), service.httpClient.AsCloudflareOptions()...)
 		// defer to common err check
-	} else if cfg.Account.Email != nil && cfg.Account.GlobalApiKey != nil {
+	} else if cfg.Account != nil && cfg.Account.Email != nil && cfg.Account.GlobalApiKey != nil {
 		// else if using Account
 		service.cloudflareApi, err = cloudflare.New(string(*cfg.Account.GlobalApiKey), *cfg.Account.Email, service.httpClient.AsCloudflareOptions()...)
 		// defer to common err check
