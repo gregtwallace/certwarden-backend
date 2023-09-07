@@ -69,6 +69,13 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) (err 
 	// delete provider from provider map
 	delete(mgr.pD, p)
 
+	// update config file
+	err = mgr.unsafeWriteProvidersConfig()
+	if err != nil {
+		mgr.logger.Errorf("failed to save config file after providers update (%s)", err)
+		return output.ErrInternal
+	}
+
 	// return response to client
 	response := output.JsonResponse{
 		Status:  http.StatusOK,

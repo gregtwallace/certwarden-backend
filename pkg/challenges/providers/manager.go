@@ -14,6 +14,7 @@ import (
 type application interface {
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
+	GetConfigFilename() string
 	GetShutdownContext() context.Context
 	GetHttpClient() *httpclient.Client
 	GetDevMode() bool
@@ -22,22 +23,24 @@ type application interface {
 
 // Manager manages the child providers
 type Manager struct {
-	childApp application
-	logger   *zap.SugaredLogger
-	output   *output.Service
-	dP       map[string]*provider   // domain -> provider
-	pD       map[*provider][]string // provider -> []domain
-	mu       sync.RWMutex
+	childApp   application
+	logger     *zap.SugaredLogger
+	output     *output.Service
+	configFile string
+	dP         map[string]*provider   // domain -> provider
+	pD         map[*provider][]string // provider -> []domain
+	mu         sync.RWMutex
 }
 
 func MakeManager(app application, cfg Config) (mgr *Manager, err error) {
 	// make struct with configs
 	mgr = &Manager{
-		childApp: app,
-		logger:   app.GetLogger(),
-		output:   app.GetOutputter(),
-		dP:       make(map[string]*provider),   // domain -> provider
-		pD:       make(map[*provider][]string), // provider -> []domain
+		childApp:   app,
+		logger:     app.GetLogger(),
+		output:     app.GetOutputter(),
+		configFile: app.GetConfigFilename(),
+		dP:         make(map[string]*provider),   // domain -> provider
+		pD:         make(map[*provider][]string), // provider -> []domain
 	}
 
 	// get all provider cfgs as array
