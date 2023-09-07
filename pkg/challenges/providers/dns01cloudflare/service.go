@@ -19,7 +19,7 @@ type App interface {
 	GetHttpClient() *httpclient.Client
 }
 
-// Accounts service struct
+// provider Service struct
 type Service struct {
 	logger        *zap.SugaredLogger
 	httpClient    *httpclient.Client

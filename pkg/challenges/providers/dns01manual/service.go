@@ -19,7 +19,7 @@ type App interface {
 	GetLogger() *zap.SugaredLogger
 }
 
-// Accounts service struct
+// provider Service struct
 type Service struct {
 	logger           *zap.SugaredLogger
 	domains          []string

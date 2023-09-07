@@ -23,7 +23,7 @@ type App interface {
 	GetShutdownWaitGroup() *sync.WaitGroup
 }
 
-// Accounts service struct
+// provider Service struct
 type Service struct {
 	devMode              bool
 	logger               *zap.SugaredLogger
