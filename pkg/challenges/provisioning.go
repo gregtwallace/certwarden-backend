@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	errShutdown        = errors.New("adding challenge record aborted due to shutdown")
+	errShutdown        = errors.New("challenge solving aborted due to challenges shutdown")
 	errNameUnavailable = errors.New("failed to add challenge record due to resource name never becoming free (timeout)")
 )
 

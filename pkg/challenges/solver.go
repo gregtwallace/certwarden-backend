@@ -91,7 +91,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		select {
 		case <-service.shutdownContext.Done():
 			// cancel/error if shutting down
-			return "", errors.New("cloudflare dns provisioning canceled due to shutdown")
+			return "", errShutdown
 
 		case <-time.After(20 * time.Second):
 			// sleep and retry
