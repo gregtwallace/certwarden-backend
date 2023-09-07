@@ -114,7 +114,7 @@ func (service *Service) backgroundDirManager(ctx context.Context, wg *sync.WaitG
 		for {
 			err := service.updateAcmeServiceDirectory()
 			if err != nil {
-				service.logger.Errorf("directory update failed, will retry shortly (%v)", err)
+				service.logger.Errorf("directory %s update failed, will retry shortly (%v)", service.dirUri, err)
 				// if something failed, use failed wait time
 				waitTime = failWaitTime
 			} else {
