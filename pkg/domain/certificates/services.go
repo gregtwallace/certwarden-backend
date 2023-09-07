@@ -2,7 +2,6 @@ package certificates
 
 import (
 	"errors"
-	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/output"
@@ -19,7 +18,6 @@ type App interface {
 	GetLogger() *zap.SugaredLogger
 	IsHttps() bool
 	GetOutputter() *output.Service
-	GetChallengesService() *challenges.Service
 	GetCertificatesStorage() Storage
 	GetKeysService() *private_keys.Service
 	GetAcctsService() *acme_accounts.Service
@@ -44,14 +42,13 @@ type Storage interface {
 
 // Keys service struct
 type Service struct {
-	devMode    bool
-	logger     *zap.SugaredLogger
-	https      bool
-	output     *output.Service
-	challenges *challenges.Service
-	storage    Storage
-	keys       *private_keys.Service
-	accounts   *acme_accounts.Service
+	devMode  bool
+	logger   *zap.SugaredLogger
+	https    bool
+	output   *output.Service
+	storage  Storage
+	keys     *private_keys.Service
+	accounts *acme_accounts.Service
 }
 
 // NewService creates a new service
@@ -73,12 +70,6 @@ func NewService(app App) (*Service, error) {
 	// output service
 	service.output = app.GetOutputter()
 	if service.output == nil {
-		return nil, errServiceComponent
-	}
-
-	// challenges service
-	service.challenges = app.GetChallengesService()
-	if service.challenges == nil {
 		return nil, errServiceComponent
 	}
 
