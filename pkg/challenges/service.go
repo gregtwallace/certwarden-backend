@@ -21,10 +21,12 @@ var (
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
-	GetHttpClient() *httpclient.Client
-	GetOutputter() *output.Service
-	GetDevMode() bool
 	GetShutdownContext() context.Context
+	GetOutputter() *output.Service
+
+	// for provider children
+	GetHttpClient() *httpclient.Client
+	GetDevMode() bool
 	GetShutdownWaitGroup() *sync.WaitGroup
 }
 
@@ -38,12 +40,12 @@ type providerService interface {
 
 // service struct
 type Service struct {
-	shutdownContext    context.Context
-	logger             *zap.SugaredLogger
-	output             *output.Service
-	providers          *providers
-	dnsChecker         *dns_checker.Service
-	resourceNamesInUse *datatypes.WorkTracker // tracks all resource names currently in use (regardless of provider)
+	logger          *zap.SugaredLogger
+	shutdownContext context.Context
+	output          *output.Service
+	dnsChecker      *dns_checker.Service
+	providers       *providers
+	resources       *datatypes.WorkTracker // tracks all resource names currently in use (regardless of provider)
 }
 
 // NewService creates a new service
@@ -88,7 +90,7 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	}
 
 	// make tracking map
-	service.resourceNamesInUse = datatypes.NewWorkTracker()
+	service.resources = datatypes.NewWorkTracker()
 
 	return service, nil
 }

@@ -18,7 +18,7 @@ func (service *Service) Provision(resourceName, resourceContent string, provider
 	// if multiple callers are in the waiting state, it is random which will execute next
 	for {
 		// add resourceName to in use
-		alreadyExisted, signal := service.resourceNamesInUse.Add(resourceName)
+		alreadyExisted, signal := service.resources.Add(resourceName)
 		// if didn't already exist, break loop and provision
 		if !alreadyExisted {
 			service.logger.Debugf("added resource name %s to challenge work tracker", resourceName)
@@ -57,7 +57,7 @@ func (service *Service) Provision(resourceName, resourceContent string, provider
 func (service *Service) Deprovision(resourceName, resourceContent string, provider providerService) (err error) {
 	// delete resource name from tracker (after the rest of the deprovisioning steps are done or failed)
 	defer func() {
-		err := service.resourceNamesInUse.Remove(resourceName)
+		err := service.resources.Remove(resourceName)
 		if err != nil {
 			service.logger.Errorf("failed to remove resource name %s from work tracker (%s)", resourceName, err)
 		} else {
