@@ -3,8 +3,8 @@ package challenges
 import (
 	"context"
 	"errors"
-	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges/dns_checker"
+	"legocerthub-backend/pkg/challenges/providers"
 	"legocerthub-backend/pkg/datatypes"
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
@@ -15,42 +15,47 @@ import (
 
 var (
 	errServiceComponent = errors.New("necessary challenges service component is missing")
-	errNoProviders      = errors.New("no challenge providers are properly configured (at least one must be enabled)")
 )
 
 // App interface is for connecting to the main app
-type App interface {
+type application interface {
 	GetLogger() *zap.SugaredLogger
 	GetShutdownContext() context.Context
 	GetOutputter() *output.Service
 
-	// for provider children
+	// for providers
 	GetHttpClient() *httpclient.Client
 	GetDevMode() bool
 	GetShutdownWaitGroup() *sync.WaitGroup
 }
 
-// interface for any provider service
-type providerService interface {
-	AcmeChallengeType() acme.ChallengeType
-	AvailableDomains() []string
-	Provision(resourceName, resourceContent string) (err error)
-	Deprovision(resourceName, resourceContent string) (err error)
+// Config holds all of the challenge config
+type Config struct {
+	DnsCheckerConfig dns_checker.Config `yaml:"dns_checker"`
+	ProviderConfigs  providers.Config   `yaml:"providers"`
 }
 
 // service struct
 type Service struct {
+	app             application
+	dnsCheckerCfg   dns_checker.Config
 	logger          *zap.SugaredLogger
 	shutdownContext context.Context
 	output          *output.Service
 	dnsChecker      *dns_checker.Service
-	providers       *providers
+	providers       *providers.Providers
 	resources       *datatypes.WorkTracker // tracks all resource names currently in use (regardless of provider)
 }
 
 // NewService creates a new service
-func NewService(app App, cfg *Config) (service *Service, err error) {
+func NewService(app application, cfg *Config) (service *Service, err error) {
 	service = new(Service)
+
+	// save app pointer for use later in reconfiguring providers
+	service.app = app
+
+	// save dns checker config for use later in reconfiguring providers
+	service.dnsCheckerCfg = cfg.DnsCheckerConfig
 
 	// logger
 	service.logger = app.GetLogger()
@@ -65,22 +70,15 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 	service.shutdownContext = app.GetShutdownContext()
 
 	// configure challenge providers
-	service.providers, err = makeProviders(app, cfg.ProviderConfigs)
+	usesDns := false
+	service.providers, usesDns, err = providers.MakeProviders(app, cfg.ProviderConfigs)
 	if err != nil {
 		service.logger.Errorf("failed to configure challenge provider(s) (%s)", err)
 		return nil, err
 	}
-	if service.providers == nil {
-		return nil, errServiceComponent
-	}
-
-	// verify at least one domain / provider exists
-	if service.providers.domainsLen() <= 0 {
-		return nil, errNoProviders
-	}
 
 	// configure dns checker service if any provider uses dns-01
-	if service.providers.hasDnsProvider() {
+	if usesDns {
 		// enable checker
 		service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
 		if err != nil {

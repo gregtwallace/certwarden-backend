@@ -27,6 +27,10 @@ type Service struct {
 	acmeDnsResources []acmeDnsResource
 }
 
+// Stop/Start is not needed for this provider. Nothing needs to be stopped or started.
+func (service *Service) Stop() error  { return nil }
+func (service *Service) Start() error { return nil }
+
 // Configuration options
 type Config struct {
 	Domains     []string          `yaml:"domains" json:"domains"`
@@ -56,7 +60,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// set supported domains from config
-	service.domains = append(service.domains, cfg.Domains...)
+	service.domains = cfg.Domains
 
 	// acme-dns host address
 	service.acmeDnsAddress = *cfg.HostAddress

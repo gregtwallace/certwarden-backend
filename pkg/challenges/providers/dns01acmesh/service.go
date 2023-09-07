@@ -39,6 +39,10 @@ type Service struct {
 	environmentVars []string
 }
 
+// Stop/Start is not needed for this provider. Nothing needs to be stopped or started.
+func (service *Service) Stop() error  { return nil }
+func (service *Service) Start() error { return nil }
+
 // Configuration options
 type Config struct {
 	Domains     []string `yaml:"domains" json:"domains"`

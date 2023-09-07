@@ -28,6 +28,10 @@ type Service struct {
 	domainIDs     map[string]string // domain_name[zone_id]
 }
 
+// Stop/Start is not needed for this provider. Nothing needs to be stopped or started.
+func (service *Service) Stop() error  { return nil }
+func (service *Service) Start() error { return nil }
+
 // NewService creates a new instance of the Cloudflare provider service. Service
 // contains one Cloudflare API instance.
 func NewService(app App, cfg *Config) (*Service, error) {

@@ -27,8 +27,37 @@ type App interface {
 type Service struct {
 	devMode              bool
 	logger               *zap.SugaredLogger
+	shutdownContext      context.Context
+	shutdownWaitgroup    *sync.WaitGroup
+	stopServerFunc       context.CancelFunc
+	stopErrChan          chan error
+	port                 int
 	domains              []string
 	provisionedResources *datatypes.SafeMap[[]byte]
+}
+
+// Stop stops the http server
+func (service *Service) Stop() error {
+	// shutdown http server
+	service.stopServerFunc()
+
+	// wait for result of server shutdown
+	err := <-service.stopErrChan
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Start starts the http server
+func (service *Service) Start() error {
+	err := service.startServer()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Configuration options
@@ -61,11 +90,20 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	// allocate resources map
 	service.provisionedResources = datatypes.NewSafeMap[[]byte]()
 
-	// start web server for http01 challenges
+	// set port
 	if cfg.Port == nil {
 		return nil, errConfigComponent
 	}
-	err := service.startServer(*cfg.Port, app.GetShutdownContext(), app.GetShutdownWaitGroup())
+	service.port = *cfg.Port
+
+	// parent shutdown context
+	service.shutdownContext = app.GetShutdownContext()
+
+	// parent shutdown wg
+	service.shutdownWaitgroup = app.GetShutdownWaitGroup()
+
+	// start web server for http01 challenges
+	err := service.startServer()
 	if err != nil {
 		return nil, err
 	}

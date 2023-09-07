@@ -5,11 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 )
 
-func (service *Service) startServer(port int, ctx context.Context, wg *sync.WaitGroup) (err error) {
+func (service *Service) startServer() (err error) {
+	// make child context for stopping server
+	ctx, stopServer := context.WithCancel(service.shutdownContext)
+	service.stopServerFunc = stopServer
+
+	// err chan for stop
+	service.stopErrChan = make(chan error)
+
 	// configure webserver
 	readTimeout := 5 * time.Second
 	writeTimeout := 10 * time.Second
@@ -22,7 +28,7 @@ func (service *Service) startServer(port int, ctx context.Context, wg *sync.Wait
 	// TODO: modify to allow specifying specific interface addresses
 	hostName := ""
 
-	servAddr := fmt.Sprintf("%s:%d", hostName, port)
+	servAddr := fmt.Sprintf("%s:%d", hostName, service.port)
 	srv := &http.Server{
 		Addr:         servAddr,
 		Handler:      service.routes(),
@@ -35,11 +41,11 @@ func (service *Service) startServer(port int, ctx context.Context, wg *sync.Wait
 
 	// launch webserver
 	service.logger.Infof("starting http-01 challenge server on %s for domains %s.", servAddr, service.AvailableDomains())
-	if port != 80 {
+	if service.port != 80 {
 		service.logger.Warnf("http-01 challenge server for domains %s is not running on port 80; internet "+
-			"facing port 80 must be proxied to port %d to function.", service.AvailableDomains(), port)
+			"facing port 80 must be proxied to port %d to function.", service.AvailableDomains(), service.port)
 	}
-	wg.Add(1)
+	service.shutdownWaitgroup.Add(1)
 
 	go func() {
 		err := srv.ListenAndServe()
@@ -47,7 +53,7 @@ func (service *Service) startServer(port int, ctx context.Context, wg *sync.Wait
 			service.logger.Panic(err)
 		}
 		service.logger.Infof("http-01 challenge server (%s) shutdown complete", service.AvailableDomains())
-		wg.Done()
+		service.shutdownWaitgroup.Done()
 	}()
 
 	// monitor shutdown context
@@ -60,8 +66,11 @@ func (service *Service) startServer(port int, ctx context.Context, wg *sync.Wait
 
 		err = srv.Shutdown(ctx)
 		if err != nil {
-			service.logger.Errorf("error shutting down http-01 challenge server (%s)", service.AvailableDomains())
+			service.logger.Errorf("error shutting down http-01 challenge server %s (%s)", service.AvailableDomains(), err)
 		}
+
+		// send shutdown result to err chan
+		service.stopErrChan <- err
 	}()
 
 	return nil

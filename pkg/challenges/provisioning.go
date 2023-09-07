@@ -2,6 +2,7 @@ package challenges
 
 import (
 	"errors"
+	"legocerthub-backend/pkg/challenges/providers"
 	"time"
 )
 
@@ -13,7 +14,7 @@ var (
 // Provision adds the specified ACME Challenge resource name to the in use tracker and then calls the provider
 // to provision the actual resource. If the resource name is already in use, it waits until the name is free
 // and then proceeds.
-func (service *Service) Provision(resourceName, resourceContent string, provider providerService) (err error) {
+func (service *Service) provision(resourceName, resourceContent string, provider providers.Service) (err error) {
 	// loop to add resourceName to those currently provisioned and wait if not available
 	// if multiple callers are in the waiting state, it is random which will execute next
 	for {
@@ -54,7 +55,7 @@ func (service *Service) Provision(resourceName, resourceContent string, provider
 
 // Deprovision calls the provider to deprovision the actual resource. It then removes the resource name from
 // the in use (work) tracker to indicate the name is once again available for use.
-func (service *Service) Deprovision(resourceName, resourceContent string, provider providerService) (err error) {
+func (service *Service) deprovision(resourceName, resourceContent string, provider providers.Service) (err error) {
 	// delete resource name from tracker (after the rest of the deprovisioning steps are done or failed)
 	defer func() {
 		err := service.resources.Remove(resourceName)

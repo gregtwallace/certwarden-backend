@@ -16,7 +16,7 @@ var (
 // for the specific domain. If no provider exists or solving otherwise fails, an error is returned.
 func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, key acme.AccountKey, acmeService *acme.Service) (status string, err error) {
 	// get provider for identifier
-	provider, err := service.providers.provider(identifier)
+	provider, err := service.providers.Provider(identifier)
 	if err != nil {
 		return "", err
 	}
@@ -43,12 +43,12 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// provision the needed resource for validation and defer deprovisioning
-	err = service.Provision(resourceName, resourceContent, provider)
+	err = service.provision(resourceName, resourceContent, provider)
 	// do error check after Deprovision to ensure any records that were created
 	// get cleaned up, even if Provision errored.
 
 	defer func() {
-		err := service.Deprovision(resourceName, resourceContent, provider)
+		err := service.deprovision(resourceName, resourceContent, provider)
 		if err != nil {
 			service.logger.Errorf("challenge solver deprovision failed (%s)", err)
 		}
@@ -60,7 +60,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// if using dns-01 provider, utilize dnsChecker
-	if providerChallengeType == acme.ChallengeTypeDns01 {
+	if service.dnsChecker != nil && providerChallengeType == acme.ChallengeTypeDns01 {
 		// check for propagation
 		propagated, err := service.dnsChecker.CheckTXTWithRetry(resourceName, resourceContent, 10)
 		if err != nil {
