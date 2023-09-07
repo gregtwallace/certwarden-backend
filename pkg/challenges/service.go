@@ -6,7 +6,6 @@ import (
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/datatypes"
-	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
 	"sync"
@@ -24,7 +23,6 @@ type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetHttpClient() *httpclient.Client
 	GetOutputter() *output.Service
-	GetAcmeServerService() *acme_servers.Service
 	GetDevMode() bool
 	GetShutdownContext() context.Context
 	GetShutdownWaitGroup() *sync.WaitGroup
@@ -43,7 +41,6 @@ type Service struct {
 	shutdownContext    context.Context
 	logger             *zap.SugaredLogger
 	output             *output.Service
-	acmeServerService  *acme_servers.Service
 	providers          *providers
 	dnsChecker         *dns_checker.Service
 	resourceNamesInUse *datatypes.WorkTracker // tracks all resource names currently in use (regardless of provider)
@@ -64,12 +61,6 @@ func NewService(app App, cfg *Config) (service *Service, err error) {
 
 	// shutdown context
 	service.shutdownContext = app.GetShutdownContext()
-
-	// acme services
-	service.acmeServerService = app.GetAcmeServerService()
-	if service.acmeServerService == nil {
-		return nil, errServiceComponent
-	}
 
 	// configure challenge providers
 	service.providers, err = makeProviders(app, cfg.ProviderConfigs)
