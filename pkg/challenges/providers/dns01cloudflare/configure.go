@@ -16,6 +16,8 @@ var (
 
 // Configuration options for an instance of Cloudflare provider
 type Config struct {
+	ID      int      `yaml:"-" json:"id"`
+	Tag     string   `yaml:"-" json:"tag"`
 	Domains []string `yaml:"domains" json:"domains"`
 	// Account
 	Account struct {
@@ -25,6 +27,12 @@ type Config struct {
 	// -- OR --
 	// Token
 	ApiToken *string `yaml:"api_token" json:"api_token"`
+}
+
+// SetIDAndTag is used by providers to set a unique identity for each provider
+func (cfg *Config) SetIDAndTag(id int, tag string) {
+	cfg.ID = id
+	cfg.Tag = tag
 }
 
 func (cfg *Config) redactedIdentifier() string {

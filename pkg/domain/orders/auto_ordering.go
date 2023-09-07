@@ -49,13 +49,7 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 			// added after timestamp calc to avoid accidental duplicate run on same day
 			// e.g. if runs at :12 and then next timestamp is :50, it is possible for the
 			// new stamp to not be after now and therefore would run a second time
-			refreshSecond, err := randomness.GenerateRandomInt(60)
-			if err != nil {
-				// if error, use 12
-				service.logger.Errorf("failed to generate auto order random second integer (%s)", err)
-				refreshSecond = 12
-			}
-			nextRunTime = nextRunTime.Add(time.Duration(refreshSecond) * time.Second)
+			nextRunTime = nextRunTime.Add(time.Duration(randomness.GenerateInsecureInt(60)) * time.Second)
 
 			// sleep or wait for shutdown context to be done
 			select {
@@ -69,7 +63,7 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 			}
 
 			// complete existing orders that are not 'valid' or 'invalid' (i.e. not completed)
-			err = service.retryIncompleteOrders()
+			err := service.retryIncompleteOrders()
 			if err != nil {
 				service.logger.Errorf("error retying incomplete orders: %s", err)
 			}

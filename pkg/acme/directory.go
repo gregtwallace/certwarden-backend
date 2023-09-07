@@ -131,21 +131,9 @@ func (service *Service) backgroundDirManager(ctx context.Context, wg *sync.WaitG
 				// (in event random #s are larger than previous, e.g. run at 5 min then 18 min it would
 				// run at 1:05 and 1:18 the same day)
 				// this randomness also prevents LeGo from updating all directories at the same exact time
-				refreshMinute, err := randomness.GenerateRandomInt(60)
-				if err != nil {
-					// if error, use 16
-					service.logger.Errorf("failed to generate directory refresh random minute integer (%s)", err)
-					refreshMinute = 16
-				}
-				refreshSecond, err := randomness.GenerateRandomInt(60)
-				if err != nil {
-					// if error, use 9
-					service.logger.Errorf("failed to generate directory refresh random second integer (%s)", err)
-					refreshSecond = 9
-				}
-
-				// add minute and second to next run time
-				nextRunTime = nextRunTime.Add(time.Duration(refreshMinute) * time.Minute).Add(time.Duration(refreshSecond) * time.Second)
+				nextRunTime = nextRunTime.
+					Add(time.Duration(randomness.GenerateInsecureInt(60)) * time.Minute).
+					Add(time.Duration(randomness.GenerateInsecureInt(60)) * time.Second)
 
 				service.logger.Debugf("next directory refresh for %s will occur at %s", service.dirUri, nextRunTime.String())
 
