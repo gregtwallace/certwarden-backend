@@ -13,11 +13,14 @@ import (
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/randomness"
 	"legocerthub-backend/pkg/validation"
+	"reflect"
+	"strings"
 	"sync"
 
 	"go.uber.org/zap"
 )
 
+// application contains functions needed in parent app
 type application interface {
 	GetLogger() *zap.SugaredLogger
 	GetShutdownContext() context.Context
@@ -26,7 +29,7 @@ type application interface {
 	GetShutdownWaitGroup() *sync.WaitGroup
 }
 
-// interface for any provider service
+// Service is an interface for any provider service
 type Service interface {
 	AcmeChallengeType() acme.ChallengeType
 	AvailableDomains() []string
@@ -37,48 +40,54 @@ type Service interface {
 	Start() error
 }
 
-// providers contains the configuration for all providers as well as a bi directional
-// mapping between all domains and all providers and a mapping from id to provider
-type Providers struct {
+// provider is the structure of a provider that is being managed
+type provider struct {
+	ID      int    `json:"id"`
+	Tag     string `json:"tag"`
+	TypeOf  string `json:"type"`
+	Config  any    `json:"config"`
+	Service `json:"-"`
+}
+
+// Manager contains all providers and maintains several types
+// of mappings between domains, providers, and provider types
+type Manager struct {
 	usable bool
-	cfg    Config
-	dP     map[string]Service   // domain -> provider
-	pD     map[Service][]string // provider -> []domain
-	idP    map[int]Service      // id -> provider
+	dP     map[string]*provider   // domain -> provider
+	pD     map[*provider][]string // provider -> []domain
+	tP     map[string][]*provider // typeOf -> []provider
 	mu     sync.RWMutex
 }
 
 // addProvider adds the provider and all of its domains. if a domain already
 // exists, an error is returned
-func (ps *Providers) addProvider(p Service, cfg providerService) error {
-	ps.mu.Lock()
-	defer ps.mu.Unlock()
+func (mgr *Manager) addProvider(pService Service, cfg any) error {
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
 
 	// no need to change usable; error or not of this func will not impact usability
 
+	// parse config type to get provider type
+	typeOf, _ := strings.CutPrefix(reflect.TypeOf(cfg).String(), "*")
+	typeOf, cfgIsConfig := strings.CutSuffix(typeOf, ".Config")
+
+	// create Provider from service and config
+	p := &provider{
+		ID:      len(mgr.pD),
+		Tag:     randomness.GenerateInsecureString(10),
+		TypeOf:  typeOf,
+		Config:  cfg,
+		Service: pService,
+	}
+
 	// always add provider to providers map, this ensures that if there is an error,
 	// Stop() can still be called on all providers that were created
+	mgr.pD[p] = []string{}
+	mgr.tP[typeOf] = append(mgr.tP[typeOf], p)
 
-	// store provider and its id
-	id := len(ps.pD)
-	ps.idP[id] = p
-	ps.pD[p] = []string{}
-
-	// store provider config with ID and Tag
-	cfg.SetIDAndTag(id, randomness.GenerateInsecureString(10))
-	switch cfg := cfg.(type) {
-	case *http01internal.Config:
-		ps.cfg.Http01InternalConfigs = append(ps.cfg.Http01InternalConfigs, cfg)
-	case *dns01manual.Config:
-		ps.cfg.Dns01ManualConfigs = append(ps.cfg.Dns01ManualConfigs, cfg)
-	case *dns01acmedns.Config:
-		ps.cfg.Dns01AcmeDnsConfigs = append(ps.cfg.Dns01AcmeDnsConfigs, cfg)
-	case *dns01acmesh.Config:
-		ps.cfg.Dns01AcmeShConfigs = append(ps.cfg.Dns01AcmeShConfigs, cfg)
-	case *dns01cloudflare.Config:
-		ps.cfg.Dns01CloudflareConfigs = append(ps.cfg.Dns01CloudflareConfigs, cfg)
-	default:
-		return errors.New("failed adding provider, config unsupported (should never happen, report as bug)")
+	// if type of cfg was not a .Config, error
+	if !cfgIsConfig {
+		return errors.New("error adding provider, cfg is not a .Config (should never happen: report this as a lego application bug)")
 	}
 
 	// providers domain names
@@ -95,28 +104,28 @@ func (ps *Providers) addProvider(p Service, cfg providerService) error {
 		}
 
 		// if already exists, return an error
-		_, exists := ps.dP[domain]
+		_, exists := mgr.dP[domain]
 		if exists {
 			return fmt.Errorf("failed to configure domain %s, each domain can only be configured once", domain)
 		}
 
 		// add to both internal maps
-		ps.dP[domain] = p
-		ps.pD[p] = append(ps.pD[p], domain)
+		mgr.dP[domain] = p
+		mgr.pD[p] = append(mgr.pD[p], domain)
 	}
 
 	return nil
 }
 
-// MakeProviders creates the providers struct and creates all of the provider services
+// MakeManager creates a manager of providers and creates all of the provider services
 // using the specified cfg
-func MakeProviders(app application, cfg Config) (ps *Providers, usesDns bool, err error) {
+func MakeManager(app application, cfg Config) (mgr *Manager, usesDns bool, err error) {
 	// make struct with configs
-	ps = &Providers{
+	mgr = &Manager{
 		usable: true,
-		dP:     make(map[string]Service),
-		pD:     make(map[Service][]string),
-		idP:    make(map[int]Service),
+		dP:     make(map[string]*provider),
+		pD:     make(map[*provider][]string),
+		tP:     make(map[string][]*provider),
 	}
 
 	// configure providers async
@@ -140,7 +149,7 @@ func MakeProviders(app application, cfg Config) (ps *Providers, usesDns bool, er
 			}
 
 			// add each domain name to providers map
-			wgErrors <- ps.addProvider(http01Internal, cfg.Http01InternalConfigs[i])
+			wgErrors <- mgr.addProvider(http01Internal, cfg.Http01InternalConfigs[i])
 		}(i)
 	}
 
@@ -158,7 +167,7 @@ func MakeProviders(app application, cfg Config) (ps *Providers, usesDns bool, er
 			}
 
 			// add each domain name to providers map
-			wgErrors <- ps.addProvider(dns01Manual, cfg.Dns01ManualConfigs[i])
+			wgErrors <- mgr.addProvider(dns01Manual, cfg.Dns01ManualConfigs[i])
 		}(i)
 	}
 
@@ -176,7 +185,7 @@ func MakeProviders(app application, cfg Config) (ps *Providers, usesDns bool, er
 			}
 
 			// add each domain name to providers map
-			wgErrors <- ps.addProvider(dns01AcmeDns, cfg.Dns01AcmeDnsConfigs[i])
+			wgErrors <- mgr.addProvider(dns01AcmeDns, cfg.Dns01AcmeDnsConfigs[i])
 		}(i)
 	}
 
@@ -194,7 +203,7 @@ func MakeProviders(app application, cfg Config) (ps *Providers, usesDns bool, er
 			}
 
 			// add each domain name to providers map
-			wgErrors <- ps.addProvider(dns01AcmeSh, cfg.Dns01AcmeShConfigs[i])
+			wgErrors <- mgr.addProvider(dns01AcmeSh, cfg.Dns01AcmeShConfigs[i])
 		}(i)
 	}
 
@@ -212,7 +221,7 @@ func MakeProviders(app application, cfg Config) (ps *Providers, usesDns bool, er
 			}
 
 			// add each domain name to providers map
-			wgErrors <- ps.addProvider(cloudflareProvider, cfg.Dns01CloudflareConfigs[i])
+			wgErrors <- mgr.addProvider(cloudflareProvider, cfg.Dns01CloudflareConfigs[i])
 		}(i)
 	}
 
@@ -223,7 +232,7 @@ func MakeProviders(app application, cfg Config) (ps *Providers, usesDns bool, er
 	close(wgErrors)
 	for err := range wgErrors {
 		if err != nil {
-			stopErr := ps.Stop()
+			stopErr := mgr.Stop()
 			if stopErr != nil {
 				app.GetLogger().Fatalf("failed to stop challenge provider(s) (%s), fatal crash due to instability", stopErr)
 				// app exits
@@ -233,17 +242,17 @@ func MakeProviders(app application, cfg Config) (ps *Providers, usesDns bool, er
 	}
 
 	// verify at least one domain / provider exists
-	if len(ps.dP) <= 0 {
+	if len(mgr.dP) <= 0 {
 		return nil, false, errors.New("no challenge providers are properly configured (at least one must be enabled)")
 	}
 
 	// check for dns
 	usesDns = false
-	for provider := range ps.pD {
+	for provider := range mgr.pD {
 		if provider.AcmeChallengeType() == acme.ChallengeTypeDns01 {
 			usesDns = true
 		}
 	}
 
-	return ps, usesDns, nil
+	return mgr, usesDns, nil
 }

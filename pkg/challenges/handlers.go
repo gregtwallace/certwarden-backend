@@ -10,7 +10,7 @@ import (
 
 // GetProvidersConfig returns all of the currently configured providers configs
 func (service *Service) GetProvidersConfig(w http.ResponseWriter, r *http.Request) (err error) {
-	err = service.output.WriteJSON(w, http.StatusOK, service.providers.Config(), "providers")
+	err = service.output.WriteJSON(w, http.StatusOK, service.providers.Providers(), "providers")
 	if err != nil {
 		return err
 	}
@@ -39,8 +39,8 @@ func (service *Service) SetProviders(w http.ResponseWriter, r *http.Request) (er
 
 	// validation occurs through attempt to MakeProviders
 
-	// create new providers with new configs
-	ps, usesDns, makeErr := providers.MakeProviders(service.app, cfg)
+	// create new providers manager with new configs
+	ps, usesDns, makeErr := providers.MakeManager(service.app, cfg)
 	if makeErr != nil {
 		// try to restart old providers
 		err = service.providers.Start()

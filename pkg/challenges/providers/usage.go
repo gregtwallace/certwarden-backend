@@ -7,14 +7,14 @@ import (
 	"strings"
 )
 
-// Provider returns the providerService for the given acme Identifier. If
+// ProviderFor returns the provider Service for the given acme Identifier. If
 // there is no provider for the Identifier, an error is returned instead.
-func (ps *Providers) Provider(identifier acme.Identifier) (Service, error) {
-	ps.mu.RLock()
-	defer ps.mu.RUnlock()
+func (mgr *Manager) ProviderFor(identifier acme.Identifier) (Service, error) {
+	mgr.mu.RLock()
+	defer mgr.mu.RUnlock()
 
 	// check that providers is usable
-	if !ps.usable {
+	if !mgr.usable {
 		return nil, errors.New("providers not currently in usable state")
 	}
 
@@ -24,14 +24,14 @@ func (ps *Providers) Provider(identifier acme.Identifier) (Service, error) {
 	}
 
 	// check if identifier value ends in the domain
-	for domain := range ps.dP {
+	for domain := range mgr.dP {
 		if strings.HasSuffix(identifier.Value, domain) {
-			return ps.dP[domain], nil
+			return mgr.dP[domain], nil
 		}
 	}
 
 	// if domain was not found, return wild provider if it exists
-	p, exists := ps.dP["*"]
+	p, exists := mgr.dP["*"]
 	if exists {
 		return p, nil
 	}

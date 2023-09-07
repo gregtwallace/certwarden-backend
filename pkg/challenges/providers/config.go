@@ -26,14 +26,10 @@ func (cfg Config) Len() int {
 		len(cfg.Http01InternalConfigs)
 }
 
-// Config returns the providers' configuration
-func (ps *Providers) Config() Config {
-	ps.mu.RLock()
-	defer ps.mu.RUnlock()
+// Providers returns all of the providers in manager, grouped by typeOf
+func (mgr *Manager) Providers() map[string][]*provider {
+	mgr.mu.RLock()
+	defer mgr.mu.RUnlock()
 
-	return ps.cfg
-}
-
-type providerService interface {
-	SetIDAndTag(id int, tag string)
+	return mgr.tP
 }

@@ -43,7 +43,7 @@ type Service struct {
 	shutdownContext context.Context
 	output          *output.Service
 	dnsChecker      *dns_checker.Service
-	providers       *providers.Providers
+	providers       *providers.Manager
 	resources       *datatypes.WorkTracker // tracks all resource names currently in use (regardless of provider)
 }
 
@@ -71,7 +71,7 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 
 	// configure challenge providers
 	usesDns := false
-	service.providers, usesDns, err = providers.MakeProviders(app, cfg.ProviderConfigs)
+	service.providers, usesDns, err = providers.MakeManager(app, cfg.ProviderConfigs)
 	if err != nil {
 		service.logger.Errorf("failed to configure challenge provider(s) (%s)", err)
 		return nil, err

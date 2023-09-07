@@ -33,17 +33,9 @@ func (service *Service) Start() error { return nil }
 
 // Configuration options
 type Config struct {
-	ID          int               `yaml:"-" json:"id"`
-	Tag         string            `yaml:"-" json:"tag"`
 	Domains     []string          `yaml:"domains" json:"domains"`
 	HostAddress *string           `yaml:"acme_dns_address" json:"acme_dns_address"`
 	Resources   []acmeDnsResource `yaml:"resources" json:"resources"`
-}
-
-// SetIDAndTag is used by providers to set a unique identity for each provider
-func (cfg *Config) SetIDAndTag(id int, tag string) {
-	cfg.ID = id
-	cfg.Tag = tag
 }
 
 // NewService creates a new service
