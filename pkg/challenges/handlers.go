@@ -61,6 +61,9 @@ func (service *Service) SetProviders(w http.ResponseWriter, r *http.Request) (er
 		return output.ErrValidationFailed
 	}
 
+	// log attempt to change configed providers
+	service.logger.Info("client attempting to reconfigure providers")
+
 	// stop all existing providers
 	err = service.providers.Stop()
 	if err != nil {
@@ -84,7 +87,7 @@ func (service *Service) SetProviders(w http.ResponseWriter, r *http.Request) (er
 		}
 
 		// restart success so app is stable, but update providers still failed
-		service.logger.Debugf("failed to configure new challenge provider(s) (%s)", makeErr)
+		service.logger.Infof("failed to configure new challenge provider(s) (%s)", makeErr)
 		return output.ErrValidationFailed
 	}
 
@@ -122,7 +125,7 @@ func (service *Service) SetProviders(w http.ResponseWriter, r *http.Request) (er
 	}
 
 	// update service
-	service.logger.Info("succesfully set new providers")
+	service.logger.Info("client succesfully reconfigured providers")
 	service.providers = ps
 
 	// return response to client
