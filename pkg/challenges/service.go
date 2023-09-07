@@ -19,6 +19,7 @@ var (
 
 // App interface is for connecting to the main app
 type application interface {
+	GetConfigFilename() string
 	GetLogger() *zap.SugaredLogger
 	GetShutdownContext() context.Context
 	GetOutputter() *output.Service

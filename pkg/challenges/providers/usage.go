@@ -7,11 +7,18 @@ import (
 	"strings"
 )
 
+var errMgrUnusable = errors.New("providers manager not currently in usable state")
+
 // Provider returns the provider with the specified id. if no such provider
 // exists, an error is returned instead
 func (mgr *Manager) Provider(id int) (*provider, error) {
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
+
+	// fail if not usable
+	if !mgr.usable {
+		return nil, errMgrUnusable
+	}
 
 	p, exists := mgr.iP[id]
 	if !exists {
@@ -21,15 +28,28 @@ func (mgr *Manager) Provider(id int) (*provider, error) {
 	return p, nil
 }
 
+// Providers returns all of the providers in manager, grouped by typeOf
+func (mgr *Manager) Providers() (map[string][]*provider, error) {
+	mgr.mu.RLock()
+	defer mgr.mu.RUnlock()
+
+	// fail if not usable
+	if !mgr.usable {
+		return nil, errMgrUnusable
+	}
+
+	return mgr.tP, nil
+}
+
 // ProviderFor returns the provider Service for the given acme Identifier. If
 // there is no provider for the Identifier, an error is returned instead.
 func (mgr *Manager) ProviderFor(identifier acme.Identifier) (Service, error) {
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
 
-	// check that providers is usable
+	// fail if not usable
 	if !mgr.usable {
-		return nil, errors.New("providers not currently in usable state")
+		return nil, errMgrUnusable
 	}
 
 	// confirm Type is correct (only dns is supported)

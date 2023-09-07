@@ -15,6 +15,10 @@ import (
 // path to the config file
 const configFile = dataStoragePath + "/config.yaml"
 
+func (app *Application) GetConfigFilename() string {
+	return configFile
+}
+
 // config is the configuration structure for app (and subsequently services)
 type config struct {
 	ConfigVersion        *int              `yaml:"config_version"`

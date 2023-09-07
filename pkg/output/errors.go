@@ -15,7 +15,8 @@ var (
 	ErrDeleteInUse    = Error{Status: 409, Message: "record in use, can't delete"}
 
 	// write
-	errWriteJsonError = Error{Status: 500, Message: "json response write error"}
+	ErrWriteConfigFailed = Error{Status: 500, Message: "failed to write lego config file"}
+	errWriteJsonError    = Error{Status: 500, Message: "json response write error"}
 	//errWriteZipError  = Error{Status: 500, Message: "zip write error"}
 	//errWritePemError  = Error{Status: 500, Message: "pem write error"}
 
