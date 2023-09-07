@@ -16,7 +16,7 @@ var (
 
 // Configuration options for an instance of Cloudflare provider
 type Config struct {
-	Domains []string `yaml:"domains" json:"domains"`
+	Doms []string `yaml:"domains" json:"domains"`
 	// Account
 	Account struct {
 		Email        *string                `yaml:"email" json:"email"`
@@ -25,6 +25,11 @@ type Config struct {
 	// -- OR --
 	// Token
 	ApiToken *output.RedactedString `yaml:"api_token" json:"api_token"`
+}
+
+// Domains returns all of the domains specified in the Config
+func (cfg *Config) Domains() []string {
+	return cfg.Doms
 }
 
 // redactedIdentifier selects the correct identifier field and then returns the identifier
@@ -108,21 +113,21 @@ func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 	service.logger.Debugf("cloudflare instance %s all available zones: %s", service.redactedApiIdentifier(), allZoneNames)
 
 	// verify all domains in cfg.Domains are available zones (if not wildcard provider)
-	if !(len(cfg.Domains) == 1 && cfg.Domains[0] == "*") {
-		for i := range cfg.Domains {
+	if !(len(cfg.Doms) == 1 && cfg.Doms[0] == "*") {
+		for i := range cfg.Doms {
 			found := false
 			for serviceDomain := range service.domainIDs {
-				if cfg.Domains[i] == serviceDomain {
+				if cfg.Doms[i] == serviceDomain {
 					found = true
 					break
 				}
 			}
 			if !found {
 				// if wildcard domain, error is different
-				if cfg.Domains[i] == "*" {
+				if cfg.Doms[i] == "*" {
 					return errors.New("when using wildcard domain * it must be the only specified domain on the provider")
 				}
-				return fmt.Errorf("cloudflare domain %s is either not available or missing the proper permission using the specified api credential", cfg.Domains[i])
+				return fmt.Errorf("cloudflare domain %s is either not available or missing the proper permission using the specified api credential", cfg.Doms[i])
 			}
 		}
 	}

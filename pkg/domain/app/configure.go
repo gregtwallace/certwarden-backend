@@ -195,8 +195,8 @@ func (app *Application) setDefaultConfigValues() {
 		*http01Port = 4060
 
 		app.config.Challenges.ProviderConfigs.Http01InternalConfigs = []*http01internal.Config{{
-			Domains: []string{"*"},
-			Port:    http01Port,
+			Doms: []string{"*"},
+			Port: http01Port,
 		}}
 	}
 }

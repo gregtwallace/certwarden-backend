@@ -4,12 +4,6 @@ import (
 	"os/exec"
 )
 
-// AvailableDomains returns all of the domains that this provider instance can
-// provision records for.
-func (service *Service) AvailableDomains() []string {
-	return service.domains
-}
-
 // Provision adds the requested DNS record.
 func (service *Service) Provision(resourceName, resourceContent string) error {
 	// domain is not used

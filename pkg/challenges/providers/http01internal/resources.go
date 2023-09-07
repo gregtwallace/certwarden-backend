@@ -2,14 +2,6 @@ package http01internal
 
 import "fmt"
 
-// AvailableDomains returns all of the domains that are configured.
-// Technically an http01 server can provision a record for any domain, but
-// this satisfies what is needed for the main challenges package so it knows
-// where to send provisioning commands.
-func (service *Service) AvailableDomains() []string {
-	return service.domains
-}
-
 // Provision adds a resource to host
 func (service *Service) Provision(resourceName, resourceValue string) error {
 	// add new entry

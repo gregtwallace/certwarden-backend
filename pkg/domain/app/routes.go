@@ -45,10 +45,11 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/updater/new-version", app.updater.CheckForNewVersion)
 
 	// challenges (config)
-	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers", app.challenges.GetProviders)
-	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/:id", app.challenges.GetProvider)
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/domains", app.challenges.Providers.GetAllDomains)
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services", app.challenges.Providers.GetAllProviders)
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.Providers.GetOneProvider)
 
-	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/challenges/providers", app.challenges.SetProviders)
+	app.makeSecureHandle(http.MethodDelete, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.Providers.DeleteProvider)
 
 	// acme_servers
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/acmeservers", app.acmeServers.GetAllServers)

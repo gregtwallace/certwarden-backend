@@ -37,7 +37,7 @@ func (service *Service) Start() error { return nil }
 // contains one Cloudflare API instance.
 func NewService(app App, cfg *Config) (*Service, error) {
 	// if no config or no domains, error
-	if cfg == nil || len(cfg.Domains) <= 0 {
+	if cfg == nil || len(cfg.Doms) <= 0 {
 		return nil, errServiceComponent
 	}
 
@@ -53,7 +53,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	service.httpClient = app.GetHttpClient()
 
 	// set supported domains from config
-	service.domains = append(service.domains, cfg.Domains...)
+	service.domains = append(service.domains, cfg.Doms...)
 
 	// make map for domains
 	service.domainIDs = make(map[string]string)

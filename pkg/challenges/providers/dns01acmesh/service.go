@@ -46,10 +46,15 @@ func (service *Service) Start() error { return nil }
 
 // Configuration options
 type Config struct {
-	Domains     []string                         `yaml:"domains" json:"domains"`
+	Doms        []string                         `yaml:"domains" json:"domains"`
 	AcmeShPath  *string                          `yaml:"acme_sh_path" json:"acme_sh_path"`
 	Environment output.RedactedEnvironmentParams `yaml:"environment" json:"environment"`
 	DnsHook     string                           `yaml:"dns_hook" json:"dns_hook"`
+}
+
+// Domains returns all of the domains specified in the Config
+func (cfg *Config) Domains() []string {
+	return cfg.Doms
 }
 
 // NewService creates a new service
@@ -60,7 +65,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// if no config or no domains, error
-	if cfg == nil || len(cfg.Domains) <= 0 {
+	if cfg == nil || len(cfg.Doms) <= 0 {
 		return nil, errServiceComponent
 	}
 
@@ -78,7 +83,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// set supported domains from config
-	service.domains = append(service.domains, cfg.Domains...)
+	service.domains = append(service.domains, cfg.Doms...)
 
 	// bash is required
 	var err error

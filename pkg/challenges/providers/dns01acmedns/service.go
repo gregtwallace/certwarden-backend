@@ -33,15 +33,20 @@ func (service *Service) Start() error { return nil }
 
 // Configuration options
 type Config struct {
-	Domains     []string          `yaml:"domains" json:"domains"`
+	Doms        []string          `yaml:"domains" json:"domains"`
 	HostAddress *string           `yaml:"acme_dns_address" json:"acme_dns_address"`
 	Resources   []acmeDnsResource `yaml:"resources" json:"resources"`
+}
+
+// Domains returns all of the domains specified in the Config
+func (cfg *Config) Domains() []string {
+	return cfg.Doms
 }
 
 // NewService creates a new service
 func NewService(app App, cfg *Config) (*Service, error) {
 	// if no config or no domains, error
-	if cfg == nil || len(cfg.Domains) <= 0 {
+	if cfg == nil || len(cfg.Doms) <= 0 {
 		return nil, errServiceComponent
 	}
 
@@ -60,7 +65,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// set supported domains from config
-	service.domains = cfg.Domains
+	service.domains = cfg.Doms
 
 	// acme-dns host address
 	service.acmeDnsAddress = *cfg.HostAddress

@@ -62,14 +62,19 @@ func (service *Service) Start() error {
 
 // Configuration options
 type Config struct {
-	Domains []string `yaml:"domains" json:"domains"`
-	Port    *int     `yaml:"port" json:"port"`
+	Doms []string `yaml:"domains" json:"domains"`
+	Port *int     `yaml:"port" json:"port"`
+}
+
+// Domains returns all of the domains specified in the Config
+func (cfg *Config) Domains() []string {
+	return cfg.Doms
 }
 
 // NewService creates a new service
 func NewService(app App, cfg *Config) (*Service, error) {
 	// if no config or no domains, error
-	if cfg == nil || len(cfg.Domains) <= 0 {
+	if cfg == nil || len(cfg.Doms) <= 0 {
 		return nil, errServiceComponent
 	}
 
@@ -85,7 +90,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// set supported domains from config
-	service.domains = append(service.domains, cfg.Domains...)
+	service.domains = append(service.domains, cfg.Doms...)
 
 	// allocate resources map
 	service.provisionedResources = datatypes.NewSafeMap[[]byte]()

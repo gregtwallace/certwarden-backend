@@ -44,7 +44,7 @@ type Service struct {
 	shutdownContext context.Context
 	output          *output.Service
 	dnsChecker      *dns_checker.Service
-	providers       *providers.Manager
+	Providers       *providers.Manager
 	resources       *datatypes.WorkTracker // tracks all resource names currently in use (regardless of provider)
 }
 
@@ -71,21 +71,17 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 	service.shutdownContext = app.GetShutdownContext()
 
 	// configure challenge providers
-	usesDns := false
-	service.providers, usesDns, err = providers.MakeManager(app, cfg.ProviderConfigs)
+	service.Providers, err = providers.MakeManager(app, cfg.ProviderConfigs)
 	if err != nil {
 		service.logger.Errorf("failed to configure challenge provider(s) (%s)", err)
 		return nil, err
 	}
 
-	// configure dns checker service if any provider uses dns-01
-	if usesDns {
-		// enable checker
-		service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
-		if err != nil {
-			service.logger.Errorf("failed to configure dns checker (%s)", err)
-			return nil, err
-		}
+	// create dns checker regardless of if using dns (since providers can change)
+	service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
+	if err != nil {
+		service.logger.Errorf("failed to configure dns checker (%s)", err)
+		return nil, err
 	}
 
 	// make tracking map

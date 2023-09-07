@@ -41,10 +41,10 @@ func (service *Service) startServer() (err error) {
 	srv.SetKeepAlivesEnabled(false)
 
 	// launch webserver
-	service.logger.Infof("starting http-01 challenge server on %s for domains %s.", servAddr, service.AvailableDomains())
+	service.logger.Infof("starting http-01 challenge server on %s.", servAddr)
 	if service.port != 80 {
-		service.logger.Warnf("http-01 challenge server for domains %s is not running on port 80; internet "+
-			"facing port 80 must be proxied to port %d to function.", service.AvailableDomains(), service.port)
+		service.logger.Warnf("http-01 challenge server is not running on port 80; internet "+
+			"facing port 80 must be proxied to port %d to function.", service.port)
 	}
 
 	// create listener for web server
@@ -61,7 +61,7 @@ func (service *Service) startServer() (err error) {
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			service.logger.Errorf("http01internal server returned error (%s)", err)
 		}
-		service.logger.Infof("http-01 challenge server (%s) shutdown complete", service.AvailableDomains())
+		service.logger.Infof("http-01 challenge server (%s) shutdown complete", servAddr)
 		service.shutdownWaitgroup.Done()
 	}()
 
@@ -75,7 +75,7 @@ func (service *Service) startServer() (err error) {
 
 		err = srv.Shutdown(ctx)
 		if err != nil {
-			service.logger.Errorf("error shutting down http-01 challenge server %s (%s)", service.AvailableDomains(), err)
+			service.logger.Errorf("error shutting down http-01 challenge server %s (%s)", servAddr, err)
 		}
 
 		// send shutdown result to err chan

@@ -10,12 +10,6 @@ import (
 	"strings"
 )
 
-// AvailableDomains returns all of the domains that this provider instance can
-// provision records for.
-func (service *Service) AvailableDomains() []string {
-	return service.domains
-}
-
 // acmeDnsResource contains the needed configuration to update
 // and acme-dns record and also the corresponding 'real' domain
 // that will have a certificate issued for it.

@@ -16,7 +16,7 @@ var (
 // for the specific domain. If no provider exists or solving otherwise fails, an error is returned.
 func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, key acme.AccountKey, acmeService *acme.Service) (status string, err error) {
 	// get provider for identifier
-	provider, err := service.providers.ProviderFor(identifier)
+	provider, err := service.Providers.ProviderFor(identifier)
 	if err != nil {
 		return "", err
 	}
@@ -60,17 +60,25 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// if using dns-01 provider, utilize dnsChecker
-	if service.dnsChecker != nil && providerChallengeType == acme.ChallengeTypeDns01 {
-		// check for propagation
-		propagated, err := service.dnsChecker.CheckTXTWithRetry(resourceName, resourceContent, 10)
-		if err != nil {
-			service.logger.Error(err)
-			return "", err
-		}
+	if providerChallengeType == acme.ChallengeTypeDns01 {
+		if service.dnsChecker != nil {
+			// check for propagation
+			propagated, err := service.dnsChecker.CheckTXTWithRetry(resourceName, resourceContent, 10)
+			if err != nil {
+				service.logger.Error(err)
+				return "", err
+			}
 
-		// if failed to propagate
-		if !propagated {
-			return "", dns_checker.ErrDnsRecordNotFound
+			// if failed to propagate
+			if !propagated {
+				return "", dns_checker.ErrDnsRecordNotFound
+			}
+		} else {
+			// dnschecker is needed but not configured, shouldn't happen but deal with it just in case
+			sleepWait := 240
+			service.logger.Error("dns checker is needed by solver but for some reason its not running, manually "+
+				"sleeping %s seconds, report this issue to lego dev", sleepWait)
+			time.Sleep(time.Duration(sleepWait) * time.Second)
 		}
 	}
 
