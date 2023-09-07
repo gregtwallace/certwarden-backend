@@ -48,7 +48,7 @@ func MakeManager(app application, cfg Config) (mgr *Manager, err error) {
 
 	// add each provider to manager
 	for i := range allCfgs {
-		err = mgr.addProvider(allCfgs[i])
+		_, err = mgr.unsafeAddProvider(allCfgs[i])
 		if err != nil {
 			return nil, err
 		}

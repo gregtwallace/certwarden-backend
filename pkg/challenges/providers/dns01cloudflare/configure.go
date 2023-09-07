@@ -21,10 +21,10 @@ type Config struct {
 	Account struct {
 		Email        *string                `yaml:"email" json:"email"`
 		GlobalApiKey *output.RedactedString `yaml:"global_api_key" json:"global_api_key"`
-	} `yaml:"account" json:"account"`
+	} `yaml:"account,omitempty" json:"account,omitempty"`
 	// -- OR --
 	// Token
-	ApiToken *output.RedactedString `yaml:"api_token" json:"api_token"`
+	ApiToken *output.RedactedString `yaml:"api_token,omitempty" json:"api_token,omitempty"`
 }
 
 // Domains returns all of the domains specified in the Config

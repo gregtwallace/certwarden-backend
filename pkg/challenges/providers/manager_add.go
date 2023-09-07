@@ -2,47 +2,29 @@ package providers
 
 import (
 	"errors"
-	"fmt"
 	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
 	"legocerthub-backend/pkg/challenges/providers/dns01acmesh"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/randomness"
-	"legocerthub-backend/pkg/validation"
 	"reflect"
 	"strings"
 )
 
-// addProvider creates the provider specified in cfg and adds it to manager
-func (mgr *Manager) addProvider(cfg providerConfig) error {
-	mgr.mu.Lock()
-	defer mgr.mu.Unlock()
-
+// unsafeAddProvider creates the provider specified in cfg and adds it to
+// manager. It MUST be called from a Locked state OR during initial Manager
+// creation which is single threaded (and thus safe)
+func (mgr *Manager) unsafeAddProvider(cfg providerConfig) (id int, err error) {
 	// verify every domain ir properly formatted, or verify this is wildcard cfg (* only)
 	// and also verify all domains are available in manager
-	domains := cfg.Domains()
-
-	// validate domain names
-	for _, domain := range domains {
-		// check validity -or- wildcard
-		if !validation.DomainValid(domain, false) && !(len(domains) == 1 && domains[0] == "*") {
-			if domain == "*" {
-				return errors.New("when using wildcard domain * it must be the only specified domain on the provider")
-			}
-			return fmt.Errorf("domain %s is not a validly formatted domain", domain)
-		}
-
-		// check manager availability
-		_, exists := mgr.dP[domain]
-		if exists {
-			return fmt.Errorf("failed to configure domain %s, each domain can only be configured once", domain)
-		}
+	err = mgr.unsafeValidateDomains(cfg, nil)
+	if err != nil {
+		return -1, err
 	}
 
 	// make provider service (switch based on cfg type (and thus which pkg to use))
 	var serv Service
-	var err error
 
 	switch realCfg := cfg.(type) {
 	case *http01internal.Config:
@@ -62,12 +44,12 @@ func (mgr *Manager) addProvider(cfg providerConfig) error {
 
 	default:
 		// default fail
-		return errors.New("cannot create provider service, unsupported provider cfg")
+		return -1, errors.New("cannot create provider service, unsupported provider cfg")
 	}
 
 	// common err check
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	// all valid, good to add provider to mgr
@@ -88,7 +70,7 @@ func (mgr *Manager) addProvider(cfg providerConfig) error {
 	mgr.pD[p] = []string{}
 
 	// add each domain
-	for _, domain := range domains {
+	for _, domain := range cfg.Domains() {
 		// add domain to domains map
 		mgr.dP[domain] = p
 
@@ -96,5 +78,5 @@ func (mgr *Manager) addProvider(cfg providerConfig) error {
 		mgr.pD[p] = append(mgr.pD[p], domain)
 	}
 
-	return nil
+	return p.ID, nil
 }

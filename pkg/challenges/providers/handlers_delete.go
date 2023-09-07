@@ -42,6 +42,7 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) (err 
 	p := (*provider)(nil)
 	for oneP := range mgr.pD {
 		if oneP.ID == payload.ID {
+
 			// once found, verify tag is correct
 			if oneP.Tag == payload.Tag {
 				p = oneP
@@ -59,15 +60,8 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrValidationFailed
 	}
 
-	// get domains list for provider
-	domains := mgr.pD[p]
-	// delete each domain that used provider
-	for _, domain := range domains {
-		delete(mgr.dP, domain)
-	}
-
-	// delete provider from provider map
-	delete(mgr.pD, p)
+	// actually do deletion
+	mgr.unsafeDeleteProvider(p)
 
 	// update config file
 	err = mgr.unsafeWriteProvidersConfig()
