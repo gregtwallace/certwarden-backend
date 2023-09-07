@@ -45,9 +45,10 @@ func (app *Application) routes() http.Handler {
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/updater/new-version", app.updater.CheckForNewVersion)
 
 	// challenges (config)
-	// TEMP REMOVED SECURITY!!!
-	app.makeHandle(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers", app.challenges.GetProvidersConfig)
-	app.makeHandle(http.MethodPost, apiUrlPath+"/v1/app/challenges/providers", app.challenges.SetProviders)
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers", app.challenges.GetProviders)
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/:id", app.challenges.GetProvider)
+
+	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/app/challenges/providers", app.challenges.SetProviders)
 
 	// acme_servers
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/acmeservers", app.acmeServers.GetAllServers)

@@ -55,6 +55,7 @@ type Manager struct {
 	usable bool
 	dP     map[string]*provider   // domain -> provider
 	pD     map[*provider][]string // provider -> []domain
+	iP     map[int]*provider      // id -> provider
 	tP     map[string][]*provider // typeOf -> []provider
 	mu     sync.RWMutex
 }
@@ -72,8 +73,9 @@ func (mgr *Manager) addProvider(pService Service, cfg any) error {
 	typeOf, cfgIsConfig := strings.CutSuffix(typeOf, ".Config")
 
 	// create Provider from service and config
+	id := len(mgr.pD)
 	p := &provider{
-		ID:      len(mgr.pD),
+		ID:      id,
 		Tag:     randomness.GenerateInsecureString(10),
 		TypeOf:  typeOf,
 		Config:  cfg,
@@ -83,6 +85,7 @@ func (mgr *Manager) addProvider(pService Service, cfg any) error {
 	// always add provider to providers map, this ensures that if there is an error,
 	// Stop() can still be called on all providers that were created
 	mgr.pD[p] = []string{}
+	mgr.iP[id] = p
 	mgr.tP[typeOf] = append(mgr.tP[typeOf], p)
 
 	// if type of cfg was not a .Config, error
@@ -125,6 +128,7 @@ func MakeManager(app application, cfg Config) (mgr *Manager, usesDns bool, err e
 		usable: true,
 		dP:     make(map[string]*provider),
 		pD:     make(map[*provider][]string),
+		iP:     make(map[int]*provider),
 		tP:     make(map[string][]*provider),
 	}
 

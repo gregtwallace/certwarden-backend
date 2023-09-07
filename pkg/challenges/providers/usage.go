@@ -7,6 +7,20 @@ import (
 	"strings"
 )
 
+// Provider returns the provider with the specified id. if no such provider
+// exists, an error is returned instead
+func (mgr *Manager) Provider(id int) (*provider, error) {
+	mgr.mu.RLock()
+	defer mgr.mu.RUnlock()
+
+	p, exists := mgr.iP[id]
+	if !exists {
+		return nil, fmt.Errorf("no provider exists with id %d", id)
+	}
+
+	return p, nil
+}
+
 // ProviderFor returns the provider Service for the given acme Identifier. If
 // there is no provider for the Identifier, an error is returned instead.
 func (mgr *Manager) ProviderFor(identifier acme.Identifier) (Service, error) {

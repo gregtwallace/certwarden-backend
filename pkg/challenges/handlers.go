@@ -6,10 +6,13 @@ import (
 	"legocerthub-backend/pkg/challenges/providers"
 	"legocerthub-backend/pkg/output"
 	"net/http"
+	"strconv"
+
+	"github.com/julienschmidt/httprouter"
 )
 
-// GetProvidersConfig returns all of the currently configured providers configs
-func (service *Service) GetProvidersConfig(w http.ResponseWriter, r *http.Request) (err error) {
+// GetProviders returns all of the currently configured providers
+func (service *Service) GetProviders(w http.ResponseWriter, r *http.Request) (err error) {
 	err = service.output.WriteJSON(w, http.StatusOK, service.providers.Providers(), "providers")
 	if err != nil {
 		return err
@@ -17,7 +20,37 @@ func (service *Service) GetProvidersConfig(w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
-// SetProviders configures providers with the provided config
+// GetProvider returns the provider with the specified id number
+func (service *Service) GetProvider(w http.ResponseWriter, r *http.Request) (err error) {
+	// params
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// // if id is new, provide some info
+	// if validation.IsIdNew(id) {
+	// 	return service.xxx?(w, r)
+	// }
+
+	// get the key from storage (and validate id)
+	p, err := service.providers.Provider(id)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// return response to client
+	err = service.output.WriteJSON(w, http.StatusOK, p, "provider")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetProviders configures providers Manager with the provided config
 func (service *Service) SetProviders(w http.ResponseWriter, r *http.Request) (err error) {
 	var cfg providers.Config
 
