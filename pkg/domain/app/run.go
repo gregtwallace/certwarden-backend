@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -90,7 +91,11 @@ func run() (restart bool) {
 
 	// start pprof if enabled or in dev mode
 	if *app.config.DevMode || *app.config.EnablePprof {
-		app.startPprof()
+		err = app.startPprof()
+		if err != nil {
+			app.logger.Errorf("failed to start pprof (%s), exiting", err)
+			os.Exit(1)
+		}
 	}
 
 	// configure webserver
@@ -137,12 +142,23 @@ func run() (restart bool) {
 				ReadTimeout:  readTimeout,
 				WriteTimeout: writeTimeout,
 			}
+
 			app.logger.Infof("starting http redirect bound to %s", app.config.httpServAddress())
+
+			// create listener for web server
+			ln1, err := net.Listen("tcp", app.config.httpServAddress())
+			if err != nil {
+				app.logger.Errorf("http redirect server cannot bind to %s (%s), exiting", app.config.httpServAddress(), err)
+				os.Exit(1)
+			}
+
+			// start server
 			app.shutdownWaitgroup.Add(1)
 			go func() {
-				err := redirectSrv.ListenAndServe()
+				defer func() { _ = ln1.Close }()
+				err := redirectSrv.Serve(ln1)
 				if err != nil && !errors.Is(err, http.ErrServerClosed) {
-					app.logger.Panic(err)
+					app.logger.Errorf("http redirect server returned error (%s)", err)
 				}
 				app.logger.Info("http redirect server shutdown complete")
 				app.shutdownWaitgroup.Done()
@@ -151,11 +167,21 @@ func run() (restart bool) {
 
 		// launch https
 		app.logger.Infof("starting lego-certhub (https) bound to %s", app.config.httpsServAddress())
+
+		// create listener for web server
+		ln2, err := net.Listen("tcp", app.config.httpsServAddress())
+		if err != nil {
+			app.logger.Errorf("lego-certhub (https) server cannot bind to %s (%s), exiting", app.config.httpServAddress(), err)
+			os.Exit(1)
+		}
+
+		// start server
 		app.shutdownWaitgroup.Add(1)
 		go func() {
-			err := srv.ListenAndServeTLS("", "")
+			defer func() { _ = ln2.Close }()
+			err := srv.ServeTLS(ln2, "", "")
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				app.logger.Panic(err)
+				app.logger.Errorf("lego-certhub (https) server returned error (%s)", err)
 			}
 			app.logger.Info("https server shutdown complete")
 			app.shutdownWaitgroup.Done()
@@ -164,11 +190,21 @@ func run() (restart bool) {
 	} else {
 		// if https failed, launch localhost only http server
 		app.logger.Warnf("starting insecure lego-certhub (http) bound to %s", app.config.httpServAddress())
+
+		// create listener for web server
+		ln3, err := net.Listen("tcp", app.config.httpServAddress())
+		if err != nil {
+			app.logger.Errorf("insecure lego-certhub (http) server cannot bind to %s (%s), exiting", app.config.httpServAddress(), err)
+			os.Exit(1)
+		}
+
+		// start server
 		app.shutdownWaitgroup.Add(1)
 		go func() {
-			err := srv.ListenAndServe()
+			defer func() { _ = ln3.Close }()
+			err := srv.Serve(ln3)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				app.logger.Panic(err)
+				app.logger.Errorf("insecure lego-certhub (http) server returned error (%s)", err)
 			}
 			app.logger.Info("http server shutdown complete")
 			app.shutdownWaitgroup.Done()

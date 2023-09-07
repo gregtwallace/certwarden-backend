@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"strings"
@@ -40,28 +42,35 @@ func pprofHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // startPprof starts the pprof http server on the configured port
-func (app *Application) startPprof() {
+func (app *Application) startPprof() error {
+	pprofServAddr := app.config.pprofServAddress()
+
 	// log availability
-	app.logger.Infof("pprof debugging enabled and available at: %s", app.config.pprofServAddress()+pprofUrlPath)
+	app.logger.Infof("pprof debugging enabled and available at: %s", pprofServAddr+pprofUrlPath)
 
 	// create router
 	router := httprouter.New()
 	router.HandlerFunc(http.MethodGet, pprofUrlPath+"/*any", pprofHandler)
 
-	// shutdown wg
-	app.shutdownWaitgroup.Add(1)
-
 	// server
 	srv := &http.Server{
-		Addr:    app.config.pprofServAddress(),
+		Addr:    pprofServAddr,
 		Handler: router,
 	}
 
+	// create listener for web server
+	ln, err := net.Listen("tcp", pprofServAddr)
+	if err != nil {
+		return fmt.Errorf("pprof server cannot bind to %s (%s)", pprofServAddr, err)
+	}
+
 	// start server
+	app.shutdownWaitgroup.Add(1)
 	go func() {
-		err := srv.ListenAndServe()
+		defer func() { _ = ln.Close }()
+		err := srv.Serve(ln)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			app.logger.Panic(err)
+			app.logger.Errorf("pprof server returned error (%s)", err)
 		}
 		app.logger.Info("pprof server shutdown complete")
 
@@ -81,4 +90,6 @@ func (app *Application) startPprof() {
 			app.logger.Errorf("error shutting down pprof server")
 		}
 	}()
+
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 )
@@ -45,12 +46,20 @@ func (service *Service) startServer() (err error) {
 		service.logger.Warnf("http-01 challenge server for domains %s is not running on port 80; internet "+
 			"facing port 80 must be proxied to port %d to function.", service.AvailableDomains(), service.port)
 	}
-	service.shutdownWaitgroup.Add(1)
 
+	// create listener for web server
+	ln, err := net.Listen("tcp", servAddr)
+	if err != nil {
+		return fmt.Errorf("http01internal server cannot bind to %s (%s)", servAddr, err)
+	}
+
+	// start server
+	service.shutdownWaitgroup.Add(1)
 	go func() {
-		err := srv.ListenAndServe()
+		defer func() { _ = ln.Close }()
+		err := srv.Serve(ln)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			service.logger.Panic(err)
+			service.logger.Errorf("http01internal server returned error (%s)", err)
 		}
 		service.logger.Infof("http-01 challenge server (%s) shutdown complete", service.AvailableDomains())
 		service.shutdownWaitgroup.Done()
