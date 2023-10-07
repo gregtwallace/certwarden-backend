@@ -3,9 +3,11 @@ package http01internal
 import (
 	"context"
 	"errors"
+	"fmt"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/datatypes"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -94,32 +96,49 @@ func NewService(app App, cfg *Config) (*Service, error) {
 }
 
 // Update Service updates the Service to use the new config
-func (service *Service) UpdateService(app App, cfg *Config) error {
-	// old Service http server must be stopped before new service is created
-	service.stopServerFunc()
+func (service *Service) UpdateService(app App, cfg *Config) (err error) {
+	// if port changed, stop server and remake service
+	if cfg.Port != nil && *cfg.Port != service.port {
+		// old Service http server must be stopped before new service is created
+		service.stopServerFunc()
 
-	// wait for result of server shutdown
-	err := <-service.stopErrChan
-	if err != nil {
-		return err
-	}
-
-	// make new service
-	newServ, err := NewService(app, cfg)
-	if err != nil {
-		// if failed to make, restart old server
-		errRestart := service.startServer()
-		if errRestart != nil {
-			service.logger.Fatalf("failed to restart http 01 server leaving http 01 internal provider in an unstable state")
-			// ^ app terminates
-			return errRestart
+		// wait for result of server shutdown
+		select {
+		case <-time.After(240 * time.Second):
+			// shutdown timeout
+			err = errors.New("timed out")
+			return err
+		case err = <-service.stopErrChan:
+			// no-op, proceed to err check
 		}
-		return err
+
+		// common err check (shutdown err = fatal unstable)
+		if err != nil {
+			err = fmt.Errorf("stop http 01 server failed (%s) leaving http 01 internal provider in an unstable state", err)
+			service.logger.Fatal(err)
+			// ^ app terminates
+			return err
+		}
+
+		// make new service
+		newServ, err := NewService(app, cfg)
+		if err != nil {
+			// if failed to make, restart old server
+			errRestart := service.startServer()
+			if errRestart != nil {
+				service.logger.Fatalf("failed to restart http 01 server leaving http 01 internal provider in an unstable state")
+				// ^ app terminates
+				return errRestart
+			}
+			return err
+		}
+
+		// set content of old pointer so anything with the pointer calls the
+		// updated service
+		*service = *newServ
 	}
 
-	// set content of old pointer so anything with the pointer calls the
-	// updated service
-	*service = *newServ
+	// nothing else to update on service (domains handled by parent pkg)
 
 	return nil
 }
