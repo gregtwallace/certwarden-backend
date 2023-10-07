@@ -67,6 +67,15 @@ func zoneValid(z *cloudflare.Zone) bool {
 // and Accounts specified within the config. If any of the config does
 // not work, configuration is aborted and an error is returned.
 func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
+	// if blank value, change to nil pointer (treat as omitted)
+	if cfg.Account != nil && ((cfg.Account.Email != nil && *cfg.Account.Email == "") || (cfg.Account.GlobalApiKey != nil && *cfg.Account.GlobalApiKey == "")) {
+		cfg.Account.Email = nil
+		cfg.Account.GlobalApiKey = nil
+	}
+	if cfg.ApiToken != nil && *cfg.ApiToken == "" {
+		cfg.ApiToken = nil
+	}
+
 	// if both account and token are specified, error
 	if cfg.Account != nil && cfg.ApiToken != nil {
 		return errAccountAndTokenSpecified
