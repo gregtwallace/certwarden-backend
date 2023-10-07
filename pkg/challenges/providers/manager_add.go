@@ -59,12 +59,15 @@ func (mgr *Manager) unsafeAddProvider(cfg providerConfig) (id int, err error) {
 	typeOf, _ = strings.CutSuffix(typeOf, ".Config")
 
 	p := &provider{
-		ID:      len(mgr.pD),
+		ID:      mgr.nextId,
 		Tag:     randomness.GenerateInsecureString(10),
 		Type:    typeOf,
 		Config:  cfg,
 		Service: serv,
 	}
+
+	// increment next id
+	mgr.nextId++
 
 	// add provider to providers map with empty domains
 	mgr.pD[p] = []string{}

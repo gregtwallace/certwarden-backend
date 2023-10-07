@@ -27,6 +27,7 @@ type Manager struct {
 	logger     *zap.SugaredLogger
 	output     *output.Service
 	configFile string
+	nextId     int
 	dP         map[string]*provider   // domain -> provider
 	pD         map[*provider][]string // provider -> []domain
 	mu         sync.RWMutex
@@ -39,6 +40,7 @@ func MakeManager(app application, cfg Config) (mgr *Manager, err error) {
 		logger:     app.GetLogger(),
 		output:     app.GetOutputter(),
 		configFile: app.GetConfigFilename(),
+		nextId:     0,
 		dP:         make(map[string]*provider),   // domain -> provider
 		pD:         make(map[*provider][]string), // provider -> []domain
 	}
