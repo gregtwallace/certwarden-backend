@@ -73,6 +73,14 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 // Update Service updates the Service to use the new config
 func (service *Service) UpdateService(app App, cfg *Config) error {
+	// if form submitted with redacted info, ensure unredacted is submitted to new service
+	if cfg.Account != nil && cfg.Account.GlobalApiKey.Redacted() == service.redactedApiIdentifier() {
+		*cfg.Account.GlobalApiKey = output.RedactedString(service.apiIdentifier())
+
+	} else if cfg.ApiToken != nil && cfg.ApiToken.Redacted() == service.redactedApiIdentifier() {
+		*cfg.ApiToken = output.RedactedString(service.apiIdentifier())
+	}
+
 	// don't need to do anything with "old" Service, just set a new one
 	newServ, err := NewService(app, cfg)
 	if err != nil {
@@ -86,25 +94,26 @@ func (service *Service) UpdateService(app App, cfg *Config) error {
 	return nil
 }
 
-// redactedIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
+// apiIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
+// (depending on which is in use for the API instance) and returns it.
+func (service *Service) apiIdentifier() string {
+	// return whichever is present
+	if len(service.cloudflareApi.APIToken) > 0 {
+		return service.cloudflareApi.APIToken
+	} else if len(service.cloudflareApi.APIKey) > 0 {
+		return service.cloudflareApi.APIKey
+	} else if len(service.cloudflareApi.APIUserServiceKey) > 0 {
+		return service.cloudflareApi.APIUserServiceKey
+	}
+
+	// none present, return unknown
+	return "unknown"
+}
+
+// redactedApiIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
 // (depending on which is in use for the API instance) and then redacts it to return
 // the first and last characters of the key separated with asterisks. This is useful
 // for logging issues without saving the full credential to logs.
 func (service *Service) redactedApiIdentifier() string {
-	identifier := ""
-
-	// select whichever is present
-	if len(service.cloudflareApi.APIToken) > 0 {
-		identifier = service.cloudflareApi.APIToken
-	} else if len(service.cloudflareApi.APIKey) > 0 {
-		identifier = service.cloudflareApi.APIKey
-	} else if len(service.cloudflareApi.APIUserServiceKey) > 0 {
-		identifier = service.cloudflareApi.APIUserServiceKey
-	} else {
-		// none present, return unknown
-		return "unknown"
-	}
-
-	// return redacted
-	return output.RedactString(identifier)
+	return output.RedactString(service.apiIdentifier())
 }
