@@ -33,6 +33,10 @@ func (service *Service) AcmeChallengeType() acme.ChallengeType {
 	return acme.ChallengeTypeDns01
 }
 
+// Stop is used for any actions needed prior to deleting this provider. If no actions
+// are needed, it is just a no-op.
+func (service *Service) Stop() error { return nil }
+
 // NewService creates a new instance of the Cloudflare provider service. Service
 // contains one Cloudflare API instance.
 func NewService(app App, cfg *Config) (*Service, error) {

@@ -14,6 +14,7 @@ type Service interface {
 	AcmeChallengeType() acme.ChallengeType
 	Provision(resourceName, resourceContent string) (err error)
 	Deprovision(resourceName, resourceContent string) (err error)
+	Stop() error
 }
 
 // provider is the structure of a provider that is being managed

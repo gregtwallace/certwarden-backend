@@ -44,6 +44,10 @@ func (service *Service) AcmeChallengeType() acme.ChallengeType {
 	return acme.ChallengeTypeDns01
 }
 
+// Stop is used for any actions needed prior to deleting this provider. If no actions
+// are needed, it is just a no-op.
+func (service *Service) Stop() error { return nil }
+
 // Configuration options
 type Config struct {
 	Doms        []string                         `yaml:"domains" json:"domains"`

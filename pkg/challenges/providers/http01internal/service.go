@@ -42,6 +42,33 @@ func (service *Service) AcmeChallengeType() acme.ChallengeType {
 	return acme.ChallengeTypeHttp01
 }
 
+// Stop is used for any actions needed prior to deleting this provider. For http-01
+// internal, the http server must be shutdown.
+func (service *Service) Stop() (err error) {
+	// stop server
+	service.stopServerFunc()
+
+	// wait for result of server shutdown
+	select {
+	case <-time.After(240 * time.Second):
+		// shutdown timeout
+		err = errors.New("http-01 internal server shutdown timed out")
+		return err
+	case err = <-service.stopErrChan:
+		// no-op, proceed to err check
+	}
+
+	// common err check (shutdown err = fatal unstable)
+	if err != nil {
+		err = fmt.Errorf("stop http 01 server failed (%s) leaving http 01 internal provider in an unstable state", err)
+		service.logger.Fatal(err)
+		// ^ app terminates
+		return err
+	}
+
+	return nil
+}
+
 // Configuration options
 type Config struct {
 	Doms []string `yaml:"domains" json:"domains"`
@@ -99,24 +126,9 @@ func NewService(app App, cfg *Config) (*Service, error) {
 func (service *Service) UpdateService(app App, cfg *Config) (err error) {
 	// if port changed, stop server and remake service
 	if cfg.Port != nil && *cfg.Port != service.port {
-		// old Service http server must be stopped before new service is created
-		service.stopServerFunc()
-
-		// wait for result of server shutdown
-		select {
-		case <-time.After(240 * time.Second):
-			// shutdown timeout
-			err = errors.New("timed out")
-			return err
-		case err = <-service.stopErrChan:
-			// no-op, proceed to err check
-		}
-
-		// common err check (shutdown err = fatal unstable)
+		// stop old server
+		err = service.Stop()
 		if err != nil {
-			err = fmt.Errorf("stop http 01 server failed (%s) leaving http 01 internal provider in an unstable state", err)
-			service.logger.Fatal(err)
-			// ^ app terminates
 			return err
 		}
 

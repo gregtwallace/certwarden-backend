@@ -66,6 +66,14 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrValidationFailed
 	}
 
+	// call provider stop func before deleting
+	err = p.Stop()
+	if err != nil {
+		// if error just log it
+		// if app is unstable, rely on provider service to call Fatal
+		mgr.logger.Errorf("failed to stop provider being deleted (%s)", err)
+	}
+
 	// actually do deletion
 	mgr.unsafeDeleteProvider(p)
 
