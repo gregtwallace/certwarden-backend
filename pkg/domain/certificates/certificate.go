@@ -5,6 +5,7 @@ import (
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
+	"legocerthub-backend/pkg/output"
 )
 
 // Certificate is a single certificate with all of its fields
@@ -102,10 +103,10 @@ func (cert Certificate) detailedResponse(service *Service, withSensitive bool) c
 	apiKey := cert.ApiKey
 	apiKeyNew := cert.ApiKeyNew
 	if !withSensitive {
-		apiKey = "[redacted]"
-		// redact if not empty
+		apiKey = output.RedactString(apiKey)
+		// only redact new key if it exists
 		if apiKeyNew != "" {
-			apiKeyNew = "[redacted]"
+			apiKeyNew = output.RedactString(apiKeyNew)
 		}
 	}
 
