@@ -2,19 +2,22 @@ package auth
 
 import (
 	"net/http"
+
+	"github.com/golang-jwt/jwt/v4"
 )
 
 type authorization struct {
-	AccessToken   accessToken    `json:"access_token"`
-	SessionClaims sessionClaims  `json:"session"`
-	refreshCookie *refreshCookie `json:"-"`
+	AccessToken       accessToken          `json:"access_token"`
+	AccessTokenClaims jwt.RegisteredClaims `json:"access_token_claims"`
+	SessionClaims     sessionClaims        `json:"session_claims"`
+	refreshCookie     *refreshCookie       `json:"-"`
 }
 
 // createAuth creates all of the necessary pieces of information
 // for an auth response
 func (service *Service) createAuth(username string) (auth authorization, err error) {
 	// make access token
-	auth.AccessToken, _, err = service.createAccessToken(username)
+	auth.AccessToken, auth.AccessTokenClaims, err = service.createAccessToken(username)
 	if err != nil {
 		return authorization{}, err
 	}
