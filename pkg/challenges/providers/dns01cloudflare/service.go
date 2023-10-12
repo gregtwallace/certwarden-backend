@@ -73,12 +73,12 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 // Update Service updates the Service to use the new config
 func (service *Service) UpdateService(app App, cfg *Config) error {
-	// if form submitted with redacted info, ensure unredacted is submitted to new service
-	if cfg.Account != nil && cfg.Account.GlobalApiKey.Redacted() == service.redactedApiIdentifier() {
-		*cfg.Account.GlobalApiKey = output.RedactedString(service.apiIdentifier())
+	// try to fix redacted vals from client
+	if cfg.Account != nil {
+		cfg.Account.GlobalApiKey.TryUnredact(service.apiIdentifier())
 
 	} else if cfg.ApiToken != nil && cfg.ApiToken.Redacted() == service.redactedApiIdentifier() {
-		*cfg.ApiToken = output.RedactedString(service.apiIdentifier())
+		cfg.ApiToken.TryUnredact(service.apiIdentifier())
 	}
 
 	// don't need to do anything with "old" Service, just set a new one

@@ -20,7 +20,6 @@ const (
 
 var (
 	errServiceComponent = errors.New("necessary dns-01 acme.sh component is missing")
-	errNoAcmeShPath     = errors.New("acme.sh path not specified in config")
 	errBashMissing      = errors.New("unable to find bash")
 	errWindows          = errors.New("acme.sh is not supported in windows, disable it")
 )
@@ -51,7 +50,7 @@ func (service *Service) Stop() error { return nil }
 // Configuration options
 type Config struct {
 	Doms        []string                         `yaml:"domains" json:"domains"`
-	AcmeShPath  *string                          `yaml:"acme_sh_path" json:"acme_sh_path"`
+	AcmeShPath  string                           `yaml:"acme_sh_path" json:"acme_sh_path"`
 	Environment output.RedactedEnvironmentParams `yaml:"environment" json:"environment"`
 	DnsHook     string                           `yaml:"dns_hook" json:"dns_hook"`
 }
@@ -73,11 +72,6 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// error if no path
-	if cfg.AcmeShPath == nil {
-		return nil, errNoAcmeShPath
-	}
-
 	service := new(Service)
 
 	// logger
@@ -94,7 +88,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// read in base script
-	acmeSh, err := os.ReadFile(*cfg.AcmeShPath + "/" + acmeShFileName)
+	acmeSh, err := os.ReadFile(cfg.AcmeShPath + "/" + acmeShFileName)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +96,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	acmeSh, _, _ = bytes.Cut(acmeSh, []byte{109, 97, 105, 110, 32, 34, 36, 64, 34})
 
 	// read in dns_hook script
-	acmeShDnsHook, err := os.ReadFile(*cfg.AcmeShPath + dnsApiPath + "/" + cfg.DnsHook + ".sh")
+	acmeShDnsHook, err := os.ReadFile(cfg.AcmeShPath + dnsApiPath + "/" + cfg.DnsHook + ".sh")
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +105,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	shellScript := append(acmeSh, acmeShDnsHook...)
 
 	// store in file to use as source
-	path := *cfg.AcmeShPath + tempScriptPath
+	path := cfg.AcmeShPath + tempScriptPath
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		err := os.Mkdir(path, os.ModePerm)
 		if err != nil {
@@ -142,6 +136,11 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 // Update Service updates the Service to use the new config
 func (service *Service) UpdateService(app App, cfg *Config) error {
+	// try to fix redacted vals from client
+	if cfg.Environment != nil {
+		cfg.Environment.TryUnredact(service.environmentVars)
+	}
+
 	// don't need to do anything with "old" Service, just set a new one
 	newServ, err := NewService(app, cfg)
 	if err != nil {

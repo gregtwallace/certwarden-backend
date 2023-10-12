@@ -118,6 +118,11 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 // Update Service updates the Service to use the new config
 func (service *Service) UpdateService(app App, cfg *Config) error {
+	// try to fix redacted vals from client
+	if cfg.Environment != nil {
+		cfg.Environment.TryUnredact(service.environmentVars)
+	}
+
 	// don't need to do anything with "old" Service, just set a new one
 	newServ, err := NewService(app, cfg)
 	if err != nil {
