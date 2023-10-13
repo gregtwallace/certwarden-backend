@@ -111,13 +111,6 @@ func create() (*Application, error) {
 	// wait group for graceful shutdown
 	app.shutdownWaitgroup = new(sync.WaitGroup)
 
-	// is the server in development mode?
-	// this changes some basic things like: log level and connection timeouts
-	// This does NOT prevent interactions with ACME production environment!
-	if *app.config.DevMode {
-		app.logger.Warn("development mode enabled (do not run in production)")
-	}
-
 	// create http client
 	userAgent := fmt.Sprintf("LeGoCertHub/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
 	app.httpClient = httpclient.New(userAgent)
@@ -155,13 +148,8 @@ func create() (*Application, error) {
 	app.httpsCert = new(datatypes.SafeCert)
 	err = app.LoadHttpsCertificate()
 	if err != nil {
-		app.logger.Errorf("failed to configure https cert: %s", err)
-		// if not https, and not dev mode, certain functions will be blocked
-		if !*app.config.DevMode {
-			app.logger.Error("certain functionality (e.g. pem downloads via API keys) will be disabled until the server is run in https mode")
-		}
-
 		// failed = not https
+		app.logger.Errorf("failed to configure https cert: %s", err)
 		app.httpsCert = nil
 	}
 

@@ -16,7 +16,6 @@ type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetChallengesService() *challenges.Service
 	GetAcmeServerService() *acme_servers.Service
-	GetDevMode() bool
 }
 
 // service struct

@@ -72,7 +72,7 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 	}
 
 	// return response to client
-	err = service.output.WriteJSON(w, http.StatusOK, key.detailedResponse(service.https || service.devMode), "private_key")
+	err = service.output.WriteJSON(w, http.StatusOK, key.detailedResponse(), "private_key")
 	if err != nil {
 		return err
 	}
@@ -82,11 +82,6 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) (err e
 
 // DownloadOneKey returns the pem for a single key to the client
 func (service *Service) DownloadOneKey(w http.ResponseWriter, r *http.Request) (err error) {
-	// if not running https, error
-	if !service.https && !service.devMode {
-		return output.ErrUnavailableHttp
-	}
-
 	// params
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)

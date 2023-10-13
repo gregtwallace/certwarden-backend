@@ -26,7 +26,6 @@ type App interface {
 	GetAuthsService() *authorizations.Service
 	GetShutdownContext() context.Context
 	GetShutdownWaitGroup() *sync.WaitGroup
-	IsHttps() bool
 	HttpsCertificateName() *string
 	LoadHttpsCertificate() error
 }
@@ -126,7 +125,6 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	// server's http cert name and reloader func
 	service.serverCertificateName = app.HttpsCertificateName()
 	service.loadHttpsCertificate = app.LoadHttpsCertificate
-	service.isHttps = app.IsHttps()
 
 	// initialize inProcess (tracker)
 	service.inProcess = newInProcess()

@@ -59,27 +59,6 @@
 # of https.
 'certificate_name': 'mylego.example.com'
 
-# Development mode
-# This should NOT be used in production!
-# Specific changes:
-# - Increased web server read/write timeouts
-# - Allow 404 errors to be returned (in prod, 401 is returned instead of 404
-#   to obfuscate if a route is valid or not)
-# - Set log level to debug
-# - Some functions are disabled until the server is running over https. devMode
-#   enables those functions even when running over http. (e.g. change password,
-#   download keys/certs, & redaction of certain sensitive informaiton before
-#   it is returned to the client)
-# - API Key manual editing is not allowed until running over https. devMode
-#   overrides this restriction.
-# - JSON marshal is indented
-# - No change password complexity requirement
-# - Set frontend to devMode (assuming backend hosts frontend)
-#   see: https://github.com/gregtwallace/legocerthub-frontend/blob/master/src/helpers/environment.js
-#   for more details regarding frontend changes
-# - Enable pprof regardless of pprof config option
-'dev_mode': true
-
 # Enable pprof for debugging. When enabled, pprof is available over http
 # at the specified port
 'enable_pprof': true

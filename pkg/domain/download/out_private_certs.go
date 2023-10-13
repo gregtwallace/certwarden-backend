@@ -108,11 +108,6 @@ func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http
 // for this is the certificate apikey appended to the private key's apikey using a '.' as a separator.
 // It also checks the apiKeyViaUrl property if the client is making a request with the apiKey in the Url.
 func (service *Service) getCertNewestValidPrivateCert(certName string, apiKeysCombined string, apiKeyViaUrl bool) (privateCertificate, error) {
-	// if not running https, error
-	if !service.https && !service.devMode {
-		return privateCertificate{}, output.ErrUnavailableHttp
-	}
-
 	// separate the apiKeys
 	apiKeys := strings.Split(apiKeysCombined, ".")
 

@@ -17,7 +17,6 @@ type application interface {
 	GetConfigFilename() string
 	GetShutdownContext() context.Context
 	GetHttpClient() *httpclient.Client
-	GetDevMode() bool
 	GetShutdownWaitGroup() *sync.WaitGroup
 }
 

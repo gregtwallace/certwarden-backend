@@ -17,7 +17,6 @@ const BcryptCost = 12
 
 // App interface is for connecting to the main app
 type App interface {
-	GetDevMode() bool
 	IsHttps() bool
 	HasCrossOrigins() bool
 	GetLogger() *zap.SugaredLogger
@@ -34,7 +33,6 @@ type Storage interface {
 
 // Keys service struct
 type Service struct {
-	devMode          bool
 	logger           *zap.SugaredLogger
 	https            bool
 	allowCrossOrigin bool
@@ -49,9 +47,6 @@ type Service struct {
 func NewService(app App) (*Service, error) {
 	service := new(Service)
 	var err error
-
-	// dev mode check
-	service.devMode = app.GetDevMode()
 
 	// logger
 	service.logger = app.GetLogger()
@@ -91,7 +86,7 @@ func NewService(app App) (*Service, error) {
 	}
 
 	// create session manager
-	service.sessionManager = newSessionManager(service.devMode)
+	service.sessionManager = newSessionManager()
 	// start cleaner
 	service.startCleanerService(app.GetShutdownContext(), app.GetShutdownWaitGroup())
 

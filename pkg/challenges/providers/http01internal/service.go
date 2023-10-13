@@ -19,7 +19,6 @@ var (
 
 // App interface is for connecting to the main app
 type App interface {
-	GetDevMode() bool
 	GetLogger() *zap.SugaredLogger
 	GetShutdownContext() context.Context
 	GetShutdownWaitGroup() *sync.WaitGroup
@@ -27,7 +26,6 @@ type App interface {
 
 // provider Service struct
 type Service struct {
-	devMode              bool
 	logger               *zap.SugaredLogger
 	shutdownContext      context.Context
 	shutdownWaitgroup    *sync.WaitGroup
@@ -88,9 +86,6 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	service := new(Service)
-
-	// devmode?
-	service.devMode = app.GetDevMode()
 
 	// logger
 	service.logger = app.GetLogger()

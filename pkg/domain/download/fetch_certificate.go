@@ -10,11 +10,6 @@ import (
 // apiKey matches the requested cert. It also checks the apiKeyViaUrl property if the client is making
 // a request with the apiKey in the Url.
 func (service *Service) getCertNewestValidOrder(certName string, apiKey string, apiKeyViaUrl bool) (order orders.Order, err error) {
-	// if not running https, error
-	if !service.https && !service.devMode {
-		return orders.Order{}, output.ErrUnavailableHttp
-	}
-
 	// if apiKey is blank, definitely unauthorized
 	if apiKey == "" {
 		service.logger.Debug(errBlankApiKey)

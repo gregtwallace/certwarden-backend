@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+// http server timeouts
+const httpServerReadTimeout = 5 * time.Second
+const httpServerWriteTimeout = 10 * time.Second
+const httpServerIdleTimeout = 1 * time.Minute
+
 func (service *Service) startServer() (err error) {
 	// make child context for stopping server
 	ctx, stopServer := context.WithCancel(service.shutdownContext)
@@ -18,13 +23,6 @@ func (service *Service) startServer() (err error) {
 	service.stopErrChan = make(chan error)
 
 	// configure webserver
-	readTimeout := 5 * time.Second
-	writeTimeout := 10 * time.Second
-	// allow longer timeouts when in development
-	if service.devMode {
-		readTimeout = 15 * time.Second
-		writeTimeout = 30 * time.Second
-	}
 
 	// TODO: modify to allow specifying specific interface addresses
 	hostName := ""
@@ -33,8 +31,9 @@ func (service *Service) startServer() (err error) {
 	srv := &http.Server{
 		Addr:         servAddr,
 		Handler:      service.routes(),
-		ReadTimeout:  readTimeout,
-		WriteTimeout: writeTimeout,
+		ReadTimeout:  httpServerReadTimeout,
+		WriteTimeout: httpServerWriteTimeout,
+		IdleTimeout:  httpServerIdleTimeout,
 	}
 
 	// no need to keep these connections alive

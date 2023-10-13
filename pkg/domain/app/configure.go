@@ -30,7 +30,6 @@ type config struct {
 	CORSPermittedOrigins []string          `yaml:"cors_permitted_origins"`
 	CertificateName      *string           `yaml:"certificate_name"`
 	LogLevel             *string           `yaml:"log_level"`
-	DevMode              *bool             `yaml:"dev_mode"`
 	EnablePprof          *bool             `yaml:"enable_pprof"`
 	PprofPort            *int              `yaml:"pprof_port"`
 	Updater              updater.Config    `yaml:"updater"`
@@ -126,10 +125,6 @@ func (app *Application) setDefaultConfigValues() {
 	if app.config.LogLevel == nil {
 		app.config.LogLevel = new(string)
 		*app.config.LogLevel = defaultLogLevel.String()
-	}
-	if app.config.DevMode == nil {
-		app.config.DevMode = new(bool)
-		*app.config.DevMode = false
 	}
 	if app.config.EnablePprof == nil {
 		app.config.EnablePprof = new(bool)

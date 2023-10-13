@@ -18,7 +18,6 @@
 
 'certificate_name': 'legocerthub'
 
-'dev_mode': false
 'enable_pprof': false
 'pprof_port': 4065
 

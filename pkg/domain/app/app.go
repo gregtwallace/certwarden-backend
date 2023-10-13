@@ -17,6 +17,7 @@ import (
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
 	"sync"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"go.uber.org/zap"
@@ -31,6 +32,15 @@ const configVersion = 1
 
 // data storage root
 const dataStoragePath = "./data"
+
+// http server timeouts
+const httpServerReadTimeout = 5 * time.Second
+const httpServerWriteTimeout = 10 * time.Second
+const httpServerIdleTimeout = 1 * time.Minute
+
+const pprofServerReadTimeout = httpServerReadTimeout
+const pprofServerWriteTimeout = 30 * time.Second
+const pprofServerIdleTimeout = httpServerIdleTimeout
 
 // appLogger is a SugaredLogger + a close function to sync (flush) the
 // logger and to close the underlying file
@@ -71,10 +81,6 @@ func (app *Application) GetAppVersion() string {
 
 func (app *Application) GetConfigVersion() int {
 	return configVersion
-}
-
-func (app *Application) GetDevMode() bool {
-	return *app.config.DevMode
 }
 
 func (app *Application) GetLogger() *zap.SugaredLogger {

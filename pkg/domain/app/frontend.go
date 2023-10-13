@@ -5,6 +5,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"go.uber.org/zap/zapcore"
 )
 
 const frontendBuildDir = "./frontend_build"
@@ -21,7 +23,7 @@ func (app *Application) setFrontendEnv() error {
 	envFileContent := `
 	window.env = {
 		API_URL: '` + apiUrlPath + `',
-		DEV_MODE: ` + strconv.FormatBool(*app.config.DevMode) + `
+		SHOW_DEBUG_INFO: ` + strconv.FormatBool(app.logger.Level() == zapcore.DebugLevel) + `
 	};
 	`
 

@@ -5,7 +5,6 @@ import (
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
-	"legocerthub-backend/pkg/output"
 )
 
 // Certificate is a single certificate with all of its fields
@@ -98,18 +97,7 @@ type certificateDetailedResponse struct {
 	ApiKeyNew          string `json:"api_key_new,omitempty"`
 }
 
-func (cert Certificate) detailedResponse(service *Service, withSensitive bool) certificateDetailedResponse {
-	// option to redact sensitive info
-	apiKey := cert.ApiKey
-	apiKeyNew := cert.ApiKeyNew
-	if !withSensitive {
-		apiKey = output.RedactString(apiKey)
-		// only redact new key if it exists
-		if apiKeyNew != "" {
-			apiKeyNew = output.RedactString(apiKeyNew)
-		}
-	}
-
+func (cert Certificate) detailedResponse(service *Service) certificateDetailedResponse {
 	return certificateDetailedResponse{
 		certificateSummaryResponse: cert.summaryResponse(service),
 		Organization:               cert.Organization,
@@ -119,8 +107,8 @@ func (cert Certificate) detailedResponse(service *Service, withSensitive bool) c
 		City:                       cert.City,
 		CreatedAt:                  cert.CreatedAt,
 		UpdatedAt:                  cert.UpdatedAt,
-		ApiKey:                     apiKey,
-		ApiKeyNew:                  apiKeyNew,
+		ApiKey:                     cert.ApiKey,
+		ApiKeyNew:                  cert.ApiKeyNew,
 	}
 }
 

@@ -54,8 +54,11 @@ func (app *Application) startPprof() error {
 
 	// server
 	srv := &http.Server{
-		Addr:    pprofServAddr,
-		Handler: router,
+		Addr:         pprofServAddr,
+		Handler:      router,
+		IdleTimeout:  pprofServerIdleTimeout,
+		ReadTimeout:  pprofServerReadTimeout,
+		WriteTimeout: pprofServerWriteTimeout,
 	}
 
 	// create listener for web server

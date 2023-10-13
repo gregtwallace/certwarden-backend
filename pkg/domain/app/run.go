@@ -89,8 +89,8 @@ func run() (restart bool) {
 		app = nil
 	}()
 
-	// start pprof if enabled or in dev mode
-	if *app.config.DevMode || *app.config.EnablePprof {
+	// start pprof if enabled
+	if app.config.EnablePprof != nil && *app.config.EnablePprof {
 		err = app.startPprof()
 		if err != nil {
 			app.logger.Errorf("failed to start pprof (%s), exiting", err)
@@ -98,22 +98,13 @@ func run() (restart bool) {
 		}
 	}
 
-	// configure webserver
-	readTimeout := 5 * time.Second
-	writeTimeout := 10 * time.Second
-	// allow longer timeouts when in development
-	if *app.config.DevMode {
-		readTimeout = 15 * time.Second
-		writeTimeout = 120 * time.Second
-	}
-
 	// http server config
 	srv := &http.Server{
 		Addr:         app.config.httpServAddress(),
 		Handler:      app.routes(),
-		IdleTimeout:  1 * time.Minute,
-		ReadTimeout:  readTimeout,
-		WriteTimeout: writeTimeout,
+		IdleTimeout:  httpServerIdleTimeout,
+		ReadTimeout:  httpServerReadTimeout,
+		WriteTimeout: httpServerWriteTimeout,
 	}
 
 	// var for redirect server (if needed)
@@ -138,9 +129,9 @@ func run() (restart bool) {
 
 					http.Redirect(w, r, newAddr, http.StatusTemporaryRedirect)
 				}),
-				IdleTimeout:  1 * time.Minute,
-				ReadTimeout:  readTimeout,
-				WriteTimeout: writeTimeout,
+				IdleTimeout:  httpServerIdleTimeout,
+				ReadTimeout:  httpServerReadTimeout,
+				WriteTimeout: httpServerWriteTimeout,
 			}
 
 			app.logger.Infof("starting http redirect bound to %s", app.config.httpServAddress())

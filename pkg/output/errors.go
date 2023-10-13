@@ -4,11 +4,10 @@ import "fmt"
 
 var (
 	// generic
-	ErrBadRequest      = Error{Status: 400, Message: "bad request"}
-	ErrNotFound        = Error{Status: 404, Message: "not found"}
-	ErrInternal        = Error{Status: 500, Message: "internal error"}
-	ErrUnauthorized    = Error{Status: 401, Message: "unauthorized"}
-	ErrUnavailableHttp = Error{Status: 503, Message: "server requires upgrade to https (not available over http)"}
+	ErrBadRequest   = Error{Status: 400, Message: "bad request"}
+	ErrNotFound     = Error{Status: 404, Message: "not found"}
+	ErrInternal     = Error{Status: 500, Message: "internal error"}
+	ErrUnauthorized = Error{Status: 401, Message: "unauthorized"}
 
 	// storage errors
 	ErrStorageGeneric = Error{Status: 500, Message: "storage error"}

@@ -26,7 +26,6 @@ type application interface {
 
 	// for providers
 	GetHttpClient() *httpclient.Client
-	GetDevMode() bool
 	GetShutdownWaitGroup() *sync.WaitGroup
 }
 

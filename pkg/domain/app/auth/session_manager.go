@@ -13,14 +13,12 @@ var errAddExisting = errors.New("cannot add existing uuid again, terminating all
 
 // sessionManager stores and manages session data
 type sessionManager struct {
-	devMode  bool
 	sessions *datatypes.SafeMap[sessionClaims] // map[uuid]sessionClaims
 }
 
 // newSessionManager creates a new sessionManager
-func newSessionManager(devMode bool) *sessionManager {
+func newSessionManager() *sessionManager {
 	sm := &sessionManager{
-		devMode:  devMode,
 		sessions: datatypes.NewSafeMap[sessionClaims](),
 	}
 

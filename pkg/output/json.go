@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"legocerthub-backend/pkg/acme"
 	"net/http"
+
+	"go.uber.org/zap/zapcore"
 )
 
 // JsonResponse is the standard response to clients
@@ -32,8 +34,8 @@ func (service *Service) WriteJSON(w http.ResponseWriter, status int, data interf
 	// wrap the data
 	wrappedData := wrapJSON(data, wrap)
 
-	// make it pretty if in dev
-	if service.devMode {
+	// make it pretty if doing debug logging
+	if service.logger.Level() == zapcore.DebugLevel {
 		jsonBytes, err = json.MarshalIndent(wrappedData, "", "\t")
 	} else {
 		jsonBytes, err = json.Marshal(wrappedData)

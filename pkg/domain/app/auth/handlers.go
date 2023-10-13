@@ -8,10 +8,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var (
-	errPasswordTooSimple = output.Error{Status: 400, Message: "new password must be at least 8 characters"}
-)
-
 // authResponse contains the JSON response for both
 // login and refresh (refresh token is in a cookie
 // so the JSON struct doesn't change)
@@ -214,12 +210,6 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (
 	// log attempt
 	service.logger.Infof("change password attempt from %s", r.RemoteAddr)
 
-	// if not running https, error
-	if !service.https && !service.devMode {
-		service.logger.Warn("cannot change password while running as http")
-		return output.ErrUnavailableHttp
-	}
-
 	// This route will be unsecured in the router because the claims need to be accessed.
 	// validate jwt and get the claims (to confirm the username)
 	claims, err := service.ValidAuthHeader(r.Header, w)
@@ -258,14 +248,10 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (
 		return output.ErrValidationFailed
 	}
 
-	// TODO: Additional password complexity requirements?
-	// verify password is long enough
-	// allow terrible passwords if in dev mode
-	if !service.devMode {
-		if len(payload.NewPassword) < 8 {
-			service.logger.Infof("change password attempt from %s for '%s' failed (new password did not meet requirements)", r.RemoteAddr, username)
-			return errPasswordTooSimple
-		}
+	// don't enforce any password requirements other than it needs to exist
+	if len(payload.NewPassword) < 1 {
+		service.logger.Infof("change password attempt from %s for '%s' failed (new password not specified)", r.RemoteAddr, username)
+		return output.ErrValidationFailed
 	}
 
 	// generate new password hash

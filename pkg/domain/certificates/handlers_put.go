@@ -82,11 +82,6 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 			return output.ErrValidationFailed
 		}
 	}
-	// fail if trying to set something sensitive
-	if (payload.ApiKey != nil || payload.ApiKeyNew != nil) && !(service.https || service.devMode) {
-		service.logger.Debug("cant put apikey when not running as https or in devmode")
-		return output.ErrUnavailableHttp
-	}
 	// api key must be at least 10 characters long
 	if payload.ApiKey != nil && len(*payload.ApiKey) < 10 {
 		service.logger.Debug(ErrApiKeyBad)

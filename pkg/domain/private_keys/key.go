@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"fmt"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
-	"legocerthub-backend/pkg/output"
 	"time"
 )
 
@@ -56,23 +55,12 @@ type keyDetailedResponse struct {
 	// exclude PEM
 }
 
-func (key Key) detailedResponse(withSensitive bool) keyDetailedResponse {
-	// option to redact sensitive info
-	apiKey := key.ApiKey
-	apiKeyNew := key.ApiKeyNew
-	if !withSensitive {
-		apiKey = output.RedactString(apiKey)
-		// only redact new key if it exists
-		if apiKeyNew != "" {
-			apiKeyNew = output.RedactString(apiKeyNew)
-		}
-	}
-
+func (key Key) detailedResponse() keyDetailedResponse {
 	return keyDetailedResponse{
 		KeySummaryResponse: key.SummaryResponse(),
 
-		ApiKey:    apiKey,
-		ApiKeyNew: apiKeyNew,
+		ApiKey:    key.ApiKey,
+		ApiKeyNew: key.ApiKeyNew,
 		CreatedAt: key.CreatedAt,
 		UpdatedAt: key.UpdatedAt,
 	}

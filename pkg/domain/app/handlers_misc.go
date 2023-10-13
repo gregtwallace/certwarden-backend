@@ -4,11 +4,13 @@ import (
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
 	"net/http"
+
+	"go.uber.org/zap/zapcore"
 )
 
 type appStatus struct {
 	Status             string `json:"status"`
-	DevMode            bool   `json:"development_mode,omitempty"`
+	ShowDebugInfo      bool   `json:"show_debug_info"`
 	Version            string `json:"version"`
 	DbUserVersion      int    `json:"database_version"`
 	ConfigVersionMatch bool   `json:"config_version_match"`
@@ -23,7 +25,7 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (e
 
 	currentStatus := appStatus{
 		Status:             "available",
-		DevMode:            *app.config.DevMode,
+		ShowDebugInfo:      app.logger.Level() == zapcore.DebugLevel,
 		Version:            appVersion,
 		DbUserVersion:      sqlite.DbCurrentUserVersion,
 		ConfigVersionMatch: cfgVerMatch,
@@ -45,28 +47,17 @@ func (app *Application) healthHandler(w http.ResponseWriter, r *http.Request) (e
 	return nil
 }
 
-// notFoundHandler is called when there is not a matching route on the router. If in dev,
-// return 404 so issue is clear. If in prod, return the generic 401 unauthorized to prevent
-// unauthorized parties from checking what routes exist. This is definitely overkill since
-// the software is open source.
+// notFoundHandler is called when there is not a matching route on the router
 func (app *Application) notFoundHandler(w http.ResponseWriter, r *http.Request) (err error) {
-	// if OPTIONS, return no content
-	// otherwise, preflight errors occur for bad routes (see: https://stackoverflow.com/questions/52047548/response-for-preflight-does-not-have-http-ok-status-in-angular)
+	// OPTIONS should always return a response to prevent preflight errors
+	// see: https://stackoverflow.com/questions/52047548/response-for-preflight-does-not-have-http-ok-status-in-angular
 	if r.Method == http.MethodOptions {
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	}
 
-	// default error 401
-	outError := output.ErrUnauthorized
-
-	// if devMode, return 404
-	if app.GetDevMode() {
-		outError = output.ErrNotFound
-	}
-
-	// return error
-	err = app.output.WriteErrorJSON(w, outError)
+	// return Unauthorized error for non-existent routes (instead of 404)
+	err = app.output.WriteErrorJSON(w, output.ErrUnauthorized)
 	if err != nil {
 		return err
 	}
