@@ -179,8 +179,9 @@ func run() (restart bool) {
 		}()
 
 	} else {
-		// if https failed, launch localhost only http server
-		app.logger.Warnf("starting insecure lego-certhub (http) bound to %s", app.config.httpServAddress())
+		// if https failed, launch http server
+		app.logger.Warn("failed to configure https; lego-certhub will run over insecure http")
+		app.logger.Infof("starting insecure lego-certhub (http) bound to %s", app.config.httpServAddress())
 
 		// create listener for web server
 		ln3, err := net.Listen("tcp", app.config.httpServAddress())
