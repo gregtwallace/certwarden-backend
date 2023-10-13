@@ -51,8 +51,10 @@ func NewService(app App, cfg Config) (service *Service, err error) {
 	} else {
 		service.dnsResolvers, err = makeResolvers(cfg.DnsServices)
 		if err != nil {
-			service.logger.Errorf("failed to configure dns checker resolvers (%s)", err)
-			return nil, err
+			// if failed to make resolvers, fallback to sleeping
+			fallbackSleepSeconds := 120
+			service.logger.Errorf("failed to configure dns checker resolvers (%s), will sleep %d seconds instead of validating dns records", err, fallbackSleepSeconds)
+			service.skipWait = time.Duration(fallbackSleepSeconds) * time.Second
 		}
 	}
 
