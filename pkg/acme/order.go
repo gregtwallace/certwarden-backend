@@ -2,8 +2,12 @@ package acme
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 )
+
+var errBadOrderPem = errors.New("pem returned from ACME server failed safety check (see: rfc8555 s 11.4)")
 
 // NewOrderPayload is the payload to post to ACME newOrder
 type NewOrderPayload struct {
@@ -100,10 +104,37 @@ func (service *Service) FinalizeOrder(finalizeUrl string, derCsr []byte, account
 // url.
 func (service *Service) DownloadCertificate(certificateUrl string, accountKey AccountKey) (pemChain string, err error) {
 	// POST-as-GET
-	bodyBytes, _, err := service.postAsGet(certificateUrl, accountKey)
+	bodyBytes, headers, err := service.postAsGet(certificateUrl, accountKey)
 	if err != nil {
 		return "", err
 	}
+
+	// this server only supports pem (application/pem-certificate-chain)
+	contentType := headers.Get("Content-type")
+	if contentType != "application/pem-certificate-chain" {
+		return "", errBadOrderPem
+	}
+
+	// validate ACME server didn't return malicious pem (see: RFC8555 s 11.4)
+	pemCheck := string(bodyBytes)
+	beginString := "-----BEGIN"
+	mustBeFollowedBy := " CERTIFICATE"
+
+	// if there is never a begin, invalid pem
+	i := strings.Index(pemCheck, beginString)
+	if i == -1 {
+		return "", errBadOrderPem
+	}
+
+	// check every begin to ensure it is followed by CERTIFICATE
+	for ; i != -1; i = strings.Index(pemCheck, beginString) {
+		pemCheck = pemCheck[(i + len(beginString)):]
+
+		if !strings.HasPrefix(pemCheck, mustBeFollowedBy) {
+			return "", errBadOrderPem
+		}
+	}
+	// end - validate (RFC8555 s 11.4)
 
 	// log alternate links in debug
 	// TODO: maybe care about these at some point
