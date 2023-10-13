@@ -70,6 +70,9 @@ func (service *Service) doOrderJob(job orderJob) {
 		return // done, failed
 	}
 
+	// always info log ordering
+	service.logger.Infof("worker ordering order id %d (certificate name: %s, subject: %s)", orderDb.ID, orderDb.Certificate.Name, orderDb.Certificate.Subject)
+
 	// update certificate timestamp after fulfiller is done
 	defer func(certId int) {
 		err = service.storage.UpdateCertUpdatedTime(certId)
@@ -200,7 +203,7 @@ fulfillLoop:
 			}
 
 		case "invalid": // break, irrecoverable
-			service.logger.Debugf("order status invalid; acme error: %s", acmeOrder.Error)
+			service.logger.Infof("order status invalid; acme error: %s", acmeOrder.Error)
 			break fulfillLoop
 
 		// Note: there is no 'expired' Status case. If the order expires it simply moves to 'invalid'.
@@ -230,4 +233,7 @@ fulfillLoop:
 			service.logger.Debugf("new lego https certificate loaded")
 		}
 	}
+
+	// always info log order completed
+	service.logger.Infof("worker ordering order id %d completed as %s (certificate name: %s, subject: %s)", orderDb.ID, acmeOrder.Status, orderDb.Certificate.Name, orderDb.Certificate.Subject)
 }

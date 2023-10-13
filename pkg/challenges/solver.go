@@ -115,7 +115,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		if challenge.Status == "valid" {
 			return challenge.Status, nil
 		} else if challenge.Status == "invalid" {
-			service.logger.Debug(challenge.Error)
+			service.logger.Infof("challenge status invalid; acme error: %s", challenge.Error)
 			return challenge.Status, nil
 		}
 		// else repeat loop
