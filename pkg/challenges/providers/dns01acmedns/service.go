@@ -38,7 +38,7 @@ func (service *Service) Stop() error { return nil }
 // Configuration options
 type Config struct {
 	Doms        []string          `yaml:"domains" json:"domains"`
-	HostAddress *string           `yaml:"acme_dns_address" json:"acme_dns_address"`
+	HostAddress string            `yaml:"acme_dns_address" json:"acme_dns_address"`
 	Resources   []acmeDnsResource `yaml:"resources" json:"resources"`
 }
 
@@ -69,7 +69,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// acme-dns host address
-	service.acmeDnsAddress = *cfg.HostAddress
+	service.acmeDnsAddress = cfg.HostAddress
 
 	// acme-dns resources that will be updated
 	service.acmeDnsResources = cfg.Resources
