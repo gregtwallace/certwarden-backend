@@ -56,8 +56,8 @@ func (app *Application) notFoundHandler(w http.ResponseWriter, r *http.Request) 
 		return nil
 	}
 
-	// return Unauthorized error for non-existent routes (instead of 404)
-	err = app.output.WriteErrorJSON(w, output.ErrUnauthorized)
+	// return 404 not found
+	err = app.output.WriteErrorJSON(w, output.ErrNotFound)
 	if err != nil {
 		return err
 	}
