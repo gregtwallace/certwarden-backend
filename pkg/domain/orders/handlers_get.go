@@ -57,7 +57,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) (e
 
 	// populate order summaries for output
 	for i := range orders {
-		response.Orders = append(response.Orders, orders[i].summaryResponse())
+		response.Orders = append(response.Orders, orders[i].summaryResponse(service.orderFulfiller))
 	}
 
 	// return response to client
@@ -99,7 +99,7 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 		TotalOrders: totalOrders,
 	}
 	for i := range orders {
-		response.Orders = append(response.Orders, orders[i].summaryResponse())
+		response.Orders = append(response.Orders, orders[i].summaryResponse(service.orderFulfiller))
 	}
 
 	// return response to client

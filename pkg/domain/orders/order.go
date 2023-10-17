@@ -35,17 +35,18 @@ type Order struct {
 // orderSummaryResponse is a JSON response containing only
 // fields desired for the summary
 type orderSummaryResponse struct {
-	ID             int                             `json:"id"`
-	Certificate    orderCertificateSummaryResponse `json:"certificate"`
-	Status         string                          `json:"status"`
-	KnownRevoked   bool                            `json:"known_revoked"`
-	Error          *acme.Error                     `json:"error"`
-	DnsIdentifiers []string                        `json:"dns_identifiers"`
-	FinalizedKey   *orderKeySummaryResponse        `json:"finalized_key"`
-	ValidFrom      *int                            `json:"valid_from"`
-	ValidTo        *int                            `json:"valid_to"`
-	CreatedAt      int                             `json:"created_at"`
-	UpdatedAt      int                             `json:"updated_at"`
+	FulfillmentWorker *int                            `json:"fulfillment_worker,omitempty"`
+	ID                int                             `json:"id"`
+	Certificate       orderCertificateSummaryResponse `json:"certificate"`
+	Status            string                          `json:"status"`
+	KnownRevoked      bool                            `json:"known_revoked"`
+	Error             *acme.Error                     `json:"error"`
+	DnsIdentifiers    []string                        `json:"dns_identifiers"`
+	FinalizedKey      *orderKeySummaryResponse        `json:"finalized_key"`
+	ValidFrom         *int                            `json:"valid_from"`
+	ValidTo           *int                            `json:"valid_to"`
+	CreatedAt         int                             `json:"created_at"`
+	UpdatedAt         int                             `json:"updated_at"`
 }
 
 type orderCertificateSummaryResponse struct {
@@ -74,7 +75,7 @@ type orderKeySummaryResponse struct {
 	Name string `json:"name"`
 }
 
-func (order Order) summaryResponse() orderSummaryResponse {
+func (order Order) summaryResponse(of *orderFulfiller) orderSummaryResponse {
 	// depends on if FinalizedKey is set yet
 	var finalKey *orderKeySummaryResponse
 	if order.FinalizedKey != nil {
@@ -85,7 +86,8 @@ func (order Order) summaryResponse() orderSummaryResponse {
 	}
 
 	return orderSummaryResponse{
-		ID: order.ID,
+		FulfillmentWorker: of.checkForOrderId(order.ID),
+		ID:                order.ID,
 		Certificate: orderCertificateSummaryResponse{
 			ID:   order.Certificate.ID,
 			Name: order.Certificate.Name,

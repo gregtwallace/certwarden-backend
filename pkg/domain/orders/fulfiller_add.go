@@ -7,7 +7,7 @@ import (
 
 // orderFulfillerJob contains information the order worker will use to do work
 type orderFulfillerJob struct {
-	placedAt     int // unix time job was requested
+	addedToQueue int // unix time job was added to queue
 	highPriority bool
 	order        Order
 }
@@ -27,7 +27,7 @@ func (of *orderFulfiller) addJob(orderId int, highPriority bool) (err error) {
 
 	// make job
 	j := orderFulfillerJob{
-		placedAt:     int(time.Now().Unix()),
+		addedToQueue: int(time.Now().Unix()),
 		highPriority: highPriority,
 		order:        orderDb,
 	}
