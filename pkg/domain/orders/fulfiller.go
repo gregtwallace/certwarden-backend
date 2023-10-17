@@ -14,11 +14,13 @@ import (
 // certificates issued. It tracks which orders have been requested, which
 // are being worked, and with which worker the orders are with.
 type orderFulfiller struct {
-	shutdownContext       context.Context
-	logger                *zap.SugaredLogger
-	storage               Storage
-	acmeServerService     *acme_servers.Service
-	authorizations        *authorizations.Service
+	shutdownContext   context.Context
+	logger            *zap.SugaredLogger
+	storage           Storage
+	acmeServerService *acme_servers.Service
+	authorizations    *authorizations.Service
+
+	isHttps               bool
 	serverCertificateName *string
 	loadHttpsCertificate  func() error
 
@@ -34,11 +36,13 @@ type orderFulfiller struct {
 // CreateManager creates the manager with the requested number of workers
 func createOrderFulfiller(app App, workerCount int) *orderFulfiller {
 	of := &orderFulfiller{
-		shutdownContext:       app.GetShutdownContext(),
-		logger:                app.GetLogger(),
-		storage:               app.GetOrderStorage(),
-		acmeServerService:     app.GetAcmeServerService(),
-		authorizations:        app.GetAuthsService(),
+		shutdownContext:   app.GetShutdownContext(),
+		logger:            app.GetLogger(),
+		storage:           app.GetOrderStorage(),
+		acmeServerService: app.GetAcmeServerService(),
+		authorizations:    app.GetAuthsService(),
+
+		isHttps:               app.IsHttps(),
 		serverCertificateName: app.HttpsCertificateName(),
 		loadHttpsCertificate:  app.LoadHttpsCertificate,
 

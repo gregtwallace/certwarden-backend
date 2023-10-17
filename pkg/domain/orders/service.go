@@ -28,6 +28,8 @@ type App interface {
 	// for fulfiller
 	GetAuthsService() *authorizations.Service
 	GetShutdownWaitGroup() *sync.WaitGroup
+
+	IsHttps() bool
 	HttpsCertificateName() *string
 	LoadHttpsCertificate() error
 }

@@ -184,7 +184,7 @@ fulfillLoop:
 
 	// if order success, check if this is app's certificate and if so inform app
 	// to reload the new order
-	if of.serverCertificateName != nil &&
+	if of.isHttps && of.serverCertificateName != nil &&
 		*of.serverCertificateName == j.order.Certificate.Name &&
 		acmeOrder.Status == "valid" {
 		err = of.loadHttpsCertificate()
