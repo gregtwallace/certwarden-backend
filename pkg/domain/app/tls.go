@@ -28,9 +28,8 @@ func (app *Application) HttpsCertificateName() *string {
 // retains its previous certificate.
 func (app *Application) LoadHttpsCertificate() error {
 	// if not running in https, this is no-op
-	// error because this should never be called in http mode
-	if app.httpsCert != nil {
-		return errors.New("https certificate is missing")
+	if !app.IsHttps() {
+		return errors.New("cannot load https certificate, server is in http mode")
 	}
 
 	// get order for LeGo server
