@@ -74,7 +74,7 @@ type orderKeySummaryResponse struct {
 	Name string `json:"name"`
 }
 
-func (order Order) summaryResponse(service *Service) orderSummaryResponse {
+func (order Order) summaryResponse() orderSummaryResponse {
 	// depends on if FinalizedKey is set yet
 	var finalKey *orderKeySummaryResponse
 	if order.FinalizedKey != nil {

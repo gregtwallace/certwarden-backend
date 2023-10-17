@@ -90,7 +90,7 @@ func (service *Service) retryIncompleteOrders() (err error) {
 
 	// add all incompletes to the low priority order queue
 	for _, orderId := range incompleteOrderIds {
-		err = service.orderFromAcme(orderId, false)
+		err = service.orderFulfiller.addJob(orderId, false)
 		if err != nil {
 			// log error, but keep going through remaining range
 			service.logger.Errorf("failed to add order %d to processing queue (%s)", orderId, err)
@@ -134,7 +134,7 @@ func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration)
 		} else {
 			// no error, retry existing order
 			service.logger.Debugf("retrying order %d to refresh cert %d", orderId, certId)
-			err = service.orderFromAcme(orderId, false)
+			err = service.orderFulfiller.addJob(orderId, false)
 			if err != nil {
 				service.logger.Errorf("failed to retry order %d for cert %d (%s)", orderId, certId, err)
 			}

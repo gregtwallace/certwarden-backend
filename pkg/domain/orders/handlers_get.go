@@ -57,7 +57,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) (e
 
 	// populate order summaries for output
 	for i := range orders {
-		response.Orders = append(response.Orders, orders[i].summaryResponse(service))
+		response.Orders = append(response.Orders, orders[i].summaryResponse())
 	}
 
 	// return response to client
@@ -99,7 +99,7 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 		TotalOrders: totalOrders,
 	}
 	for i := range orders {
-		response.Orders = append(response.Orders, orders[i].summaryResponse(service))
+		response.Orders = append(response.Orders, orders[i].summaryResponse())
 	}
 
 	// return response to client
@@ -212,5 +212,14 @@ func (service *Service) DownloadOneOrder(w http.ResponseWriter, r *http.Request)
 		return err
 	}
 
+	return nil
+}
+
+// GetAllWorkStatus returns all jobs/orders currently with fulfiller
+func (service *Service) GetAllWorkStatus(w http.ResponseWriter, r *http.Request) (err error) {
+	err = service.output.WriteJSON(w, http.StatusOK, service.orderFulfiller.allWorkStatus(), "work_status")
+	if err != nil {
+		return err
+	}
 	return nil
 }

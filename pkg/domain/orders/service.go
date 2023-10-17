@@ -18,13 +18,15 @@ var errServiceComponent = errors.New("necessary orders service component is miss
 
 // App interface is for connecting to the main app
 type App interface {
+	GetShutdownContext() context.Context
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 	GetOrderStorage() Storage
 	GetAcmeServerService() *acme_servers.Service
 	GetCertificatesService() *certificates.Service
+
+	// for fulfiller
 	GetAuthsService() *authorizations.Service
-	GetShutdownContext() context.Context
 	GetShutdownWaitGroup() *sync.WaitGroup
 	HttpsCertificateName() *string
 	LoadHttpsCertificate() error
@@ -64,19 +66,13 @@ type Config struct {
 
 // Keys service struct
 type Service struct {
-	shutdownContext       context.Context
-	logger                *zap.SugaredLogger
-	output                *output.Service
-	storage               Storage
-	acmeServerService     *acme_servers.Service
-	certificates          *certificates.Service
-	authorizations        *authorizations.Service
-	serverCertificateName *string
-	loadHttpsCertificate  func() error
-	isHttps               bool
-	inProcess             *inProcess
-	highJobs              chan orderJob
-	lowJobs               chan orderJob
+	shutdownContext   context.Context
+	logger            *zap.SugaredLogger
+	output            *output.Service
+	storage           Storage
+	acmeServerService *acme_servers.Service
+	certificates      *certificates.Service
+	orderFulfiller    *orderFulfiller
 }
 
 // NewService creates a new private_key service
@@ -116,29 +112,9 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// authorization service
-	service.authorizations = app.GetAuthsService()
-	if service.authorizations == nil {
-		return nil, errServiceComponent
-	}
-
-	// server's http cert name and reloader func
-	service.serverCertificateName = app.HttpsCertificateName()
-	service.loadHttpsCertificate = app.LoadHttpsCertificate
-
-	// initialize inProcess (tracker)
-	service.inProcess = newInProcess()
-
-	// workers
-	// make job channels for order workers
-	service.highJobs = make(chan orderJob)
-	service.lowJobs = make(chan orderJob)
+	// make worker manager
 	workerCount := 3
-
-	// make workers
-	for i := 0; i < workerCount; i++ {
-		go service.makeOrderWorker(i, service.highJobs, service.lowJobs, app.GetShutdownWaitGroup())
-	}
+	service.orderFulfiller = createOrderFulfiller(app, workerCount)
 
 	// start service to automatically place and complete orders
 	service.startAutoOrderService(cfg, service.shutdownContext, app.GetShutdownWaitGroup())

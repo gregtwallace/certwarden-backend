@@ -103,6 +103,8 @@ func (app *Application) routes() http.Handler {
 
 	// orders (for certificates)
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/orders/currentvalid", app.orders.GetAllValidCurrentOrders)
+	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/orders/fulfiller/status", app.orders.GetAllWorkStatus)
+
 	app.makeSecureHandle(http.MethodGet, apiUrlPath+"/v1/certificates/:certid/orders", app.orders.GetCertOrders)
 	app.makeSecureHandle(http.MethodPost, apiUrlPath+"/v1/certificates/:certid/orders", app.orders.NewOrder)
 

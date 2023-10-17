@@ -78,7 +78,7 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 	// end validation
 
 	// kickoff order fulfillment (async)
-	err = service.orderFromAcme(orderId, true)
+	err = service.orderFulfiller.addJob(orderId, true)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrOrderCantFulfill

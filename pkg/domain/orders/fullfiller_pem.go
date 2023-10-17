@@ -17,7 +17,7 @@ type CertPayload struct {
 
 // savePemChain calls a func to determine the valid from and to dates for the issued pem chain
 // and then saves the pem chain and valid dates to storage
-func (service *Service) savePemChain(orderId int, pemChain string) (err error) {
+func (of *orderFulfiller) savePemChain(orderId int, pemChain string) (err error) {
 	// calculate dates
 	validFrom, validTo, err := validDates(pemChain)
 	if err != nil {
@@ -32,7 +32,7 @@ func (service *Service) savePemChain(orderId int, pemChain string) (err error) {
 	}
 
 	// save to storage
-	err = service.storage.UpdateOrderCert(orderId, payload)
+	err = of.storage.UpdateOrderCert(orderId, payload)
 	if err != nil {
 		return err
 	}
