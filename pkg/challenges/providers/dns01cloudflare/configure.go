@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"legocerthub-backend/pkg/output"
+	"time"
 
 	"github.com/cloudflare/cloudflare-go"
 )
@@ -13,6 +14,9 @@ var (
 	errAccountAndTokenSpecified = errors.New("cloudflare provider config should have either an account or an api token, not both")
 	errMissingConfigInfo        = errors.New("cloudflare config missing an account (email and global key) or api token")
 )
+
+// timeout for api calls
+const apiCallTimeout = 10 * time.Second
 
 // Configuration options for an instance of Cloudflare provider
 type Config struct {
@@ -103,7 +107,10 @@ func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 	}
 
 	// fetch list of zones
-	availableZones, err := service.cloudflareApi.ListZones(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), apiCallTimeout)
+	defer cancel()
+
+	availableZones, err := service.cloudflareApi.ListZones(ctx)
 	if err != nil {
 		err = fmt.Errorf("api instance %s failed to list zones (%s)", service.redactedApiIdentifier(), err)
 		service.logger.Error(err)

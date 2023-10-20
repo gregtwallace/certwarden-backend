@@ -2,53 +2,25 @@ package dns01cloudflare
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"strings"
-
-	"github.com/cloudflare/cloudflare-go"
 )
-
-var ErrDomainNotConfigured = errors.New("dns01cloudflare domain name not configured (restart lego if zone was just added to an account)")
-
-// getZoneId returns the zone ID for a specified resourceName. If a matching
-// zone isn't found, an error is returned.
-func (service *Service) getZoneId(resourceName string) (string, error) {
-	// look for domain suffix
-	for domain := range service.domainIDs {
-		if strings.HasSuffix(resourceName, domain) {
-			return service.domainIDs[domain], nil
-		}
-	}
-
-	return "", fmt.Errorf("dns01cloudflare could not find domain supporting resource name %s", resourceName)
-}
-
-// acmeRecord returns the cloudflare dns record for a given acme resource
-// name and content
-func newAcmeRecord(resourceName, resourceContent string) cloudflare.DNSRecord {
-	return cloudflare.DNSRecord{
-		Type:      "TXT",
-		Name:      resourceName,
-		Content:   resourceContent,
-		TTL:       60,
-		Proxiable: false,
-	}
-}
 
 // Provision adds the corresponding DNS record on Cloudflare.
 func (service *Service) Provision(resourceName, resourceContent string) error {
 	// no need to delete, just handle already exists error (which in theory isn't possible
 	// anyway because resourceContent should always change)
 
-	// zoneID
-	zoneID, err := service.getZoneId(resourceName)
+	// cloudflare resource
+	cfResource, err := service.cloudflareResource(resourceName)
 	if err != nil {
 		return err
 	}
 
 	// create DNS record on cloudflare for the ACME resource
-	_, err = service.cloudflareApi.CreateDNSRecord(context.Background(), zoneID, newAcmeRecord(resourceName, resourceContent))
+	ctx, cancel := context.WithTimeout(context.Background(), apiCallTimeout)
+	defer cancel()
+
+	_, err = service.cloudflareApi.CreateDNSRecord(ctx, cfResource, cloudflareCreateDNSParams(resourceName, resourceContent))
 	if err != nil && !(strings.Contains(err.Error(), "81057") || strings.Contains(err.Error(), "Record already exists")) {
 		return err
 	}
@@ -58,26 +30,28 @@ func (service *Service) Provision(resourceName, resourceContent string) error {
 
 // Deprovision deletes the corresponding DNS record on Cloudflare.
 func (service *Service) Deprovision(resourceName, resourceContent string) error {
-	// zoneID
-	zoneID, err := service.getZoneId(resourceName)
+	// cloudflare resource
+	cfResource, err := service.cloudflareResource(resourceName)
 	if err != nil {
 		return err
 	}
 
 	// fetch matching record(s) (should only be one)
-	records, err := service.cloudflareApi.DNSRecords(context.Background(), zoneID, cloudflare.DNSRecord{
-		Type:    "TXT",
-		Name:    resourceName,
-		Content: resourceContent,
-	})
+	ctx, cancel := context.WithTimeout(context.Background(), apiCallTimeout)
+	defer cancel()
+
+	records, _, err := service.cloudflareApi.ListDNSRecords(ctx, cfResource, cloudflareListDNSParams(resourceName, resourceContent))
 	if err != nil {
 		return err
 	}
 
 	// delete all records with the name and content (should only ever be one)
+	ctx, cancel = context.WithTimeout(context.Background(), apiCallTimeout)
+	defer cancel()
+
 	var deleteErr error
 	for i := range records {
-		err = service.cloudflareApi.DeleteDNSRecord(context.Background(), zoneID, records[i].ID)
+		err = service.cloudflareApi.DeleteDNSRecord(ctx, cfResource, records[i].ID)
 		if err != nil {
 			deleteErr = err
 			service.logger.Error(err)
