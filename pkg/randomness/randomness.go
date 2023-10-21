@@ -6,17 +6,20 @@ import (
 	math_rand "math/rand"
 )
 
-// character sets
+// lengths
 const (
-	numbersAndLettersCharSet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	hexCharSet               = "0123456789abcdef"
-
-	apiKeyLength    = 32
-	hexSecretLength = 64
+	lengthApiKey    = 32
+	lengthHexSecret = 64
 )
 
-// generateRandomSecureInt returns a uniform random value in [0, max) that
-// is cryptographically secure.
+// character sets
+const (
+	charSetNumbersAndLetters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	charSetHex               = "0123456789abcdef"
+)
+
+// generateSecureRandomInt returns a uniform random value in [0, max) that
+// is cryptographically random.
 func generateSecureRandomInt(max int) (int, error) {
 	num, err := crypto_rand.Int(crypto_rand.Reader, big.NewInt(int64(max)))
 	if err != nil {
@@ -26,7 +29,7 @@ func generateSecureRandomInt(max int) (int, error) {
 	return int(num.Int64()), nil
 }
 
-// generateRandomString generates a cryptographically secure random string
+// generateSecureRandomString generates a cryptographically secure random string
 // based on the specified character set and length
 func generateSecureRandomString(charSet string, length int) (string, error) {
 	key := make([]byte, length)
@@ -45,13 +48,13 @@ func generateSecureRandomString(charSet string, length int) (string, error) {
 // GenerateApiKey generates a cryptographically secure API key with
 // sufficiently secure entropy.
 func GenerateApiKey() (string, error) {
-	return generateSecureRandomString(numbersAndLettersCharSet, apiKeyLength)
+	return generateSecureRandomString(charSetNumbersAndLetters, lengthApiKey)
 }
 
 // GenerateHexSecret generates a cryptographically secure random hex
 // byte slice (particualrly useful for jwt secret)
 func GenerateHexSecret() ([]byte, error) {
-	hexString, err := generateSecureRandomString(hexCharSet, hexSecretLength)
+	hexString, err := generateSecureRandomString(charSetHex, lengthHexSecret)
 	return []byte(hexString), err
 }
 
@@ -62,12 +65,12 @@ func GenerateHexSecret() ([]byte, error) {
 func GenerateInsecureString(length int) string {
 	bytes := make([]byte, length)
 	for i := range bytes {
-		bytes[i] = numbersAndLettersCharSet[math_rand.Int63()%int64(len(numbersAndLettersCharSet))]
+		bytes[i] = charSetNumbersAndLetters[math_rand.Int63()%int64(len(charSetNumbersAndLetters))]
 	}
 	return string(bytes)
 }
 
-// GenerateNumber creates a random int between [0, max). It is NOT
+// GenerateInsecureInt creates a random int between [0, max). It is NOT
 // cryptographically secure.
 func GenerateInsecureInt(max int) int {
 	return math_rand.Intn(max)
