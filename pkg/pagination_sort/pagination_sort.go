@@ -7,19 +7,19 @@ import (
 	"strings"
 )
 
+type sorting struct {
+	field      string
+	descending bool
+}
+
 type Query struct {
 	limit  int
 	offset int
 	sort   sorting
 }
 
-type sorting struct {
-	field     string
-	direction string
-}
-
-// funcs to access Query members. These allow access to
-// the data but prevent changing it outside of this pkg.
+// funcs to access Query members. These allow access to data but prevent changing
+// it outside of this pkg.
 func (q Query) Limit() int {
 	return q.limit
 }
@@ -30,11 +30,11 @@ func (q Query) SortField() string {
 	return q.sort.field
 }
 func (q Query) SortDirection() string {
-	// if value is bad, return 'asc'
-	if q.sort.direction != "asc" && q.sort.direction != "desc" {
-		return "asc"
+	if q.sort.descending {
+		return "desc"
 	}
-	return q.sort.direction
+
+	return "asc"
 }
 
 // QueryAll is a query that returns all records
@@ -42,16 +42,6 @@ var QueryAll = Query{
 	limit:  -1,
 	offset: 0,
 }
-
-// configure paramters for validation
-const (
-	defaultLimit = 20
-	minLimit     = 1
-	maxLimit     = 1000
-
-	defaultOffset = 0
-	minOffset     = 0
-)
 
 var validFieldNames = []string{
 	"accountname",
@@ -81,6 +71,13 @@ func ParseRequestToQuery(r *http.Request) Query {
 	}
 }
 
+// limit paramters for validation
+const (
+	limitDefault = 20
+	limitMin     = 1
+	limitMax     = 1000
+)
+
 // limit parses, sanitizes, and returns the limit from url.Values
 func limit(v url.Values) int {
 	limitStr := v.Get("limit")
@@ -88,45 +85,43 @@ func limit(v url.Values) int {
 	// convert to int
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		return defaultLimit
+		return limitDefault
 	}
 
 	// set acceptable bounds
-	switch {
-	case limit > maxLimit:
-		limit = maxLimit
-	case limit < minLimit:
-		limit = defaultLimit
-	default:
-		// no-op
+	if limit > limitMax {
+		return limitMax
+	}
+
+	if limit < limitMin {
+		return limitMin
 	}
 
 	return limit
 }
 
-// offset parses, sanitizes, and returns the offset from url.Values
+// offset parses, sanitizes, and returns the offset from url.Values. If there is an
+// issue with the offset, the default 0 is returned.
 func offset(v url.Values) int {
 	offsetStr := v.Get("offset")
 
 	// convert to int
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil {
-		return defaultOffset
+		return 0
 	}
 
-	// set acceptable bounds
-	switch {
-	// no max
-	case offset < minOffset:
-		offset = defaultOffset
-	default:
-		// no-op
+	// if invalid offset, use default
+	if offset < 0 {
+		return 0
 	}
 
 	return offset
 }
 
-// sort parses, sanitizes, and returns the sort parameters from url.Values
+// sort parses, sanitizes, and returns the sort parameters from url.Values. If either
+// the field or direction are invalid, default sorting of unspecified field and ascending
+// is returned.
 func sort(v url.Values) sorting {
 	sortStr := v.Get("sort")
 
@@ -164,7 +159,7 @@ func sort(v url.Values) sorting {
 	}
 
 	return sorting{
-		field:     field,
-		direction: direction,
+		field:      field,
+		descending: direction == "desc",
 	}
 }
