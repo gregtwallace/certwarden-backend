@@ -51,7 +51,7 @@ func (app *Application) setFrontendEnv() error {
 // they work to mitigate things like click jacking. If the file being served is html
 // the CSP nonce is also returned by this function (for use in rewriting the html file)
 func setFrontendSecurityHeaders(w http.ResponseWriter, isHtmlFile bool) (nonce []byte, err error) {
-	// CSP header ("Content-Security-Policy")
+	// header: CSP ("Content-Security-Policy")
 	if isHtmlFile {
 		nonce, err = randomness.GenerateFrontendNonce()
 		if err != nil {
@@ -82,6 +82,12 @@ func setFrontendSecurityHeaders(w http.ResponseWriter, isHtmlFile bool) (nonce [
 		w.Header().Set("Content-Security-Policy", "default-src 'none'; ")
 	}
 
+	// header: no MIME type sniffing (strict MIME) ("X-Content-Type-Options")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+
+	// header: do NOT allow frames ("X-Frame-Options")
+	w.Header().Set("X-Frame-Options", "deny")
+
 	return nonce, nil
 }
 
@@ -97,6 +103,7 @@ func (app *Application) frontendHandler(w http.ResponseWriter, r *http.Request) 
 	if fExt == "" {
 		fPath = "/index.html"
 	}
+	fExt = filepath.Ext(fPath)
 
 	// app.logger.Debugf("serving frontend file: %s -> %s (fext = %s)", r.URL.Path, fPath, fExt)
 
