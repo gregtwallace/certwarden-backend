@@ -41,7 +41,7 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 		// headers for client to expose to the cross origin requester (in server response)
 		ExposedHeaders: []string{
 			// general
-			"content-length", "content-type",
+			"content-length", "content-security-policy", "content-type",
 
 			// set name of file when client downloads something (used with pem, zip)
 			"content-disposition",

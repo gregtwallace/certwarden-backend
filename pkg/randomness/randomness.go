@@ -8,8 +8,9 @@ import (
 
 // lengths
 const (
-	lengthApiKey    = 32
-	lengthHexSecret = 64
+	lengthApiKey        = 32
+	lengthFrontendNonce = 26
+	lengthHexSecret     = 64
 )
 
 // character sets
@@ -49,6 +50,17 @@ func generateSecureRandomString(charSet string, length int) (string, error) {
 // sufficiently secure entropy.
 func GenerateApiKey() (string, error) {
 	return generateSecureRandomString(charSetNumbersAndLetters, lengthApiKey)
+}
+
+// GenerateFrontendNonce generates a cryptographically secure nonce with
+// sufficiently secure entropy.
+func GenerateFrontendNonce() ([]byte, error) {
+	s, err := generateSecureRandomString(charSetNumbersAndLetters, lengthFrontendNonce)
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(s), nil
 }
 
 // GenerateHexSecret generates a cryptographically secure random hex
