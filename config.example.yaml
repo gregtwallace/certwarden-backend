@@ -55,6 +55,9 @@
 # If not specified (or invalid), the application launches over http instead
 # of https.
 'certificate_name': 'mylego.example.com'
+# The HTTP Strict Transport Security (HSTS) header is automatically added when running
+# in https. This setting will disable the header if you don't want HSTS.
+'disable_hsts': true
 
 # Enable pprof for debugging. When enabled, pprof is available over http
 # at the specified port

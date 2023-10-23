@@ -31,6 +31,7 @@ type config struct {
 	ServeFrontend             *bool             `yaml:"serve_frontend"`
 	CORSPermittedCrossOrigins []string          `yaml:"cors_permitted_crossorigins"`
 	CertificateName           *string           `yaml:"certificate_name"`
+	DisableHSTS               *bool             `yaml:"disable_hsts"`
 	LogLevel                  *string           `yaml:"log_level"`
 	EnablePprof               *bool             `yaml:"enable_pprof"`
 	PprofPort                 *int              `yaml:"pprof_port"`
@@ -190,6 +191,10 @@ func (app *Application) setDefaultConfigValues() {
 	if app.config.CertificateName == nil {
 		app.config.CertificateName = new(string)
 		*app.config.CertificateName = "legocerthub"
+	}
+	if app.config.DisableHSTS == nil {
+		app.config.DisableHSTS = new(bool)
+		*app.config.DisableHSTS = false
 	}
 
 	// debug and dev stuff

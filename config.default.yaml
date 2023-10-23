@@ -17,6 +17,7 @@
 'cors_permitted_crossorigins': null
 
 'certificate_name': 'legocerthub'
+'disable_hsts': false
 
 'enable_pprof': false
 'pprof_port': 4065
