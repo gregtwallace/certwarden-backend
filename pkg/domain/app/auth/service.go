@@ -18,7 +18,7 @@ const BcryptCost = 12
 // App interface is for connecting to the main app
 type App interface {
 	IsHttps() bool
-	HasCrossOrigins() bool
+	AllowsSomeCrossOrigin() bool
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 	GetAuthStorage() Storage
@@ -58,7 +58,7 @@ func NewService(app App) (*Service, error) {
 	service.https = app.IsHttps()
 
 	// cross origin allowed?
-	service.allowCrossOrigin = app.HasCrossOrigins()
+	service.allowCrossOrigin = app.AllowsSomeCrossOrigin()
 
 	// output service
 	service.output = app.GetOutputter()

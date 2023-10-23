@@ -28,7 +28,7 @@ const appVersion = "0.14.1"
 
 // config version
 // increment any time there is a breaking change between versions
-const configVersion = 1
+const configVersion = 2
 
 // data storage root
 const dataStoragePath = "./data"
@@ -93,8 +93,8 @@ func (app *Application) IsHttps() bool {
 }
 
 // are any cross origins allowed?
-func (app *Application) HasCrossOrigins() bool {
-	return len(app.config.CORSPermittedOrigins) > 0
+func (app *Application) AllowsSomeCrossOrigin() bool {
+	return len(app.config.CORSPermittedCrossOrigins) > 0
 }
 
 func (app *Application) GetHttpClient() *httpclient.Client {

@@ -21,20 +21,20 @@ func (app *Application) GetConfigFilename() string {
 
 // config is the configuration structure for app (and subsequently services)
 type config struct {
-	ConfigVersion        *int              `yaml:"config_version"`
-	BindAddress          *string           `yaml:"bind_address"`
-	HttpsPort            *int              `yaml:"https_port"`
-	HttpPort             *int              `yaml:"http_port"`
-	EnableHttpRedirect   *bool             `yaml:"enable_http_redirect"`
-	ServeFrontend        *bool             `yaml:"serve_frontend"`
-	CORSPermittedOrigins []string          `yaml:"cors_permitted_origins"`
-	CertificateName      *string           `yaml:"certificate_name"`
-	LogLevel             *string           `yaml:"log_level"`
-	EnablePprof          *bool             `yaml:"enable_pprof"`
-	PprofPort            *int              `yaml:"pprof_port"`
-	Updater              updater.Config    `yaml:"updater"`
-	Orders               orders.Config     `yaml:"orders"`
-	Challenges           challenges.Config `yaml:"challenges"`
+	ConfigVersion             *int              `yaml:"config_version"`
+	BindAddress               *string           `yaml:"bind_address"`
+	HttpsPort                 *int              `yaml:"https_port"`
+	HttpPort                  *int              `yaml:"http_port"`
+	EnableHttpRedirect        *bool             `yaml:"enable_http_redirect"`
+	ServeFrontend             *bool             `yaml:"serve_frontend"`
+	CORSPermittedCrossOrigins []string          `yaml:"cors_permitted_crossorigins"`
+	CertificateName           *string           `yaml:"certificate_name"`
+	LogLevel                  *string           `yaml:"log_level"`
+	EnablePprof               *bool             `yaml:"enable_pprof"`
+	PprofPort                 *int              `yaml:"pprof_port"`
+	Updater                   updater.Config    `yaml:"updater"`
+	Orders                    orders.Config     `yaml:"orders"`
+	Challenges                challenges.Config `yaml:"challenges"`
 }
 
 // httpAddress() returns formatted http server address string

@@ -7,9 +7,11 @@ import (
 )
 
 // enableCORS applies CORS to an http.Handler and is intended to wrap the router
+// if no cross origins are permitted, this function is a no-op and just returns
+// next
 func (app *Application) enableCORS(next http.Handler) http.Handler {
 	// are any cross origins allowed? if not, do not use CORS
-	if app.config.CORSPermittedOrigins == nil {
+	if app.config.CORSPermittedCrossOrigins == nil {
 		return next
 	}
 
@@ -17,7 +19,7 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 	c := cors.New(cors.Options{
 		// permitted cross origins
 		// WARNING: nil / empty slice == allow all!
-		AllowedOrigins: app.config.CORSPermittedOrigins,
+		AllowedOrigins: app.config.CORSPermittedCrossOrigins,
 
 		// credentials must be allowed for access to work properly
 		AllowCredentials: true,
