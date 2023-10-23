@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"go.uber.org/zap/zapcore"
 )
 
 const frontendBuildDir = "./frontend_build"
@@ -24,12 +22,18 @@ func (app *Application) setFrontendEnv() error {
 	// remove any old environment
 	_ = os.Remove(frontendEnvFile)
 
+	// show debug info if set
+	showDebugInfo := false
+	if app.config.FrontendShowDebugInfo != nil && *app.config.FrontendShowDebugInfo {
+		showDebugInfo = true
+	}
+
 	// content of new environment file
 	// api and & app on same server, so use path for api url
 	envFileContent := `
 	window.env = {
 		API_URL: '` + apiUrlPath + `',
-		SHOW_DEBUG_INFO: ` + strconv.FormatBool(app.logger.Level() == zapcore.DebugLevel) + `
+		SHOW_DEBUG_INFO: ` + strconv.FormatBool(showDebugInfo) + `
 	};
 	`
 

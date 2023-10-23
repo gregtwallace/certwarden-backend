@@ -14,6 +14,7 @@
 'enable_http_redirect': true
 'log_level': 'info'
 'serve_frontend': true
+'frontend_show_debug_info': false
 'cors_permitted_crossorigins': null
 
 'certificate_name': 'legocerthub'

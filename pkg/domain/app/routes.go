@@ -127,7 +127,7 @@ func (app *Application) routes() http.Handler {
 	app.makeDownloadHandle(http.MethodGet, apiDownloadUrlPath+"/certrootchains/:name/*apiKey", app.download.DownloadCertRootChainViaUrl)
 
 	// frontend (if enabled)
-	if *app.config.ServeFrontend {
+	if *app.config.FrontendServe {
 		// log availability
 		app.logger.Infof("frontend hosting enabled and available at: %s", frontendUrlPath)
 

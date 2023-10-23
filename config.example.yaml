@@ -39,6 +39,8 @@
 
 # Should the server also host the frontend?
 'serve_frontend': true
+# Should the frontend show debug info and do console.log of debug info?
+'frontend_show_debug_info': false
 
 # CORS permitted cross origins
 # Only needed if the frontend is hosted somewhere other than the backend api server

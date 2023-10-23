@@ -28,7 +28,8 @@ type config struct {
 	HttpsPort                 *int              `yaml:"https_port"`
 	HttpPort                  *int              `yaml:"http_port"`
 	EnableHttpRedirect        *bool             `yaml:"enable_http_redirect"`
-	ServeFrontend             *bool             `yaml:"serve_frontend"`
+	FrontendServe             *bool             `yaml:"serve_frontend"`
+	FrontendShowDebugInfo     *bool             `yaml:"frontend_show_debug_info"`
 	CORSPermittedCrossOrigins []string          `yaml:"cors_permitted_crossorigins"`
 	CertificateName           *string           `yaml:"certificate_name"`
 	DisableHSTS               *bool             `yaml:"disable_hsts"`
@@ -184,9 +185,13 @@ func (app *Application) setDefaultConfigValues() {
 		app.config.EnableHttpRedirect = new(bool)
 		*app.config.EnableHttpRedirect = true
 	}
-	if app.config.ServeFrontend == nil {
-		app.config.ServeFrontend = new(bool)
-		*app.config.ServeFrontend = true
+	if app.config.FrontendServe == nil {
+		app.config.FrontendServe = new(bool)
+		*app.config.FrontendServe = true
+	}
+	if app.config.FrontendShowDebugInfo == nil {
+		app.config.FrontendShowDebugInfo = new(bool)
+		*app.config.FrontendShowDebugInfo = false
 	}
 	if app.config.CertificateName == nil {
 		app.config.CertificateName = new(string)
