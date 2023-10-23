@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"fmt"
+	"io"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
@@ -14,10 +15,10 @@ import (
 )
 
 // path to the config file
-const configFile = dataStoragePath + "/config.yaml"
+const configFilePath = dataStoragePath + "/config.yaml"
 
 func (app *Application) GetConfigFilename() string {
-	return configFile
+	return configFilePath
 }
 
 // config is the configuration structure for app (and subsequently services)
@@ -55,44 +56,98 @@ func (c config) pprofServAddress() string {
 
 // loadConfigFile parses the config yaml file. It also sets default config
 // for any unspecified options. If there is no config file, a blank one with
-// the current config version is created
+// the current config version is created. It will also try to upgrade old
+// config schemas, if possible.
 func (app *Application) loadConfigFile() (err error) {
-	// check if db file exists
-	if _, err := os.Stat(configFile); errors.Is(err, os.ErrNotExist) {
+	// check if config file exists
+	if _, err := os.Stat(configFilePath); errors.Is(err, os.ErrNotExist) {
 		app.logger.Warn("LeGo config file does not exist, creating one")
-		// create db file
-		file, err := os.Create(configFile)
+		// create config file
+		cfgFile, err := os.Create(configFilePath)
 		if err != nil {
 			return fmt.Errorf("failed to create new LeGo config file (%s)", err)
 		}
 
 		// write new config with config version
-		newCfgFile := fmt.Sprintf("\"config_version\": %d\n", configVersion)
-		file.WriteString(newCfgFile)
+		newCfgFile := fmt.Sprintf("\"config_version\": %d\n", appConfigVersion)
+		cfgFile.WriteString(newCfgFile)
 
-		file.Close()
+		cfgFile.Close()
 	}
 
 	// open config file
-	file, err := os.Open(configFile)
+	cfgFile, err := os.Open(configFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to open config file (%s)", err)
 	}
-	defer file.Close()
+	defer cfgFile.Close()
 
-	// decode config
-	app.config = new(config)
-	decoder := yaml.NewDecoder(file)
-	err = decoder.Decode(app.config)
+	// read in config file
+	cfgFileData, err := io.ReadAll(cfgFile)
 	if err != nil {
 		return fmt.Errorf("failed to read config file (%s)", err)
 	}
 
-	// if config_version is missing or doesn't match, error
-	if app.config.ConfigVersion == nil {
-		return fmt.Errorf("config version is missing (expected %d); fix the config file", configVersion)
-	} else if *app.config.ConfigVersion != configVersion {
-		return fmt.Errorf("config version is %d (expected %d); fix the config file", *app.config.ConfigVersion, configVersion)
+	// unmarshal into yaml object
+	cfgFileYamlObj := make(map[string]any)
+	err = yaml.Unmarshal(cfgFileData, cfgFileYamlObj)
+	if err != nil {
+		return fmt.Errorf("failed to parse config file for version migration (%s)", err)
+	}
+
+	// get current config version
+	cfgVerVal, ok := cfgFileYamlObj["config_version"]
+	if !ok {
+		return fmt.Errorf("config version is missing (expected %d); fix the config file", appConfigVersion)
+	}
+	origCfgVer, ok := cfgVerVal.(int)
+	if !ok {
+		return fmt.Errorf("config version is not an integer (%s); fix the config file", cfgVerVal)
+	}
+
+	// check config version, do auto schema upgrades if possible
+	cfgVer := origCfgVer
+	for cfgVer != appConfigVersion && err == nil {
+		// take incremental migration action, if possible
+		switch cfgVer {
+		case 1:
+			cfgVer, err = configMigrateV1toV2(cfgFileYamlObj)
+
+		case appConfigVersion:
+			// no-op, loop will end due to version ==
+
+		default:
+			err = fmt.Errorf("config version is %d (expected %d) and cannot be fixed automatically; fix the config file", *app.config.ConfigVersion, appConfigVersion)
+		}
+	}
+	// err check from upgrade for loop
+	if err != nil {
+		return err
+	}
+
+	// if cfg version changed, write config
+	if cfgVer != origCfgVer {
+		// update config bytes with new cfg
+		cfgFileData, err = yaml.Marshal(cfgFileYamlObj)
+		if err != nil {
+			return fmt.Errorf("failed to marshal new config file for version migration (%s)", err)
+		}
+
+		// write new config
+		err = os.WriteFile(configFilePath, cfgFileData, 0600)
+		if err != nil {
+			return fmt.Errorf("could not write version migrated config file (%s)", err)
+		}
+		app.logger.Infof("config version migrated from %d to %d", origCfgVer, cfgVer)
+	} else {
+		app.logger.Debugf("config version is current (%d)", appConfigVersion)
+	}
+
+	// decode config
+	app.config = new(config)
+	err = yaml.Unmarshal(cfgFileData, app.config)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal config file into lego config struct (%s)", err)
 	}
 
 	// set defaults on anything that wasn't specified

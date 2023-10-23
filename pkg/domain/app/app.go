@@ -28,7 +28,7 @@ const appVersion = "0.14.1"
 
 // config version
 // increment any time there is a breaking change between versions
-const configVersion = 2
+const appConfigVersion = 2
 
 // data storage root
 const dataStoragePath = "./data"
@@ -80,7 +80,7 @@ func (app *Application) GetAppVersion() string {
 }
 
 func (app *Application) GetConfigVersion() int {
-	return configVersion
+	return appConfigVersion
 }
 
 func (app *Application) GetLogger() *zap.SugaredLogger {
