@@ -5,7 +5,7 @@
 # username: admin
 # password: password
 
-'config_version': -1
+# NO default config_version
 
 'bind_address': ''
 'https_port': 4055
@@ -14,7 +14,7 @@
 'enable_http_redirect': true
 'log_level': 'info'
 'serve_frontend': true
-'cors_permitted_origins': null
+'cors_permitted_crossorigins': null
 
 'certificate_name': 'legocerthub'
 

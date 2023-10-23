@@ -8,14 +8,11 @@
 # long. However, this is not enforced in devMode. You should NOT use a password
 # this week.  10+ chars, upper/lower case, & special chars is strongly recommended.
 
-# config version is used indicate when breaking changes are made between
-# versions of LeGo. Error will be logged and the /status endpoint will
-# show mismatch if the version number of the config file and the LeGo binary
-# do not match.
-# If you see this, review the change log to determine what configuration
-# item(s)need to be updated and then manually update the version number to
-# clear the error.
-'config_version': 1
+# config_version is used to track changes in the config file schema. it must match
+# LeGo's expected schema version. If it does not, LeGo will try to migrate from the
+# current schema. If it cannot, the server will not start and manual config editing
+# will be required.
+'config_version': 2
 
 # Bind Address and Ports for API Server
 # If address is blank, server will bind to all available addresses
@@ -43,12 +40,12 @@
 # Should the server also host the frontend?
 'serve_frontend': true
 
-# CORS permitted origins
+# CORS permitted cross origins
 # Only needed if the frontend is hosted somewhere other than the backend api server
 # Each entry should be a protocol + hostname or address + port
 # (e.g. https://localhost:5353 or http://192.168.1.1:5050)
 # In most cases, this should not be used.
-'cors_permitted_origins':
+'cors_permitted_crossorigins':
   - 'http://localhost:5173'
   - 'https://frontend.example.com:8099'
 
