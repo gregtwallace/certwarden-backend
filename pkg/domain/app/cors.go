@@ -8,9 +8,15 @@ import (
 
 // enableCORS applies CORS to an http.Handler and is intended to wrap the router
 func (app *Application) enableCORS(next http.Handler) http.Handler {
+	// are any cross origins allowed? if not, do not use CORS
+	if app.config.CORSPermittedOrigins == nil {
+		return next
+	}
+
 	// set up CORS
 	c := cors.New(cors.Options{
 		// permitted cross origins
+		// WARNING: nil / empty slice == allow all!
 		AllowedOrigins: app.config.CORSPermittedOrigins,
 
 		// credentials must be allowed for access to work properly
