@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/challenges/dns_checker"
@@ -52,17 +53,31 @@ func (c config) pprofServAddress() string {
 	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.PprofPort)
 }
 
-// readConfigFile parses the config yaml file. It also sets default config
-// for any unspecified options
-func (app *Application) readConfigFile() (err error) {
-	// open config file, if exists
+// loadConfigFile parses the config yaml file. It also sets default config
+// for any unspecified options. If there is no config file, a blank one with
+// the current config version is created
+func (app *Application) loadConfigFile() (err error) {
+	// check if db file exists
+	if _, err := os.Stat(configFile); errors.Is(err, os.ErrNotExist) {
+		app.logger.Warn("LeGo config file does not exist, creating one")
+		// create db file
+		file, err := os.Create(configFile)
+		if err != nil {
+			return fmt.Errorf("failed to create new LeGo config file (%s)", err)
+		}
+
+		// write new config with config version
+		newCfgFile := fmt.Sprintf("\"config_version\": %d\n", configVersion)
+		file.WriteString(newCfgFile)
+
+		file.Close()
+	}
+
+	// open config file
 	file, err := os.Open(configFile)
 	if err != nil {
-		app.logger.Warnf("can't open config file, using defaults (%s)", err)
-		app.setDefaultConfigValues()
-		return nil
+		return fmt.Errorf("failed to open config file (%s)", err)
 	}
-	// only needed if file actually opened
 	defer file.Close()
 
 	// decode config
@@ -70,8 +85,14 @@ func (app *Application) readConfigFile() (err error) {
 	decoder := yaml.NewDecoder(file)
 	err = decoder.Decode(app.config)
 	if err != nil {
-		app.logger.Errorf("failed to read config file (%s)", err)
-		return err
+		return fmt.Errorf("failed to read config file (%s)", err)
+	}
+
+	// if config_version is missing or doesn't match, error
+	if app.config.ConfigVersion == nil {
+		return fmt.Errorf("config version is missing (expected %d); fix the config file", configVersion)
+	} else if *app.config.ConfigVersion != configVersion {
+		return fmt.Errorf("config version is %d (expected %d); fix the config file", *app.config.ConfigVersion, configVersion)
 	}
 
 	// set defaults on anything that wasn't specified
@@ -88,12 +109,7 @@ func (app *Application) setDefaultConfigValues() {
 		app.config = new(config)
 	}
 
-	// default config version is always invalid to ensure error if doesn't
-	// exist in config file
-	if app.config.ConfigVersion == nil {
-		app.config.ConfigVersion = new(int)
-		*app.config.ConfigVersion = -1
-	}
+	// no default config version
 
 	// http/s server
 	if app.config.BindAddress == nil {

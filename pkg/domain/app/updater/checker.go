@@ -66,11 +66,11 @@ func (service *Service) fetchNewVersion() error {
 	}
 
 	// lock since timestamp updates no matter what
-	service.mu.Lock()
-	defer service.mu.Unlock()
+	service.newVersion.mu.Lock()
+	defer service.newVersion.mu.Unlock()
 
-	changed := !reflect.DeepEqual(newestVersion, service.newVersionInfo)
-	service.newVersionLastCheck = time.Now()
+	changed := !reflect.DeepEqual(newestVersion, service.newVersion.info)
+	service.newVersion.lastCheck = time.Now()
 
 	// Only update if the data has changed
 	if changed {
@@ -82,13 +82,13 @@ func (service *Service) fetchNewVersion() error {
 		}
 		if newer {
 			service.logger.Infof("new version (%s) of app is available", newestVersion.Version)
-			service.newVersionAvailable = true
+			service.newVersion.available = true
 		} else {
-			service.newVersionAvailable = false
+			service.newVersion.available = false
 		}
 
 		// update newest version info
-		service.newVersionInfo = &newestVersion
+		service.newVersion.info = &newestVersion
 		service.logger.Debug("new version info updated succesfully")
 
 	} else {

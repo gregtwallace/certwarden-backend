@@ -48,8 +48,8 @@ func create() (*Application, error) {
 		}
 	}
 
-	// parse config file
-	err = app.readConfigFile()
+	// parse config file (also create if doesn't exist)
+	err = app.loadConfigFile()
 	if err != nil {
 		app.logger.Errorf("failed to read app config file (%s)", err)
 		return app, err

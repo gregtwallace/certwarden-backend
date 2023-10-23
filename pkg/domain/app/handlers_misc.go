@@ -4,31 +4,24 @@ import (
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
 	"net/http"
-
-	"go.uber.org/zap/zapcore"
 )
 
 type appStatus struct {
-	Status             string `json:"status"`
-	ShowDebugInfo      bool   `json:"show_debug_info"`
-	Version            string `json:"version"`
-	DbUserVersion      int    `json:"database_version"`
-	ConfigVersionMatch bool   `json:"config_version_match"`
+	Status        string `json:"status"`
+	LogLevel      string `json:"log_level"`
+	Version       string `json:"version"`
+	ConfigVersion int    `json:"config_version"`
+	DbUserVersion int    `json:"database_version"`
 }
 
 // statusHandler writes some basic info about the status of the Application
 func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) (err error) {
-	cfgVerMatch := false
-	if app.config.ConfigVersion != nil && *app.config.ConfigVersion == configVersion {
-		cfgVerMatch = true
-	}
-
 	currentStatus := appStatus{
-		Status:             "available",
-		ShowDebugInfo:      app.logger.Level() == zapcore.DebugLevel,
-		Version:            appVersion,
-		DbUserVersion:      sqlite.DbCurrentUserVersion,
-		ConfigVersionMatch: cfgVerMatch,
+		Status:        "available",
+		LogLevel:      app.logger.Level().String(),
+		Version:       appVersion,
+		ConfigVersion: *app.config.ConfigVersion,
+		DbUserVersion: sqlite.DbCurrentUserVersion,
 	}
 
 	err = app.output.WriteJSON(w, http.StatusOK, currentStatus, "server")

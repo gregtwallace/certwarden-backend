@@ -19,29 +19,29 @@ type getNewVersionInfoResponse struct {
 // GetNewVersionInfo returns if there is a newer known version and if there is
 // it returns detailed information about that new version.
 func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request) (err error) {
-	service.mu.RLock()
-	defer service.mu.RUnlock()
+	service.newVersion.mu.RLock()
+	defer service.newVersion.mu.RUnlock()
 
 	// does new config version match? if blank, false
 	configMatch := false
-	if service.newVersionInfo != nil {
-		configMatch = service.currentConfigVersion == service.newVersionInfo.ConfigVersion
+	if service.newVersion.info != nil {
+		configMatch = service.currentConfigVersion == service.newVersion.info.ConfigVersion
 	}
 
 	// does new db version match? if blank, false
 	dbMatch := false
-	if service.newVersionInfo != nil {
-		dbMatch = sqlite.DbCurrentUserVersion == service.newVersionInfo.DatabaseVersion
+	if service.newVersion.info != nil {
+		dbMatch = sqlite.DbCurrentUserVersion == service.newVersion.info.DatabaseVersion
 	}
 
 	// new version or not?
 	response := getNewVersionInfoResponse{
 		// last checked time -62135596800 (default time.Time value) means never checked
-		LastCheckedUnixTime:  int(service.newVersionLastCheck.Unix()),
-		NewVersionAvailable:  service.newVersionAvailable,
+		LastCheckedUnixTime:  int(service.newVersion.lastCheck.Unix()),
+		NewVersionAvailable:  service.newVersion.available,
 		ConfigVersionMatches: configMatch,
 		DbVersionMatches:     dbMatch,
-		NewVersionInfo:       service.newVersionInfo,
+		NewVersionInfo:       service.newVersion.info,
 	}
 
 	// return response to client

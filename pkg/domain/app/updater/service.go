@@ -24,6 +24,15 @@ type App interface {
 	GetShutdownWaitGroup() *sync.WaitGroup
 }
 
+// verVersion holds all of the information regarding new version check
+// results
+type newVersion struct {
+	available bool
+	info      *versionInfo
+	lastCheck time.Time
+	mu        sync.RWMutex
+}
+
 // Keys service struct
 type Service struct {
 	logger               *zap.SugaredLogger
@@ -32,10 +41,7 @@ type Service struct {
 	currentVersion       string
 	currentConfigVersion int
 	checkChannel         Channel
-	newVersionAvailable  bool
-	newVersionInfo       *versionInfo
-	newVersionLastCheck  time.Time
-	mu                   sync.RWMutex
+	newVersion           newVersion
 }
 
 // Config holds all of the challenge config
