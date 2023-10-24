@@ -33,7 +33,7 @@ take advantage of.
   + log begins
   + config_version is 1
 
-### [v? TBD] - Next Version TBD
+### [v0.15.0] - 2023.10.23
 
 - 2023.10.23
   https://github.com/gregtwallace/legocerthub-backend/commit/523d2bf8dd8a8e5c4a43714ba7c728f7b4084c47
@@ -54,3 +54,5 @@ take advantage of.
   https://github.com/gregtwallace/legocerthub-backend/commit/978eecfb6b86f580a35ce7344c1aedc2a6bdb8eb
   + `frontend_show_debug_info` config option ADDED that controls if the frontend
     will show debug info (if it is being hosted by the backend)
+
+### [v? TBD] - Next Version TBD
