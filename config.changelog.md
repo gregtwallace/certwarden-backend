@@ -33,6 +33,8 @@ take advantage of.
   + log begins
   + config_version is 1
 
+### [v? TBD] - Next Version TBD
+
 - 2023.10.23
   https://github.com/gregtwallace/legocerthub-backend/commit/523d2bf8dd8a8e5c4a43714ba7c728f7b4084c47
   + `cors_permitted_origins` RENAMED to `cors_permitted_crossorigins`
