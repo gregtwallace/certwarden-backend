@@ -26,6 +26,14 @@ type App interface {
 	GetShutdownWaitGroup() *sync.WaitGroup
 }
 
+type User struct {
+	ID           int
+	Username     string
+	PasswordHash string
+	CreatedAt    int
+	UpdatedAt    int
+}
+
 type Storage interface {
 	GetOneUserByName(username string) (User, error)
 	UpdateUserPassword(username string, newPasswordHash string) (userId int, err error)

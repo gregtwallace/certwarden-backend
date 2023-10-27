@@ -10,7 +10,7 @@ import (
 // executing next.
 func (app *Application) middlewareApplyAuthJWT(next handlerFunc) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		_, err := app.auth.ValidAuthHeader(r.Header, w)
+		_, err := app.auth.ValidAuthHeader(r, w)
 		if err != nil {
 			return output.ErrUnauthorized
 		}

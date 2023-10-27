@@ -13,12 +13,12 @@ const authHeader = "Authorization"
 // access token. If valid, it also returns the validated claims.
 // It also writes to r to indicate the response was impacted by
 // the relevant header.
-func (service *Service) ValidAuthHeader(header http.Header, w http.ResponseWriter) (claims jwt.MapClaims, err error) {
+func (service *Service) ValidAuthHeader(r *http.Request, w http.ResponseWriter) (claims jwt.MapClaims, err error) {
 	// indicate Authorization header influenced the response
 	w.Header().Add("Vary", authHeader)
 
 	// get token string from header
-	accessToken := accessToken(header.Get(authHeader))
+	accessToken := accessToken(r.Header.Get(authHeader))
 
 	// anonymous user
 	if accessToken == "" {
@@ -28,7 +28,7 @@ func (service *Service) ValidAuthHeader(header http.Header, w http.ResponseWrite
 	// validate token
 	claims, err = accessToken.valid(service.accessJwtSecret)
 	if err != nil {
-		service.logger.Debug(err)
+		service.logger.Debugf("client %s: validation of jwt in auth header failed (%s)", r.RemoteAddr, err)
 		return nil, output.ErrUnauthorized
 	}
 
