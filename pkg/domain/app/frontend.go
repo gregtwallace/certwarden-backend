@@ -18,13 +18,13 @@ const frontendEnvFile = frontendBuildDir + "/env.js"
 
 // setFrontendEnv creates the env.js file in the frontend build. This is used
 // to set variables at server run time
-func (app *Application) setFrontendEnv() error {
+func setFrontendEnv(frontendShowDebugInfo *bool) error {
 	// remove any old environment
 	_ = os.Remove(frontendEnvFile)
 
 	// show debug info if set
 	showDebugInfo := false
-	if app.config.FrontendShowDebugInfo != nil && *app.config.FrontendShowDebugInfo {
+	if frontendShowDebugInfo != nil && *frontendShowDebugInfo {
 		showDebugInfo = true
 	}
 
@@ -158,5 +158,11 @@ func (app *Application) frontendHandler(w http.ResponseWriter, r *http.Request) 
 
 	// serve file as-is if not .html
 	http.ServeContent(w, r, fInfo.Name(), fInfo.ModTime(), f)
+	return nil
+}
+
+// redirectToFrontendHandler is a handler that redirects to the frontend app
+func redirectToFrontendHandler(w http.ResponseWriter, r *http.Request) error {
+	http.Redirect(w, r, frontendUrlPath, http.StatusPermanentRedirect)
 	return nil
 }

@@ -20,7 +20,7 @@ type PemObject interface {
 func (service *Service) WritePem(w http.ResponseWriter, r *http.Request, obj PemObject) error {
 	// get filename and log for auditing
 	filename := obj.PemFilename()
-	service.logger.Debugf("writing pem %s to client", filename)
+	service.logger.Debugf("writing pem %s to client %s", filename, r.RemoteAddr)
 
 	// get pem content and convert to Reader
 	pemContent := []byte(obj.PemContent())

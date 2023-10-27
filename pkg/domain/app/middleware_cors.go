@@ -6,10 +6,9 @@ import (
 	"github.com/rs/cors"
 )
 
-// enableCORS applies CORS to an http.Handler and is intended to wrap the router
-// if no cross origins are permitted, this function is a no-op and just returns
-// next
-func (app *Application) enableCORS(next http.Handler) http.Handler {
+// middlewareApplyCORS applies the CORS package which manages all CORS headers.
+// if no cross origins are permitted, this function is a no-op and just returns next
+func (app *Application) middlewareApplyCORS(next http.HandlerFunc) http.HandlerFunc {
 	// are any cross origins allowed? if not, do not use CORS
 	if app.config.CORSPermittedCrossOrigins == nil {
 		return next
@@ -49,7 +48,8 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 		// headers for client to expose to the cross origin requester (in server response)
 		ExposedHeaders: []string{
 			// general
-			"content-length", "content-security-policy", "content-type", "strict-transport-security", "x-content-type-options", "x-frame-options",
+			"content-length", "content-security-policy", "content-type", "strict-transport-security",
+			"vary", "x-content-type-options", "x-frame-options",
 
 			// set name of file when client downloads something (used with pem, zip)
 			"content-disposition",
@@ -59,5 +59,7 @@ func (app *Application) enableCORS(next http.Handler) http.Handler {
 		},
 	})
 
-	return c.Handler(next)
+	return func(w http.ResponseWriter, r *http.Request) {
+		c.Handler(next).ServeHTTP(w, r)
+	}
 }
