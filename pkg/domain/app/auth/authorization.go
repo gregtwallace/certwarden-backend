@@ -9,7 +9,7 @@ import (
 type authorization struct {
 	AccessToken        accessToken    `json:"access_token"`
 	AccessTokenClaims  tokenClaims    `json:"access_token_claims"`
-	SessionTokenClaims tokenClaims    `json:"session_claims"`
+	SessionTokenClaims tokenClaims    `json:"session_token_claims"`
 	sessionCookie      *sessionCookie `json:"-"`
 }
 
