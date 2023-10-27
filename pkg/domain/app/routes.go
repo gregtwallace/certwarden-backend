@@ -21,20 +21,22 @@ const frontendUrlPath = baseUrlPath + "/app"
 func (app *Application) routes() http.Handler {
 	app.router = httprouter.New()
 
-	// app auth - insecure
+	// health check (HEAD or GET) - insecure for docker probing
+	app.handleAPIRouteInsecure(http.MethodHead, apiUrlPath+"/health", healthHandler)
+	app.handleAPIRouteInsecure(http.MethodGet, apiUrlPath+"/health", healthHandler)
+
+	// app auth - insecure as these give clients the access_token to access secure routes
+	// validates with user/password
 	app.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/login", app.auth.Login)
+	// validates with cookie ("refresh_token")
 	app.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/refresh", app.auth.Refresh)
-	app.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/logout", app.auth.Logout)
 
 	// app auth - secure
 	app.handleAPIRouteSecure(http.MethodPut, apiUrlPath+"/v1/app/auth/changepassword", app.auth.ChangePassword)
+	app.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/app/auth/logout", app.auth.Logout)
 
 	// status
 	app.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/status", app.statusHandler)
-
-	// health check (HEAD or GET) - insecure
-	app.handleAPIRouteInsecure(http.MethodHead, apiUrlPath+"/health", healthHandler)
-	app.handleAPIRouteInsecure(http.MethodGet, apiUrlPath+"/health", healthHandler)
 
 	// app
 	app.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/log", app.viewCurrentLogHandler)
