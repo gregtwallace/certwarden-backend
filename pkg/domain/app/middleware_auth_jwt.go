@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 )
@@ -10,7 +11,10 @@ import (
 // executing next.
 func (app *Application) middlewareApplyAuthJWT(next handlerFunc) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		_, err := app.auth.ValidAuthHeader(r, w)
+		// shorten URI for logging
+		trimmedURI := loggableRequestURI(r)
+
+		_, err := app.auth.ValidateAuthHeader(r, w, fmt.Sprintf("%s %s", r.Method, trimmedURI))
 		if err != nil {
 			return output.ErrUnauthorized
 		}

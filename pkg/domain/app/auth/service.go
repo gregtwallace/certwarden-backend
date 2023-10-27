@@ -47,7 +47,7 @@ type Service struct {
 	output           *output.Service
 	storage          Storage
 	accessJwtSecret  []byte
-	refreshJwtSecret []byte
+	sessionJwtSecret []byte
 	sessionManager   *sessionManager
 }
 
@@ -80,15 +80,14 @@ func NewService(app App) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// generate new secrets on every start
-	// this will auto-invalidate old keys to avoid any conflicts caused
-	// by losing the session states on restart
+	// generate new secrets on every start. this will auto-invalidate old keys to avoid any conflicts
+	// caused by losing the session states on restart
 	service.accessJwtSecret, err = randomness.GenerateHexSecret()
 	if err != nil {
 		return nil, errServiceComponent
 	}
 
-	service.refreshJwtSecret, err = randomness.GenerateHexSecret()
+	service.sessionJwtSecret, err = randomness.GenerateHexSecret()
 	if err != nil {
 		return nil, errServiceComponent
 	}

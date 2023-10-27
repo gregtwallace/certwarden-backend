@@ -9,7 +9,7 @@ import (
 )
 
 // authResponse contains the JSON response for both
-// login and refresh (refresh token is in a cookie
+// login and session (session token is in a cookie
 // so the JSON struct doesn't change)
 type authResponse struct {
 	output.JsonResponse
@@ -22,10 +22,10 @@ type loginPayload struct {
 	Password string `json:"password"`
 }
 
-// Login takes the loginPayload and determines if the username is in
-// storage and if the password matches the hash. If so, an Access Token
-// is returned in JSON and a refresh token is sent in a cookie.
-func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error) {
+// LoginUsingUserPwPayload takes the loginPayload, looks up the username in storage
+// and validates the password. If so, an Access Token is returned in JSON and a refresh
+// token is sent in a cookie.
+func (service *Service) LoginUsingUserPwPayload(w http.ResponseWriter, r *http.Request) (err error) {
 	// wrap handler to easily check err and delete cookies
 	err = func() error {
 		var payload loginPayload
@@ -43,28 +43,28 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 		// fetch the password hash from storage
 		user, err := service.storage.GetOneUserByName(payload.Username)
 		if err != nil {
-			service.logger.Infof("client %s: login attempt failed (bad username: %s)", r.RemoteAddr, err)
+			service.logger.Infof("client %s: login failed (bad username: %s)", r.RemoteAddr, err)
 			return output.ErrUnauthorized
 		}
 
 		// compare
 		err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(payload.Password))
 		if err != nil {
-			service.logger.Infof("client %s: login attempt failed (bad password: %s)", r.RemoteAddr, err)
+			service.logger.Infof("client %s: login failed (bad password: %s)", r.RemoteAddr, err)
 			return output.ErrUnauthorized
 		}
 
 		// user and password now verified, make auth
-		auth, err := service.createAuth(user.Username)
+		auth, err := service.newAuthorization(user.Username)
 		if err != nil {
-			service.logger.Errorf("client %s: login attempt failed (internal error: %s)", r.RemoteAddr, err)
+			service.logger.Errorf("client %s: login failed (internal error: %s)", r.RemoteAddr, err)
 			return output.ErrInternal
 		}
 
 		// save auth's session in manager
-		err = service.sessionManager.new(auth.SessionClaims)
+		err = service.sessionManager.new(auth.SessionTokenClaims)
 		if err != nil {
-			service.logger.Errorf("client %s: login attempt failed (internal error: %s)", r.RemoteAddr, err)
+			service.logger.Errorf("client %s: login failed (internal error: %s)", r.RemoteAddr, err)
 			return output.ErrUnauthorized
 		}
 
@@ -75,7 +75,7 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 		response.authorization = auth
 
 		// write auth cookies (part of response)
-		auth.writeCookies(w)
+		auth.writeSessionCookie(w)
 
 		err = service.output.WriteJSON(w, response.Status, response, "response")
 		if err != nil {
@@ -83,61 +83,47 @@ func (service *Service) Login(w http.ResponseWriter, r *http.Request) (err error
 		}
 
 		// log success
-		service.logger.Infof("client %s: user '%s' logged in", r.RemoteAddr, auth.SessionClaims.Subject)
+		service.logger.Infof("client %s: user '%s' logged in", r.RemoteAddr, auth.SessionTokenClaims.Subject)
 
 		return nil
 	}()
 
-	// if err, delete cookies and return err
+	// if err, delete session cookie and return err
 	if err != nil {
-		service.deleteAuthCookies(w)
+		service.deleteSessionCookie(w)
 		return err
 	}
 
 	return nil
 }
 
-// Refresh takes the RefreshToken, confirms it is valid and from a valid auth
-// and then returns a new Access Token to the client.
-func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err error) {
-	// wrap handler to easily check err and delete cookies
+// RefreshUsingCookie validates the SessionToken cookie and confirms its UUID is for a valid
+// session. If so, it generates a new AccessToken and new SessionToken cookie and then sends both
+// to the client.
+func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Request) (err error) {
+	// wrap to easily check err and delete cookies
 	err = func() error {
 		// log attempt
 		service.logger.Infof("client %s: attempting access token refresh", r.RemoteAddr)
 
-		// get the refresh token cookie from request
-		cookie, err := r.Cookie(refreshCookieName)
+		// validate cookie
+		oldClaims, err := service.validateSessionCookie(r, w, "access token refresh")
 		if err != nil {
-			service.logger.Infof("client %s: access token refresh attempt failed (bad cookie: %s)", r.RemoteAddr, err)
-			return output.ErrUnauthorized
+			// error logged in validateCookieSession func and nice output error returned
+			return err
 		}
 
-		// validate cookie and get claims
-		refreshCookie := refreshCookie(*cookie)
-		oldClaims, err := refreshCookie.valid(service.refreshJwtSecret)
+		// cookie & session verified, make new auth
+		auth, err := service.newAuthorization(oldClaims.Subject)
 		if err != nil {
-			service.logger.Infof("client %s: access token refresh attempt failed (bad cookie: %s)", r.RemoteAddr, err)
-			return output.ErrUnauthorized
-		}
-
-		// verify session is still valid
-		_, err = service.sessionManager.sessions.Read(oldClaims.UUID.String())
-		if err != nil {
-			service.logger.Infof("client %s: access token refresh attempt failed (session no longer valid: %s)", r.RemoteAddr, err)
-			return output.ErrUnauthorized
-		}
-
-		// refresh token & session verified, make new auth
-		auth, err := service.createAuth(oldClaims.Subject)
-		if err != nil {
-			service.logger.Errorf("client %s: access token refresh attempt failed (internal error: %s)", r.RemoteAddr, err)
+			service.logger.Errorf("client %s: access token refresh failed (internal error: %s)", r.RemoteAddr, err)
 			return output.ErrInternal
 		}
 
 		// refresh session in manager (remove old, add new)
-		err = service.sessionManager.refresh(*oldClaims, auth.SessionClaims)
+		err = service.sessionManager.refresh(*oldClaims, auth.SessionTokenClaims)
 		if err != nil {
-			service.logger.Errorf("client %s: access token refresh attempt failed (internal error: %s)", r.RemoteAddr, err)
+			service.logger.Errorf("client %s: access token refresh failed (internal error: %s)", r.RemoteAddr, err)
 			return output.ErrUnauthorized
 		}
 
@@ -147,7 +133,7 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 		response.Message = "refreshed"
 		response.authorization = auth
 		// write auth cookies (part of response)
-		auth.writeCookies(w)
+		auth.writeSessionCookie(w)
 
 		err = service.output.WriteJSON(w, response.Status, response, "response")
 		if err != nil {
@@ -155,47 +141,36 @@ func (service *Service) Refresh(w http.ResponseWriter, r *http.Request) (err err
 		}
 
 		// log success
-		service.logger.Infof("client %s: access token refresh for user '%s' succeeded", r.RemoteAddr, auth.SessionClaims.Subject)
+		service.logger.Infof("client %s: access token refresh for user '%s' succeeded", r.RemoteAddr, auth.SessionTokenClaims.Subject)
 
 		return nil
 	}()
 
 	// if err, delete cookies and return err
 	if err != nil {
-		service.deleteAuthCookies(w)
+		service.deleteSessionCookie(w)
 		return err
 	}
 
 	return nil
 }
 
-// Logout logs the user out and deletes the client cookies.
+// Logout logs the client out and removes the session from session manager
 func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err error) {
 	// log attempt
 	service.logger.Infof("client %s: attempting logout", r.RemoteAddr)
 
-	// regardless of outcome (success or err response), client's cookies should be deleted
-	service.deleteAuthCookies(w)
-
-	// get refresh cookie
-	cookie, err := r.Cookie(refreshCookieName)
+	// get claims from auth header
+	oldClaims, err := service.ValidateAuthHeader(r, w, "logout")
 	if err != nil {
-		service.logger.Errorf("client %s: logout attempt failed (cookie error: %s)", r.RemoteAddr, err)
-		return output.ErrUnauthorized
-	}
-
-	// validate refresh cookie
-	refreshCookie := refreshCookie(*cookie)
-	oldClaims, err := refreshCookie.valid(service.refreshJwtSecret)
-	if err != nil {
-		service.logger.Errorf("client %s: logout attempt failed (cookie error: %s)", r.RemoteAddr, err)
+		service.logger.Errorf("client %s: logout failed (%s)", r.RemoteAddr, oldClaims.Subject, err)
 		return output.ErrUnauthorized
 	}
 
 	// remove session in manager
 	err = service.sessionManager.close(*oldClaims)
 	if err != nil {
-		service.logger.Errorf("client %s: logout attempt failed for user '%s' (%s)", r.RemoteAddr, oldClaims.Subject, err)
+		service.logger.Errorf("client %s: logout for user '%s' failed (%s)", r.RemoteAddr, oldClaims.Subject, err)
 		return output.ErrUnauthorized
 	}
 
@@ -203,6 +178,8 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err erro
 	response := output.JsonResponse{}
 	response.Status = http.StatusOK
 	response.Message = "logged out"
+	// delete session cookie
+	service.deleteSessionCookie(w)
 
 	err = service.output.WriteJSON(w, response.Status, response, "response")
 	if err != nil {
@@ -223,16 +200,15 @@ type passwordChangePayload struct {
 // ChangePassword allows a user to change their password
 func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (err error) {
 	// log attempt
-	service.logger.Infof("client %s: attemping password change", r.RemoteAddr)
+	service.logger.Infof("client %s: attempting password change", r.RemoteAddr)
 
-	// This route will be unsecured in the router because the claims need to be accessed.
 	// validate jwt and get the claims (to confirm the username)
-	claims, err := service.ValidAuthHeader(r, w)
+	claims, err := service.ValidateAuthHeader(r, w, "password change")
 	if err != nil {
 		service.logger.Infof("client %s: password change failed (bad auth header: %s)", r.RemoteAddr, err)
 		return output.ErrUnauthorized
 	}
-	username := claims["sub"].(string)
+	username := claims.Subject
 
 	// decode body into payload
 	var payload passwordChangePayload

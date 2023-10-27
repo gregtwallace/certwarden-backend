@@ -8,18 +8,18 @@ import (
 	"time"
 )
 
-var errInvalidUuid = errors.New("invalid uuid")
-var errAddExisting = errors.New("cannot add existing uuid again, terminating all sessions for this subject")
+var errInvalidSessionID = errors.New("invalid session id")
+var errAddExisting = errors.New("cannot add existing session id again, terminating all sessions for this subject")
 
 // sessionManager stores and manages session data
 type sessionManager struct {
-	sessions *datatypes.SafeMap[sessionClaims] // map[uuid]sessionClaims
+	sessions *datatypes.SafeMap[tokenClaims] // map[uuid]sessionClaims
 }
 
 // newSessionManager creates a new sessionManager
 func newSessionManager() *sessionManager {
 	sm := &sessionManager{
-		sessions: datatypes.NewSafeMap[sessionClaims](),
+		sessions: datatypes.NewSafeMap[tokenClaims](),
 	}
 
 	return sm
@@ -28,12 +28,12 @@ func newSessionManager() *sessionManager {
 // new adds the session to the map of open sessions. If session already exists
 // an error is returned and all sessions for the specific subject (user) are
 // removed.
-func (sm *sessionManager) new(session sessionClaims) error {
+func (sm *sessionManager) new(session tokenClaims) error {
 	// parse uuid to a sane string for map key
-	uuidString := session.UUID.String()
+	uuidString := session.SessionID.String()
 	if uuidString == "" {
 		sm.closeSubject(session)
-		return errInvalidUuid
+		return errInvalidSessionID
 	}
 
 	// check if session already exists
@@ -49,12 +49,12 @@ func (sm *sessionManager) new(session sessionClaims) error {
 // close removes the session from the map of open sessions. If session
 // doesn't exist an error is returned and all sessions for the specific
 // subject (user) are removed.
-func (sm *sessionManager) close(session sessionClaims) error {
+func (sm *sessionManager) close(session tokenClaims) error {
 	// parse uuid to a sane string for map key
-	uuidString := session.UUID.String()
+	uuidString := session.SessionID.String()
 	if uuidString == "" {
 		sm.closeSubject(session)
-		return errInvalidUuid
+		return errInvalidSessionID
 	}
 
 	// remove and check if trying to remove non-existent
@@ -71,7 +71,7 @@ func (sm *sessionManager) close(session sessionClaims) error {
 // session in its place. If the session doesn't exist or the new session
 // already exists an error is returned and all sessions for the specific subject
 // (user) are removed.
-func (sm *sessionManager) refresh(oldSession, newSession sessionClaims) error {
+func (sm *sessionManager) refresh(oldSession, newSession tokenClaims) error {
 	// remove old session (error if doesn't exist, so this is validation)
 	err := sm.close(oldSession)
 
@@ -92,9 +92,9 @@ func (sm *sessionManager) refresh(oldSession, newSession sessionClaims) error {
 
 // closeSubject deletes all sessions where the session's Subject is equal to
 // the specified sessionClaims' Subject
-func (sm *sessionManager) closeSubject(sc sessionClaims) {
+func (sm *sessionManager) closeSubject(sc tokenClaims) {
 	// delete func for close subject
-	deleteFunc := func(k string, v sessionClaims) bool {
+	deleteFunc := func(k string, v tokenClaims) bool {
 		// if map value Subject == this func param's (sc's) Subject, return true
 		return v.Subject == sc.Subject
 	}
@@ -113,7 +113,7 @@ func (service *Service) startCleanerService(ctx context.Context, wg *sync.WaitGr
 	wg.Add(1)
 
 	// delete func that checks values for expired session
-	deleteFunc := func(k string, v sessionClaims) bool {
+	deleteFunc := func(k string, v tokenClaims) bool {
 		if v.ExpiresAt.Unix() <= time.Now().Unix() {
 			// if expiration has passed, delete
 			service.logger.Infof("user '%s' logged out (expired)", v.Subject)
@@ -125,8 +125,8 @@ func (service *Service) startCleanerService(ctx context.Context, wg *sync.WaitGr
 	}
 
 	go func() {
-		// wait time is based on expiration of sessions (refresh)
-		waitTime := 2 * refreshTokenExpiration
+		// wait time is based on expiration of session token
+		waitTime := 2 * sessionTokenExpiration
 		for {
 			select {
 			case <-ctx.Done():

@@ -5,15 +5,14 @@ import (
 	"net/http"
 )
 
-const refreshCookieName = "refresh_token"
-const cookieMaxAge = refreshTokenExpiration
+const sessionCookieName = "session_token"
+const sessionCookieMaxAge = sessionTokenExpiration
 
 // cookie types
-type refreshCookie http.Cookie
+type sessionCookie http.Cookie
 
-// createRefreshCookie creates the refresh cookie based on the
-// specified refresh token and maxAge
-func (service *Service) createRefreshCookie(refreshToken refreshToken) *refreshCookie {
+// createSessionCookie creates the session cookie using the session token
+func (service *Service) createSessionCookie(token sessionToken) *sessionCookie {
 	// make cookie secure if secure https channel is available
 	secureCookie := service.https
 
@@ -30,31 +29,47 @@ func (service *Service) createRefreshCookie(refreshToken refreshToken) *refreshC
 		secureCookie = true
 	}
 
-	return &refreshCookie{
-		Name:     refreshCookieName,
-		Value:    string(refreshToken),
-		MaxAge:   int(cookieMaxAge.Seconds()),
+	return &sessionCookie{
+		Name:     sessionCookieName,
+		Value:    string(token),
+		MaxAge:   int(sessionCookieMaxAge.Seconds()),
 		Secure:   secureCookie,
 		HttpOnly: true,
 		SameSite: sameSiteMode,
 	}
 }
 
-// Valid (RefreshCookie) returns the refresh cookie's token's claims if
-// it the token is valid, otherwise an error is returned if there is any
-// issue (e.g. token not valid)
-func (cookie *refreshCookie) valid(jwtSecret []byte) (claims *sessionClaims, err error) {
+// valid returns the cookie's token's claims if the token is valid, otherwise an error
+// is returned (e.g. token not valid)
+func (cookie *sessionCookie) valid(jwtSecret []byte) (claims *tokenClaims, err error) {
 	// confirm cookie name (should never trigger)
-	if cookie.Name != refreshCookieName {
+	if cookie.Name != sessionCookieName {
 		return nil, errors.New("bad cookie name")
 	}
 
-	// parse and validate refresh token
-	refreshToken := refreshToken(cookie.Value)
-	claims, err = refreshToken.valid(jwtSecret)
+	// parse and validate session token
+	token := sessionToken(cookie.Value)
+	claims, err = validateTokenString(string(token), jwtSecret)
 	if err != nil {
 		return nil, err
 	}
 
 	return claims, nil
+}
+
+// writeSessionCookie writes the auth's session cookie to w
+func (auth *authorization) writeSessionCookie(w http.ResponseWriter) {
+	cookie := http.Cookie(*auth.sessionCookie)
+	http.SetCookie(w, &cookie)
+}
+
+// deleteSessionCookie writes a dummy session cookie with max age -1 (delete now) to w
+func (service *Service) deleteSessionCookie(w http.ResponseWriter) {
+	// make dummy cookie
+	sCookie := service.createSessionCookie("")
+	sCookie.MaxAge = -1
+
+	// write cookie
+	cookie := http.Cookie(*sCookie)
+	http.SetCookie(w, &cookie)
 }

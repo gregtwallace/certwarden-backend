@@ -27,9 +27,9 @@ func (app *Application) routes() http.Handler {
 
 	// app auth - insecure as these give clients the access_token to access secure routes
 	// validates with user/password
-	app.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/login", app.auth.Login)
-	// validates with cookie ("refresh_token")
-	app.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/refresh", app.auth.Refresh)
+	app.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/login", app.auth.LoginUsingUserPwPayload)
+	// validates with cookie
+	app.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/refresh", app.auth.RefreshUsingCookie)
 
 	// app auth - secure
 	app.handleAPIRouteSecure(http.MethodPut, apiUrlPath+"/v1/app/auth/changepassword", app.auth.ChangePassword)
