@@ -25,7 +25,9 @@ func (app *Application) routes() http.Handler {
 	app.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/login", app.auth.Login)
 	app.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/refresh", app.auth.Refresh)
 	app.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/logout", app.auth.Logout)
-	app.handleAPIRouteInsecure(http.MethodPut, apiUrlPath+"/v1/app/auth/changepassword", app.auth.ChangePassword)
+
+	// app auth - secure
+	app.handleAPIRouteSecure(http.MethodPut, apiUrlPath+"/v1/app/auth/changepassword", app.auth.ChangePassword)
 
 	// status
 	app.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/status", app.statusHandler)
