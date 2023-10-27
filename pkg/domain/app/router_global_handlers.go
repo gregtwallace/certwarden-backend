@@ -26,8 +26,8 @@ func (app *Application) handlerNotFound() http.Handler {
 	// Logger
 	httpHandlerFunc := app.middlewareApplyLogger(handlerFunc, false)
 
-	// CORS
-	httpHandlerFunc = app.middlewareApplyCORS(httpHandlerFunc)
+	// NO CORS
+	// no cors info to provide if route is 404
 
 	return httpHandlerFunc
 }
