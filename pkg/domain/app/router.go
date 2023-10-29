@@ -88,8 +88,6 @@ func (router *router) handleAPIRouteDownloadWithAPIKey(method string, path strin
 
 // handleFrontend creates a route to serve content for the frontend
 func (router *router) handleFrontend(method string, path string, handlerFunc handlerFunc) {
-	// no auth to load the frontend app
-
 	// NO CORS
 	// Frontend App should not cross-origin
 

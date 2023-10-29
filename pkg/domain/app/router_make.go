@@ -152,7 +152,7 @@ func (app *Application) makeRouterAndRoutes() {
 		router.handleFrontend(http.MethodGet, baseUrlPath, redirectToFrontendHandler)
 
 		// add file server route for frontend
-		router.handleFrontend(http.MethodGet, frontendUrlPath+"/*anything(unused)", app.frontendHandler)
+		router.handleFrontend(http.MethodGet, frontendUrlPath+"/*anything(unused)", app.frontendFileHandler)
 	}
 
 	// invalid route
@@ -165,10 +165,10 @@ func (app *Application) makeRouterAndRoutes() {
 	// wrong method
 	router.r.HandleMethodNotAllowed = false
 
-	// conver to handler and apply common (universal) middlewares
+	// convert to handler and apply common (universal) middlewares
 	appRouter := http.Handler(router)
-	// Referrer-Policy header
-	appRouter = middlewareApplyReferrerPolicy(appRouter)
+	// browser security headers (for all routes, not just frontend)
+	appRouter = middlewareApplyBrowserSecurityHeaders(appRouter)
 	// HSTS header (only is HTTPS and config option to disable isn't true)
 	if app.IsHttps() && (app.config.DisableHSTS != nil || !*app.config.DisableHSTS) {
 		appRouter = middlewareApplyHSTS(appRouter)
