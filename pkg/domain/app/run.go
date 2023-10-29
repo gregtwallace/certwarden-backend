@@ -101,7 +101,7 @@ func run() (restart bool) {
 	// http server config
 	srv := &http.Server{
 		Addr:         app.config.httpServAddress(),
-		Handler:      app.routes(),
+		Handler:      app.router,
 		IdleTimeout:  httpServerIdleTimeout,
 		ReadTimeout:  httpServerReadTimeout,
 		WriteTimeout: httpServerWriteTimeout,

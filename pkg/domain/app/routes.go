@@ -18,7 +18,7 @@ const frontendUrlPath = baseUrlPath + "/app"
 
 // routes creates the application's router and adds the routes. It also
 // inserts the CORS middleware before returning the routes
-func (app *Application) routes() http.Handler {
+func (app *Application) makeRouter() {
 	app.router = httprouter.New()
 
 	// health check (HEAD or GET) - insecure for docker probing
@@ -158,6 +158,4 @@ func (app *Application) routes() http.Handler {
 
 	// wrong method
 	app.router.HandleMethodNotAllowed = false
-
-	return app.router
 }

@@ -209,5 +209,8 @@ func create() (*Application, error) {
 		return app, err
 	}
 
+	// make router
+	app.makeRouter()
+
 	return app, nil
 }
