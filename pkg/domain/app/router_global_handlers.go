@@ -23,8 +23,8 @@ func (app *Application) handlerNotFound() http.Handler {
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
 
-	// Logger
-	httpHandlerFunc := app.middlewareApplyLogger(handlerFunc, false)
+	// Logger / handle custom handler func's error
+	httpHandlerFunc := app.middlewareApplyErrorHandling(handlerFunc, false)
 
 	// NO CORS
 	// no cors info to provide if route is 404
@@ -49,8 +49,8 @@ func (app *Application) handlerGlobalOptions() http.Handler {
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
 
-	// Logger
-	httpHandlerFunc := app.middlewareApplyLogger(handlerFunc, false)
+	// Logger / handle custom handler func's error
+	httpHandlerFunc := app.middlewareApplyErrorHandling(handlerFunc, false)
 
 	// CORS
 	httpHandlerFunc = app.middlewareApplyCORS(httpHandlerFunc)
