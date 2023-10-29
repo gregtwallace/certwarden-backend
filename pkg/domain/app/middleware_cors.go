@@ -8,7 +8,7 @@ import (
 
 // middlewareApplyCORS applies the CORS package which manages all CORS headers.
 // if no cross origins are permitted, this function is a no-op and just returns next
-func (app *Application) middlewareApplyCORS(next http.HandlerFunc) http.HandlerFunc {
+func (app *Application) middlewareApplyCORS(next handlerFunc) handlerFunc {
 	// are any cross origins allowed? if not, do not use CORS
 	if app.config.CORSPermittedCrossOrigins == nil {
 		return next
@@ -59,7 +59,12 @@ func (app *Application) middlewareApplyCORS(next http.HandlerFunc) http.HandlerF
 		},
 	})
 
-	return func(w http.ResponseWriter, r *http.Request) {
-		c.Handler(next).ServeHTTP(w, r)
+	// return custom handlerFunc
+	return func(w http.ResponseWriter, r *http.Request) error {
+		// apply cors
+		c.HandlerFunc(w, r)
+
+		// then next
+		return next(w, r)
 	}
 }

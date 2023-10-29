@@ -12,11 +12,11 @@ func (app *Application) handleAPIRouteInsecure(method string, path string, handl
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
 
+	// CORS
+	handlerFunc = app.middlewareApplyCORS(handlerFunc)
+
 	// Logger / handle custom handler func's error
 	httpHandlerFunc := app.middlewareApplyErrorHandling(handlerFunc, false)
-
-	// CORS
-	httpHandlerFunc = app.middlewareApplyCORS(httpHandlerFunc)
 
 	// make handler
 	app.router.Handler(method, path, httpHandlerFunc)
@@ -30,11 +30,11 @@ func (app *Application) handleAPIRouteSecure(method string, path string, handler
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
 
+	// CORS
+	handlerFunc = app.middlewareApplyCORS(handlerFunc)
+
 	// Logger / handle custom handler func's error
 	httpHandlerFunc := app.middlewareApplyErrorHandling(handlerFunc, false)
-
-	// CORS
-	httpHandlerFunc = app.middlewareApplyCORS(httpHandlerFunc)
 
 	// make handler
 	app.router.HandlerFunc(method, path, httpHandlerFunc)
@@ -48,11 +48,11 @@ func (app *Application) handleAPIRouteSecureDownload(method string, path string,
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
 
+	// CORS
+	handlerFunc = app.middlewareApplyCORS(handlerFunc)
+
 	// Logger / handle custom handler func's error
 	httpHandlerFunc := app.middlewareApplyErrorHandling(handlerFunc, true)
-
-	// CORS
-	httpHandlerFunc = app.middlewareApplyCORS(httpHandlerFunc)
 
 	// make handler
 	app.router.HandlerFunc(method, path, httpHandlerFunc)
@@ -66,11 +66,11 @@ func (app *Application) handleAPIRouteDownloadWithAPIKey(method string, path str
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
 
-	// Logger / handle custom handler func's error
-	httpHandlerFunc := app.middlewareApplyErrorHandling(handlerFunc, true)
-
 	// NO CORS
 	// downloads with api key should not cross-origin
+
+	// Logger / handle custom handler func's error
+	httpHandlerFunc := app.middlewareApplyErrorHandling(handlerFunc, true)
 
 	// make handler
 	app.router.HandlerFunc(method, path, httpHandlerFunc)
@@ -83,11 +83,11 @@ func (app *Application) handleFrontend(method string, path string, handlerFunc h
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
 
-	// Logger / handle custom handler func's error
-	httpHandlerFunc := app.middlewareApplyErrorHandling(handlerFunc, true)
-
 	// NO CORS
 	// Frontend App should not cross-origin
+
+	// Logger / handle custom handler func's error
+	httpHandlerFunc := app.middlewareApplyErrorHandling(handlerFunc, true)
 
 	// make handler
 	app.router.HandlerFunc(method, path, httpHandlerFunc)
