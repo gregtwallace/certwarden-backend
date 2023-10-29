@@ -12,8 +12,8 @@ import (
 // thresholds to decide if checking succeeded for not.
 // propagationRequirement is the portion of functioning dns services that need
 // to return the expected record for the check to yield TRUE (e.g. 1 = 100%)
-// functioningRequirement is the portion of DNS services that must not error in
-// order for a check to not produce an Error.
+// functioningRequirement is the portion of DNS services that must not fail to
+// resolve in order for a check to not produce an Error.
 const (
 	propagationRequirement = 1.0
 	functioningRequirement = 0.5
@@ -75,10 +75,10 @@ func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue strin
 		}
 	}
 
-	// calculate error rate
+	// calculate dns resolver failure rate
 	errCount := len(returnedErrs)
 	errRate := float32(errCount) / float32(resolverTotal)
-	service.logger.Debugf("dns check (%s): error count: %d, error rate: %.2f, error threshold: %.2f", fqdn, errCount, errRate, functioningRequirement)
+	service.logger.Debugf("dns check (%s): resolver fail count: %d, resolver fail rate: %.2f, resolver fail threshold: %.2f", fqdn, errCount, errRate, functioningRequirement)
 	// if error rate is greater than tolerable, error
 	if errRate > (1 - functioningRequirement) {
 		return false, returnedErrs[0]
@@ -94,7 +94,7 @@ func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue strin
 
 	// calculate propagation
 	propagationRate := float32(successCount) / float32(resolverTotal-errCount)
-	service.logger.Debugf("dns check (%s): success count: %d, resolver count: %d, propagation rate: %.2f, propagation req: %.2f", fqdn, successCount, resolverTotal, propagationRate, propagationRequirement)
+	service.logger.Debugf("dns check (%s): propagation success count: %d, resolver count: %d, propagation rate: %.2f, propagation requirement: %.2f", fqdn, successCount, resolverTotal, propagationRate, propagationRequirement)
 	if propagationRate < propagationRequirement {
 		// not fully propagated, return false
 		return false, nil
