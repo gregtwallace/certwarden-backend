@@ -16,10 +16,10 @@ import (
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage/sqlite"
+	"net/http"
 	"sync"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	"go.uber.org/zap"
 )
 
@@ -60,7 +60,7 @@ type Application struct {
 	httpsCert         *datatypes.SafeCert
 	httpClient        *httpclient.Client
 	output            *output.Service
-	router            *httprouter.Router
+	router            http.Handler
 	storage           *sqlite.Storage
 	acmeServers       *acme_servers.Service
 	challenges        *challenges.Service

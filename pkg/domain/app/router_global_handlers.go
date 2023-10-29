@@ -20,17 +20,11 @@ func (app *Application) handlerNotFound() http.Handler {
 
 	// Add Middleware
 
-	// HSTS
-	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
-
-	// Referrer-Policy
-	handlerFunc = middlewareApplyReferrerPolicy(handlerFunc)
-
 	// NO CORS
 	// no cors info to provide if route is 404
 
 	// Logger / handle custom handler func's error
-	httpHandlerFunc := app.middlewareApplyErrorHandling(handlerFunc, false)
+	httpHandlerFunc := middlewareApplyErrorHandling(handlerFunc, false, app.logger.SugaredLogger, app.output)
 
 	return httpHandlerFunc
 }
@@ -49,17 +43,11 @@ func (app *Application) handlerGlobalOptions() http.Handler {
 
 	// Add Middleware
 
-	// HSTS
-	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
-
-	// Referrer-Policy
-	handlerFunc = middlewareApplyReferrerPolicy(handlerFunc)
-
 	// CORS
-	handlerFunc = app.middlewareApplyCORS(handlerFunc)
+	handlerFunc = middlewareApplyCORS(handlerFunc, app.config.CORSPermittedCrossOrigins)
 
 	// Logger / handle custom handler func's error
-	httpHandlerFunc := app.middlewareApplyErrorHandling(handlerFunc, false)
+	httpHandlerFunc := middlewareApplyErrorHandling(handlerFunc, false, app.logger.SugaredLogger, app.output)
 
 	return httpHandlerFunc
 }

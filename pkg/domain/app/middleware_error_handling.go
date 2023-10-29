@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // loggableRequestURI returns a log safe RequestURI. The app baseUrlPath is removed
@@ -42,14 +44,14 @@ func loggableRequestURI(r *http.Request) string {
 // an http.Handler by processing the error from the custom handler func and logging it. If
 // sensitive is true, the log level is increased and a little more verbose. This is useful
 // for certain routes that should always log their access (e.g. download)
-func (app *Application) middlewareApplyErrorHandling(next handlerFunc, sensitive bool) http.HandlerFunc {
+func middlewareApplyErrorHandling(next handlerFunc, sensitive bool, logger *zap.SugaredLogger, output *output.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// shorten URI for logging
 		trimmedURI := loggableRequestURI(r)
 
 		// info log attempt if sensitive
 		if sensitive {
-			app.logger.Infof("client %s: attempting %s %s", r.RemoteAddr, r.Method, trimmedURI)
+			logger.Infof("client %s: attempting %s %s", r.RemoteAddr, r.Method, trimmedURI)
 		}
 
 		// execute
@@ -59,23 +61,23 @@ func (app *Application) middlewareApplyErrorHandling(next handlerFunc, sensitive
 
 		// if there was an error, log it and write error JSON
 		if err != nil {
-			writeErr := app.output.WriteErrorJSON(w, err)
+			writeErr := output.WriteErrorJSON(w, err)
 			// if error, serve isn't done until error json written
 			timeToServe = time.Since(start)
 			if writeErr != nil {
-				app.logger.Errorf("client %s: %s %s: failed to serve error response (json write error: %s)", r.RemoteAddr, r.Method, trimmedURI, writeErr)
+				logger.Errorf("client %s: %s %s: failed to serve error response (json write error: %s)", r.RemoteAddr, r.Method, trimmedURI, writeErr)
 			} else {
 				logMsg := fmt.Sprintf("client %s: %s %s %v: served error response", r.RemoteAddr, r.Method, trimmedURI, timeToServe)
 				if sensitive {
-					app.logger.Info(logMsg)
+					logger.Info(logMsg)
 				} else {
-					app.logger.Debug(logMsg)
+					logger.Debug(logMsg)
 				}
 			}
 
 			// no error
 		} else if sensitive {
-			app.logger.Infof("client %s: %s %s %v: served without error", r.RemoteAddr, r.Method, trimmedURI, timeToServe)
+			logger.Infof("client %s: %s %s %v: served without error", r.RemoteAddr, r.Method, trimmedURI, timeToServe)
 		}
 	}
 }

@@ -8,9 +8,9 @@ import (
 
 // middlewareApplyCORS applies the CORS package which manages all CORS headers.
 // if no cross origins are permitted, this function is a no-op and just returns next
-func (app *Application) middlewareApplyCORS(next handlerFunc) handlerFunc {
+func middlewareApplyCORS(next handlerFunc, permittedCrossOrigins []string) handlerFunc {
 	// are any cross origins allowed? if not, do not use CORS
-	if app.config.CORSPermittedCrossOrigins == nil {
+	if permittedCrossOrigins == nil {
 		return next
 	}
 
@@ -18,7 +18,7 @@ func (app *Application) middlewareApplyCORS(next handlerFunc) handlerFunc {
 	c := cors.New(cors.Options{
 		// permitted cross origins
 		// WARNING: nil / empty slice == allow all!
-		AllowedOrigins: app.config.CORSPermittedCrossOrigins,
+		AllowedOrigins: permittedCrossOrigins,
 
 		// credentials must be allowed for access to work properly
 		AllowCredentials: true,

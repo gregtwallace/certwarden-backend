@@ -210,7 +210,7 @@ func create() (*Application, error) {
 	}
 
 	// make router
-	app.makeRouter()
+	app.makeRouterAndRoutes()
 
 	return app, nil
 }
