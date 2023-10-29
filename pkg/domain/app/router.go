@@ -12,6 +12,9 @@ func (app *Application) handleAPIRouteInsecure(method string, path string, handl
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
 
+	// Referrer-Policy
+	handlerFunc = middlewareApplyReferrerPolicy(handlerFunc)
+
 	// CORS
 	handlerFunc = app.middlewareApplyCORS(handlerFunc)
 
@@ -29,6 +32,9 @@ func (app *Application) handleAPIRouteSecure(method string, path string, handler
 
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
+
+	// Referrer-Policy
+	handlerFunc = middlewareApplyReferrerPolicy(handlerFunc)
 
 	// CORS
 	handlerFunc = app.middlewareApplyCORS(handlerFunc)
@@ -48,6 +54,9 @@ func (app *Application) handleAPIRouteSecureDownload(method string, path string,
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
 
+	// Referrer-Policy
+	handlerFunc = middlewareApplyReferrerPolicy(handlerFunc)
+
 	// CORS
 	handlerFunc = app.middlewareApplyCORS(handlerFunc)
 
@@ -66,6 +75,9 @@ func (app *Application) handleAPIRouteDownloadWithAPIKey(method string, path str
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
 
+	// Referrer-Policy
+	handlerFunc = middlewareApplyReferrerPolicy(handlerFunc)
+
 	// NO CORS
 	// downloads with api key should not cross-origin
 
@@ -82,6 +94,9 @@ func (app *Application) handleFrontend(method string, path string, handlerFunc h
 
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
+
+	// Referrer-Policy
+	handlerFunc = middlewareApplyReferrerPolicy(handlerFunc)
 
 	// NO CORS
 	// Frontend App should not cross-origin

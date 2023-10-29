@@ -23,6 +23,9 @@ func (app *Application) handlerNotFound() http.Handler {
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
 
+	// Referrer-Policy
+	handlerFunc = middlewareApplyReferrerPolicy(handlerFunc)
+
 	// NO CORS
 	// no cors info to provide if route is 404
 
@@ -48,6 +51,9 @@ func (app *Application) handlerGlobalOptions() http.Handler {
 
 	// HSTS
 	handlerFunc = app.middlewareApplyHSTS(handlerFunc)
+
+	// Referrer-Policy
+	handlerFunc = middlewareApplyReferrerPolicy(handlerFunc)
 
 	// CORS
 	handlerFunc = app.middlewareApplyCORS(handlerFunc)

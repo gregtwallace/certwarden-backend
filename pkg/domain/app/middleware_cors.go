@@ -48,8 +48,8 @@ func (app *Application) middlewareApplyCORS(next handlerFunc) handlerFunc {
 		// headers for client to expose to the cross origin requester (in server response)
 		ExposedHeaders: []string{
 			// general
-			"content-length", "content-security-policy", "content-type", "strict-transport-security",
-			"vary", "x-content-type-options", "x-frame-options",
+			"content-length", "content-security-policy", "content-type", "referrer-policy",
+			"strict-transport-security", "vary", "x-content-type-options", "x-frame-options",
 
 			// set name of file when client downloads something (used with pem, zip)
 			"content-disposition",
