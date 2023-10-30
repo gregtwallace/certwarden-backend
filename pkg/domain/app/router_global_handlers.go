@@ -36,7 +36,9 @@ func (app *Application) handlerGlobalOptions() http.Handler {
 	handlerFunc := func(w http.ResponseWriter, r *http.Request) error {
 		// OPTIONS should always return a response to prevent preflight errors
 		// see: https://stackoverflow.com/questions/52047548/response-for-preflight-does-not-have-http-ok-status-in-angular
-		w.WriteHeader(http.StatusNoContent)
+
+		// Note: Disabled as CORS will write the headers automatically
+		// w.WriteHeader(http.StatusNoContent)
 
 		return nil
 	}
