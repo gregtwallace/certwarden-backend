@@ -2,11 +2,13 @@ package app
 
 import (
 	"bytes"
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/randomness"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -22,7 +24,7 @@ var noncePlaceholder = []byte("{SERVER-CSP-NONCE}")
 // LeGo react app loads.
 func setContentSecurityPolicy(w http.ResponseWriter, nonce []byte) {
 	// LeGo app's security policy
-	// nonceString := string(nonce)
+	nonceString := string(nonce)
 	var contentSecurityPolicy = []string{
 		"default-src 'none'",
 
@@ -31,11 +33,10 @@ func setContentSecurityPolicy(w http.ResponseWriter, nonce []byte) {
 		"script-src-attr 'none'", // csp v3
 		"script-src-elem 'self'", // csp v3
 
-		// styles - TODO: Use nonce when Vite fixes csp style
-		// fmt.Sprintf("style-src 'self' 'nonce-%s' 'unsafe-inline'", nonceString),
-		"style-src 'self' 'unsafe-inline'",      // fallback csp v1
-		"style-src-attr 'none'",                 // csp v3
-		"style-src-elem 'self' 'unsafe-inline'", // csp v3
+		// styles
+		fmt.Sprintf("style-src 'self' 'nonce-%s' 'unsafe-inline'", nonceString),      // fallback csp v1, unsafe-inline is for browsers that don't support nonce
+		fmt.Sprintf("style-src-elem 'self' 'nonce-%s' 'unsafe-inline'", nonceString), // csp v3, unsafe-inline is for browsers that don't support nonce
+		"style-src-attr 'none'", // csp v3
 
 		"img-src 'self'",
 		"manifest-src 'self'",
@@ -84,6 +85,35 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		return output.ErrInternal
 	}
 
+	// TODO: REMOVE WHEN PROPER NONCE SUPPORT IN VITE!
+	// this modifies the code of the relevant module to be able to inject the nonce from meta tag
+	// if emotion_sheet-*.js file, modify code to enable getting nonce from index.html's meta tag
+	if strings.HasPrefix(fPath, "/assets/emotion_sheet-") && fExt == ".js" {
+		// read in file to serve
+		fBytes := make([]byte, fInfo.Size())
+		_, err = f.Read(fBytes)
+		if err != nil {
+			app.logger.Errorf("could not read frontend file %s into buffer for nonce injection", fPath)
+			return output.ErrInternal
+		}
+
+		// replace offending line of code to make it get the nonce from meta nonce
+		// capture 1st, 2nd, and 3rd variable name
+		// regex should cover all cases of the code, even if formatted or var names change
+		re := regexp.MustCompile(`,\s*([A-Za-z0-9]+)\.nonce.*!==.*void 0.*&&.*([A-Za-z0-9]+)\.setAttribute\(["']nonce["'],.*([A-Za-z0-9]+)\.nonce\),`)
+		// use 2nd variable name in new string
+		fString := string(fBytes)
+		fString = re.ReplaceAllString(fString, ",$2.setAttribute('nonce',document.querySelector('meta[property=\"csp-nonce\"]').nonce),")
+		// orig:             ,n.nonce!==void 0&&t.setAttribute("nonce",n.nonce),
+		// orig (formatted): , n.nonce !== void 0 && t.setAttribute('nonce', n.nonce),
+		// modified:         ,t.setAttribute('nonce',document.querySelector('meta[property="csp-nonce"]').nonce),
+
+		// serve modified file, and return
+		http.ServeContent(w, r, fInfo.Name(), fInfo.ModTime(), strings.NewReader(fString))
+		return nil
+	}
+	// END - TODO: REMOVE WHEN PROPER NONCE SUPPORT IN VITE
+
 	// if fExt is of an approved type, generate a nonce, do nonce injection, and set the CSP
 	if fExt == ".html" {
 		// generate nonce
@@ -107,7 +137,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		// set nonce placeholders to the actual nonce value
 		fBytes = bytes.ReplaceAll(fBytes, noncePlaceholder, nonce)
 
-		// set CSP, serve modified file, and return (modtime is now since nonce is always modified)
+		// serve modified file, and return (modtime is now since nonce is always modified)
 		http.ServeContent(w, r, fInfo.Name(), time.Now(), bytes.NewReader(fBytes))
 		return nil
 	}
