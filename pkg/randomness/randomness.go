@@ -15,6 +15,7 @@ const (
 
 // character sets
 const (
+	charSetBase64            = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/"
 	charSetNumbersAndLetters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	charSetHex               = "0123456789abcdef"
 )
@@ -53,9 +54,9 @@ func GenerateApiKey() (string, error) {
 }
 
 // GenerateFrontendNonce generates a cryptographically secure nonce with
-// sufficiently secure entropy.
+// sufficiently secure entropy using the base64 character set.
 func GenerateFrontendNonce() ([]byte, error) {
-	s, err := generateSecureRandomString(charSetNumbersAndLetters, lengthFrontendNonce)
+	s, err := generateSecureRandomString(charSetBase64, lengthFrontendNonce)
 	if err != nil {
 		return nil, err
 	}
