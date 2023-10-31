@@ -2,7 +2,6 @@ package app
 
 import (
 	"bytes"
-	"fmt"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/randomness"
 	"net/http"
@@ -23,12 +22,21 @@ var noncePlaceholder = []byte("{SERVER-CSP-NONCE}")
 // LeGo react app loads.
 func setContentSecurityPolicy(w http.ResponseWriter, nonce []byte) {
 	// LeGo app's security policy
-	nonceString := string(nonce)
+	// nonceString := string(nonce)
 	var contentSecurityPolicy = []string{
 		"default-src 'none'",
-		fmt.Sprintf("script-src 'nonce-%s'", nonceString),
-		// fmt.Sprintf("style-src-elem 'nonce-%s'", nonceString),
-		"style-src-elem 'self' 'unsafe-inline'", // TODO: Use nonce when Vite fixes csp style
+
+		// scripts
+		"script-src 'self'",      // fallback csp v1
+		"script-src-attr 'none'", // csp v3
+		"script-src-elem 'self'", // csp v3
+
+		// styles - TODO: Use nonce when Vite fixes csp style
+		// fmt.Sprintf("style-src 'self' 'nonce-%s' 'unsafe-inline'", nonceString),
+		"style-src 'self' 'unsafe-inline'",      // fallback csp v1
+		"style-src-attr 'none'",                 // csp v3
+		"style-src-elem 'self' 'unsafe-inline'", // csp v3
+
 		"img-src 'self'",
 		"manifest-src 'self'",
 		"font-src 'self'",
