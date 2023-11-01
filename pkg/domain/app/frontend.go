@@ -27,6 +27,9 @@ func setContentSecurityPolicy(w http.ResponseWriter, nonce []byte) {
 	nonceString := string(nonce)
 	var contentSecurityPolicy = []string{
 		"default-src 'none'",
+		"base-uri 'none'",
+		"form-action 'none'",
+		"frame-ancestors 'none'",
 
 		// scripts
 		"script-src 'self'",      // fallback csp v1
