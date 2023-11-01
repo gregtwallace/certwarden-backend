@@ -174,6 +174,9 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err erro
 		return output.ErrUnauthorized
 	}
 
+	// log success
+	service.logger.Infof("client %s: logout for user '%s' succeeded", r.RemoteAddr, oldClaims.Subject)
+
 	// return response (logged out)
 	response := output.JsonResponse{}
 	response.Status = http.StatusOK
