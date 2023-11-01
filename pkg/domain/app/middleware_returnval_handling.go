@@ -40,11 +40,11 @@ func loggableRequestURI(r *http.Request) string {
 	return strings.TrimPrefix(uri, baseUrlPath)
 }
 
-// middlewareApplyErrorHandling applies middleware that transforms the custom handlerFunc into
+// middlewareApplyReturnValHandling applies middleware that transforms the custom handlerFunc into
 // an http.Handler by processing the error from the custom handler func and logging it. If
 // sensitive is true, the log level is increased and a little more verbose. This is useful
 // for certain routes that should always log their access (e.g. download)
-func middlewareApplyErrorHandling(next handlerFunc, sensitive bool, logger *zap.SugaredLogger, output *output.Service) http.HandlerFunc {
+func middlewareApplyReturnValHandling(next handlerFunc, sensitive bool, logger *zap.SugaredLogger, output *output.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// shorten URI for logging
 		trimmedURI := loggableRequestURI(r)

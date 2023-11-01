@@ -35,7 +35,7 @@ func (router *router) handleAPIRouteInsecure(method string, path string, handler
 	handlerFunc = middlewareApplyCORS(handlerFunc, router.permittedCrossOrigins)
 
 	// Logger / handle custom handler func's error
-	httpHandlerFunc := middlewareApplyErrorHandling(handlerFunc, false, router.logger, router.output)
+	httpHandlerFunc := middlewareApplyReturnValHandling(handlerFunc, false, router.logger, router.output)
 
 	// make handler
 	router.r.Handler(method, path, httpHandlerFunc)
@@ -50,7 +50,7 @@ func (router *router) handleAPIRouteSecure(method string, path string, handlerFu
 	handlerFunc = middlewareApplyCORS(handlerFunc, router.permittedCrossOrigins)
 
 	// Logger / handle custom handler func's error
-	httpHandlerFunc := middlewareApplyErrorHandling(handlerFunc, false, router.logger, router.output)
+	httpHandlerFunc := middlewareApplyReturnValHandling(handlerFunc, false, router.logger, router.output)
 
 	// make handler
 	router.r.HandlerFunc(method, path, httpHandlerFunc)
@@ -65,7 +65,7 @@ func (router *router) handleAPIRouteSecureDownload(method string, path string, h
 	handlerFunc = middlewareApplyCORS(handlerFunc, router.permittedCrossOrigins)
 
 	// Logger / handle custom handler func's error
-	httpHandlerFunc := middlewareApplyErrorHandling(handlerFunc, true, router.logger, router.output)
+	httpHandlerFunc := middlewareApplyReturnValHandling(handlerFunc, true, router.logger, router.output)
 
 	// make handler
 	router.r.HandlerFunc(method, path, httpHandlerFunc)
@@ -80,7 +80,7 @@ func (router *router) handleAPIRouteDownloadWithAPIKey(method string, path strin
 	// downloads with api key should not cross-origin
 
 	// Logger / handle custom handler func's error
-	httpHandlerFunc := middlewareApplyErrorHandling(handlerFunc, true, router.logger, router.output)
+	httpHandlerFunc := middlewareApplyReturnValHandling(handlerFunc, true, router.logger, router.output)
 
 	// make handler
 	router.r.HandlerFunc(method, path, httpHandlerFunc)
@@ -92,7 +92,7 @@ func (router *router) handleFrontend(method string, path string, handlerFunc han
 	// Frontend App should not cross-origin
 
 	// Logger / handle custom handler func's error
-	httpHandlerFunc := middlewareApplyErrorHandling(handlerFunc, true, router.logger, router.output)
+	httpHandlerFunc := middlewareApplyReturnValHandling(handlerFunc, true, router.logger, router.output)
 
 	// make handler
 	router.r.HandlerFunc(method, path, httpHandlerFunc)

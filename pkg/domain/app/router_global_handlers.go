@@ -24,7 +24,7 @@ func (app *Application) handlerNotFound() http.Handler {
 	// no cors info to provide if route is 404
 
 	// Logger / handle custom handler func's error
-	httpHandlerFunc := middlewareApplyErrorHandling(handlerFunc, false, app.logger.SugaredLogger, app.output)
+	httpHandlerFunc := middlewareApplyReturnValHandling(handlerFunc, false, app.logger.SugaredLogger, app.output)
 
 	return httpHandlerFunc
 }
@@ -49,7 +49,7 @@ func (app *Application) handlerGlobalOptions() http.Handler {
 	handlerFunc = middlewareApplyCORS(handlerFunc, app.config.CORSPermittedCrossOrigins)
 
 	// Logger / handle custom handler func's error
-	httpHandlerFunc := middlewareApplyErrorHandling(handlerFunc, false, app.logger.SugaredLogger, app.output)
+	httpHandlerFunc := middlewareApplyReturnValHandling(handlerFunc, false, app.logger.SugaredLogger, app.output)
 
 	return httpHandlerFunc
 }
