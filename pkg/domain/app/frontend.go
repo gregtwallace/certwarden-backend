@@ -33,8 +33,8 @@ func setContentSecurityPolicy(w http.ResponseWriter, nonce []byte) {
 
 		// scripts
 		"script-src 'self'",      // fallback csp v1
-		"script-src-attr 'none'", // csp v3
 		"script-src-elem 'self'", // csp v3
+		"script-src-attr 'none'", // csp v3
 
 		// styles
 		fmt.Sprintf("style-src 'self' 'nonce-%s' 'unsafe-inline'", nonceString),      // fallback csp v1, unsafe-inline is for browsers that don't support nonce
