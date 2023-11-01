@@ -92,7 +92,7 @@ func (router *router) handleFrontend(method string, path string, handlerFunc han
 	// Frontend App should not cross-origin
 
 	// Logger / handle custom handler func's error
-	httpHandlerFunc := middlewareApplyReturnValHandling(handlerFunc, true, router.logger, router.output)
+	httpHandlerFunc := middlewareApplyReturnValHandling(handlerFunc, false, router.logger, router.output)
 
 	// make handler
 	router.r.HandlerFunc(method, path, httpHandlerFunc)
