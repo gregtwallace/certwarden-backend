@@ -23,13 +23,19 @@ func middlewareApplyBrowserSecurityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 1) header: Content-Security-Policy - disable loading of other content
 		// Note: this can be overwritten by the frontend handler, when needed
-		w.Header().Set("Content-Security-Policy",
-			`
-			default-src 'none'; 
-			base-uri 'none';
-			form-action 'none';
-			frame-ancestors 'none';
-		`)
+		var contentSecurityPolicy = []string{
+			"default-src 'none'",
+			"base-uri 'none'",
+			"form-action 'none'",
+			"frame-ancestors 'none'",
+		}
+
+		csp := ""
+		for _, s := range contentSecurityPolicy {
+			csp += s + "; "
+		}
+
+		w.Header().Set("Content-Security-Policy", csp)
 
 		// 2) header: X-Content-Type-Options - no MIME type sniffing
 		w.Header().Set("X-Content-Type-Options", "nosniff")
