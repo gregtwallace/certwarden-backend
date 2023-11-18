@@ -31,7 +31,7 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 	case "email":
 		sortField = "aa.email"
 	case "is_staging":
-		sortField = "aa.is_staging"
+		sortField = "aserv.is_staging"
 	// default if not in allowed list
 	default:
 		sortField = "aa.name"
