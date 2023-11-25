@@ -3,7 +3,6 @@ package orders
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"legocerthub-backend/pkg/randomness"
 	"sync"
 	"time"
@@ -69,10 +68,7 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 			}
 
 			// order expiring certificates
-			err = service.orderExpiringCerts(remainingDaysThreshold)
-			if err != nil {
-				service.logger.Errorf("error ordering expiring certs: %s", err)
-			}
+			service.orderExpiringCerts(remainingDaysThreshold)
 		}
 	}()
 }
@@ -103,13 +99,14 @@ func (service *Service) retryIncompleteOrders() (err error) {
 
 // orderExpiringCerts automatically orders any certficates that are valid but have a valid_to
 // timestamp within the specified threshold
-func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration) (err error) {
+func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration) {
 	service.logger.Info("adding expiring certificates to order queue")
 
 	// get slice of all expiring certificate ids
 	expiringCertIds, err := service.storage.GetExpiringCertIds(remainingDaysThreshold)
 	if err != nil {
-		return err
+		service.logger.Errorf("error ordering expiring certs: %s", err)
+		return
 	}
 
 	// address each expiring cert
@@ -126,8 +123,8 @@ func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration)
 
 			// place new order
 			service.logger.Debugf("placing new order for expiring cert %d", certId)
-			_, err = service.placeNewOrderAndFulfill(certId, false)
-			if err != nil {
+			_, outErr := service.placeNewOrderAndFulfill(certId, false)
+			if outErr != nil {
 				service.logger.Errorf("failed to place new order for cert %d (%s)", certId, err)
 			}
 
@@ -145,7 +142,8 @@ func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration)
 		select {
 		case <-service.shutdownContext.Done():
 			// abort refreshing due to shutdown
-			return errors.New("expiring certificates refresh canceled due to shutdown")
+			service.logger.Info("expiring certificates refresh canceled due to shutdown")
+			return
 
 		case <-time.After(15 * time.Second):
 			// sleep and continue
@@ -153,5 +151,4 @@ func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration)
 	}
 
 	service.logger.Info("expiring certificates added to order queue")
-	return nil
 }

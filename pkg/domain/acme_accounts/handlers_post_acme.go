@@ -20,12 +20,12 @@ type registerPayload struct {
 // NewAcmeAccount sends the account information to the ACME new-account endpoint
 // which effectively registers the account with ACME
 // endpoint: /api/v1/acmeaccounts/:id/new-account
-func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *output.Error {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	// decode body into payload
 	var payload registerPayload
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -73,22 +73,28 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (
 	acmeAccount.UpdatedAt = int(time.Now().Unix())
 
 	// save ACME response to account
-	err = service.storage.PutAcmeAccountResponse(acmeAccount)
+	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccount)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "registered",
-		ID:      idParam,
+	updatedAcctDetailedResp, err := updatedAcct.detailedResponse(service)
+	if err != nil {
+		service.logger.Errorf("failed to generate account summary response (%s)", err)
+		return output.ErrInternal
 	}
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	// write response
+	response := &accountResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "registered account"
+	response.Account = updatedAcctDetailedResp
+
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil
@@ -98,7 +104,7 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) (
 // Once deactivated, accounts cannot be re-enabled. This action is DANGEROUS
 // and should only be done when there is a complete understanding of the repurcussions.
 // endpoint: /api/v1/acmeaccounts/:id/deactivate
-func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) *output.Error {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
 	// convert id param to an integer
@@ -155,22 +161,28 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) (err 
 	acmeAccount.UpdatedAt = int(time.Now().Unix())
 
 	// save ACME response to account
-	err = service.storage.PutAcmeAccountResponse(acmeAccount)
+	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccount)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "deactivated",
-		ID:      idParam,
+	updatedAcctDetailedResp, err := updatedAcct.detailedResponse(service)
+	if err != nil {
+		service.logger.Errorf("failed to generate account summary response (%s)", err)
+		return output.ErrInternal
 	}
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	// write response
+	response := &accountResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "deactivated account"
+	response.Account = updatedAcctDetailedResp
+
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

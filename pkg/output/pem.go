@@ -17,7 +17,7 @@ type PemObject interface {
 
 // WritePem sends an object supporting PEM output to the client as the appropriate application type
 // Note: currently error is not possible
-func (service *Service) WritePem(w http.ResponseWriter, r *http.Request, obj PemObject) error {
+func (service *Service) WritePem(w http.ResponseWriter, r *http.Request, obj PemObject) {
 	// get filename and log for auditing
 	filename := obj.PemFilename()
 	service.logger.Debugf("writing pem %s to client %s", filename, r.RemoteAddr)
@@ -37,6 +37,4 @@ func (service *Service) WritePem(w http.ResponseWriter, r *http.Request, obj Pem
 
 	// ServeContent (technically fielname is not needed here since Content-Type is set explicitly above)
 	http.ServeContent(w, r, filename, obj.PemModtime(), contentReader)
-
-	return nil
 }

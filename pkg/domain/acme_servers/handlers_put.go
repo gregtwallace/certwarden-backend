@@ -24,10 +24,10 @@ type UpdatePayload struct {
 
 // PutServerUpdate updates a Server that already exists in storage.
 // Only fields received in the payload (non-nil) are updated.
-func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) *output.Error {
 	// parse payload
 	var payload UpdatePayload
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -43,9 +43,9 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 
 	// validation
 	// id
-	_, err = service.getServer(payload.ID)
-	if err != nil {
-		return err
+	_, outErr := service.getServer(payload.ID)
+	if outErr != nil {
+		return outErr
 	}
 	// name (optional - check if not nil)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
@@ -63,7 +63,7 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	payload.UpdatedAt = int(time.Now().Unix())
 
 	// save updated key info to storage
-	err = service.storage.PutServerUpdate(payload)
+	updatedServer, err := service.storage.PutServerUpdate(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
@@ -81,16 +81,24 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "updated",
-		ID:      payload.ID,
+	// make detailed response
+	detailedResp, err := updatedServer.detailedResponse(service)
+	if err != nil {
+		service.logger.Errorf("failed to generate server summary response (%s)", err)
+		return output.ErrInternal
 	}
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	// write response
+	response := &acmeServerResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "updated server"
+	response.Server = detailedResp
+
+	// return response to client
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

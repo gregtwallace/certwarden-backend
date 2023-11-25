@@ -38,11 +38,11 @@ type NewPayload struct {
 // PostNewCert creates a new certificate object in storage. No actual encryption certificate
 // is generated, this only stores the needed information to later contact ACME and acquire
 // the cert.
-func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *output.Error {
 	var payload NewPayload
 
 	// decode body into payload
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -154,12 +154,13 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 		newKeyPayload.CreatedAt = int(time.Now().Unix())
 		newKeyPayload.UpdatedAt = payload.CreatedAt
 
-		// save new key to storage, and set the cert key id based on returned key id
-		*payload.PrivateKeyID, err = service.storage.PostNewKey(newKeyPayload)
+		// save new key to storage, and set the cert key id based on returned key's id
+		newKey, err := service.storage.PostNewKey(newKeyPayload)
 		if err != nil {
 			service.logger.Error(err)
 			return output.ErrStorageGeneric
 		}
+		*payload.PrivateKeyID = newKey.ID
 	}
 
 	// add additional details to the payload before saving
@@ -172,31 +173,30 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) (err
 	payload.CreatedAt = int(time.Now().Unix())
 	payload.UpdatedAt = payload.CreatedAt
 
-	// Save new account details to storage
-	// No ACME actions are performed.
-	id, err := service.storage.PostNewCert(payload)
+	// save new cert
+	newCert, err := service.storage.PostNewCert(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusCreated,
-		Message: "created",
-		ID:      id,
-	}
+	// write response
+	response := &certificateResponse{}
+	response.StatusCode = http.StatusCreated
+	response.Message = "created certificate"
+	response.Certificate = newCert.detailedResponse(service)
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil
 }
 
 // StageNewApiKey generates a new API key and places it in the cert api_key_new
-func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get id param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
 	certId, err := strconv.Atoi(idParam)
@@ -207,9 +207,9 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) (
 
 	// validation
 	// get cert (validate exists)
-	cert, err := service.GetCertificate(certId)
-	if err != nil {
-		return err
+	cert, outErr := service.GetCertificate(certId)
+	if outErr != nil {
+		return outErr
 	}
 
 	// verify new api key is empty
@@ -232,16 +232,18 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) (
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
+	cert.ApiKeyNew = newApiKey
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusCreated,
-		Message: "new api key created", // TODO?
-	}
+	// write response
+	response := &certificateResponse{}
+	response.StatusCode = http.StatusCreated
+	response.Message = "certificate new api key created"
+	response.Certificate = cert.detailedResponse(service)
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

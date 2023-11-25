@@ -25,10 +25,10 @@ type UpdatePayload struct {
 
 // PutKeyUpdate updates a Key that already exists in storage.
 // Only fields received in the payload (non-nil) are updated.
-func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) *output.Error {
 	// parse payload
 	var payload UpdatePayload
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -44,9 +44,9 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (er
 
 	// validation
 	// id
-	_, err = service.getKey(payload.ID)
-	if err != nil {
-		return err
+	_, outErr := service.getKey(payload.ID)
+	if outErr != nil {
+		return outErr
 	}
 	// name (optional - check if not nil)
 	if payload.Name != nil && !service.NameValid(*payload.Name, &payload.ID) {
@@ -70,22 +70,23 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) (er
 	payload.UpdatedAt = int(time.Now().Unix())
 
 	// save updated key info to storage
-	err = service.storage.PutKeyUpdate(payload)
+	updatedKey, err := service.storage.PutKeyUpdate(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "updated",
-		ID:      payload.ID,
-	}
+	// write response
+	response := &privateKeyResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "updated private key"
+	response.PrivateKey = updatedKey.detailedResponse()
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	// return response to client
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

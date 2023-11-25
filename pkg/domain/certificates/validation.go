@@ -29,7 +29,7 @@ var (
 )
 
 // GetCertificate returns the Certificate for the specified id.
-func (service *Service) GetCertificate(id int) (Certificate, error) {
+func (service *Service) GetCertificate(id int) (Certificate, *output.Error) {
 	// if id is not in valid range, it is definitely not valid
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)

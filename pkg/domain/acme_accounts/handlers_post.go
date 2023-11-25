@@ -24,11 +24,11 @@ type NewPayload struct {
 
 // PostNewAccount is the handler to save a new account to storage. No ACME
 // actions (e.g. registration) are taken.
-func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *output.Error {
 	var payload NewPayload
 
 	// decode body into payload
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -83,22 +83,28 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) (
 
 	// Save new account details to storage.
 	// No ACME actions are performed.
-	id, err := service.storage.PostNewAccount(payload)
+	newAcct, err := service.storage.PostNewAccount(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusCreated,
-		Message: "created",
-		ID:      id,
+	detailedResp, err := newAcct.detailedResponse(service)
+	if err != nil {
+		service.logger.Errorf("failed to generate account summary response (%s)", err)
+		return output.ErrInternal
 	}
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	// write response
+	response := &accountResponse{}
+	response.StatusCode = http.StatusCreated
+	response.Message = "created account"
+	response.Account = detailedResp
+
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

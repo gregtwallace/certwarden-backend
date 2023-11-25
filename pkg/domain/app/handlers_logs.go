@@ -3,6 +3,7 @@ package app
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
 	"io"
 	"legocerthub-backend/pkg/output"
 	"net/http"
@@ -12,16 +13,21 @@ import (
 )
 
 // logEntry represents the structure of the zap log
-// type logEntry struct {
-// 	Level      string `json:"level"`
-// 	TimeStamp  string `json:"ts"`
-// 	Caller     string `json:"caller"`
-// 	Message    string `json:"msg"`
-// 	StackTrace string `json:"stacktrace,omitempty"`
-// }
+type logEntry struct {
+	Level      string `json:"level"`
+	TimeStamp  string `json:"ts"`
+	Caller     string `json:"caller"`
+	Message    string `json:"msg"`
+	StackTrace string `json:"stacktrace,omitempty"`
+}
+
+type currentLogResponse struct {
+	output.JsonResponse
+	LogEntries []logEntry `json:"log_entries"`
+}
 
 // viewLogHandler is a handler that returns the content of the current log file to the client
-func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Request) (err error) {
+func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Request) *output.Error {
 	// open log, read only
 	logFile, err := os.OpenFile(logFilePath+logFileName, os.O_RDONLY, 0600)
 	if err != nil {
@@ -30,20 +36,34 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 	}
 	defer logFile.Close()
 
-	// read in the log file
+	// read in the log file (with slight modifications to make valid json array)
 	logBuffer := &bytes.Buffer{}
 	// add opening wrap and bracket for json
-	_, _ = logBuffer.WriteString("{\"log_entries\": [")
+	_, _ = logBuffer.WriteString("[")
 	_, _ = io.Copy(logBuffer, logFile)
 	// remove line break and comma after last log item
 	logBuffer.Truncate(logBuffer.Len() - 2)
 	// add end of json
-	_, _ = logBuffer.WriteString("]}")
+	_, _ = logBuffer.WriteString("]")
 
-	// output
-	err = app.output.WriteMarshalledJSON(w, http.StatusOK, logBuffer.Bytes())
+	// Unmarshal the log entries in response
+	response := &currentLogResponse{}
+	err = json.Unmarshal(logBuffer.Bytes(), &response.LogEntries)
 	if err != nil {
-		return err
+		app.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// write response
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	// response.LogEntries = [populated above]
+
+	// return response to client
+	err = app.output.WriteJSON(w, response)
+	if err != nil {
+		app.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil
@@ -51,7 +71,7 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 
 // downloadLogsHandler is a handler that sends a zip of all of the log files to
 // the client
-func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Request) (err error) {
+func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Request) *output.Error {
 	// make buffer and writer for zip
 	zipBuffer := new(bytes.Buffer)
 	zipWriter := zip.NewWriter(zipBuffer)
@@ -108,10 +128,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	zipFilename := logFileName + "." + time.Now().Local().Format(time.RFC3339) + ".zip"
 
 	// output
-	err = app.output.WriteZip(w, r, zipFilename, zipBuffer.Bytes())
-	if err != nil {
-		return err
-	}
+	app.output.WriteZip(w, r, zipFilename, zipBuffer.Bytes())
 
 	return nil
 }

@@ -24,7 +24,9 @@ func (service *Service) AcmeService(id int) (*acme.Service, error) {
 	acmeService, exist := service.acmeServers[id]
 	// if not valid, or if the service pointer is nil
 	if !exist || acmeService == nil {
-		return nil, fmt.Errorf("specified acme service id (%d) is not valid", id)
+		err := fmt.Errorf("somehow invalid acme service id %d was requested, wtfbbq?", id)
+		service.logger.Error(err)
+		return nil, err
 	}
 
 	// return valid acme service
@@ -71,6 +73,7 @@ type serverDetailedResponse struct {
 func (serv Server) detailedResponse(service *Service) (serverDetailedResponse, error) {
 	summaryResp, err := serv.summaryResponse(service)
 	if err != nil {
+		service.logger.Errorf("failed to generate acme server summary response (%s)", err)
 		return serverDetailedResponse{}, err
 	}
 

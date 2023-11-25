@@ -9,51 +9,61 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// allAcmeServersResponse provides the json response struct
+// acmeServersResponse provides the json response struct
 // to answer a query for a portion of the ACME servers
-type allAcmeServersResponse struct {
-	Servers   []ServerSummaryResponse `json:"acme_servers"`
-	TotalKeys int                     `json:"total_records"`
+type acmeServersResponse struct {
+	output.JsonResponse
+	TotalServers int                     `json:"total_records"`
+	Servers      []ServerSummaryResponse `json:"acme_servers"`
 }
 
 // GetAllServers returns all of the ACME servers
-func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) *output.Error {
 	// parse pagination and sorting
 	query := pagination_sort.ParseRequestToQuery(r)
 
-	// get keys from storage
+	// get from storage
 	servers, totalRows, err := service.storage.GetAllAcmeServers(query)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// assemble response
-	response := allAcmeServersResponse{
-		TotalKeys: totalRows,
-	}
-
-	// populate keysSummaries for output
+	// populate summaries for output
+	scmeServers := []ServerSummaryResponse{}
 	for i := range servers {
 		summary, err := servers[i].summaryResponse(service)
 		if err != nil {
-			return err
+			service.logger.Errorf("failed to generate server summary response (%s)", err)
+			return output.ErrInternal
 		}
 
-		response.Servers = append(response.Servers, summary)
+		scmeServers = append(scmeServers, summary)
 	}
 
-	// return response to client
-	err = service.output.WriteJSON(w, http.StatusOK, response, "all_acme_servers")
+	// write response
+	response := &acmeServersResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	response.TotalServers = totalRows
+	response.Servers = scmeServers
+
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil
 }
 
+type acmeServerResponse struct {
+	output.JsonResponse
+	Server serverDetailedResponse `json:"acme_server"`
+}
+
 // GetOneServer returns a single acme server
-func (service *Service) GetOneServer(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) GetOneServer(w http.ResponseWriter, r *http.Request) *output.Error {
 	// params
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
@@ -63,21 +73,29 @@ func (service *Service) GetOneServer(w http.ResponseWriter, r *http.Request) (er
 	}
 
 	// get the server from storage (and validate id)
-	server, err := service.getServer(id)
-	if err != nil {
-		return err
+	server, outErr := service.getServer(id)
+	if outErr != nil {
+		return outErr
 	}
 
 	// make detailed response
 	detailedResp, err := server.detailedResponse(service)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to generate server summary response (%s)", err)
+		return output.ErrInternal
 	}
 
+	// write response
+	response := &acmeServerResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	response.Server = detailedResp
+
 	// return response to client
-	err = service.output.WriteJSON(w, http.StatusOK, detailedResp, "acme_server")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

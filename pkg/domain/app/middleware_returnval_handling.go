@@ -61,9 +61,11 @@ func middlewareApplyReturnValHandling(next handlerFunc, sensitive bool, logger *
 
 		// if there was an error, log it and write error JSON
 		if err != nil {
-			writeErr := output.WriteErrorJSON(w, err)
+			writeErr := output.WriteJSON(w, err)
+
 			// if error, serve isn't done until error json written
 			timeToServe = time.Since(start)
+
 			if writeErr != nil {
 				logger.Errorf("client %s: %s %s: failed to serve error response (json write error: %s)", r.RemoteAddr, r.Method, trimmedURI, writeErr)
 			} else {

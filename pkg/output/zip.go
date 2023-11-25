@@ -9,7 +9,7 @@ import (
 
 // WriteZip sends a zip file with the specified filename using the
 // supplied Buffer
-func (service *Service) WriteZip(w http.ResponseWriter, r *http.Request, filename string, zipData []byte) error {
+func (service *Service) WriteZip(w http.ResponseWriter, r *http.Request, filename string, zipData []byte) {
 	// log output
 	service.logger.Debugf("writing zip %s to client", filename)
 
@@ -27,6 +27,4 @@ func (service *Service) WriteZip(w http.ResponseWriter, r *http.Request, filenam
 
 	// ServeContent (technically fielname is not needed here since Content-Type is set explicitly above)
 	http.ServeContent(w, r, filename, time.Time{}, contentReader)
-
-	return nil
 }

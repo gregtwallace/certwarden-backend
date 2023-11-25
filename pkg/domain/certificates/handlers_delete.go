@@ -2,6 +2,7 @@ package certificates
 
 import (
 	"errors"
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 )
 
 // DeleteCert deletes a cert from storage
-func (service *Service) DeleteCert(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) DeleteCert(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
 	id, err := strconv.Atoi(idParam)
@@ -21,9 +22,9 @@ func (service *Service) DeleteCert(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// verify cert id exists
-	_, err = service.GetCertificate(id)
-	if err != nil {
-		return err
+	_, outErr := service.GetCertificate(id)
+	if outErr != nil {
+		return outErr
 	}
 
 	// delete from storage
@@ -33,16 +34,15 @@ func (service *Service) DeleteCert(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrStorageGeneric
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "deleted",
-		ID:      id,
-	}
+	// write response
+	response := &output.JsonResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = fmt.Sprintf("deleted certificate (id: %d)", id)
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil
@@ -50,7 +50,7 @@ func (service *Service) DeleteCert(w http.ResponseWriter, r *http.Request) (err 
 
 // RemoveOldApiKey discards a cert's api_key, replaces it with the key's
 // api_key_new, and then blanks api_key_new
-func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get id param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
 	certId, err := strconv.Atoi(idParam)
@@ -61,9 +61,9 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 
 	// validation
 	// get cert (validate exists)
-	cert, err := service.GetCertificate(certId)
-	if err != nil {
-		return err
+	cert, outErr := service.GetCertificate(certId)
+	if outErr != nil {
+		return outErr
 	}
 
 	// verify new api key is not empty (need something to promote)
@@ -80,22 +80,26 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
+	cert.ApiKey = cert.ApiKeyNew
+
 	// set new key to blank
 	err = service.storage.PutCertNewApiKey(certId, "", int(time.Now().Unix()))
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
+	cert.ApiKeyNew = ""
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "new api key promoted", // TODO?
-	}
+	// write response
+	response := &certificateResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "certificate old api key deleted, new api key promoted"
+	response.Certificate = cert.detailedResponse(service)
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

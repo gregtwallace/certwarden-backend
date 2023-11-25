@@ -6,7 +6,7 @@ import (
 )
 
 // PostNewKey saves the KeyExtended to the db as a new key
-func (store *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err error) {
+func (store *Storage) PostNewKey(payload private_keys.NewPayload) (private_keys.Key, error) {
 	// database action
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
@@ -18,7 +18,8 @@ func (store *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err e
 	`
 
 	// insert and scan the new id
-	err = store.db.QueryRowContext(ctx, query,
+	id := -1
+	err := store.db.QueryRowContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.AlgorithmValue,
@@ -31,8 +32,14 @@ func (store *Storage) PostNewKey(payload private_keys.NewPayload) (id int, err e
 	).Scan(&id)
 
 	if err != nil {
-		return -2, err
+		return private_keys.Key{}, err
 	}
 
-	return id, nil
+	// get updated key to return
+	updatedKey, err := store.GetOneKeyById(id)
+	if err != nil {
+		return private_keys.Key{}, err
+	}
+
+	return updatedKey, nil
 }

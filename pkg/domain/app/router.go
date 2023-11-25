@@ -10,7 +10,7 @@ import (
 )
 
 // handlerFunc is the type of the custom handler functions
-type handlerFunc func(w http.ResponseWriter, r *http.Request) error
+type handlerFunc func(w http.ResponseWriter, r *http.Request) *output.Error
 
 // router is the custom router implementation for app
 type router struct {

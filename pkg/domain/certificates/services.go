@@ -27,15 +27,15 @@ type Storage interface {
 	GetOneCertById(id int) (cert Certificate, err error)
 	GetOneCertByName(name string) (cert Certificate, err error)
 
-	PostNewCert(payload NewPayload) (id int, err error)
+	PostNewCert(payload NewPayload) (Certificate, error)
 
-	PutDetailsCert(payload DetailsUpdatePayload) (err error)
+	PutDetailsCert(payload DetailsUpdatePayload) (Certificate, error)
 	PutCertApiKey(certId int, apiKey string, updateTimeUnix int) (err error)
 	PutCertNewApiKey(certId int, newApiKey string, updateTimeUnix int) (err error)
 
 	DeleteCert(id int) (err error)
 
-	PostNewKey(private_keys.NewPayload) (keyId int, err error)
+	PostNewKey(private_keys.NewPayload) (private_keys.Key, error)
 }
 
 // Keys service struct

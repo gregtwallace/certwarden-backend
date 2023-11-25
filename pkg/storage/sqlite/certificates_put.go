@@ -8,7 +8,7 @@ import (
 
 // PutDetailsCert saves details about the cert that can be updated at any time. It only updates
 // the details which are provided
-func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) (err error) {
+func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) (certificates.Certificate, error) {
 	// database update
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
@@ -34,7 +34,7 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 			id = $14
 		`
 
-	_, err = store.db.ExecContext(ctx, query,
+	_, err := store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.PrivateKeyId,
@@ -52,10 +52,16 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 	)
 
 	if err != nil {
-		return err
+		return certificates.Certificate{}, err
 	}
 
-	return nil
+	// get updated to return
+	updatedCert, err := store.GetOneCertById(payload.ID)
+	if err != nil {
+		return certificates.Certificate{}, err
+	}
+
+	return updatedCert, nil
 }
 
 // UpdateCertUpdatedTime sets the specified order's updated_at to now

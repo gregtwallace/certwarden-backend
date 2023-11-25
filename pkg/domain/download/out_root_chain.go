@@ -3,6 +3,7 @@ package download
 import (
 	"fmt"
 	"legocerthub-backend/pkg/domain/orders"
+	"legocerthub-backend/pkg/output"
 	"net/http"
 	"time"
 
@@ -37,7 +38,7 @@ func (rc rootChain) PemModtime() time.Time {
 // DownloadCertRootChainViaHeader is the handler to write just a
 // cert's chain to the client, if the proper apiKey is provided via
 // header (standard method)
-func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get cert name
 	params := httprouter.ParamsFromContext(r.Context())
 	certName := params.ByName("name")
@@ -52,10 +53,7 @@ func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r 
 	}
 
 	// return pem file to client
-	err = service.output.WritePem(w, r, rootChain)
-	if err != nil {
-		return err
-	}
+	service.output.WritePem(w, r, rootChain)
 
 	return nil
 }
@@ -64,7 +62,7 @@ func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r 
 // cert's chain to the client, if the proper apiKey is provided via
 // URL (NOT recommended - only implemented to support clients that
 // can't specify the apiKey header)
-func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get cert name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
 	certName := params.ByName("name")
@@ -78,17 +76,14 @@ func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *ht
 	}
 
 	// return pem file to client
-	err = service.output.WritePem(w, r, rootChain)
-	if err != nil {
-		return err
-	}
+	service.output.WritePem(w, r, rootChain)
 
 	return nil
 }
 
 // getCertNewestValidRootChain gets the appropriate order for the requested Cert and sets its type to
 // rootChain so the proper data is outputted
-func (service *Service) getCertNewestValidRootChain(certName string, apiKey string, apiKeyViaUrl bool) (rootChain, error) {
+func (service *Service) getCertNewestValidRootChain(certName string, apiKey string, apiKeyViaUrl bool) (rootChain, *output.Error) {
 	order, err := service.getCertNewestValidOrder(certName, apiKey, apiKeyViaUrl)
 	if err != nil {
 		return rootChain{}, err

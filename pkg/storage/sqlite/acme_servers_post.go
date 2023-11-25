@@ -6,7 +6,7 @@ import (
 )
 
 // PostNewServer saves the KeyExtended to the db as a new key
-func (store *Storage) PostNewServer(payload acme_servers.NewPayload) (acmeServerId int, err error) {
+func (store *Storage) PostNewServer(payload acme_servers.NewPayload) (acme_servers.Server, error) {
 	// database action
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
@@ -18,7 +18,8 @@ func (store *Storage) PostNewServer(payload acme_servers.NewPayload) (acmeServer
 	`
 
 	// insert and scan the new id
-	err = store.db.QueryRowContext(ctx, query,
+	acmeServerId := -1
+	err := store.db.QueryRowContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.DirectoryURL,
@@ -28,8 +29,14 @@ func (store *Storage) PostNewServer(payload acme_servers.NewPayload) (acmeServer
 	).Scan(&acmeServerId)
 
 	if err != nil {
-		return -2, err
+		return acme_servers.Server{}, err
 	}
 
-	return acmeServerId, nil
+	// get updated server to return
+	updatedServer, err := store.GetOneServerById(acmeServerId)
+	if err != nil {
+		return acme_servers.Server{}, err
+	}
+
+	return updatedServer, nil
 }

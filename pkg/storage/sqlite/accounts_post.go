@@ -6,7 +6,7 @@ import (
 )
 
 // PostNewAccount inserts a new account into the db
-func (store *Storage) PostNewAccount(payload acme_accounts.NewPayload) (id int, err error) {
+func (store *Storage) PostNewAccount(payload acme_accounts.NewPayload) (acme_accounts.Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
@@ -21,7 +21,8 @@ func (store *Storage) PostNewAccount(payload acme_accounts.NewPayload) (id int, 
 	RETURNING id
 	`
 
-	err = store.db.QueryRowContext(ctx, query,
+	id := -1
+	err := store.db.QueryRowContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.AcmeServerID,
@@ -35,8 +36,14 @@ func (store *Storage) PostNewAccount(payload acme_accounts.NewPayload) (id int, 
 	).Scan(&id)
 
 	if err != nil {
-		return -2, err
+		return acme_accounts.Account{}, err
 	}
 
-	return id, nil
+	// get new account to return
+	newAccount, err := store.GetOneAccountById(id)
+	if err != nil {
+		return acme_accounts.Account{}, err
+	}
+
+	return newAccount, nil
 }

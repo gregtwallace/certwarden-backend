@@ -30,8 +30,8 @@ type Storage interface {
 	GetOneServerById(acmeServerId int) (Server, error)
 	GetOneServerByName(name string) (Server, error)
 
-	PostNewServer(NewPayload) (acmeServerId int, err error)
-	PutServerUpdate(UpdatePayload) error
+	PostNewServer(NewPayload) (Server, error)
+	PutServerUpdate(UpdatePayload) (Server, error)
 	DeleteServer(acmeServerId int) error
 
 	ServerHasAccounts(accountId int) (inUse bool)

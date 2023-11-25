@@ -27,13 +27,13 @@ type modifyPayload struct {
 
 // ModifyProvider modifies the provider specified by the ID in manager with the specified
 // configuration.
-func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) (err error) {
+func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *output.Error {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 
 	// decode body into payload
 	var payload modifyPayload
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		mgr.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -143,16 +143,16 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrInternal
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "updated provider",
-		ID:      payload.ID,
-	}
+	// write response
+	response := &providerResponse{}
+	response.StatusCode = http.StatusCreated
+	response.Message = "updated provider"
+	response.Provider = p
 
-	err = mgr.output.WriteJSON(w, response.Status, response, "response")
+	err = mgr.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		mgr.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

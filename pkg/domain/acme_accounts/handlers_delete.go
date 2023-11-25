@@ -1,6 +1,7 @@
 package acme_accounts
 
 import (
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
@@ -9,7 +10,7 @@ import (
 )
 
 // DeleteAccount deletes an acme account from storage
-func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
@@ -20,9 +21,9 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) (e
 
 	// validation
 	// verify account exists
-	_, err = service.getAccount(id)
-	if err != nil {
-		return err
+	_, outErr := service.getAccount(id)
+	if outErr != nil {
+		return outErr
 	}
 
 	// do not allow delete if there are any certs using the account
@@ -39,16 +40,16 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) (e
 		return output.ErrStorageGeneric
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "deleted",
-		ID:      id,
+	// write response
+	response := &output.JsonResponse{
+		StatusCode: http.StatusOK,
+		Message:    fmt.Sprintf("deleted acme account (id: %d)", id),
 	}
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

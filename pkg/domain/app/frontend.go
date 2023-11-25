@@ -58,7 +58,7 @@ func setContentSecurityPolicy(w http.ResponseWriter, nonce []byte) {
 }
 
 // frontendFileHandler provides a handler for the frontend files
-func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Request) error {
+func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Request) *output.Error {
 	// remove the frontend URL root path (it is not used for the file path where frontend
 	// is stored)
 	fPath := strings.TrimPrefix(r.URL.Path, frontendUrlPath)
@@ -151,7 +151,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 }
 
 // redirectToFrontendHandler is a handler that redirects to the frontend app
-func redirectToFrontendHandler(w http.ResponseWriter, r *http.Request) error {
+func redirectToFrontendHandler(w http.ResponseWriter, r *http.Request) *output.Error {
 	http.Redirect(w, r, frontendUrlPath, http.StatusPermanentRedirect)
 	return nil
 }

@@ -12,12 +12,10 @@ import (
 var (
 	ErrIdBad   = errors.New("server id is invalid")
 	ErrNameBad = errors.New("server name is not valid")
-
-	ErrNoAcmeService = errors.New("acme server id exists but doesn't have a service (how did this happen?!)")
 )
 
 // getAcmeServer returns the Server for the specified id or an error.
-func (service *Service) getServer(acmeServerId int) (Server, error) {
+func (service *Service) getServer(acmeServerId int) (Server, *output.Error) {
 	// basic check
 	if !validation.IsIdExistingValidRange(acmeServerId) {
 		service.logger.Debug(ErrIdBad)
@@ -27,7 +25,8 @@ func (service *Service) getServer(acmeServerId int) (Server, error) {
 	// verify specified id has an acme service
 	// this should never trigger, but just in case
 	if service.acmeServers[acmeServerId] == nil {
-		return Server{}, ErrNoAcmeService
+		service.logger.Error("acme server id exists but doesn't have a service (how did this happen?!)")
+		return Server{}, output.ErrInternal
 	}
 
 	// get the Server from storage

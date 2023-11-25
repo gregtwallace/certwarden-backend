@@ -7,7 +7,7 @@ import (
 
 // PutKeyUpdate updates an existing key in the db using any non-null
 // fields specified in the UpdatePayload.
-func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (err error) {
+func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_keys.Key, error) {
 	// database action
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
@@ -27,7 +27,7 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (err erro
 		id = $8
 	`
 
-	_, err = store.db.ExecContext(ctx, query,
+	_, err := store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.ApiKey,
@@ -39,10 +39,16 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (err erro
 	)
 
 	if err != nil {
-		return err
+		return private_keys.Key{}, err
 	}
 
-	return nil
+	// get updated key to return
+	updatedKey, err := store.GetOneKeyById(payload.ID)
+	if err != nil {
+		return private_keys.Key{}, err
+	}
+
+	return updatedKey, nil
 }
 
 // PutKeyUpdate sets a key's new api key and updates the updated at time

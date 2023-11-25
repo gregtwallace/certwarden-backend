@@ -57,7 +57,7 @@ func (app *Application) makeRouterAndRoutes() {
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/app/updater/new-version", app.updater.CheckForNewVersion)
 
 	// challenges (config)
-	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/domains", app.challenges.Providers.GetAllDomains)
+	// router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/domains", app.challenges.Providers.GetAllDomains)
 	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services", app.challenges.Providers.GetAllProviders)
 	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.Providers.GetOneProvider)
 

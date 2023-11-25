@@ -1,6 +1,7 @@
 package app
 
 import (
+	"legocerthub-backend/pkg/output"
 	"net/http"
 
 	"github.com/rs/cors"
@@ -60,7 +61,7 @@ func middlewareApplyCORS(next handlerFunc, permittedCrossOrigins []string) handl
 	})
 
 	// return custom handlerFunc
-	return func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) *output.Error {
 		// apply cors
 		c.HandlerFunc(w, r)
 

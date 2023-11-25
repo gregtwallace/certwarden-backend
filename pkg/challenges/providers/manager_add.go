@@ -15,12 +15,12 @@ import (
 // unsafeAddProvider creates the provider specified in cfg and adds it to
 // manager. It MUST be called from a Locked state OR during initial Manager
 // creation which is single threaded (and thus safe)
-func (mgr *Manager) unsafeAddProvider(cfg providerConfig) (id int, err error) {
+func (mgr *Manager) unsafeAddProvider(cfg providerConfig) (*provider, error) {
 	// verify every domain ir properly formatted, or verify this is wildcard cfg (* only)
 	// and also verify all domains are available in manager
-	err = mgr.unsafeValidateDomains(cfg, nil)
+	err := mgr.unsafeValidateDomains(cfg, nil)
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 
 	// make provider service (switch based on cfg type (and thus which pkg to use))
@@ -44,12 +44,12 @@ func (mgr *Manager) unsafeAddProvider(cfg providerConfig) (id int, err error) {
 
 	default:
 		// default fail
-		return -1, errors.New("cannot create provider service, unsupported provider cfg")
+		return nil, errors.New("cannot create provider service, unsupported provider cfg")
 	}
 
 	// common err check
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 
 	// all valid, good to add provider to mgr
@@ -81,5 +81,5 @@ func (mgr *Manager) unsafeAddProvider(cfg providerConfig) (id int, err error) {
 		mgr.pD[p] = append(mgr.pD[p], domain)
 	}
 
-	return p.ID, nil
+	return p, nil
 }

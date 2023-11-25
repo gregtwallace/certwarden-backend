@@ -4,41 +4,38 @@ import "fmt"
 
 var (
 	// generic
-	ErrBadRequest   = Error{Status: 400, Message: "bad request"}
-	ErrNotFound     = Error{Status: 404, Message: "not found"}
-	ErrInternal     = Error{Status: 500, Message: "internal error"}
-	ErrUnauthorized = Error{Status: 401, Message: "unauthorized"}
+	ErrBadRequest   = &Error{StatusCode: 400, Message: "error: bad request"}
+	ErrNotFound     = &Error{StatusCode: 404, Message: "error: not found"}
+	ErrInternal     = &Error{StatusCode: 500, Message: "error: internal error"}
+	ErrUnauthorized = &Error{StatusCode: 401, Message: "error: unauthorized"}
 
 	// storage errors
-	ErrStorageGeneric = Error{Status: 500, Message: "storage error"}
-	ErrDeleteInUse    = Error{Status: 409, Message: "record in use, can't delete"}
+	ErrStorageGeneric = &Error{StatusCode: 500, Message: "error: storage error"}
+	ErrDeleteInUse    = &Error{StatusCode: 409, Message: "error: record in use, can't delete"}
 
 	// write
-	ErrWriteConfigFailed = Error{Status: 500, Message: "failed to write lego config file"}
-	errWriteJsonError    = Error{Status: 500, Message: "json response write error"}
-	//errWriteZipError  = Error{Status: 500, Message: "zip write error"}
-	//errWritePemError  = Error{Status: 500, Message: "pem write error"}
+	ErrWriteConfigFailed = &Error{StatusCode: 500, Message: "error: failed to write lego config file"}
+	ErrWriteJsonError    = &Error{StatusCode: 500, Message: "error: json response write error"}
 
 	// validation
-	ErrValidationFailed = Error{Status: 400, Message: "request validation (param or payload) invalid"}
-	ErrBadDirectoryURL  = Error{Status: 400, Message: "specified acme directory url is not https or did not return a valid directory json response"}
+	ErrValidationFailed = &Error{StatusCode: 400, Message: "error: request validation (param or payload) invalid"}
+	ErrBadDirectoryURL  = &Error{StatusCode: 400, Message: "error: specified acme directory url is not https or did not return a valid directory json response"}
 
 	// order
-	ErrOrderInvalid     = Error{Status: 400, Message: "order status is invalid (which cannot be recovered from)"}
-	ErrOrderCantFulfill = Error{Status: 400, Message: "failed to order from acme (it is likely this order is already currently being processed)"}
+	ErrOrderInvalid     = &Error{StatusCode: 400, Message: "error: order status is invalid (which cannot be recovered from)"}
+	ErrOrderCantFulfill = &Error{StatusCode: 400, Message: "error: failed to order from acme (it is likely this order is already currently being processed)"}
 )
 
 // Error is the standardized error structure, it is the same as a regular message but also
-// implements Error()
+// implements Error() interface
 type Error JsonResponse
+
+// HttpStatusCode() implements the jsonData interface
+func (e *Error) HttpStatusCode() int {
+	return e.StatusCode
+}
 
 // Error() implements the error interface
 func (e Error) Error() string {
-	// if there is a type use it
-	if e.Type != "" {
-		return fmt.Sprintf("%d: %s (%s)", e.Status, e.Message, e.Type)
-	}
-
-	// else omit it
-	return fmt.Sprintf("%d: %s", e.Status, e.Message)
+	return fmt.Sprintf("%d: %s", e.StatusCode, e.Message)
 }

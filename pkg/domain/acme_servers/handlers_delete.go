@@ -1,6 +1,7 @@
 package acme_servers
 
 import (
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
@@ -10,7 +11,7 @@ import (
 
 // DeleteServer deletes an acme server from storage and terminates the
 // related service.
-func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
@@ -21,14 +22,14 @@ func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) (er
 
 	// validation
 	// verify server exists
-	_, err = service.getServer(id)
-	if err != nil {
-		return err
+	_, outErr := service.getServer(id)
+	if outErr != nil {
+		return outErr
 	}
 
 	// do not allow delete if there are any accounts using the server
 	if service.storage.ServerHasAccounts(id) {
-		service.logger.Warn("cannot delete server (in use)")
+		service.logger.Debug("cannot delete server (in use)")
 		return output.ErrDeleteInUse
 	}
 	// end validation
@@ -45,16 +46,16 @@ func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) (er
 	defer service.mu.Unlock()
 	delete(service.acmeServers, id)
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "deleted",
-		ID:      id,
+	// write response
+	response := &output.JsonResponse{
+		StatusCode: http.StatusOK,
+		Message:    fmt.Sprintf("deleted acme server (id: %d)", id),
 	}
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

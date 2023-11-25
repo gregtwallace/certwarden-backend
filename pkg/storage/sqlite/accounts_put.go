@@ -7,7 +7,7 @@ import (
 
 // PutNameDescAccount only updates the name and desc in the database
 // TODO: refactor to more generic for anything that can be updated??
-func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) (err error) {
+func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) (acme_accounts.Account, error) {
 	// database update
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
@@ -23,7 +23,7 @@ func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) 
 		id = $4
 	`
 
-	_, err = store.db.ExecContext(ctx, query,
+	_, err := store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.UpdatedAt,
@@ -31,15 +31,21 @@ func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) 
 	)
 
 	if err != nil {
-		return err
+		return acme_accounts.Account{}, err
 	}
 
-	return nil
+	// get updated account to return
+	updatedAccount, err := store.GetOneAccountById(payload.ID)
+	if err != nil {
+		return acme_accounts.Account{}, err
+	}
+
+	return updatedAccount, nil
 }
 
 // PutAcmeAccountResponse populates an account with data that is returned by LE when
 // an account is POSTed to
-func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccount) error {
+func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccount) (acme_accounts.Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
@@ -64,15 +70,21 @@ func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccount) 
 		payload.ID,
 	)
 	if err != nil {
-		return err
+		return acme_accounts.Account{}, err
+	}
+	// TODO: Handle 0 rows updated.
+
+	// get updated account to return
+	updatedAccount, err := store.GetOneAccountById(payload.ID)
+	if err != nil {
+		return acme_accounts.Account{}, err
 	}
 
-	// TODO: Handle 0 rows updated.
-	return nil
+	return updatedAccount, nil
 }
 
 // PutNewAccountKey updates the specified account to the new key id
-func (store *Storage) PutNewAccountKey(payload acme_accounts.RolloverKeyPayload) error {
+func (store *Storage) PutNewAccountKey(payload acme_accounts.RolloverKeyPayload) (acme_accounts.Account, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
@@ -92,9 +104,15 @@ func (store *Storage) PutNewAccountKey(payload acme_accounts.RolloverKeyPayload)
 		payload.ID,
 	)
 	if err != nil {
-		return err
+		return acme_accounts.Account{}, err
+	}
+	// TODO: Handle 0 rows updated.
+
+	// get updated account to return
+	updatedAccount, err := store.GetOneAccountById(payload.ID)
+	if err != nil {
+		return acme_accounts.Account{}, err
 	}
 
-	// TODO: Handle 0 rows updated.
-	return nil
+	return updatedAccount, nil
 }

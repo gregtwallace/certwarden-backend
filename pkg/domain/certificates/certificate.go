@@ -4,7 +4,6 @@ import (
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 )
 
 // Certificate is a single certificate with all of its fields
@@ -130,12 +129,4 @@ func (cert *Certificate) NewOrderPayload() acme.NewOrderPayload {
 	return acme.NewOrderPayload{
 		Identifiers: identifiers,
 	}
-}
-
-// new account info
-// used to return info about valid options when making a new account
-type newCertOptions struct {
-	AvailableKeys  []private_keys.KeySummaryResponse      `json:"private_keys"`
-	KeyAlgorithms  []key_crypto.Algorithm                 `json:"key_algorithms"`
-	UsableAccounts []acme_accounts.AccountSummaryResponse `json:"acme_accounts"`
 }

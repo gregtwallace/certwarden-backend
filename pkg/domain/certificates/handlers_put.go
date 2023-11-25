@@ -31,10 +31,10 @@ type DetailsUpdatePayload struct {
 
 // PutDetailsCert is a handler that sets various details about a cert and saves
 // them to storage. These are all details that should be editable any time.
-func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *output.Error {
 	// payload decoding
 	var payload DetailsUpdatePayload
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -50,8 +50,8 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 
 	// validation
 	// id
-	cert, err := service.GetCertificate(payload.ID)
-	if err != nil {
+	cert, outErr := service.GetCertificate(payload.ID)
+	if outErr != nil {
 		service.logger.Debug(ErrIdBad)
 		return output.ErrValidationFailed
 	}
@@ -100,22 +100,22 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) (
 
 	// save account name and desc to storage, which also returns the account id with new
 	// name and description
-	err = service.storage.PutDetailsCert(payload)
+	updatedCert, err := service.storage.PutDetailsCert(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "updated",
-		ID:      payload.ID,
-	}
+	// write response
+	response := &certificateResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "updated certificate"
+	response.Certificate = updatedCert.detailedResponse(service)
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

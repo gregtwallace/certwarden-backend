@@ -1,6 +1,8 @@
 package certificates
 
 import (
+	"legocerthub-backend/pkg/domain/acme_accounts"
+	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
@@ -11,15 +13,16 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// allKeysResponse provides the json response struct
-// to answer a query for a portion of the keys
-type allKeysResponse struct {
-	Certificates      []certificateSummaryResponse `json:"certificates"`
+// allCertsResponse provides the json response struct
+// to answer a query for a portion of the certs
+type allCertsResponse struct {
+	output.JsonResponse
 	TotalCertificates int                          `json:"total_records"`
+	Certificates      []certificateSummaryResponse `json:"certificates"`
 }
 
 // GetAllCertificates fetches all certs from storage and outputs them as JSON
-func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) *output.Error {
 	// parse pagination and sorting
 	query := pagination_sort.ParseRequestToQuery(r)
 
@@ -30,28 +33,36 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) (err
 		return output.ErrStorageGeneric
 	}
 
-	// make response (for json output)
-	response := allKeysResponse{
-		TotalCertificates: totalRows,
-	}
-
 	// populate cert summaries for output
+	outputCerts := []certificateSummaryResponse{}
 	for i := range certs {
-		response.Certificates = append(response.Certificates, certs[i].summaryResponse(service))
+		outputCerts = append(outputCerts, certs[i].summaryResponse(service))
 	}
 
-	// return response to client
-	err = service.output.WriteJSON(w, http.StatusOK, response, "all_certificates")
+	// write response
+	response := &allCertsResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	response.TotalCertificates = totalRows
+	response.Certificates = outputCerts
+
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil
 }
 
+type certificateResponse struct {
+	output.JsonResponse
+	Certificate certificateDetailedResponse `json:"certificate"`
+}
+
 // GetOneCert is an http handler that returns one Certificate based on its unique id in the
 // form of JSON written to w
-func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
 	id, err := strconv.Atoi(idParam)
@@ -66,26 +77,38 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// get from storage
-	cert, err := service.GetCertificate(id)
-	if err != nil {
-		return err
+	cert, outErr := service.GetCertificate(id)
+	if outErr != nil {
+		return outErr
 	}
 
-	// return response to client
-	err = service.output.WriteJSON(w, http.StatusOK, cert.detailedResponse(service), "certificate")
+	// write response
+	response := &certificateResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	response.Certificate = cert.detailedResponse(service)
+
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil
 }
 
+type newCertOptions struct {
+	output.JsonResponse
+	CertificateOptions struct {
+		AvailableKeys  []private_keys.KeySummaryResponse      `json:"private_keys"`
+		KeyAlgorithms  []key_crypto.Algorithm                 `json:"key_algorithms"`
+		UsableAccounts []acme_accounts.AccountSummaryResponse `json:"acme_accounts"`
+	} `json:"certificate_options"`
+}
+
 // GetNewCertOptions is an http handler that returns information the client GUI needs to properly
 // present options when the user is creating a certificate
-func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request) (err error) {
-	// certificate options / info to assist client with new certificate posting
-	newCertOptions := newCertOptions{}
-
+func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request) *output.Error {
 	// available private keys
 	keys, err := service.keys.AvailableKeys()
 	if err != nil {
@@ -93,12 +116,10 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 		return output.ErrStorageGeneric
 	}
 
+	outputKeys := []private_keys.KeySummaryResponse{}
 	for i := range keys {
-		newCertOptions.AvailableKeys = append(newCertOptions.AvailableKeys, keys[i].SummaryResponse())
+		outputKeys = append(outputKeys, keys[i].SummaryResponse())
 	}
-
-	// available algorithms to generate private keys
-	newCertOptions.KeyAlgorithms = key_crypto.ListOfAlgorithms()
 
 	// available accounts
 	accounts, err := service.accounts.GetUsableAccounts()
@@ -107,14 +128,23 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 		return output.ErrStorageGeneric
 	}
 
+	outputAccounts := []acme_accounts.AccountSummaryResponse{}
 	for i := range accounts {
-		newCertOptions.UsableAccounts = append(newCertOptions.UsableAccounts, accounts[i].SummaryResponse())
+		outputAccounts = append(outputAccounts, accounts[i].SummaryResponse())
 	}
 
-	// return response to client
-	err = service.output.WriteJSON(w, http.StatusOK, newCertOptions, "certificate_options")
+	// write response
+	response := &newCertOptions{}
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	response.CertificateOptions.AvailableKeys = outputKeys
+	response.CertificateOptions.KeyAlgorithms = key_crypto.ListOfAlgorithms()
+	response.CertificateOptions.UsableAccounts = outputAccounts
+
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

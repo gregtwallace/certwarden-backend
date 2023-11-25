@@ -2,6 +2,7 @@ package providers
 
 import (
 	"encoding/json"
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
@@ -9,7 +10,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// DeletePayload is the needed payload to delete a provider
+// deletePayload is the needed payload to delete a provider
 type deletePayload struct {
 	ID  int    `json:"-"`
 	Tag string `json:"tag"`
@@ -18,13 +19,13 @@ type deletePayload struct {
 // DeleteProvider deletes the provider specified by the ID from manager also freeing
 // up the domains previously mapped to it. If the tag is not specified or is incorrect
 // deleting fails.
-func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) (err error) {
+func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *output.Error {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 
 	// decode body into payload
 	var payload deletePayload
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		mgr.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -84,16 +85,16 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrInternal
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "deleted",
-		ID:      payload.ID,
+	// write response
+	response := &output.JsonResponse{
+		StatusCode: http.StatusOK,
+		Message:    fmt.Sprintf("deleted provider (id: %d)", payload.ID),
 	}
 
-	err = mgr.output.WriteJSON(w, response.Status, response, "response")
+	err = mgr.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		mgr.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

@@ -52,9 +52,9 @@ func (service *Service) ValidateAuthHeader(r *http.Request, w http.ResponseWrite
 // validateSessionCookie validates that r contains a valid cookie and that the session ID
 // contained in the cookie's claims is for a valid session. If so, it returns the validated
 // claims.
-func (service *Service) validateSessionCookie(r *http.Request, w http.ResponseWriter, logTaskName string) (*tokenClaims, error) {
+func (service *Service) validateSessionCookie(r *http.Request, w http.ResponseWriter, logTaskName string) (*tokenClaims, *output.Error) {
 	// wrap to easily check err and delete cookies
-	claims, err := func() (*tokenClaims, error) {
+	claims, outErr := func() (*tokenClaims, *output.Error) {
 		// if logTaskName unspecified, use a default
 		if logTaskName == "" {
 			logTaskName = "validation of session cookie"
@@ -86,9 +86,9 @@ func (service *Service) validateSessionCookie(r *http.Request, w http.ResponseWr
 	}()
 
 	// if err, delete session cookie and return err
-	if err != nil {
+	if outErr != nil {
 		service.deleteSessionCookie(w)
-		return nil, err
+		return nil, outErr
 	}
 
 	return claims, nil

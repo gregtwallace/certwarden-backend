@@ -7,31 +7,31 @@ import (
 
 // placeNewOrderAndFulfill creates a new ACME order for the specified Certificate ID,
 // and prioritizes the order as specified. It returns the new orderId.
-func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (orderId int, err error) {
+func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (Order, *output.Error) {
 	// get cert
-	cert, err := service.certificates.GetCertificate(certId)
-	if err != nil {
-		return -2, err
+	cert, outErr := service.certificates.GetCertificate(certId)
+	if outErr != nil {
+		return Order{}, outErr
 	}
 
 	// get account key
 	key, err := cert.CertificateAccount.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
-		return -2, output.ErrInternal
+		return Order{}, output.ErrInternal
 	}
 
 	// send the new-order to ACME
 	acmeService, err := service.acmeServerService.AcmeService(cert.CertificateAccount.AcmeServer.ID)
 	if err != nil {
 		service.logger.Error(err)
-		return -2, output.ErrInternal
+		return Order{}, output.ErrInternal
 	}
 
 	acmeResponse, err := acmeService.NewOrder(cert.NewOrderPayload(), key)
 	if err != nil {
 		service.logger.Error(err)
-		return -2, output.ErrInternal
+		return Order{}, output.ErrInternal
 	}
 	service.logger.Debugf("new order location: %s", acmeResponse.Location)
 
@@ -39,17 +39,17 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 	payload := makeNewOrderAcmePayload(cert, acmeResponse)
 
 	// save ACME response to order storage
-	orderId, err = service.storage.PostNewOrder(payload)
+	orderId, err := service.storage.PostNewOrder(payload)
 	// if exists error, try to update an existing order
 	if errors.Is(err, ErrOrderExists) {
 		err = service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(orderId, acmeResponse))
 		if err != nil {
 			service.logger.Error(err)
-			return -2, output.ErrStorageGeneric
+			return Order{}, output.ErrStorageGeneric
 		}
 	} else if err != nil {
 		service.logger.Error(err)
-		return -2, output.ErrStorageGeneric
+		return Order{}, output.ErrStorageGeneric
 	}
 
 	// update certificate timestamp
@@ -67,5 +67,11 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		// no return
 	}
 
-	return orderId, nil
+	// get new order from db to return
+	newOrder, outErr := service.getOrder(certId, orderId)
+	if outErr != nil {
+		return Order{}, outErr
+	}
+
+	return newOrder, nil
 }

@@ -92,7 +92,12 @@ type accountKeyDetailedResponse struct {
 	Algorithm key_crypto.Algorithm `json:"algorithm"`
 }
 
-func (acct Account) detailedResponse(as *acme.Service) accountDetailedResponse {
+func (acct Account) detailedResponse(service *Service) (accountDetailedResponse, error) {
+	as, err := service.acmeServerService.AcmeService(acct.AcmeServer.ID)
+	if err != nil {
+		return accountDetailedResponse{}, err
+	}
+
 	return accountDetailedResponse{
 		AccountSummaryResponse: acct.SummaryResponse(),
 		AcmeServer: accountServerDetailedResponse{
@@ -115,7 +120,7 @@ func (acct Account) detailedResponse(as *acme.Service) accountDetailedResponse {
 		CreatedAt: acct.CreatedAt,
 		UpdatedAt: acct.UpdatedAt,
 		Kid:       acct.Kid,
-	}
+	}, nil
 }
 
 // AcmeAccountKey() provides a method to create an ACME AccountKey
@@ -142,11 +147,4 @@ func (account *Account) newAccountPayload(eabKid string, eabHmacKey string) acme
 		ExternalAccountBindingKid:     eabKid,
 		ExternalAccountBindingHmacKey: eabHmacKey,
 	}
-}
-
-// new account info
-// used to return info about valid options when making a new account
-type newAccountOptions struct {
-	AcmeServers   []acme_servers.ServerSummaryResponse `json:"acme_servers"`
-	AvailableKeys []private_keys.KeySummaryResponse    `json:"private_keys"`
 }

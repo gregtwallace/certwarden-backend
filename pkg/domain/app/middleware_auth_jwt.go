@@ -11,7 +11,7 @@ import (
 // contained in the auth header. If it is not valid, an error is returned instead of
 // executing next.
 func middlewareApplyAuthJWT(next handlerFunc, auth *auth.Service) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) *output.Error {
 		// shorten URI for logging
 		trimmedURI := loggableRequestURI(r)
 
@@ -20,12 +20,7 @@ func middlewareApplyAuthJWT(next handlerFunc, auth *auth.Service) handlerFunc {
 			return output.ErrUnauthorized
 		}
 
-		// if valid, execute next
-		err = next(w, r)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		// if valid, do next
+		return next(w, r)
 	}
 }

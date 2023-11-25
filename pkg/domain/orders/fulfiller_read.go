@@ -1,8 +1,14 @@
 package orders
 
-type allWorkStatus struct {
-	JobsWaiting []orderFulfillerJobResponse        `json:"jobs_waiting"`
+import (
+	"legocerthub-backend/pkg/output"
+	"net/http"
+)
+
+type allWorkStatusResponse struct {
+	output.JsonResponse
 	WorkerJobs  map[int]*orderFulfillerJobResponse `json:"worker_jobs"` // [workerid]
+	JobsWaiting []orderFulfillerJobResponse        `json:"jobs_waiting"`
 }
 
 type orderFulfillerJobResponse struct {
@@ -25,7 +31,7 @@ func (j *orderFulfillerJob) summaryResponse(of *orderFulfiller) *orderFulfillerJ
 
 // allWorkStatus returns a summary of all work currently in the fulfiller queue
 // or being worked by its workers
-func (of *orderFulfiller) allWorkStatus() allWorkStatus {
+func (of *orderFulfiller) allWorkStatus() *allWorkStatusResponse {
 	of.mu.RLock()
 	defer of.mu.RUnlock()
 
@@ -41,10 +47,14 @@ func (of *orderFulfiller) allWorkStatus() allWorkStatus {
 		workerJobs[i] = of.workerJobs[i].summaryResponse(of)
 	}
 
-	return allWorkStatus{
-		JobsWaiting: jobsWaiting,
-		WorkerJobs:  workerJobs,
-	}
+	// make response
+	response := &allWorkStatusResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	response.WorkerJobs = workerJobs
+	response.JobsWaiting = jobsWaiting
+
+	return response
 }
 
 // checkForOrderId returns the worker that is currently working the specified

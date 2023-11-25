@@ -2,6 +2,7 @@ package private_keys
 
 import (
 	"errors"
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 )
 
 // DeleteKey deletes a private key from storage
-func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get params
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
@@ -21,9 +22,9 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err e
 	}
 
 	// validate key exists
-	_, err = service.getKey(id)
-	if err != nil {
-		return err
+	_, outErr := service.getKey(id)
+	if outErr != nil {
+		return outErr
 	}
 
 	// confirm key is not in use
@@ -45,16 +46,16 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err e
 		return output.ErrStorageGeneric
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "deleted",
-		ID:      id,
+	// write response
+	response := &output.JsonResponse{
+		StatusCode: http.StatusOK,
+		Message:    fmt.Sprintf("deleted private key (id: %d)", id),
 	}
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil
@@ -62,7 +63,7 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) (err e
 
 // RemoveOldApiKey discards a key's api_key, replaces it with the key's
 // api_key_new, and then blanks api_key_new
-func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get id param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	keyId, err := strconv.Atoi(idParam)
@@ -73,9 +74,9 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 
 	// validation
 	// get key (validate exists)
-	key, err := service.getKey(keyId)
-	if err != nil {
-		return err
+	key, outErr := service.getKey(keyId)
+	if outErr != nil {
+		return outErr
 	}
 
 	// verify new api key is not empty (need something to promote)
@@ -92,22 +93,26 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
+	key.ApiKey = key.ApiKeyNew
+
 	// set new key to blank
 	err = service.storage.PutKeyNewApiKey(keyId, "", int(time.Now().Unix()))
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
+	key.ApiKeyNew = ""
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusOK,
-		Message: "new api key promoted", // TODO?
-	}
+	// write response
+	response := &privateKeyResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "private key old api key deleted, new api key promoted"
+	response.PrivateKey = key.detailedResponse()
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

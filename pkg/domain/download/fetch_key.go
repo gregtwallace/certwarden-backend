@@ -9,7 +9,7 @@ import (
 // getKey returns the private key if the apiKey matches
 // the requested key. It also checks the apiKeyViaUrl property if
 // the client is making a request with the apiKey in the Url.
-func (service *Service) getKey(keyName string, apiKey string, apiKeyViaUrl bool) (key private_keys.Key, err error) {
+func (service *Service) getKey(keyName string, apiKey string, apiKeyViaUrl bool) (private_keys.Key, *output.Error) {
 	// if apiKey is blank, definitely unauthorized
 	if apiKey == "" {
 		service.logger.Debug(errBlankApiKey)
@@ -17,7 +17,7 @@ func (service *Service) getKey(keyName string, apiKey string, apiKeyViaUrl bool)
 	}
 
 	// get the key from storage
-	key, err = service.storage.GetOneKeyByName(keyName)
+	key, err := service.storage.GetOneKeyByName(keyName)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {

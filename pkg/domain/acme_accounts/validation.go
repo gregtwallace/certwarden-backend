@@ -20,7 +20,7 @@ var (
 )
 
 // getAccount returns the Account for the specified account id.
-func (service *Service) getAccount(id int) (Account, error) {
+func (service *Service) getAccount(id int) (Account, *output.Error) {
 	// if id is not in valid range, it is definitely not valid
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)

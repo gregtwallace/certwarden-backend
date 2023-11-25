@@ -1,6 +1,8 @@
 package acme_accounts
 
 import (
+	"legocerthub-backend/pkg/domain/acme_servers"
+	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/validation"
@@ -10,15 +12,16 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// allAccountsResponse provides the json response struct
+// accountsResponse provides the json response struct
 // to answer a query for a portion of the accounts
-type allAccountsResponse struct {
-	Accounts      []AccountSummaryResponse `json:"acme_accounts"`
+type accountsResponse struct {
+	output.JsonResponse
 	TotalAccounts int                      `json:"total_records"`
+	Accounts      []AccountSummaryResponse `json:"acme_accounts"`
 }
 
 // GetAllAccounts is an http handler that returns all acme accounts in the form of JSON written to w
-func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) *output.Error {
 	// parse pagination and sorting
 	query := pagination_sort.ParseRequestToQuery(r)
 
@@ -29,28 +32,36 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) (
 		return output.ErrStorageGeneric
 	}
 
-	// assemble response
-	response := allAccountsResponse{
-		TotalAccounts: totalRows,
-	}
-
 	// populate account summaries for output
+	outputAccounts := []AccountSummaryResponse{}
 	for i := range accounts {
-		response.Accounts = append(response.Accounts, accounts[i].SummaryResponse())
+		outputAccounts = append(outputAccounts, accounts[i].SummaryResponse())
 	}
 
-	// return response to client
-	err = service.output.WriteJSON(w, http.StatusOK, response, "all_acme_accounts")
+	// write response
+	response := &accountsResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	response.TotalAccounts = totalRows
+	response.Accounts = outputAccounts
+
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil
 }
 
+type accountResponse struct {
+	output.JsonResponse
+	Account accountDetailedResponse `json:"acme_account"`
+}
+
 // GetOneAccount is an http handler that returns one acme account based on its unique id in the
 // form of JSON written to w
-func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
@@ -65,53 +76,76 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) (e
 	}
 
 	// get from storage
-	account, err := service.getAccount(id)
-	if err != nil {
-		return err
+	account, outErr := service.getAccount(id)
+	if outErr != nil {
+		return outErr
 	}
 
-	// get acme service for the account
-	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
+	detailedResp, err := account.detailedResponse(service)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to generate account summary response (%s)", err)
+		return output.ErrInternal
 	}
+
+	// write response
+	response := &accountResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	response.Account = detailedResp
 
 	// return response to client
-	err = service.output.WriteJSON(w, http.StatusOK, account.detailedResponse(acmeService), "acme_account")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil
 }
 
+// new account info
+// used to return info about valid options when making a new account
+type newAccountOptions struct {
+	output.JsonResponse
+	AcmeAccountOptions struct {
+		AcmeServers   []acme_servers.ServerSummaryResponse `json:"acme_servers"`
+		AvailableKeys []private_keys.KeySummaryResponse    `json:"private_keys"`
+	} `json:"acme_account_options"`
+}
+
 // GetNewAccountOptions is an http handler that returns information the client GUI needs to properly
 // present options when the user is creating an account
-func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Request) (err error) {
-	// account options / info to assist client with new account posting
-	newAccountOptions := newAccountOptions{}
-
+func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Request) *output.Error {
 	// acme servers
-	newAccountOptions.AcmeServers, err = service.acmeServerService.ListAllServersSummaries()
+	acmeServers, err := service.acmeServerService.ListAllServersSummaries()
 	if err != nil {
-		return err
+		service.logger.Error(err)
+		return output.ErrInternal
 	}
 
 	// available private keys
-	keys, err := service.keys.AvailableKeys()
+	rawKeys, err := service.keys.AvailableKeys()
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	for i := range keys {
-		newAccountOptions.AvailableKeys = append(newAccountOptions.AvailableKeys, keys[i].SummaryResponse())
+	keys := []private_keys.KeySummaryResponse{}
+	for i := range rawKeys {
+		keys = append(keys, rawKeys[i].SummaryResponse())
 	}
 
-	// return response to client
-	err = service.output.WriteJSON(w, http.StatusOK, newAccountOptions, "acme_account_options")
+	// write response
+	response := &newAccountOptions{}
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	response.AcmeAccountOptions.AcmeServers = acmeServers
+	response.AcmeAccountOptions.AvailableKeys = keys
+
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

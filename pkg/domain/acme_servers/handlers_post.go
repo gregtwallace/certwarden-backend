@@ -19,11 +19,11 @@ type NewPayload struct {
 }
 
 // PostNewServer creates a new server, saves it to storage, and starts an *acme.Service
-func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) *output.Error {
 	var payload NewPayload
 
 	// decode body into payload
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -58,8 +58,8 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) (e
 	payload.CreatedAt = int(time.Now().Unix())
 	payload.UpdatedAt = payload.CreatedAt
 
-	// save new key to storage, which also returns the new key id
-	serverId, err := service.storage.PostNewServer(payload)
+	// save new key to storage, which also returns the new server
+	newServer, err := service.storage.PostNewServer(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
@@ -69,22 +69,30 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) (e
 	service.mu.Lock()
 	defer service.mu.Unlock()
 
-	service.acmeServers[serverId], err = acme.NewService(service, *payload.DirectoryURL)
+	service.acmeServers[newServer.ID], err = acme.NewService(service, *payload.DirectoryURL)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrInternal
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusCreated,
-		Message: "created",
-		ID:      serverId,
+	// make detailed response
+	detailedResp, err := newServer.detailedResponse(service)
+	if err != nil {
+		service.logger.Errorf("failed to generate server summary response (%s)", err)
+		return output.ErrInternal
 	}
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	// write response
+	response := &acmeServerResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "created server"
+	response.Server = detailedResp
+
+	// return response to client
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

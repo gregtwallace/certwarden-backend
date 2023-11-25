@@ -56,7 +56,7 @@ func (pc privateCertificate) PemModtime() time.Time {
 // end privateCertificate Output Pem Methods
 
 // DownloadPrivateCertViaHeader
-func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get cert name
 	params := httprouter.ParamsFromContext(r.Context())
 	certName := params.ByName("name")
@@ -71,16 +71,13 @@ func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *h
 	}
 
 	// return pem file to client
-	err = service.output.WritePem(w, r, privCert)
-	if err != nil {
-		return err
-	}
+	service.output.WritePem(w, r, privCert)
 
 	return nil
 }
 
 // DownloadPrivateCertViaUrl
-func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get cert name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
 	certName := params.ByName("name")
@@ -94,10 +91,7 @@ func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http
 	}
 
 	// return pem file to client
-	err = service.output.WritePem(w, r, privCert)
-	if err != nil {
-		return err
-	}
+	service.output.WritePem(w, r, privCert)
 
 	return nil
 }
@@ -107,7 +101,7 @@ func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http
 // To avoid unauthorized output of a key, both the certificate and key apiKeys must be provided. The format
 // for this is the certificate apikey appended to the private key's apikey using a '.' as a separator.
 // It also checks the apiKeyViaUrl property if the client is making a request with the apiKey in the Url.
-func (service *Service) getCertNewestValidPrivateCert(certName string, apiKeysCombined string, apiKeyViaUrl bool) (privateCertificate, error) {
+func (service *Service) getCertNewestValidPrivateCert(certName string, apiKeysCombined string, apiKeyViaUrl bool) (privateCertificate, *output.Error) {
 	// separate the apiKeys
 	apiKeys := strings.Split(apiKeysCombined, ".")
 

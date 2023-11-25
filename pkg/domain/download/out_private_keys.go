@@ -1,6 +1,7 @@
 package download
 
 import (
+	"legocerthub-backend/pkg/output"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -8,7 +9,7 @@ import (
 
 // DownloadKeyViaHeader is the handler to write a private key to the client
 // if the proper apiKey is provided via header (standard method)
-func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get key name
 	params := httprouter.ParamsFromContext(r.Context())
 	keyName := params.ByName("name")
@@ -23,10 +24,7 @@ func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Requ
 	}
 
 	// return pem file to client
-	err = service.output.WritePem(w, r, key)
-	if err != nil {
-		return err
-	}
+	service.output.WritePem(w, r, key)
 
 	return nil
 }
@@ -34,7 +32,7 @@ func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Requ
 // DownloadKeyViaUrl is the handler to write a private key to the client
 // if the proper apiKey is provided via URL (NOT recommended - only implemented
 // to support clients that can't specify the apiKey header)
-func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get key name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
 	keyName := params.ByName("name")
@@ -48,10 +46,7 @@ func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request
 	}
 
 	// return pem file to client
-	err = service.output.WritePem(w, r, key)
-	if err != nil {
-		return err
-	}
+	service.output.WritePem(w, r, key)
 
 	return nil
 }

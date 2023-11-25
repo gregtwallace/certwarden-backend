@@ -8,13 +8,13 @@ import (
 // handlerNotFound is called when there is not a matching route on the router
 func (app *Application) handlerNotFound() http.Handler {
 	// the base handler function (before middleware)
-	handlerFunc := func(w http.ResponseWriter, r *http.Request) error {
+	handlerFunc := func(w http.ResponseWriter, r *http.Request) *output.Error {
 		// return 404 not found
-		err := app.output.WriteErrorJSON(w, output.ErrNotFound)
+		err := app.output.WriteJSON(w, output.ErrNotFound)
 		if err != nil {
-			return err
+			app.logger.Errorf("failed to write json (%s)", err)
+			// never return Error since this is already an error
 		}
-
 		return nil
 	}
 
@@ -33,7 +33,7 @@ func (app *Application) handlerNotFound() http.Handler {
 // particularly important for CORS.
 func (app *Application) handlerGlobalOptions() http.Handler {
 	// the base handler function (before middleware)
-	handlerFunc := func(w http.ResponseWriter, r *http.Request) error {
+	handlerFunc := func(w http.ResponseWriter, r *http.Request) *output.Error {
 		// OPTIONS should always return a response to prevent preflight errors
 		// see: https://stackoverflow.com/questions/52047548/response-for-preflight-does-not-have-http-ok-status-in-angular
 

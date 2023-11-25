@@ -94,12 +94,6 @@ func (key Key) PemModtime() time.Time {
 
 // end Pem Output Methods
 
-// new private key options
-// used to return info about valid options when making a new key
-type newKeyOptions struct {
-	KeyAlgorithms []key_crypto.Algorithm `json:"key_algorithms"`
-}
-
 // CryptoPrivateKey() provides a crypto.PrivateKey for the Key
 // for the Account
 func (key *Key) CryptoPrivateKey() (cryptoKey crypto.PrivateKey, err error) {

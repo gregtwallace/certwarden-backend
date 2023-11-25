@@ -27,11 +27,11 @@ type NewPayload struct {
 }
 
 // PostNewKey creates a new private key and saves it to storage
-func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) *output.Error {
 	var payload NewPayload
 
 	// decode body into payload
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -99,29 +99,30 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) (err 
 	payload.UpdatedAt = payload.CreatedAt
 
 	// save new key to storage, which also returns the new key id
-	id, err := service.storage.PostNewKey(payload)
+	newKey, err := service.storage.PostNewKey(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusCreated,
-		Message: "created",
-		ID:      id,
-	}
+	// write response
+	response := &privateKeyResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "created private key"
+	response.PrivateKey = newKey.detailedResponse()
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	// return response to client
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil
 }
 
 // StageNewApiKey generates a new API key and places it in the keys
-func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get id param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	keyId, err := strconv.Atoi(idParam)
@@ -132,9 +133,9 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) (
 
 	// validation
 	// get key (validate exists)
-	key, err := service.getKey(keyId)
-	if err != nil {
-		return err
+	key, outErr := service.getKey(keyId)
+	if outErr != nil {
+		return outErr
 	}
 
 	// verify new api key is empty
@@ -157,16 +158,19 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) (
 		service.logger.Error(err)
 		return output.ErrStorageGeneric
 	}
+	key.ApiKeyNew = newApiKey
+
+	// write response
+	response := &privateKeyResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "private key new api key created"
+	response.PrivateKey = key.detailedResponse()
 
 	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusCreated,
-		Message: "new api key created", // TODO?
-	}
-
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

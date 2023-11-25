@@ -9,7 +9,7 @@ import (
 // getCertNewestValidOrder returns the most recent valid order for the specified certificate if the
 // apiKey matches the requested cert. It also checks the apiKeyViaUrl property if the client is making
 // a request with the apiKey in the Url.
-func (service *Service) getCertNewestValidOrder(certName string, apiKey string, apiKeyViaUrl bool) (order orders.Order, err error) {
+func (service *Service) getCertNewestValidOrder(certName string, apiKey string, apiKeyViaUrl bool) (orders.Order, *output.Error) {
 	// if apiKey is blank, definitely unauthorized
 	if apiKey == "" {
 		service.logger.Debug(errBlankApiKey)
@@ -17,7 +17,7 @@ func (service *Service) getCertNewestValidOrder(certName string, apiKey string, 
 	}
 
 	// get the cert's newest valid order from storage
-	order, err = service.storage.GetCertNewestValidOrderByName(certName)
+	order, err := service.storage.GetCertNewestValidOrderByName(certName)
 	if err != nil {
 		// special error case for no record found
 		if err == storage.ErrNoRecord {

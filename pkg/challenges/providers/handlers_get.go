@@ -1,7 +1,6 @@
 package providers
 
 import (
-	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
@@ -9,47 +8,76 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-var errBadID = func(id int) error { return fmt.Errorf("no provider exists with id %d", id) }
+type providersResponse struct {
+	output.JsonResponse
+	Providers []provider `json:"providers"`
+}
 
 // GetAllProviders returns all of the providers in manager
-func (mgr *Manager) GetAllProviders(w http.ResponseWriter, r *http.Request) (err error) {
+func (mgr *Manager) GetAllProviders(w http.ResponseWriter, r *http.Request) *output.Error {
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
 
-	var allProviders []*provider
-
+	// read all providers
+	var allProviders []provider
 	for p := range mgr.pD {
-		allProviders = append(allProviders, p)
+		allProviders = append(allProviders, *p)
 	}
 
-	err = mgr.output.WriteJSON(w, http.StatusOK, allProviders, "providers")
+	// write response
+	response := &providersResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	response.Providers = allProviders
+
+	err := mgr.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		mgr.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
+
 	return nil
 }
 
-// GetAllDomains returns all domains in manager and the ID of the provider that
-// services them.
-func (mgr *Manager) GetAllDomains(w http.ResponseWriter, r *http.Request) (err error) {
-	mgr.mu.RLock()
-	defer mgr.mu.RUnlock()
+// type domainsResponse struct {
+// 	output.JsonResponse
+// 	Domains map[string]int `json:"domains"`
+// }
 
-	allDomains := make(map[string]int)
+// // GetAllDomains returns all domains in manager and the ID of the provider that
+// // services them.
+// func (mgr *Manager) GetAllDomains(w http.ResponseWriter, r *http.Request) *output.Error {
+// 	mgr.mu.RLock()
+// 	defer mgr.mu.RUnlock()
 
-	for d, p := range mgr.dP {
-		allDomains[d] = p.ID
-	}
+// 	// read all domains and associated provider IDs
+// 	allDomains := make(map[string]int)
+// 	for d, p := range mgr.dP {
+// 		allDomains[d] = p.ID
+// 	}
 
-	err = mgr.output.WriteJSON(w, http.StatusOK, allDomains, "domains")
-	if err != nil {
-		return err
-	}
-	return nil
+// 	// write response
+// 	response := &domainsResponse{}
+// 	response.StatusCode = http.StatusOK
+// 	response.Message = "ok"
+// 	response.Domains = allDomains
+
+// 	err := mgr.output.WriteJSON(w, response)
+// 	if err != nil {
+// 		mgr.logger.Errorf("failed to write json (%s)", err)
+// 		return output.ErrWriteJsonError
+// 	}
+
+// 	return nil
+// }
+
+type providerResponse struct {
+	output.JsonResponse
+	Provider *provider `json:"provider"`
 }
 
 // GetOneProvider a provider from manager based on its ID param
-func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) (err error) {
+func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) *output.Error {
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
 
@@ -60,11 +88,6 @@ func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) (err 
 		mgr.logger.Debug(err)
 		return output.ErrValidationFailed
 	}
-
-	// // if id is new, provide some info
-	// if validation.IsIdNew(id) {
-	// 	return service.xxx?(w, r)
-	// }
 
 	// get the provider
 	var p *provider
@@ -79,10 +102,18 @@ func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrValidationFailed
 	}
 
+	// write response
+	response := &providerResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	response.Provider = p
+
 	// return response to client
-	err = mgr.output.WriteJSON(w, http.StatusOK, p, "provider")
+	err = mgr.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		mgr.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
+
 	return nil
 }

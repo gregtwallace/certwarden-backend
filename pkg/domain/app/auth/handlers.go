@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"fmt"
 	"legocerthub-backend/pkg/output"
 	"net/http"
 
@@ -13,7 +14,7 @@ import (
 // so the JSON struct doesn't change)
 type authResponse struct {
 	output.JsonResponse
-	authorization
+	Authorization authorization `json:"authorization"`
 }
 
 // loginPayload is the payload client's send to login
@@ -25,16 +26,16 @@ type loginPayload struct {
 // LoginUsingUserPwPayload takes the loginPayload, looks up the username in storage
 // and validates the password. If so, an Access Token is returned in JSON and a refresh
 // token is sent in a cookie.
-func (service *Service) LoginUsingUserPwPayload(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) LoginUsingUserPwPayload(w http.ResponseWriter, r *http.Request) *output.Error {
 	// wrap handler to easily check err and delete cookies
-	err = func() error {
+	outErr := func() *output.Error {
 		var payload loginPayload
 
 		// log attempt
 		service.logger.Infof("client %s: attempting login", r.RemoteAddr)
 
 		// decode body into payload
-		err = json.NewDecoder(r.Body).Decode(&payload)
+		err := json.NewDecoder(r.Body).Decode(&payload)
 		if err != nil {
 			service.logger.Infof("client %s: login failed (payload error: %s)", r.RemoteAddr, err)
 			return output.ErrUnauthorized
@@ -69,17 +70,17 @@ func (service *Service) LoginUsingUserPwPayload(w http.ResponseWriter, r *http.R
 		}
 
 		// return response to client
-		response := authResponse{}
-		response.Status = http.StatusOK
-		response.Message = "authenticated"
-		response.authorization = auth
+		response := &authResponse{}
+		response.StatusCode = http.StatusOK
+		response.Message = fmt.Sprintf("user '%s' logged in", auth.SessionTokenClaims.Subject)
+		response.Authorization = auth
 
-		// write auth cookies (part of response)
+		// write response
 		auth.writeSessionCookie(w)
-
-		err = service.output.WriteJSON(w, response.Status, response, "response")
+		err = service.output.WriteJSON(w, response)
 		if err != nil {
-			return err
+			service.logger.Errorf("failed to write json (%s)", err)
+			return output.ErrWriteJsonError
 		}
 
 		// log success
@@ -89,9 +90,9 @@ func (service *Service) LoginUsingUserPwPayload(w http.ResponseWriter, r *http.R
 	}()
 
 	// if err, delete session cookie and return err
-	if err != nil {
+	if outErr != nil {
 		service.deleteSessionCookie(w)
-		return err
+		return outErr
 	}
 
 	return nil
@@ -100,17 +101,17 @@ func (service *Service) LoginUsingUserPwPayload(w http.ResponseWriter, r *http.R
 // RefreshUsingCookie validates the SessionToken cookie and confirms its UUID is for a valid
 // session. If so, it generates a new AccessToken and new SessionToken cookie and then sends both
 // to the client.
-func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Request) *output.Error {
 	// wrap to easily check err and delete cookies
-	err = func() error {
+	outErr := func() *output.Error {
 		// log attempt
 		service.logger.Infof("client %s: attempting access token refresh", r.RemoteAddr)
 
 		// validate cookie
-		oldClaims, err := service.validateSessionCookie(r, w, "access token refresh")
-		if err != nil {
+		oldClaims, outErr := service.validateSessionCookie(r, w, "access token refresh")
+		if outErr != nil {
 			// error logged in validateCookieSession func and nice output error returned
-			return err
+			return outErr
 		}
 
 		// cookie & session verified, make new auth
@@ -128,16 +129,17 @@ func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Reques
 		}
 
 		// return response (new auth) to client
-		response := authResponse{}
-		response.Status = http.StatusOK
-		response.Message = "refreshed"
-		response.authorization = auth
-		// write auth cookies (part of response)
-		auth.writeSessionCookie(w)
+		response := &authResponse{}
+		response.StatusCode = http.StatusOK
+		response.Message = fmt.Sprintf("user '%s' access token refreshed", auth.SessionTokenClaims.Subject)
+		response.Authorization = auth
 
-		err = service.output.WriteJSON(w, response.Status, response, "response")
+		// write response
+		auth.writeSessionCookie(w)
+		err = service.output.WriteJSON(w, response)
 		if err != nil {
-			return err
+			service.logger.Errorf("failed to write json (%s)", err)
+			return output.ErrWriteJsonError
 		}
 
 		// log success
@@ -147,16 +149,16 @@ func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Reques
 	}()
 
 	// if err, delete cookies and return err
-	if err != nil {
+	if outErr != nil {
 		service.deleteSessionCookie(w)
-		return err
+		return outErr
 	}
 
 	return nil
 }
 
 // Logout logs the client out and removes the session from session manager
-func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) Logout(w http.ResponseWriter, r *http.Request) *output.Error {
 	// log attempt
 	service.logger.Infof("client %s: attempting logout", r.RemoteAddr)
 
@@ -178,15 +180,16 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) (err erro
 	service.logger.Infof("client %s: logout for user '%s' succeeded", r.RemoteAddr, oldClaims.Subject)
 
 	// return response (logged out)
-	response := output.JsonResponse{}
-	response.Status = http.StatusOK
-	response.Message = "logged out"
+	response := &output.JsonResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = fmt.Sprintf("user '%s' logged out", oldClaims.Subject)
 	// delete session cookie
 	service.deleteSessionCookie(w)
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil
@@ -201,7 +204,7 @@ type passwordChangePayload struct {
 }
 
 // ChangePassword allows a user to change their password
-func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (err error) {
+func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) *output.Error {
 	// log attempt
 	service.logger.Infof("client %s: attempting password change", r.RemoteAddr)
 
@@ -266,14 +269,14 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) (
 	service.logger.Infof("client %s: password change for user '%s' succeeded", r.RemoteAddr, username)
 
 	// return response to client
-	response := output.JsonResponse{}
-	response.Status = http.StatusOK
-	response.Message = "password changed"
-	response.ID = userId
+	response := &output.JsonResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = fmt.Sprintf("password changed for user '%s' (id: %d)", username, userId)
 
-	err = service.output.WriteJSON(w, response.Status, response, "response")
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

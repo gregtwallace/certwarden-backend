@@ -21,13 +21,13 @@ type newPayload struct {
 }
 
 // CreateProvider creates a new provider using the specified configuration.
-func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) (err error) {
+func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *output.Error {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 
 	// decode body into payload
 	var payload newPayload
-	err = json.NewDecoder(r.Body).Decode(&payload)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		mgr.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -56,21 +56,21 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) (err 
 	}
 
 	// try to add the specified provider (actual action)
-	var id int
+	var p *provider
 	if payload.Http01InternalConfig != nil {
-		id, err = mgr.unsafeAddProvider(payload.Http01InternalConfig)
+		p, err = mgr.unsafeAddProvider(payload.Http01InternalConfig)
 
 	} else if payload.Dns01ManualConfig != nil {
-		id, err = mgr.unsafeAddProvider(payload.Dns01ManualConfig)
+		p, err = mgr.unsafeAddProvider(payload.Dns01ManualConfig)
 
 	} else if payload.Dns01AcmeDnsConfig != nil {
-		id, err = mgr.unsafeAddProvider(payload.Dns01AcmeDnsConfig)
+		p, err = mgr.unsafeAddProvider(payload.Dns01AcmeDnsConfig)
 
 	} else if payload.Dns01AcmeShConfig != nil {
-		id, err = mgr.unsafeAddProvider(payload.Dns01AcmeShConfig)
+		p, err = mgr.unsafeAddProvider(payload.Dns01AcmeShConfig)
 
 	} else if payload.Dns01CloudflareConfig != nil {
-		id, err = mgr.unsafeAddProvider(payload.Dns01CloudflareConfig)
+		p, err = mgr.unsafeAddProvider(payload.Dns01CloudflareConfig)
 
 	} else {
 		mgr.logger.Error("new provider cfg missing, this error should never trigger though, report lego bug")
@@ -89,16 +89,16 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) (err 
 		return output.ErrInternal
 	}
 
-	// return response to client
-	response := output.JsonResponse{
-		Status:  http.StatusCreated,
-		Message: "created",
-		ID:      id,
-	}
+	// write response
+	response := &providerResponse{}
+	response.StatusCode = http.StatusCreated
+	response.Message = "created provider"
+	response.Provider = p
 
-	err = mgr.output.WriteJSON(w, response.Status, response, "response")
+	err = mgr.output.WriteJSON(w, response)
 	if err != nil {
-		return err
+		mgr.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
 	}
 
 	return nil

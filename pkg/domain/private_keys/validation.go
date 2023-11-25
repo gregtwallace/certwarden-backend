@@ -20,7 +20,7 @@ var (
 
 // getKey returns the Key for the specified id or an
 // error.
-func (service *Service) getKey(id int) (Key, error) {
+func (service *Service) getKey(id int) (Key, *output.Error) {
 	// basic check
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)
