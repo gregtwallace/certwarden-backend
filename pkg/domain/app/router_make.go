@@ -96,7 +96,7 @@ func (app *Application) makeRouterAndRoutes() {
 	router.handleAPIRouteSecure(http.MethodPut, apiUrlPath+"/v1/acmeaccounts/:id/email", app.accounts.ChangeEmail)
 	router.handleAPIRouteSecure(http.MethodPut, apiUrlPath+"/v1/acmeaccounts/:id/key-change", app.accounts.RolloverKey)
 
-	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/acmeaccounts/:id/new-account", app.accounts.NewAcmeAccount)
+	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/acmeaccounts/:id/register-account", app.accounts.NewAcmeAccount)
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/acmeaccounts/:id/deactivate", app.accounts.Deactivate)
 
 	router.handleAPIRouteSecure(http.MethodDelete, apiUrlPath+"/v1/acmeaccounts/:id", app.accounts.DeleteAccount)
