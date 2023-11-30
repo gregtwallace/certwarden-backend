@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"legocerthub-backend/pkg/output"
 	"net"
 	"net/http"
 	"net/http/pprof"
@@ -17,7 +18,7 @@ const pprofBasePath = ""
 const pprofUrlPath = pprofBasePath + "/debug/pprof"
 
 // pprofHandler handles all requests related to pprof
-func pprofHandler(w http.ResponseWriter, r *http.Request) {
+func pprofHandler(w http.ResponseWriter, r *http.Request) *output.Error {
 	// remove the URL base path
 	r.URL.Path = strings.TrimPrefix(r.URL.Path, pprofBasePath)
 	r.URL.RawPath = strings.TrimPrefix(r.URL.RawPath, pprofBasePath)
@@ -39,18 +40,35 @@ func pprofHandler(w http.ResponseWriter, r *http.Request) {
 		// anything else, serve Index which also handles profiles
 		pprof.Index(w, r)
 	}
+
+	return nil
+}
+
+// pprofRouter creates the router for pprof by wrapping the pprofHandler
+// in middleware
+func (app *Application) makePprofRouter() http.Handler {
+	router := httprouter.New()
+
+	// Logger / handle custom handler func's error
+	// do sensitive logging to show any access to pprof
+	pprofHandlerFunc := middlewareApplyReturnValHandling(pprofHandler, true, app.logger.SugaredLogger, app.output)
+
+	// actual handle path
+	router.HandlerFunc(http.MethodGet, pprofUrlPath+"/*any", pprofHandlerFunc)
+
+	// don't bother to apply HSTS here (main app access will handle it if desired)
+
+	// security headers for browser
+	// Note: CSP will complain and inline style blocking but who cares for pprof
+	return middlewareApplyBrowserSecurityHeaders(router)
 }
 
 // startPprof starts the pprof http server on the configured port
 func (app *Application) startPprof() error {
-	// create router
-	router := httprouter.New()
-	router.HandlerFunc(http.MethodGet, pprofUrlPath+"/*any", pprofHandler)
-
 	// http server config
 	srv := &http.Server{
 		Addr:         app.config.pprofHttpServAddress(),
-		Handler:      router,
+		Handler:      app.makePprofRouter(),
 		IdleTimeout:  pprofServerIdleTimeout,
 		ReadTimeout:  pprofServerReadTimeout,
 		WriteTimeout: pprofServerWriteTimeout,
