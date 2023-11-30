@@ -1,10 +1,13 @@
 package acme
 
 import (
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
+
+	"go.uber.org/zap/zapcore"
 )
 
 var errBadOrderPem = errors.New("pem returned from ACME server failed safety check (see: rfc8555 s 11.4)")
@@ -78,6 +81,21 @@ func (service *Service) GetOrder(orderUrl string, accountKey AccountKey) (respon
 
 // FinalizeOrder posts the specified CSR to the specified finalize URL
 func (service *Service) FinalizeOrder(finalizeUrl string, derCsr []byte, accountKey AccountKey) (response Order, err error) {
+	// pretty log CSR names if in debug
+	if service.logger.Level() == zapcore.DebugLevel {
+		csr, prettyErr := x509.ParseCertificateRequest(derCsr)
+		if prettyErr == nil {
+			// log CN and DNS names
+			service.logger.Debugf("attempting finalize using csr with common name: %s ; and dns name(s): %s", csr.Subject.CommonName, csr.DNSNames)
+
+			// Log full CSR
+			// prettyBytes, prettyErr := json.MarshalIndent(csr, "", "\t")
+			// if prettyErr == nil {
+			// 	service.logger.Debugf("%s", prettyBytes)
+			// }
+		}
+	}
+
 	// insert csr into expected json payload format
 	payload := struct {
 		Csr string `json:"csr"`

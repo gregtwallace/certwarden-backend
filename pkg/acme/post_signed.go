@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"go.uber.org/zap/zapcore"
 )
 
 // acmeSignedMessage is the ACME signed message payload
@@ -68,11 +70,22 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	// url
 	header.Url = url
 
-	service.logger.Debugf("unencoded acme header: %s", header)
+	// Debugging
+	//service.logger.Debugf("unencoded acme header: %s", header)
+
 	// header (end)
 
-	// payload won't change in the loop
-	// if payload is empty, don't encode it
+	// debug log payload content & destination
+	if service.logger.Level() == zapcore.DebugLevel {
+		prettyPayload, prettyErr := json.MarshalIndent(payload, "", "\t")
+		if prettyErr != nil {
+			service.logger.Debugf("sending acme signed post to: %s ; unencoded payload: %s", url, payload)
+		} else {
+			service.logger.Debugf("sending acme signed post to: %s ; unencoded payload: %s", url, string(prettyPayload))
+		}
+	}
+
+	// set payload - won't change in the loop (if payload is empty, don't encode it)
 	if payload == "" {
 		message.Payload = ""
 	} else {
@@ -86,8 +99,8 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	var response *http.Response
 	var bodyBytes []byte
 
-	// loop to retry on badNonce error, capped at 3 tries
-	for i := 0; i < 3; i++ {
+	// loop to retry on badNonce error, capped at 4 tries
+	for i := 0; i < 4; i++ {
 		// encord and insert header
 		message.ProtectedHeader, err = encodeJson(header)
 		if err != nil {
@@ -108,7 +121,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		}
 
 		// data to POST (debugging)
-		service.logger.Debugf("acme post signed body: %s", string(messageBodyJson))
+		//service.logger.Debugf("acme post signed body: %s", string(messageBodyJson))
 
 		// post to ACME
 		response, err = service.httpClient.Post(url, "application/jose+json", bytes.NewBuffer(messageBodyJson))
@@ -116,8 +129,6 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 			return nil, nil, err
 		}
 		defer response.Body.Close()
-
-		service.logger.Debugf("acme post signed response status code: %d", response.StatusCode)
 
 		// read body of response
 		bodyBytes, err = io.ReadAll(response.Body)
@@ -127,7 +138,16 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		}
 
 		// ACME response body (debugging)
-		service.logger.Debugf("acme post signed response body: %s", string(bodyBytes))
+		// indent (if possible) before debug logging
+		if service.logger.Level() == zapcore.DebugLevel {
+			var prettyBytes bytes.Buffer
+			prettyErr := json.Indent(&prettyBytes, bodyBytes, "", "\t")
+			if prettyErr != nil {
+				service.logger.Debugf("acme signed post response code: %d ; body: %s", response.StatusCode, string(bodyBytes))
+			} else {
+				service.logger.Debugf("acme signed post response code: %d ; body: %s", response.StatusCode, prettyBytes.String())
+			}
+		}
 
 		// try to decode AcmeError
 		acmeError := unmarshalErrorResponse(bodyBytes)
