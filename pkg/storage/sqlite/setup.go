@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"io"
+	"io/fs"
 	"legocerthub-backend/pkg/domain/app/auth"
 	"net/url"
 	"os"
@@ -19,6 +22,7 @@ import (
 const dbTimeout = time.Duration(5 * time.Second)
 const dbFilename = "/lego-certhub.db"
 const DbCurrentUserVersion = 2
+const dbFileMode = 0600
 
 var dbOptions = url.Values{
 	"_fk": []string{"true"},
@@ -28,6 +32,8 @@ var errServiceComponent = errors.New("necessary storage service component is mis
 
 type App interface {
 	GetLogger() *zap.SugaredLogger
+	GetFileBackupFolder() string
+	GetFileBackupFolderMode() fs.FileMode
 }
 
 // Storage is the struct that holds data about the connection
@@ -62,12 +68,11 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 		dbExists = false
 		store.logger.Warn("database file does not exist, creating a new one")
 		// create db file
-		file, err := os.Create(dbWithPath)
+		err := os.WriteFile(dbWithPath, []byte{}, dbFileMode)
 		if err != nil {
 			store.logger.Errorf("failed to create new database file", err)
 			return nil, err
 		}
-		file.Close()
 	}
 
 	// open db
@@ -107,41 +112,78 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 			store.logger.Errorf("failed to populate new database file", err)
 			return nil, err
 		}
-	} else {
-		// check and do db schema upgrades, if needed
-		fileUserVersion := -1
-		// try upgrading until version matches or an error occurs
-		for fileUserVersion != DbCurrentUserVersion && err == nil {
-			// get db file user_version
-			query := `PRAGMA user_version`
-			row := store.db.QueryRowContext(ctx, query)
-			err = row.Scan(
-				&fileUserVersion,
-			)
-			if err != nil {
-				return nil, err
-			}
+	}
 
-			// take incremental migration action, if needed
-			switch fileUserVersion {
-			case 0:
-				err = store.migrateV0toV1()
-			case 1:
-				err = store.migrateV1toV2()
-			case DbCurrentUserVersion:
-				store.logger.Debugf("database user_version is current (%d)", fileUserVersion)
-				// no-op, loop will end due to version ==
-			default:
-				err = errors.New("unsupported user_version found in db file")
+	// check and do db schema upgrades, if needed
+	// get db file user_version
+	query := `PRAGMA user_version`
+	row := store.db.QueryRowContext(ctx, query)
+	fileUserVersion := -1
+	err = row.Scan(
+		&fileUserVersion,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// back up exisitng db before trying any migrations
+	if fileUserVersion != DbCurrentUserVersion {
+		backupFolder := app.GetFileBackupFolder()
+
+		// check for (and possibly make) backup folder
+		backupFolderStat, err := os.Stat(backupFolder)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				// make backup folder since doesn't exist
+				err = os.Mkdir(backupFolder, app.GetFileBackupFolderMode())
+				if err != nil {
+					return nil, fmt.Errorf("failed to make db backup directory (%s) for pre-migration db file backup", err)
+				}
+			} else {
+				return nil, fmt.Errorf("failed to stat db backup folder (%s) for pre-migration db file backup", err)
 			}
+		} else if !backupFolderStat.IsDir() {
+			return nil, fmt.Errorf("backup folder (%s) is not a directory (needed for pre-migration db file backup)", backupFolder)
 		}
 
-		// err check from upgrade loop
+		// backup db file
+		dbFile, err := os.Open(dbWithPath)
 		if err != nil {
-			store.logger.Errorf("failed to update database file to latest user_version (%d), currently %d (%s)", DbCurrentUserVersion, fileUserVersion, err)
+			return nil, fmt.Errorf("failed to open db file for backup (%s)", err)
+		}
+
+		dbFileData, err := io.ReadAll(dbFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read db file for backup (%s)", err)
+		}
+
+		dbFile.Close()
+
+		err = os.WriteFile(backupFolder+"/lego-certhub."+time.Now().Format("2006.01.02-15.04.05")+".v"+strconv.Itoa(fileUserVersion)+".db", dbFileData, dbFileMode)
+		if err != nil {
+			return nil, fmt.Errorf("failed to write backup of old db file (%s)", err)
+		}
+	}
+
+	// upgrade if schema 0
+	if fileUserVersion == 0 {
+		fileUserVersion, err = store.migrateV0toV1()
+		if err != nil {
 			return nil, err
 		}
+	}
 
+	// upgrade if schema 1
+	if fileUserVersion == 1 {
+		fileUserVersion, err = store.migrateV1toV2()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// fail if still not correct
+	if fileUserVersion != DbCurrentUserVersion {
+		return nil, fmt.Errorf("db schema user_version is %d (expected %d) and automatic migration failed", fileUserVersion, DbCurrentUserVersion)
 	}
 
 	return store, nil

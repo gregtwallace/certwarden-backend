@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"fmt"
 )
 
 // CHANGES v0 to v1:
@@ -16,8 +17,11 @@ import (
 
 // updates the storage db from user_version 0 to user_version 1, if it cannot
 // do so, an error is returned and modification is aborted
-func (store *Storage) migrateV0toV1() error {
-	store.logger.Info("updating database user_version from 0 to 1")
+func (store *Storage) migrateV0toV1() (int, error) {
+	oldSchemaVer := 0
+	newSchemaVer := 1
+
+	store.logger.Infof("updating database user_version from %d to %d", oldSchemaVer, newSchemaVer)
 
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
@@ -25,37 +29,51 @@ func (store *Storage) migrateV0toV1() error {
 	// create sql transaction to roll back in the event an error occurs
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return -1, err
 	}
 	defer tx.Rollback()
+
+	// verify correct current ver
+	query := `PRAGMA user_version`
+	row := tx.QueryRowContext(ctx, query)
+	fileUserVersion := -1
+	err = row.Scan(
+		&fileUserVersion,
+	)
+	if err != nil {
+		return -1, err
+	}
+	if fileUserVersion != oldSchemaVer {
+		return -1, fmt.Errorf("cannot update db schema, current version %d (expected %d)", fileUserVersion, oldSchemaVer)
+	}
 
 	// rename old data tables
 	err = renameOldDbTables(tx)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	// create new tables
 	err = createDBTables(tx)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	// add default entries for the new acme_servers table
 	err = insertDefaultAcmeServers(tx)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	// copy data from _old tables
 	// copy from private_keys
-	query := `
+	query = `
 	INSERT INTO private_keys SELECT * FROM private_keys_old
 	`
 
 	_, err = tx.Exec(query)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	// copy from acme_accounts_old (and transform is_staging to acme_server_id)
@@ -69,7 +87,7 @@ func (store *Storage) migrateV0toV1() error {
 
 	_, err = tx.Exec(query)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	// copy from remaining tables
@@ -81,31 +99,31 @@ func (store *Storage) migrateV0toV1() error {
 
 	_, err = tx.Exec(query)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	// remove _old tables
 	err = removeOldDbTables(tx)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	// update user_version to 1
-	query = `
-		PRAGMA user_version = 1
-	`
+	query = fmt.Sprintf(`
+		PRAGMA user_version = %d
+	`, newSchemaVer)
 
 	_, err = tx.Exec(query)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	// no errors, commit transaction
 	err = tx.Commit()
 	if err != nil {
-		return err
+		return -1, err
 	}
 
-	store.logger.Info("database user_version successfully upgraded from 0 to 1")
-	return nil
+	store.logger.Infof("database user_version successfully upgraded from %d to %d", oldSchemaVer, newSchemaVer)
+	return newSchemaVer, nil
 }
