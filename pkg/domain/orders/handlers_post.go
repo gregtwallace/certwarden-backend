@@ -2,6 +2,7 @@ package orders
 
 import (
 	"encoding/json"
+	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
 	"net/http"
@@ -174,9 +175,9 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 
 	err = acmeService.RevokeCertificate(*order.Pem, payload.Reason, key)
 	if err != nil {
-		// fail on any non-ACME error, fail on ACME error if any other type than already revoked
-		acmeErr, isAcmeErr := err.(acme.Error)
-		if !isAcmeErr || acmeErr.Type != "urn:ietf:params:acme:error:alreadyRevoked" {
+		// fail on any non-ACME error OR fail on ACME error if it is not 'already revoked' error type
+		acmeErr := new(acme.Error)
+		if !errors.As(err, &acmeErr) || acmeErr.Type != "urn:ietf:params:acme:error:alreadyRevoked" {
 			service.logger.Error(err)
 			return output.ErrInternal
 		}

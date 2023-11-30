@@ -40,7 +40,7 @@ func (service *Service) GetCertificate(id int) (Certificate, *output.Error) {
 	account, err := service.storage.GetOneCertById(id)
 	if err != nil {
 		// special error case for no record found
-		if err == storage.ErrNoRecord {
+		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
 			return Certificate{}, output.ErrNotFound
 		} else {
@@ -62,7 +62,7 @@ func (service *Service) nameValid(certName string, certId *int) bool {
 
 	// make sure the name isn't already in use in storage
 	cert, err := service.storage.GetOneCertByName(certName)
-	if err == storage.ErrNoRecord {
+	if errors.Is(err, storage.ErrNoRecord) {
 		// no rows means name is not in use
 		return true
 	} else if err != nil {

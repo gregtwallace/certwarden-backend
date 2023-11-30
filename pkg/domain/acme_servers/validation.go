@@ -33,7 +33,7 @@ func (service *Service) getServer(acmeServerId int) (Server, *output.Error) {
 	server, err := service.storage.GetOneServerById(acmeServerId)
 	if err != nil {
 		// special error case for no record found
-		if err == storage.ErrNoRecord {
+		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
 			return Server{}, output.ErrNotFound
 		} else {
@@ -67,7 +67,7 @@ func (service *Service) nameValid(serverName string, serverId *int) bool {
 
 	// make sure the name isn't already in use in storage
 	key, err := service.storage.GetOneServerByName(serverName)
-	if err == storage.ErrNoRecord {
+	if errors.Is(err, storage.ErrNoRecord) {
 		// no rows means name is not in use
 		return true
 	} else if err != nil {

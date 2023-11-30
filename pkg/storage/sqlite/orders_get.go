@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"legocerthub-backend/pkg/domain/orders"
 	"legocerthub-backend/pkg/pagination_sort"
@@ -702,7 +703,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 	)
 	if err != nil {
 		// if no record exists
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			err = storage.ErrNoRecord
 		}
 		return orders.Order{}, err
@@ -889,7 +890,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 	)
 	if err != nil {
 		// if no record exists
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			err = storage.ErrNoRecord
 		}
 		return orders.Order{}, err

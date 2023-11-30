@@ -13,7 +13,7 @@ type Error struct {
 }
 
 // Error() implements the error interface
-func (e Error) Error() string {
+func (e *Error) Error() string {
 	return fmt.Sprintf("status: %d; type: %s; detail: %s", e.Status, e.Type, e.Detail)
 }
 

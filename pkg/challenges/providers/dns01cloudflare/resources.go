@@ -2,7 +2,9 @@ package dns01cloudflare
 
 import (
 	"context"
-	"strings"
+	"errors"
+
+	"github.com/cloudflare/cloudflare-go"
 )
 
 // Provision adds the corresponding DNS record on Cloudflare.
@@ -21,7 +23,9 @@ func (service *Service) Provision(resourceName, resourceContent string) error {
 	defer cancel()
 
 	_, err = service.cloudflareApi.CreateDNSRecord(ctx, cfResource, cloudflareCreateDNSParams(resourceName, resourceContent))
-	if err != nil && !(strings.Contains(err.Error(), "81057") || strings.Contains(err.Error(), "Record already exists")) {
+	cfReqErr := new(cloudflare.RequestError)
+	// return err if not a CF RequestError, or if it is CF Req Error, but does NOT contain code 81057 (which is "Record already exists")
+	if err != nil && (!errors.As(err, &cfReqErr) || !cfReqErr.InternalErrorCodeIs(81057)) {
 		return err
 	}
 

@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"errors"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/storage"
@@ -42,7 +43,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 	orders, totalRows, err := service.storage.GetOrdersByCert(certId, query)
 	if err != nil {
 		// special error case for no record found
-		if err == storage.ErrNoRecord {
+		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
 			return output.ErrNotFound
 		} else {
@@ -83,7 +84,7 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 	orders, totalRows, err := service.storage.GetAllValidCurrentOrders(query)
 	if err != nil {
 		// special error case for no record found
-		if err == storage.ErrNoRecord {
+		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
 			return output.ErrNotFound
 		} else {
@@ -128,7 +129,7 @@ func (service *Service) DownloadCertNewestOrder(w http.ResponseWriter, r *http.R
 	order, err := service.storage.GetCertNewestValidOrderById(id)
 	if err != nil {
 		// special error case for no record found
-		if err == storage.ErrNoRecord {
+		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
 			return output.ErrNotFound
 		} else {
@@ -182,7 +183,7 @@ func (service *Service) DownloadOneOrder(w http.ResponseWriter, r *http.Request)
 	order, err := service.storage.GetOneOrder(orderId)
 	if err != nil {
 		// special error case for no record found
-		if err == storage.ErrNoRecord {
+		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
 			return output.ErrNotFound
 		} else {

@@ -1,6 +1,7 @@
 package private_keys
 
 import (
+	"errors"
 	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
@@ -116,7 +117,7 @@ func (service *Service) DownloadOneKey(w http.ResponseWriter, r *http.Request) *
 	key, err := service.storage.GetOneKeyById(id)
 	if err != nil {
 		// special error case for no record found
-		if err == storage.ErrNoRecord {
+		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
 			return output.ErrNotFound
 		} else {

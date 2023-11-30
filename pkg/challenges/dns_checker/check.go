@@ -48,7 +48,8 @@ func checkDnsRecord(fqdn string, recordValue string, recordType dnsRecordType, r
 	if err != nil {
 		// if host wasn't found, this isn't a real error, it actually just means
 		// the record does not exist
-		if dnsErr, ok := err.(*net.DNSError); ok && dnsErr.IsNotFound {
+		dnsErr := new(net.DNSError)
+		if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
 			return false, nil
 		}
 

@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"legocerthub-backend/pkg/domain/app/auth"
 	"legocerthub-backend/pkg/storage"
 )
@@ -46,7 +47,7 @@ func (store Storage) GetOneUserByName(username string) (auth.User, error) {
 
 	if err != nil {
 		// if no record exists
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			err = storage.ErrNoRecord
 		}
 		return auth.User{}, err

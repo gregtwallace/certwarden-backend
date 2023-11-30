@@ -31,7 +31,7 @@ func (service *Service) getAccount(id int) (Account, *output.Error) {
 	account, err := service.storage.GetOneAccountById(id)
 	if err != nil {
 		// special error case for no record found
-		if err == storage.ErrNoRecord {
+		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
 			return Account{}, output.ErrNotFound
 		} else {
@@ -56,7 +56,7 @@ func (service *Service) nameValid(accountName string, accountId *int) bool {
 
 	// make sure the name isn't already in use in storage
 	account, err := service.storage.GetOneAccountByName(accountName)
-	if err == storage.ErrNoRecord {
+	if errors.Is(err, storage.ErrNoRecord) {
 		// no rows means name is not in use (valid)
 		return true
 	} else if err != nil {

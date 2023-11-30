@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/pagination_sort"
@@ -200,7 +201,7 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 
 	if err != nil {
 		// if no record exists
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			err = storage.ErrNoRecord
 		}
 		return acme_accounts.Account{}, err

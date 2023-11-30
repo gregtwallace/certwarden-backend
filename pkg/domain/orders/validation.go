@@ -37,7 +37,7 @@ func (service *Service) getOrder(certId int, orderId int) (Order, *output.Error)
 	order, err := service.storage.GetOneOrder(orderId)
 	if err != nil {
 		// special error case for no record found
-		if err == storage.ErrNoRecord {
+		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
 			return Order{}, output.ErrNotFound
 		} else {

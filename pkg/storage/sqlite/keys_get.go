@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/pagination_sort"
@@ -136,7 +137,7 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 
 	if err != nil {
 		// if no record exists
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			err = storage.ErrNoRecord
 		}
 		return private_keys.Key{}, err

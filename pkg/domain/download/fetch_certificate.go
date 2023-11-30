@@ -1,6 +1,7 @@
 package download
 
 import (
+	"errors"
 	"legocerthub-backend/pkg/domain/orders"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
@@ -20,7 +21,7 @@ func (service *Service) getCertNewestValidOrder(certName string, apiKey string, 
 	order, err := service.storage.GetCertNewestValidOrderByName(certName)
 	if err != nil {
 		// special error case for no record found
-		if err == storage.ErrNoRecord {
+		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
 			return orders.Order{}, output.ErrNotFound
 		} else {

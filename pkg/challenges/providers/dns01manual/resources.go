@@ -1,6 +1,7 @@
 package dns01manual
 
 import (
+	"errors"
 	"os/exec"
 )
 
@@ -13,11 +14,12 @@ func (service *Service) Provision(resourceName, resourceContent string) error {
 	// run script command
 	result, err := cmd.Output()
 	if err != nil {
-		// try to get detailed err
-		exitErr, ok := err.(*exec.ExitError)
-		if ok {
-			service.logger.Errorf("dns create script std err: %s", exitErr.Stderr)
+		// try to get stderr and log it too
+		exitErr := new(exec.ExitError)
+		if errors.As(err, &exitErr) {
+			service.logger.Errorf("acme.sh dns create script std err: %s", exitErr.Stderr)
 		}
+
 		service.logger.Errorf("dns create script error: %s", err)
 		return err
 	}
@@ -35,11 +37,12 @@ func (service *Service) Deprovision(resourceName, resourceContent string) error 
 	// run script command
 	result, err := cmd.Output()
 	if err != nil {
-		// try to get detailed err
-		exitErr, ok := err.(*exec.ExitError)
-		if ok {
-			service.logger.Errorf("dns delete script std err: %s", exitErr.Stderr)
+		// try to get stderr and log it too
+		exitErr := new(exec.ExitError)
+		if errors.As(err, &exitErr) {
+			service.logger.Errorf("acme.sh dns create script std err: %s", exitErr.Stderr)
 		}
+
 		service.logger.Errorf("dns delete script error: %s", err)
 		return err
 	}

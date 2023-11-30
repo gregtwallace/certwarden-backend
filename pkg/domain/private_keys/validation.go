@@ -31,7 +31,7 @@ func (service *Service) getKey(id int) (Key, *output.Error) {
 	key, err := service.storage.GetOneKeyById(id)
 	if err != nil {
 		// special error case for no record found
-		if err == storage.ErrNoRecord {
+		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
 			return Key{}, output.ErrNotFound
 		} else {
@@ -56,7 +56,7 @@ func (service *Service) NameValid(keyName string, keyId *int) bool {
 
 	// make sure the name isn't already in use in storage
 	key, err := service.storage.GetOneKeyByName(keyName)
-	if err == storage.ErrNoRecord {
+	if errors.Is(err, storage.ErrNoRecord) {
 		// no rows means name is not in use
 		return true
 	} else if err != nil {

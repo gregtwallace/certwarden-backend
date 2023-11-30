@@ -1,6 +1,7 @@
 package download
 
 import (
+	"errors"
 	"legocerthub-backend/pkg/domain/private_keys"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/storage"
@@ -20,7 +21,7 @@ func (service *Service) getKey(keyName string, apiKey string, apiKeyViaUrl bool)
 	key, err := service.storage.GetOneKeyByName(keyName)
 	if err != nil {
 		// special error case for no record found
-		if err == storage.ErrNoRecord {
+		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
 			return private_keys.Key{}, output.ErrNotFound
 		} else {

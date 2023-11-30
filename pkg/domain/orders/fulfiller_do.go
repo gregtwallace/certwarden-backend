@@ -1,6 +1,7 @@
 package orders
 
 import (
+	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/randomness"
 	"net/http"
@@ -86,7 +87,8 @@ fulfillLoop:
 			// see: RFC8555 7.4 ("If the client fails to complete the required
 			// actions before the "expires" time, then the server SHOULD change the
 			// status of the order to "invalid" and MAY delete the order resource.")
-			if acmeErr, ok := err.(acme.Error); ok && acmeErr.Status == http.StatusNotFound {
+			acmeErr := new(acme.Error)
+			if errors.As(err, &acmeErr) && acmeErr.Status == http.StatusNotFound {
 				of.storage.PutOrderInvalid(j.order.ID)
 				return // done, permanent status
 			}
