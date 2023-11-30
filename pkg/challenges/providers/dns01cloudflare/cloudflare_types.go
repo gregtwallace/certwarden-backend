@@ -33,7 +33,7 @@ func cloudflareCreateDNSParams(resourceName, resourceContent string) cloudflare.
 		// specific to create
 		TTL:       60,
 		Proxiable: false,
-		Comment:   fmt.Sprintf("created by LeGo Certhub on %s", time.Now().Format("Mon Jan 2 15:04:05 MST 2006")),
+		Comment:   fmt.Sprintf("created by LeGo CertHub on %s", time.Now().Format("Mon Jan 2 15:04:05 MST 2006")),
 	}
 }
 
