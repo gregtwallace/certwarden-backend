@@ -83,13 +83,11 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	}
 
 	// post
-	var messageJson []byte
 	var response *http.Response
 	var bodyBytes []byte
-	var acmeError Error
 
-	// loop to allow retry on badNonce error, capped at 3 tries
-	for i, done := 0, false; i < 3 && !done; i++ {
+	// loop to retry on badNonce error, capped at 3 tries
+	for i := 0; i < 3; i++ {
 		// encord and insert header
 		message.ProtectedHeader, err = encodeJson(header)
 		if err != nil {
@@ -103,55 +101,66 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		}
 
 		// marshal for posting
-		messageJson, err = json.Marshal(message)
+		var messageBodyJson []byte
+		messageBodyJson, err = json.Marshal(message)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		// ACME to post (debugging)
-		service.logger.Debugf(string(messageJson))
+		// data to POST (debugging)
+		service.logger.Debugf("acme post signed body: %s", string(messageBodyJson))
 
 		// post to ACME
-		response, err = service.httpClient.Post(url, "application/jose+json", bytes.NewBuffer(messageJson))
+		response, err = service.httpClient.Post(url, "application/jose+json", bytes.NewBuffer(messageBodyJson))
 		if err != nil {
 			return nil, nil, err
 		}
-		defer response.Body.Close() // TODO: do something with this to avoid leaving stuff hanging during loop?
+		defer response.Body.Close()
 
-		service.logger.Debugf("acme response status code: %d", response.StatusCode)
+		service.logger.Debugf("acme post signed response status code: %d", response.StatusCode)
 
 		// read body of response
 		bodyBytes, err = io.ReadAll(response.Body)
 		if err != nil {
-			return nil, nil, err
+			// if body read fails, try post again
+			continue
 		}
 
 		// ACME response body (debugging)
-		service.logger.Debugf(string(bodyBytes))
+		service.logger.Debugf("acme post signed response body: %s", string(bodyBytes))
 
-		// check if the response was an AcmeError
-		acmeError, err = unmarshalErrorResponse(bodyBytes)
+		// try to decode AcmeError
+		acmeError := unmarshalErrorResponse(bodyBytes)
+		if acmeError != nil {
+			// set err to check after loop ends
+			err = acmeError
 
-		// if nonce error, update nonce with new scoped nonce before retry loop continues
-		if acmeError.Type == "urn:ietf:params:acme:error:badNonce" {
-			header.Nonce = response.Header.Get("Replay-Nonce")
-		} else {
-			// if anything other than nonce error:
-			// save nonce in manager
-			nonceErr := service.nonceManager.SaveNonce(response.Header.Get("Replay-Nonce"))
-			if nonceErr != nil {
-				// no need to error out of routine, just log the save failure
-				service.logger.Error(nonceErr)
+			// if acme error and it is specifically bad nonce, set header nonce and continue
+			// to next loop iteration
+			if acmeError.Type == "urn:ietf:params:acme:error:badNonce" {
+				header.Nonce = response.Header.Get("Replay-Nonce")
+
+				// no need to sleep, remote server is working ok
+				continue
 			}
-			// loop ends for any result other than badNonce
-			done = true
+		}
+
+		// not bad nonce error, loop is done
+		break
+	}
+
+	// save response nonce in manager
+	if response != nil && response.Header != nil {
+		nonceErr := service.nonceManager.SaveNonce(response.Header.Get("Replay-Nonce"))
+		if nonceErr != nil {
+			// no need to error out of routine, just log the save failure
+			service.logger.Errorf("failed to save response replay nonce (%s)", nonceErr)
 		}
 	}
 
-	// re: acmeError decode
-	// if it didn't error, that means an error response WAS decoded
-	if err == nil {
-		return nil, nil, acmeError
+	// if err from loop, return
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// verify status code is success (catch all in case acmeError didn't decode somehow)

@@ -3,6 +3,8 @@ package dns_checker
 import (
 	"errors"
 	"time"
+
+	"github.com/cenkalti/backoff/v4"
 )
 
 // define dnsRecordType
@@ -16,39 +18,43 @@ const (
 	txtRecord
 )
 
-var (
-	ErrDnsRecordNotFound = errors.New("dns record not found by checker")
-	errShutdown          = errors.New("dns provisioning canceled due to shutdown")
-)
-
-// CheckTXTWithRetry checks for the specified record. If the check fails, sleep and retry
-// the check again up to the maxTries specified. After exhausing retries, return false
-// if still not successful.
-func (service *Service) CheckTXTWithRetry(fqdn string, recordValue string, maxTries int) (propagated bool, err error) {
-	// retry loop
-	for i := 1; i <= maxTries; i++ {
+// CheckTXTWithRetry checks for the specified record. If the check fails, use exponential
+// backoff until that times out and then return false if propagation still hasn't occurred.
+func (service *Service) CheckTXTWithRetry(fqdn string, recordValue string) (propagated bool) {
+	// func to try with exponential backoff
+	checkAllServicesFunc := func() (bool, error) {
 		// check for propagation
-		propagated, err := service.checkDnsRecordAllServices(fqdn, recordValue, txtRecord)
-		// if error, log error but still retry
-		if err != nil {
-			service.logger.Error(err)
-		} else if propagated {
-			// if propagated, done & success
+		propagated := service.checkDnsRecordAllServices(fqdn, recordValue, txtRecord)
+
+		// if propagated, done & success
+		if propagated {
 			return true, nil
 		}
 
-		// sleep or cancel/error if shutdown is called
-		select {
-		case <-service.shutdownContext.Done():
-			// cancel/error if shutting down
-			return false, errShutdown
-
-		case <-time.After(time.Duration(i) * 15 * time.Second):
-			// sleep and retry
-		}
+		// return err to trigger retry
+		return false, errors.New("try again")
 	}
 
-	// loop exhausted without success
-	service.logger.Error(ErrDnsRecordNotFound)
-	return false, nil
+	// backoff properties
+	bo := backoff.NewExponentialBackOff()
+	bo.InitialInterval = 15 * time.Second
+	bo.RandomizationFactor = 0.2
+	bo.Multiplier = 1.2
+	bo.MaxInterval = 2 * time.Minute
+	bo.MaxElapsedTime = 30 * time.Minute
+
+	boWithContext := backoff.WithContext(bo, service.shutdownContext)
+
+	// log failures
+	notifyFunc := func(_err error, dur time.Duration) {
+		service.logger.Infof("dns TXT record %s value %s is still not propagated, will check again in %s", fqdn, recordValue, dur.Round(100*time.Millisecond))
+	}
+
+	// (re)try with backoff
+	propagated, err := backoff.RetryNotifyWithData(checkAllServicesFunc, boWithContext, notifyFunc)
+	if err != nil || !propagated {
+		return false
+	}
+
+	return true
 }

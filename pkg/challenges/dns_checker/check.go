@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net"
-	"strings"
 	"sync"
 	"time"
 )
@@ -19,11 +18,61 @@ const (
 	functioningRequirement = 0.5
 )
 
+// checkDnsRecord checks if the fqdn has a record of the specified type, set to the specified
+// value, on the specified dns resolver. If the record does not exist or exists but the value is
+// different, false is returned. If there is an error querying for the record, an error is returned.
+func checkDnsRecord(fqdn string, recordValue string, recordType dnsRecordType, r *net.Resolver) (exists bool, err error) {
+	var values []string
+
+	// nil check
+	if r == nil {
+		return false, errors.New("can't check record, resolver is nil")
+	}
+
+	// timeout context
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutSeconds*time.Second)
+	defer cancel()
+
+	// run appropriate query function
+	switch recordType {
+	// TXT records
+	case txtRecord:
+		values, err = r.LookupTXT(ctx, fqdn)
+
+	// any other (unsupported)
+	default:
+		return false, errors.New("unsupported dns record type")
+	}
+
+	// error check
+	if err != nil {
+		// if host wasn't found, this isn't a real error, it actually just means
+		// the record does not exist
+		if dnsErr, ok := err.(*net.DNSError); ok && dnsErr.IsNotFound {
+			return false, nil
+		}
+
+		// any other error, server failed
+		return false, err
+	}
+
+	// check for desired value
+	for i := range values {
+		// if value found
+		if values[i] == recordValue {
+			return true, nil
+		}
+	}
+
+	// records exist but desired value wasn't found
+	return false, nil
+}
+
 // checkDnsRecordAllServices sends concurrent dns requests using all configured
 // resolvers to check for the existence of the specified record. If the propagation
 // requirement is met, TRUE is returned. An Error is returned if the functioning
 // requirement is not met.
-func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue string, recordType dnsRecordType) (exists bool, err error) {
+func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue string, recordType dnsRecordType) (exists bool) {
 	// if no resolvers (i.e. configured to skip)
 	if service.dnsResolvers == nil {
 		// sleep the skip wait and then return true (assume propagated)
@@ -33,13 +82,13 @@ func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue strin
 		select {
 		case <-service.shutdownContext.Done():
 			// cancel/error if shutting down
-			return false, errShutdown
+			return false
 
 		case <-time.After(service.skipWait):
 			// sleep and retry
 		}
 
-		return true, nil
+		return true
 	}
 
 	// use waitgroup for concurrent checking
@@ -79,9 +128,10 @@ func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue strin
 	errCount := len(returnedErrs)
 	errRate := float32(errCount) / float32(resolverTotal)
 	service.logger.Debugf("dns check (%s): resolver fail count: %d, resolver fail rate: %.2f, resolver fail threshold: %.2f", fqdn, errCount, errRate, functioningRequirement)
-	// if error rate is greater than tolerable, error
+
+	// if error rate is greater than tolerable, return not propagated
 	if errRate > (1 - functioningRequirement) {
-		return false, returnedErrs[0]
+		return false
 	}
 
 	// error rate was acceptable, check results
@@ -95,60 +145,7 @@ func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue strin
 	// calculate propagation
 	propagationRate := float32(successCount) / float32(resolverTotal-errCount)
 	service.logger.Debugf("dns check (%s): propagation success count: %d, resolver count: %d, propagation rate: %.2f, propagation requirement: %.2f", fqdn, successCount, resolverTotal, propagationRate, propagationRequirement)
-	if propagationRate < propagationRequirement {
-		// not fully propagated, return false
-		return false, nil
-	}
 
-	// passed both thresholds, record exists
-	return true, nil
-}
-
-// checkDnsRecord checks if the fqdn has a record of the specified type, set to the specified
-// value, on the specified dns resolver. If the record does not exist or exists but the value is
-// different, false is returned. If there is an error querying for the record, an error is returned.
-func checkDnsRecord(fqdn string, recordValue string, recordType dnsRecordType, r *net.Resolver) (exists bool, err error) {
-	var values []string
-
-	// nil check
-	if r == nil {
-		return false, errors.New("can't check record, resolver is nil")
-	}
-
-	// timeout context
-	ctx, cancel := context.WithTimeout(context.Background(), timeoutSeconds*time.Second)
-	defer cancel()
-
-	// run appropriate query function
-	switch recordType {
-	// TXT records
-	case txtRecord:
-		values, err = r.LookupTXT(ctx, fqdn)
-
-	// any other (unsupported)
-	default:
-		return false, errors.New("unsupported dns record type")
-	}
-
-	// error check
-	if err != nil {
-		// error is "no such host" - aka success but record doesn't exist
-		// succeeded but record does not exist
-		if strings.Contains(err.Error(), "no such host") {
-			return false, nil
-		}
-		// any other error, server failed
-		return false, err
-	}
-
-	// check for desired value
-	for i := range values {
-		// if value found
-		if values[i] == recordValue {
-			return true, nil
-		}
-	}
-
-	// records exist but desired value wasn't found
-	return false, nil
+	// return true if rate >= requirement
+	return propagationRate >= propagationRequirement
 }

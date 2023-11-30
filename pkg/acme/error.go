@@ -17,19 +17,18 @@ func (e Error) Error() string {
 	return fmt.Sprintf("status: %d; type: %s; detail: %s", e.Status, e.Type, e.Detail)
 }
 
-// unmarshalErrorResponse attempts to unmarshal into the error response object
-// Note: This function returns err when an error response COULD NOT be decoded.
-// That is, the function returns an error type when the response did NOT decode
-// to an error.
-func unmarshalErrorResponse(bodyBytes []byte) (response Error, err error) {
-	err = json.Unmarshal(bodyBytes, &response)
-	// if error decoding was not succesful
+// unmarshalErrorResponse attempts to unmarshal into the error response object. If
+// it returns nil, the bodyBytes are not an ACME error.
+func unmarshalErrorResponse(bodyBytes []byte) (errResponse *Error) {
+	errResponse = new(Error)
+	err := json.Unmarshal(bodyBytes, errResponse)
+	// if error decoding was not succesful, not an error
 	if err != nil {
-		return Error{}, err
+		return nil
 	}
 
 	// if we did get an error response from ACME
-	return response, nil
+	return errResponse
 }
 
 // MarshalledString returns a JSON object as a string. This is useful to

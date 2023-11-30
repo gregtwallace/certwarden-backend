@@ -2,14 +2,18 @@ package challenges
 
 import (
 	"errors"
+	"fmt"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/challenges/dns_checker"
+	"legocerthub-backend/pkg/randomness"
 	"time"
+
+	"github.com/cenkalti/backoff/v4"
 )
 
 var (
-	errChallengeRetriesExhausted = errors.New("challenge failed (out of retries)")
-	errChallengeTypeNotFound     = errors.New("provider's challenge type not found in challenges array (possibly trying to use a wildcard with http-01)")
+	errDnsDidntPropagate         = errors.New("solving failed: dns record didn't propagate")
+	errChallengeRetriesExhausted = errors.New("solving failed: challenge failed to move to final state")
+	errChallengeTypeNotFound     = errors.New("solving failed: provider's challenge type not found in challenges array (possibly trying to use a wildcard with http-01)")
 )
 
 // Solve accepts an ACME identifier and a slice of challenges and then solves the challenge using a provider
@@ -30,6 +34,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		if challenges[i].Type == providerChallengeType {
 			found = true
 			challenge = challenges[i]
+			break
 		}
 	}
 	if !found {
@@ -63,15 +68,10 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	if providerChallengeType == acme.ChallengeTypeDns01 {
 		if service.dnsChecker != nil {
 			// check for propagation
-			propagated, err := service.dnsChecker.CheckTXTWithRetry(resourceName, resourceContent, 10)
-			if err != nil {
-				service.logger.Error(err)
-				return "", err
-			}
-
+			propagated := service.dnsChecker.CheckTXTWithRetry(resourceName, resourceContent)
 			// if failed to propagate
 			if !propagated {
-				return "", dns_checker.ErrDnsRecordNotFound
+				return "", errDnsDidntPropagate
 			}
 		} else {
 			// dnschecker is needed but not configured, shouldn't happen but deal with it just in case
@@ -92,35 +92,42 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		return "", err
 	}
 
-	// monitor for processing to complete (max 5 tries, 20 seconds apart each)
-	for i := 1; i <= 5; i++ {
-		// sleep to allow ACME time to process
-		// cancel/error if shutdown is called
-		select {
-		case <-service.shutdownContext.Done():
-			// cancel/error if shutting down
-			return "", errShutdown
+	// sleep a little before first check
+	time.Sleep(7 * time.Second)
 
-		case <-time.After(20 * time.Second):
-			// sleep and retry
-		}
-
-		// get challenge and check for error or final Statuses
+	// monitor challenge status using exponential backoff
+	challCheckFunc := func() error {
+		// get challenge
 		challenge, err = acmeService.GetChallenge(challenge.Url, key)
 		if err != nil {
-			return "", err
+			return err
 		}
 
-		// return Status if it has reached a final status
-		if challenge.Status == "valid" {
-			return challenge.Status, nil
-		} else if challenge.Status == "invalid" {
+		// log error if invalid
+		if challenge.Status == "invalid" {
 			service.logger.Infof("challenge status invalid; acme error: %s", challenge.Error)
-			return challenge.Status, nil
 		}
-		// else repeat loop
+
+		// done if Status has reached a final status
+		if challenge.Status == "valid" || challenge.Status == "invalid" {
+			return nil
+		}
+
+		// not a final status
+		return fmt.Errorf("current status (%s) is not a final status", challenge.Status)
 	}
 
-	// loop ended without reaching valid or invalid Status
-	return "", errChallengeRetriesExhausted
+	// notify: info log challenge checks
+	notifyFunc := func(_err error, dur time.Duration) {
+		service.logger.Infof("challenge for %s not confirmed finalized (%s), will check again in %s", challenge.Url, err, dur.Round(100*time.Millisecond))
+	}
+
+	bo := randomness.BackoffACME(service.shutdownContext)
+	err = backoff.RetryNotify(challCheckFunc, bo, notifyFunc)
+	// if err returned, retry was exhausted
+	if err != nil {
+		return "", errChallengeRetriesExhausted
+	}
+
+	return challenge.Status, nil
 }

@@ -2,6 +2,7 @@ package orders
 
 import (
 	"legocerthub-backend/pkg/acme"
+	"legocerthub-backend/pkg/randomness"
 	"net/http"
 	"time"
 )
@@ -66,10 +67,17 @@ func (of *orderFulfiller) doJob(j orderFulfillerJob, workerId int) {
 		return // done, failed
 	}
 
-	// Use loop to retry order. Cap retries to avoid indefinite loop.
-	maxTries := 5
+	// exponential backoff for retrying while 'processing'
+	bo := randomness.BackoffACME(of.shutdownContext)
+
+	// Use loop to retry order. Cap loop at 2 hours to avoid indefinite loop if something unexpected
+	// occurs (e.g., somethign broken with the acme server).
+	startTime := time.Now()
+	timeoutLength := 2 * time.Hour
+
 fulfillLoop:
-	for i := 1; i <= maxTries; i++ {
+	for time.Since(startTime) <= timeoutLength {
+
 		// Get the order (for most recent Order object and Status)
 		acmeOrder, err = acmeService.GetOrder(j.order.Location, key)
 		if err != nil {
@@ -80,13 +88,23 @@ fulfillLoop:
 			// status of the order to "invalid" and MAY delete the order resource.")
 			if acmeErr, ok := err.(acme.Error); ok && acmeErr.Status == http.StatusNotFound {
 				of.storage.PutOrderInvalid(j.order.ID)
+				return // done, permanent status
 			}
+
 			of.logger.Errorf("worker %d: error: %s", workerId, err)
 			return // done, failed
 		}
 
+		// if order is NOT processing, reset the backoff used when in processing; this ensures
+		// that any given processing phase starts with a fresh backoff as opposed to including
+		// time that elapsed during other statuses that were being worked on
+		if acmeOrder.Status != "processing" {
+			bo.Reset()
+		}
+
 		// action depends on order's current Status
 		switch acmeOrder.Status {
+
 		case "pending": // needs to be authed
 			var authStatus string
 			authStatus, err = of.authorizations.FulfillAuths(acmeOrder.Authorizations, key, acmeService)
@@ -94,10 +112,11 @@ fulfillLoop:
 				of.logger.Errorf("worker %d: error: %s", workerId, err)
 				return // done, failed
 			}
-			// auth should be valid (thus making order ready)
+
+			// auth(s) should be valid (thus making order ready)
 			// if not valid, should be invalid, loop to get updated order (also now invalid)
 			if authStatus != "valid" {
-				break
+				continue
 			}
 
 			// auths were valid, fallthrough to "ready" (which order should now be in)
@@ -112,56 +131,53 @@ fulfillLoop:
 			}
 
 			// finalize the order
-			acmeOrder, err = acmeService.FinalizeOrder(acmeOrder.Finalize, csr, key)
+			_, err = acmeService.FinalizeOrder(acmeOrder.Finalize, csr, key)
 			if err != nil {
 				of.logger.Errorf("worker %d: error: %s", workerId, err)
 				return // done, failed
 			}
 
-			// should now be valid, if not, probably processing
-			if acmeOrder.Status != "valid" {
-				break
-			}
-
-			// if order is valid, fallthrough to valid
-			fallthrough
+			// should be valid on next check (or maybe processing - sleep a little to try and
+			// avoid 'processing')
+			time.Sleep(7 * time.Second)
+			continue
 
 		case "valid": // can be downloaded
 			// download cert pem
+
 			// nil check (make sure there is a cert URL)
-			if acmeOrder.Certificate != nil {
-				certPemChain, err := acmeService.DownloadCertificate(*acmeOrder.Certificate, key)
-				if err != nil {
-					of.logger.Errorf("worker %d: error: %s", workerId, err)
-					return // done, failed
-				}
-
-				// process pem and save to storage
-				err = of.savePemChain(j.order.ID, certPemChain)
-				if err != nil {
-					of.logger.Errorf("worker %d: error: %s", workerId, err)
-					return
-				}
-
-				break fulfillLoop
+			if acmeOrder.Certificate == nil {
+				// if cert url is missing (nil), loop again (which will refresh order info)
+				continue
 			}
 
-			// if cert url is missing (nil), loop again (which will refresh order info)
+			certPemChain, err := acmeService.DownloadCertificate(*acmeOrder.Certificate, key)
+			if err != nil {
+				of.logger.Errorf("worker %d: error: %s", workerId, err)
+				return // done, failed
+			}
+
+			// process pem and save to storage
+			err = of.savePemChain(j.order.ID, certPemChain)
+			if err != nil {
+				of.logger.Errorf("worker %d: error: %s", workerId, err)
+				return // done, failed
+			}
+
+			// done
+			break fulfillLoop
 
 		case "processing":
-			// TODO: Implement exponential backoff
-			if i != maxTries {
-				// cancel on shutdown context
-				select {
-				case <-of.shutdownContext.Done():
-					// abort refreshing due to shutdown
+			// sleep and loop again, ACME server is working on it
 
-					of.logger.Errorf("worker %d: order job canceled due to shutdown", workerId)
-					return
+			select {
+			// cancel on shutdown context
+			case <-of.shutdownContext.Done():
+				of.logger.Errorf("worker %d: order job canceled due to shutdown", workerId)
+				return
 
-				case <-time.After(time.Duration(i) * 30 * time.Second):
-					// sleep and retry
-				}
+			case <-time.After(bo.NextBackOff()):
+				// sleep and retry using exponential backoff
 			}
 
 		case "invalid": // break, irrecoverable
@@ -170,13 +186,14 @@ fulfillLoop:
 
 		// Note: there is no 'expired' Status case. If the order expires it simply moves to 'invalid'.
 
+		// should never happen
 		default:
 			of.logger.Errorf("worker %d: error: order status unknown", workerId)
 			return // done, failed
 		}
 	}
 
-	// update order in storage
+	// update order in storage (regardless of loop outcome)
 	err = of.storage.PutOrderAcme(makeUpdateOrderAcmePayload(j.order.ID, acmeOrder))
 	if err != nil {
 		of.logger.Errorf("worker %d: error: %s", workerId, err)
@@ -195,6 +212,11 @@ fulfillLoop:
 		}
 	}
 
-	// always info log order completed
-	of.logger.Infof("worker %d: order id %d completed as %s (certificate name: %s, subject: %s)", workerId, j.order.ID, acmeOrder.Status, j.order.Certificate.Name, j.order.Certificate.Subject)
+	// log error if loop exhausted somehow
+	if time.Since(startTime) >= timeoutLength {
+		of.logger.Errorf("worker %d: order id %d exhausted retry loop time and terminated with status %s (certificate name: %s, subject: %s)", workerId, j.order.ID, acmeOrder.Status, j.order.Certificate.Name, j.order.Certificate.Subject)
+	} else {
+		// always info log order completed
+		of.logger.Infof("worker %d: order id %d completed with status %s (certificate name: %s, subject: %s)", workerId, j.order.ID, acmeOrder.Status, j.order.Certificate.Name, j.order.Certificate.Subject)
+	}
 }

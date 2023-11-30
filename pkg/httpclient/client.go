@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -35,6 +36,11 @@ func (c *Client) do(method string, url string, body io.Reader, addlHeader http.H
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
+	}
+
+	// return err if invalid scheme (detail about acme directory is helpful in logs)
+	if req.URL.Scheme != "http" && req.URL.Scheme != "https" {
+		return nil, fmt.Errorf("invalid scheme (%s) in http client request url (%s); is an acme directory failing to fetch?", req.URL.Scheme, req.URL.String())
 	}
 
 	// add any additionally specified headers
