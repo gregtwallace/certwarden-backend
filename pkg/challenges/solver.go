@@ -48,6 +48,8 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// provision the needed resource for validation and defer deprovisioning
+	// add to wg to ensure deprovision completes during shutdown
+	service.shutdownWaitgroup.Add(1)
 	err = service.provision(resourceName, resourceContent, provider)
 	// do error check after Deprovision to ensure any records that were created
 	// get cleaned up, even if Provision errored.
@@ -57,6 +59,8 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		if err != nil {
 			service.logger.Errorf("challenge solver deprovision failed (%s)", err)
 		}
+		// wg done do shutdown can proceed after deprovision
+		service.shutdownWaitgroup.Done()
 	}()
 
 	// Provision error check

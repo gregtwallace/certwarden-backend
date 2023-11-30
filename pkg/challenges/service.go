@@ -22,11 +22,11 @@ type application interface {
 	GetConfigFilename() string
 	GetLogger() *zap.SugaredLogger
 	GetShutdownContext() context.Context
+	GetShutdownWaitGroup() *sync.WaitGroup
 	GetOutputter() *output.Service
 
 	// for providers
 	GetHttpClient() *httpclient.Client
-	GetShutdownWaitGroup() *sync.WaitGroup
 }
 
 // Config holds all of the challenge config
@@ -37,14 +37,15 @@ type Config struct {
 
 // service struct
 type Service struct {
-	app             application
-	dnsCheckerCfg   dns_checker.Config
-	logger          *zap.SugaredLogger
-	shutdownContext context.Context
-	output          *output.Service
-	dnsChecker      *dns_checker.Service
-	Providers       *providers.Manager
-	resources       *datatypes.WorkTracker // tracks all resource names currently in use (regardless of provider)
+	app               application
+	dnsCheckerCfg     dns_checker.Config
+	logger            *zap.SugaredLogger
+	shutdownContext   context.Context
+	shutdownWaitgroup *sync.WaitGroup
+	output            *output.Service
+	dnsChecker        *dns_checker.Service
+	Providers         *providers.Manager
+	resources         *datatypes.WorkTracker // tracks all resource names currently in use (regardless of provider)
 }
 
 // NewService creates a new service
@@ -66,8 +67,9 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 	// output
 	service.output = app.GetOutputter()
 
-	// shutdown context
+	// shutdown context & wg
 	service.shutdownContext = app.GetShutdownContext()
+	service.shutdownWaitgroup = app.GetShutdownWaitGroup()
 
 	// configure challenge providers
 	service.Providers, err = providers.MakeManager(app, cfg.ProviderConfigs)
