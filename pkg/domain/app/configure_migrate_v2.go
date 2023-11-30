@@ -7,8 +7,10 @@ package app
 // to migrate the config from version 1 to version 2. an error is returned
 // if the migration cannot be performed.
 func configMigrateV1toV2(cfgFileYamlObj map[string]any) (newCfgVer int, err error) {
+	newSchemaVersion := 2
+
 	// set config version
-	cfgFileYamlObj["config_version"] = 2
+	cfgFileYamlObj["config_version"] = newSchemaVersion
 
 	// if old has cors_permitted_origins, set new cors_permitted_crossorigins from old & delete old
 	corsPermittedOrigins, ok := cfgFileYamlObj["cors_permitted_origins"]
@@ -17,5 +19,5 @@ func configMigrateV1toV2(cfgFileYamlObj map[string]any) (newCfgVer int, err erro
 		delete(cfgFileYamlObj, "cors_permitted_origins")
 	}
 
-	return 2, nil
+	return newSchemaVersion, nil
 }

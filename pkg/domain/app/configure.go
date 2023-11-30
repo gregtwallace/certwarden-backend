@@ -35,7 +35,8 @@ type config struct {
 	DisableHSTS               *bool             `yaml:"disable_hsts"`
 	LogLevel                  *string           `yaml:"log_level"`
 	EnablePprof               *bool             `yaml:"enable_pprof"`
-	PprofPort                 *int              `yaml:"pprof_port"`
+	PprofHttpsPort            *int              `yaml:"pprof_https_port"`
+	PprofHttpPort             *int              `yaml:"pprof_http_port"`
 	Updater                   updater.Config    `yaml:"updater"`
 	Orders                    orders.Config     `yaml:"orders"`
 	Challenges                challenges.Config `yaml:"challenges"`
@@ -51,9 +52,14 @@ func (c config) httpsServAddress() string {
 	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.HttpsPort)
 }
 
-// pprofAddress() returns formatted pprov server address string
-func (c config) pprofServAddress() string {
-	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.PprofPort)
+// pprofHttpServAddress() returns formatted pprof http server address string
+func (c config) pprofHttpServAddress() string {
+	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.PprofHttpPort)
+}
+
+// pprofHttpsServAddress() returns formatted pprof https server address string
+func (c config) pprofHttpsServAddress() string {
+	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.PprofHttpsPort)
 }
 
 // loadConfigFile parses the config yaml file. It also sets default config
@@ -115,11 +121,14 @@ func (app *Application) loadConfigFile() (err error) {
 		case 1:
 			cfgVer, err = configMigrateV1toV2(cfgFileYamlObj)
 
+		case 2:
+			cfgVer, err = configMigrateV2toV3(cfgFileYamlObj)
+
 		case appConfigVersion:
 			// no-op, loop will end due to version ==
 
 		default:
-			err = fmt.Errorf("config version is %d (expected %d) and cannot be fixed automatically; fix the config file", *app.config.ConfigVersion, appConfigVersion)
+			err = fmt.Errorf("config schema version is %d (expected %d) and cannot be fixed automatically; fix the config file", *app.config.ConfigVersion, appConfigVersion)
 		}
 	}
 	// err check from upgrade for loop
@@ -132,17 +141,17 @@ func (app *Application) loadConfigFile() (err error) {
 		// update config bytes with new cfg
 		cfgFileData, err = yaml.Marshal(cfgFileYamlObj)
 		if err != nil {
-			return fmt.Errorf("failed to marshal new config file for version migration (%s)", err)
+			return fmt.Errorf("failed to marshal new config file for schema version migration (%s)", err)
 		}
 
 		// write new config
 		err = os.WriteFile(configFilePath, cfgFileData, 0600)
 		if err != nil {
-			return fmt.Errorf("could not write version migrated config file (%s)", err)
+			return fmt.Errorf("could not write schema version migrated config file (%s)", err)
 		}
-		app.logger.Infof("config version migrated from %d to %d", origCfgVer, cfgVer)
+		app.logger.Infof("config schema version migrated from %d to %d", origCfgVer, cfgVer)
 	} else {
-		app.logger.Debugf("config version is current (%d)", appConfigVersion)
+		app.logger.Debugf("config schema version is current (%d)", appConfigVersion)
 	}
 
 	// decode config
@@ -211,9 +220,13 @@ func (app *Application) setDefaultConfigValues() {
 		app.config.EnablePprof = new(bool)
 		*app.config.EnablePprof = false
 	}
-	if app.config.PprofPort == nil {
-		app.config.PprofPort = new(int)
-		*app.config.PprofPort = 4065
+	if app.config.PprofHttpPort == nil {
+		app.config.PprofHttpPort = new(int)
+		*app.config.PprofHttpPort = 4065
+	}
+	if app.config.PprofHttpsPort == nil {
+		app.config.PprofHttpsPort = new(int)
+		*app.config.PprofHttpsPort = 4070
 	}
 
 	// updater

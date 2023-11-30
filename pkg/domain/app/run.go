@@ -134,12 +134,12 @@ func run() (restart bool) {
 				WriteTimeout: httpServerWriteTimeout,
 			}
 
-			app.logger.Infof("starting http redirect bound to %s", app.config.httpServAddress())
+			app.logger.Infof("starting http redirect bound to %s", redirectSrv.Addr)
 
 			// create listener for web server
-			ln1, err := net.Listen("tcp", app.config.httpServAddress())
+			ln1, err := net.Listen("tcp", redirectSrv.Addr)
 			if err != nil {
-				app.logger.Errorf("http redirect server cannot bind to %s (%s), exiting", app.config.httpServAddress(), err)
+				app.logger.Errorf("http redirect server cannot bind to %s (%s), exiting", redirectSrv.Addr, err)
 				os.Exit(1)
 			}
 
@@ -157,12 +157,12 @@ func run() (restart bool) {
 		}
 
 		// launch https
-		app.logger.Infof("starting lego-certhub (https) bound to %s", app.config.httpsServAddress())
+		app.logger.Infof("starting lego-certhub (https) bound to %s", srv.Addr)
 
 		// create listener for web server
-		ln2, err := net.Listen("tcp", app.config.httpsServAddress())
+		ln2, err := net.Listen("tcp", srv.Addr)
 		if err != nil {
-			app.logger.Errorf("lego-certhub (https) server cannot bind to %s (%s), exiting", app.config.httpServAddress(), err)
+			app.logger.Errorf("lego-certhub (https) server cannot bind to %s (%s), exiting", srv.Addr, err)
 			os.Exit(1)
 		}
 
@@ -181,12 +181,12 @@ func run() (restart bool) {
 	} else {
 		// if https failed, launch http server
 		app.logger.Warn("failed to configure https; lego-certhub will run over insecure http")
-		app.logger.Infof("starting insecure lego-certhub (http) bound to %s", app.config.httpServAddress())
+		app.logger.Infof("starting insecure lego-certhub (http) bound to %s", srv.Addr)
 
 		// create listener for web server
-		ln3, err := net.Listen("tcp", app.config.httpServAddress())
+		ln3, err := net.Listen("tcp", srv.Addr)
 		if err != nil {
-			app.logger.Errorf("insecure lego-certhub (http) server cannot bind to %s (%s), exiting", app.config.httpServAddress(), err)
+			app.logger.Errorf("insecure lego-certhub (http) server cannot bind to %s (%s), exiting", srv.Addr, err)
 			os.Exit(1)
 		}
 

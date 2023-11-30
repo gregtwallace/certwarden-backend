@@ -43,35 +43,51 @@ func pprofHandler(w http.ResponseWriter, r *http.Request) {
 
 // startPprof starts the pprof http server on the configured port
 func (app *Application) startPprof() error {
-	pprofServAddr := app.config.pprofServAddress()
-
-	// log availability
-	app.logger.Infof("pprof debugging enabled and available at: %s", pprofServAddr+pprofUrlPath)
-
 	// create router
 	router := httprouter.New()
 	router.HandlerFunc(http.MethodGet, pprofUrlPath+"/*any", pprofHandler)
 
-	// server
+	// http server config
 	srv := &http.Server{
-		Addr:         pprofServAddr,
+		Addr:         app.config.pprofHttpServAddress(),
 		Handler:      router,
 		IdleTimeout:  pprofServerIdleTimeout,
 		ReadTimeout:  pprofServerReadTimeout,
 		WriteTimeout: pprofServerWriteTimeout,
 	}
 
+	// if https, update config accordingly and log starting
+	// note: http redirect server is not run for pprof
+
+	if app.httpsCert != nil {
+		// https server config
+		srv.Addr = app.config.pprofHttpsServAddress()
+		srv.TLSConfig = app.tlsConf()
+
+		app.logger.Infof("starting pprof debugging (https) at %s", srv.Addr+pprofUrlPath)
+	} else {
+		app.logger.Infof("starting pprof debugging (http) at %s", srv.Addr+pprofUrlPath)
+	}
+
 	// create listener for web server
-	ln, err := net.Listen("tcp", pprofServAddr)
+	ln, err := net.Listen("tcp", srv.Addr)
 	if err != nil {
-		return fmt.Errorf("pprof server cannot bind to %s (%s)", pprofServAddr, err)
+		return fmt.Errorf("pprof server cannot bind to %s (%s)", srv.Addr, err)
 	}
 
 	// start server
 	app.shutdownWaitgroup.Add(1)
 	go func() {
 		defer func() { _ = ln.Close }()
-		err := srv.Serve(ln)
+
+		// start server as https or http
+		var err error
+		if app.httpsCert != nil {
+			err = srv.ServeTLS(ln, "", "")
+		} else {
+			err = srv.Serve(ln)
+		}
+
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			app.logger.Errorf("pprof server returned error (%s)", err)
 		}
