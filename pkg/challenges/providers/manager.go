@@ -14,7 +14,7 @@ import (
 type application interface {
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
-	GetConfigFilename() string
+	GetConfigFilenameWithPath() string
 	GetShutdownContext() context.Context
 	GetHttpClient() *httpclient.Client
 	GetShutdownWaitGroup() *sync.WaitGroup
@@ -38,7 +38,7 @@ func MakeManager(app application, cfg Config) (mgr *Manager, err error) {
 		childApp:   app,
 		logger:     app.GetLogger(),
 		output:     app.GetOutputter(),
-		configFile: app.GetConfigFilename(),
+		configFile: app.GetConfigFilenameWithPath(),
 		nextId:     0,
 		dP:         make(map[string]*provider),   // domain -> provider
 		pD:         make(map[*provider][]string), // provider -> []domain

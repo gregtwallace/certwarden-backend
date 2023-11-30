@@ -10,15 +10,21 @@ import (
 	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/orders"
 	"os"
+	"strconv"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
 // path to the config file
-const configFilePath = dataStoragePath + "/config.yaml"
+const configFile = "config.yaml"
+const configFilenameWithPath = dataStoragePath + "/" + configFile
+const configFileBackupFolder = dataStoragePath + "/backup"
+const configFolderMode = 0700
+const configFileMode = 0600
 
-func (app *Application) GetConfigFilename() string {
-	return configFilePath
+func (app *Application) GetConfigFilenameWithPath() string {
+	return configFilenameWithPath
 }
 
 // config is the configuration structure for app (and subsequently services)
@@ -68,10 +74,10 @@ func (c config) pprofHttpsServAddress() string {
 // config schemas, if possible.
 func (app *Application) loadConfigFile() (err error) {
 	// check if config file exists
-	if _, err := os.Stat(configFilePath); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(configFilenameWithPath); errors.Is(err, os.ErrNotExist) {
 		app.logger.Warn("LeGo config file does not exist, creating one")
 		// create config file
-		cfgFile, err := os.Create(configFilePath)
+		cfgFile, err := os.Create(configFilenameWithPath)
 		if err != nil {
 			return fmt.Errorf("failed to create new LeGo config file (%s)", err)
 		}
@@ -84,7 +90,7 @@ func (app *Application) loadConfigFile() (err error) {
 	}
 
 	// open config file
-	cfgFile, err := os.Open(configFilePath)
+	cfgFile, err := os.Open(configFilenameWithPath)
 	if err != nil {
 		return fmt.Errorf("failed to open config file (%s)", err)
 	}
@@ -115,29 +121,52 @@ func (app *Application) loadConfigFile() (err error) {
 
 	// check config version, do auto schema upgrades if possible
 	cfgVer := origCfgVer
-	for cfgVer != appConfigVersion && err == nil {
-		// take incremental migration action, if possible
-		switch cfgVer {
-		case 1:
-			cfgVer, err = configMigrateV1toV2(cfgFileYamlObj)
 
-		case 2:
-			cfgVer, err = configMigrateV2toV3(cfgFileYamlObj)
-
-		case appConfigVersion:
-			// no-op, loop will end due to version ==
-
-		default:
-			err = fmt.Errorf("config schema version is %d (expected %d) and cannot be fixed automatically; fix the config file", *app.config.ConfigVersion, appConfigVersion)
+	// upgrade if schema 1
+	if cfgVer == 1 {
+		cfgVer, err = configMigrateV1toV2(cfgFileYamlObj)
+		if err != nil {
+			return err
 		}
 	}
-	// err check from upgrade for loop
-	if err != nil {
-		return err
+
+	// upgrade if schema 2
+	if cfgVer == 2 {
+		cfgVer, err = configMigrateV2toV3(cfgFileYamlObj)
+		if err != nil {
+			return err
+		}
 	}
 
-	// if cfg version changed, write config
+	// fail if still not correct
+	if cfgVer != appConfigVersion {
+		return fmt.Errorf("config schema version is %d (expected %d) and cannot be fixed automatically; fix the config file", cfgVer, appConfigVersion)
+	}
+
+	// if cfg version changed, backup old config and write config
 	if cfgVer != origCfgVer {
+		// check for (and possibly make) backup folder
+		backupFolderStat, err := os.Stat(configFileBackupFolder)
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				// make backup folder since doesn't exist
+				err = os.Mkdir(configFileBackupFolder, configFolderMode)
+				if err != nil {
+					return fmt.Errorf("failed to make config backup directory (%s) for pre-migration config file backup", err)
+				}
+			} else {
+				return fmt.Errorf("failed to stat backup folder (%s) for pre-migration config file backup", err)
+			}
+		} else if !backupFolderStat.IsDir() {
+			return fmt.Errorf("backup folder (%s) is not a directory (needed for pre-migration config file backup)", configFileBackupFolder)
+		}
+
+		// save backup copy of old config
+		err = os.WriteFile(configFileBackupFolder+"/config."+time.Now().Format("2006.01.02-15.04.05")+".v"+strconv.Itoa(origCfgVer)+".yaml", cfgFileData, configFileMode)
+		if err != nil {
+			return fmt.Errorf("failed to write backup of old config file (%s)", err)
+		}
+
 		// update config bytes with new cfg
 		cfgFileData, err = yaml.Marshal(cfgFileYamlObj)
 		if err != nil {
@@ -145,7 +174,7 @@ func (app *Application) loadConfigFile() (err error) {
 		}
 
 		// write new config
-		err = os.WriteFile(configFilePath, cfgFileData, 0600)
+		err = os.WriteFile(configFilenameWithPath, cfgFileData, configFileMode)
 		if err != nil {
 			return fmt.Errorf("could not write schema version migrated config file (%s)", err)
 		}

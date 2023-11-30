@@ -1,5 +1,7 @@
 package app
 
+import "fmt"
+
 // CHANGES v1 to v2:
 // - cors_permitted_origins renamed to cors_permitted_crossorigins
 
@@ -7,7 +9,12 @@ package app
 // to migrate the config from version 1 to version 2. an error is returned
 // if the migration cannot be performed.
 func configMigrateV1toV2(cfgFileYamlObj map[string]any) (newCfgVer int, err error) {
+	currentSchemaVersion := 1
 	newSchemaVersion := 2
+
+	if cfgFileYamlObj["config_version"] != currentSchemaVersion {
+		return -1, fmt.Errorf("cannot update schema, current version %d (expected %d)", cfgFileYamlObj["config_version"], currentSchemaVersion)
+	}
 
 	// set config version
 	cfgFileYamlObj["config_version"] = newSchemaVersion
