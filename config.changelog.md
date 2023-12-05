@@ -21,7 +21,7 @@ take advantage of.
 - 0 -> any:
   + Manual intervention is required, review config.default.yaml,
     config.example.yaml, and this log.
-- 1 -> 2:
+- 1 -> 2 -> 3:
   + Automatic migration will occur.
 
 
@@ -54,5 +54,12 @@ take advantage of.
   https://github.com/gregtwallace/legocerthub-backend/commit/978eecfb6b86f580a35ce7344c1aedc2a6bdb8eb
   + `frontend_show_debug_info` config option ADDED that controls if the frontend
     will show debug info (if it is being hosted by the backend)
+
+### [v0.16.1] - 2023.12.03
+
+- 2023.11.29
+  https://github.com/gregtwallace/legocerthub-backend/commit/172fea183414c51d531fc98016142774c24737d7
+  + `pprof_port` RENAMED to `pprof_http_port`
+  + added `pprof_https_port` for pprof https port
 
 ### [v? TBD] - Next Version TBD

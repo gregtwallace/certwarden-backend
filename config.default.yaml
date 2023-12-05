@@ -21,7 +21,9 @@
 'disable_hsts': false
 
 'enable_pprof': false
-'pprof_port': 4065
+'pprof_http_port': 4065
+'pprof_https_port': 4070
+
 
 'updater':
   'auto_check': true

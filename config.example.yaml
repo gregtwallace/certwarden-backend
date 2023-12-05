@@ -12,7 +12,7 @@
 # LeGo's expected schema version. If it does not, LeGo will try to migrate from the
 # current schema. If it cannot, the server will not start and manual config editing
 # will be required.
-'config_version': 2
+'config_version': 3
 
 # Bind Address and Ports for API Server
 # If address is blank, server will bind to all available addresses
@@ -64,7 +64,8 @@
 # Enable pprof for debugging. When enabled, pprof is available over http
 # at the specified port
 'enable_pprof': true
-'pprof_port': 8065
+'pprof_http_port': 8065
+'pprof_https_port': 8070
 
 # LeGo update checking functionality to alert you when new versions are available
 'updater':
