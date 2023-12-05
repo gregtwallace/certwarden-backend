@@ -19,10 +19,6 @@ useradd -r -s /bin/false "$lego_user"
 mkdir "$lego_path"
 cp -R ../* "$lego_path"
 
-# make empty config
-mkdir "$lego_path/data"
-touch "$lego_path/data/config.yaml"
-
 # permissions
 ./set_permissions.sh "$lego_path" "$lego_user"
 
