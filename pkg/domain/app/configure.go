@@ -85,17 +85,15 @@ func (app *Application) loadConfigFile() (err error) {
 	// check if config file exists
 	if _, err := os.Stat(configFilenameWithPath); errors.Is(err, os.ErrNotExist) {
 		app.logger.Warn("LeGo config file does not exist, creating one")
-		// create config file
-		cfgFile, err := os.Create(configFilenameWithPath)
+
+		// new config file content
+		newCfgFile := fmt.Sprintf("\"config_version\": %d\n", appConfigVersion)
+
+		// write file
+		err := os.WriteFile(configFilenameWithPath, []byte(newCfgFile), configFileMode)
 		if err != nil {
 			return fmt.Errorf("failed to create new LeGo config file (%s)", err)
 		}
-
-		// write new config with config version
-		newCfgFile := fmt.Sprintf("\"config_version\": %d\n", appConfigVersion)
-		cfgFile.WriteString(newCfgFile)
-
-		cfgFile.Close()
 	}
 
 	// open config file
