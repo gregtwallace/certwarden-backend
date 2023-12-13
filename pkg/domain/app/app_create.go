@@ -37,11 +37,11 @@ func create() (*Application, error) {
 	// startup log
 	app.logger.Infof("starting LeGo CertHub v%s", appVersion)
 
-	// make data dir if doesn't exist
-	_, err = os.Stat(dataStoragePath)
+	// make app data dir if doesn't exist
+	_, err = os.Stat(dataStorageAppDataPath)
 	if errors.Is(err, os.ErrNotExist) {
 		// create data dir
-		err = os.Mkdir(dataStoragePath, 0700)
+		err = os.Mkdir(dataStorageAppDataPath, 0700)
 		if err != nil {
 			app.logger.Errorf("failed to make data storage directory (%s)", err)
 			return app, err
@@ -122,8 +122,23 @@ func create() (*Application, error) {
 		return app, err
 	}
 
+	// if db file does not exist at new location, check old location and move file
+	// from old to new (if exists at old location)
+	if _, err := os.Stat(dataStorageAppDataPath + sqlite.DbFilename); errors.Is(err, os.ErrNotExist) {
+		// stat old location
+		if _, err := os.Stat(dataStorageRootPath + sqlite.DbFilename); err == nil {
+			// exists at old location, move it
+			err = os.Rename(dataStorageRootPath+sqlite.DbFilename, dataStorageAppDataPath+sqlite.DbFilename)
+			if err != nil {
+				app.logger.Errorf("failed to move app db file from old location to new location (%s)", err)
+				return app, err
+			}
+			app.logger.Infof("storage database moved from %s to %s", dataStorageRootPath+sqlite.DbFilename, dataStorageAppDataPath+sqlite.DbFilename)
+		}
+	}
+
 	// storage
-	app.storage, err = sqlite.OpenStorage(app, dataStoragePath)
+	app.storage, err = sqlite.OpenStorage(app, dataStorageAppDataPath)
 	if err != nil {
 		app.logger.Errorf("failed to configure app storage (%s)", err)
 		return app, err

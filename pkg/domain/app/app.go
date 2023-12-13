@@ -31,7 +31,8 @@ const appVersion = "0.16.3"
 const appConfigVersion = 3
 
 // data storage root
-const dataStoragePath = "./data"
+const dataStorageRootPath = "./data"
+const dataStorageAppDataPath = dataStorageRootPath + "/app"
 
 // http server timeouts
 const httpServerReadTimeout = 5 * time.Second

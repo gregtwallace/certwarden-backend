@@ -11,7 +11,7 @@ import (
 )
 
 // logFile is the path and filename to store the application's log
-const logFilePath = dataStoragePath + "/log/"
+const logFilePath = dataStorageRootPath + "/log/"
 
 const logFileBaseName = "lego-certhub"
 const logFileSuffix = ".log"

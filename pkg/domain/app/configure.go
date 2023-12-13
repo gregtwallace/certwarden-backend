@@ -19,8 +19,8 @@ import (
 
 // path to the config file
 const configFile = "config.yaml"
-const configFilenameWithPath = dataStoragePath + "/" + configFile
-const fileBackupFolder = dataStoragePath + "/backup"
+const configFilenameWithPath = dataStorageAppDataPath + "/" + configFile
+const fileBackupFolder = dataStorageRootPath + "/backup"
 const configFolderMode = 0700
 const configFileMode = 0600
 
@@ -84,17 +84,30 @@ func (c config) pprofHttpsServAddress() string {
 func (app *Application) loadConfigFile() (err error) {
 	// check if config file exists
 	if _, err := os.Stat(configFilenameWithPath); errors.Is(err, os.ErrNotExist) {
-		app.logger.Warn("LeGo config file does not exist, creating one")
+		// if doesn't exist, check old location and move if it exists in old location
+		if _, err := os.Stat(dataStorageRootPath + "/" + configFile); err == nil {
+			// exists at old location, move it
+			err = os.Rename(dataStorageRootPath+"/"+configFile, configFilenameWithPath)
+			if err != nil {
+				app.logger.Errorf("failed to move config file from old location to new location (%s)", err)
+				return err
+			}
+			app.logger.Infof("config file moved from %s to %s", dataStorageRootPath+"/"+configFile, configFilenameWithPath)
+		} else {
+			// config doesn't exist at old location either
+			app.logger.Warn("LeGo config file does not exist, creating one")
 
-		// new config file content
-		newCfgFile := fmt.Sprintf("\"config_version\": %d\n", appConfigVersion)
+			// new config file content
+			newCfgFile := fmt.Sprintf("\"config_version\": %d\n", appConfigVersion)
 
-		// write file
-		err := os.WriteFile(configFilenameWithPath, []byte(newCfgFile), configFileMode)
-		if err != nil {
-			return fmt.Errorf("failed to create new LeGo config file (%s)", err)
+			// write file
+			err := os.WriteFile(configFilenameWithPath, []byte(newCfgFile), configFileMode)
+			if err != nil {
+				return fmt.Errorf("failed to create new LeGo config file (%s)", err)
+			}
 		}
 	}
+	// ignore any other Stat error, should error out below when opening
 
 	// open config file
 	cfgFile, err := os.Open(configFilenameWithPath)

@@ -20,7 +20,7 @@ import (
 
 // config for DB
 const dbTimeout = time.Duration(5 * time.Second)
-const dbFilename = "/lego-certhub.db"
+const DbFilename = "/lego-certhub.db"
 const DbCurrentUserVersion = 2
 const dbFileMode = 0600
 
@@ -59,7 +59,7 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 	store.timeout = dbTimeout
 
 	// full path and append options to the Dsn for connString
-	dbWithPath := dataPath + dbFilename
+	dbWithPath := dataPath + DbFilename
 	connString := dbWithPath + "?" + dbOptions.Encode()
 
 	// check if db file exists
