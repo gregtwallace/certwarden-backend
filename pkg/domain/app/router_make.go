@@ -56,6 +56,15 @@ func (app *Application) makeRouterAndRoutes() {
 	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/updater/new-version", app.updater.GetNewVersionInfo)
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/app/updater/new-version", app.updater.CheckForNewVersion)
 
+	// app backup and restore
+	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/backup/disk", app.backup.ListDiskBackupsHandler)
+
+	router.handleAPIRouteSecureSensitive(http.MethodPost, apiUrlPath+"/v1/app/backup/disk", app.backup.MakeDiskBackupNowHandler)
+	router.handleAPIRouteSecureSensitive(http.MethodDelete, apiUrlPath+"/v1/app/backup/disk/:filename", app.backup.DeleteDiskBackupHandler)
+
+	router.handleAPIRouteSecureDownload(http.MethodGet, apiUrlPath+"/v1/app/backup", app.backup.DownloadBackupNowHandler)
+	router.handleAPIRouteSecureDownload(http.MethodGet, apiUrlPath+"/v1/app/backup/disk/:filename", app.backup.DownloadDiskBackupHandler)
+
 	// challenges (config)
 	// router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/domains", app.challenges.Providers.GetAllDomains)
 	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services", app.challenges.Providers.GetAllProviders)

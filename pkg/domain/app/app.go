@@ -7,6 +7,7 @@ import (
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/app/auth"
+	"legocerthub-backend/pkg/domain/app/backup"
 	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
@@ -32,7 +33,8 @@ const appConfigVersion = 3
 
 // data storage root
 const dataStorageRootPath = "./data"
-const dataStorageAppDataPath = dataStorageRootPath + "/app"
+const dataStorageAppDataDirName = "app"
+const dataStorageAppDataPath = dataStorageRootPath + "/" + dataStorageAppDataDirName
 
 // http server timeouts
 const httpServerReadTimeout = 5 * time.Second
@@ -55,12 +57,13 @@ type Application struct {
 	restart           bool
 	config            *config
 	logger            *appLogger
+	output            *output.Service
+	backup            *backup.Service
 	shutdownContext   context.Context
 	shutdown          func(restart bool)
 	shutdownWaitgroup *sync.WaitGroup
 	httpsCert         *datatypes.SafeCert
 	httpClient        *httpclient.Client
-	output            *output.Service
 	router            http.Handler
 	storage           *sqlite.Storage
 	acmeServers       *acme_servers.Service
@@ -78,6 +81,23 @@ type Application struct {
 // return various app parts which are used as needed by services
 func (app *Application) GetAppVersion() string {
 	return appVersion
+}
+
+func (app *Application) GetDataStorageRootPath() string {
+	return dataStorageRootPath
+}
+
+func (app *Application) GetDataStorageAppDataPath() string {
+	return dataStorageAppDataPath
+}
+
+func (app *Application) GetDataStorageLogPath() string {
+	return dataStorageLogPath
+}
+
+func (app *Application) CreateBackupOnDisk(withLogFiles bool) error {
+	_, err := app.backup.CreateBackupOnDisk(withLogFiles)
+	return err
 }
 
 func (app *Application) GetConfigVersion() int {

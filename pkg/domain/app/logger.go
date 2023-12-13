@@ -11,7 +11,8 @@ import (
 )
 
 // logFile is the path and filename to store the application's log
-const logFilePath = dataStorageRootPath + "/log/"
+const logFileDirName = "log"
+const dataStorageLogPath = dataStorageRootPath + "/" + logFileDirName
 
 const logFileBaseName = "lego-certhub"
 const logFileSuffix = ".log"
@@ -76,7 +77,7 @@ func (app *Application) initZapLogger() {
 	} else {
 		// not init run, make lumber jack
 		lumberjackLogger := &lumberjack.Logger{
-			Filename: logFilePath + logFileName,
+			Filename: dataStorageLogPath + "/" + logFileName,
 			MaxSize:  1,   // megabytes
 			MaxAge:   364, // days
 			// MaxBackups: 10,
@@ -114,9 +115,14 @@ func (app *Application) initZapLogger() {
 		app.logger.syncAndClose()
 	}
 
-	// make logger
-	app.logger = &appLogger{}
-	app.logger.SugaredLogger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)).Sugar()
+	// make logger - don't change address during re-init
+	if app.logger == nil {
+		app.logger = &appLogger{}
+		app.logger.SugaredLogger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)).Sugar()
+	} else {
+		*app.logger.SugaredLogger = *zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)).Sugar()
+	}
+
 	app.logger.syncAndClose = func() {
 		_ = app.logger.Sync()
 		_ = closeFileFunc()
@@ -138,13 +144,13 @@ func (app *Application) initZapLogger() {
 // openLogFile opens the app's current log file or creates one if it does not exist
 func openLogFile() (*os.File, error) {
 	// make log path if it does not exist
-	err := os.MkdirAll(logFilePath, 0755)
+	err := os.MkdirAll(dataStorageLogPath, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("can't make directories for new logfile: %s", err)
 	}
 
 	// open log file (create if does not exist)
-	f, err := os.OpenFile(logFilePath+logFileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.FileMode(0600))
+	f, err := os.OpenFile(dataStorageLogPath+"/"+logFileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.FileMode(0600))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open or create logfile: %s", err)
 	}

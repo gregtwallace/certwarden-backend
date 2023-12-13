@@ -29,7 +29,7 @@ type currentLogResponse struct {
 // viewLogHandler is a handler that returns the content of the current log file to the client
 func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Request) *output.Error {
 	// open log, read only
-	logFile, err := os.OpenFile(logFilePath+logFileName, os.O_RDONLY, 0600)
+	logFile, err := os.OpenFile(dataStorageLogPath+"/"+logFileName, os.O_RDONLY, 0600)
 	if err != nil {
 		app.logger.Error(err)
 		return output.ErrInternal
@@ -73,11 +73,11 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 // the client
 func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Request) *output.Error {
 	// make buffer and writer for zip
-	zipBuffer := new(bytes.Buffer)
+	zipBuffer := bytes.NewBuffer(nil)
 	zipWriter := zip.NewWriter(zipBuffer)
 
 	// get all files in the log directory
-	files, err := os.ReadDir(logFilePath)
+	files, err := os.ReadDir(dataStorageLogPath)
 	if err != nil {
 		app.logger.Error(err)
 		return output.ErrInternal
@@ -89,11 +89,12 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 		if !files[i].IsDir() {
 			name := files[i].Name()
 
-			// confirm prefix and suffix then add
+			// confirm prefix and suffix then add (aka ensure non-log files that are accidentally in
+			// this folder are not zipped up and returned to client)
 			if strings.HasPrefix(name, logFileBaseName) && strings.HasSuffix(name, logFileSuffix) {
 
 				// open log file
-				logFile, err := os.Open(logFilePath + name)
+				logFile, err := os.Open(dataStorageLogPath + "/" + name)
 				if err != nil {
 					app.logger.Error(err)
 					return output.ErrInternal
@@ -128,7 +129,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	zipFilename := logFileName + "." + time.Now().Local().Format(time.RFC3339) + ".zip"
 
 	// output
-	app.output.WriteZip(w, r, zipFilename, zipBuffer.Bytes())
+	app.output.WriteZipNoStoreCache(w, r, zipFilename, zipBuffer.Bytes())
 
 	return nil
 }

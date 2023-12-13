@@ -61,6 +61,8 @@ replace legocerthub-backend/pkg/domain/app => /pkg/domain/app
 
 replace legocerthub-backend/pkg/domain/app/auth => /pkg/domain/app/auth
 
+replace legocerthub-backend/pkg/domain/app/backup => /pkg/domain/app/backup
+
 replace legocerthub-backend/pkg/domain/app/updater => /pkg/domain/app/updater
 
 replace legocerthub-backend/pkg/domain/authorizations => /pkg/domain/authorizations

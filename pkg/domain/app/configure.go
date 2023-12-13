@@ -11,8 +11,6 @@ import (
 	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/orders"
 	"os"
-	"strconv"
-	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -20,16 +18,12 @@ import (
 // path to the config file
 const configFile = "config.yaml"
 const configFilenameWithPath = dataStorageAppDataPath + "/" + configFile
-const fileBackupFolder = dataStorageRootPath + "/backup"
+
 const configFolderMode = 0700
 const configFileMode = 0600
 
 func (app *Application) GetConfigFilenameWithPath() string {
 	return configFilenameWithPath
-}
-
-func (app *Application) GetFileBackupFolder() string {
-	return fileBackupFolder
 }
 
 func (app *Application) GetFileBackupFolderMode() fs.FileMode {
@@ -165,26 +159,10 @@ func (app *Application) loadConfigFile() (err error) {
 
 	// if cfg version changed, backup old config and write config
 	if cfgVer != origCfgVer {
-		// check for (and possibly make) backup folder
-		backupFolderStat, err := os.Stat(fileBackupFolder)
+		// backup
+		err = app.CreateBackupOnDisk(false)
 		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				// make backup folder since doesn't exist
-				err = os.Mkdir(fileBackupFolder, configFolderMode)
-				if err != nil {
-					return fmt.Errorf("failed to make config backup directory (%s) for pre-migration config file backup", err)
-				}
-			} else {
-				return fmt.Errorf("failed to stat backup folder (%s) for pre-migration config file backup", err)
-			}
-		} else if !backupFolderStat.IsDir() {
-			return fmt.Errorf("backup folder (%s) is not a directory (needed for pre-migration config file backup)", fileBackupFolder)
-		}
-
-		// save backup copy of old config
-		err = os.WriteFile(fileBackupFolder+"/config."+time.Now().Format("2006.01.02-15.04.05")+".v"+strconv.Itoa(origCfgVer)+".yaml", cfgFileData, configFileMode)
-		if err != nil {
-			return fmt.Errorf("failed to write backup of old config file (%s)", err)
+			return fmt.Errorf("failed to backup data before writing config schema migration (%s)", err)
 		}
 
 		// update config bytes with new cfg

@@ -56,6 +56,22 @@ func (router *router) handleAPIRouteSecure(method string, path string, handlerFu
 	router.r.HandlerFunc(method, path, httpHandlerFunc)
 }
 
+// handleAPIRouteSecure creates a route on router intended for an authenticated API route WITH
+// enhanced logging to ensure any time these routes are accessed they are explicitly logged
+func (router *router) handleAPIRouteSecureSensitive(method string, path string, handlerFunc handlerFunc) {
+	// JWT Auth
+	handlerFunc = middlewareApplyAuthJWT(handlerFunc, router.auth)
+
+	// CORS
+	handlerFunc = middlewareApplyCORS(handlerFunc, router.permittedCrossOrigins)
+
+	// Logger / handle custom handler func's error
+	httpHandlerFunc := middlewareApplyReturnValHandling(handlerFunc, true, router.logger, router.output)
+
+	// make handler
+	router.r.HandlerFunc(method, path, httpHandlerFunc)
+}
+
 // handleAPIRouteSecureDownload creates a route on router intended for downloading files via
 // a logged in (SECURE) user.
 func (router *router) handleAPIRouteSecureDownload(method string, path string, handlerFunc handlerFunc) {

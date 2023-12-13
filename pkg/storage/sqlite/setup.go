@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"io"
-	"io/fs"
 	"legocerthub-backend/pkg/domain/app/auth"
 	"net/url"
 	"os"
@@ -20,7 +18,7 @@ import (
 
 // config for DB
 const dbTimeout = time.Duration(5 * time.Second)
-const DbFilename = "/lego-certhub.db"
+const DbFilename = "lego-certhub.db"
 const DbCurrentUserVersion = 2
 const dbFileMode = 0600
 
@@ -31,9 +29,9 @@ var dbOptions = url.Values{
 var errServiceComponent = errors.New("necessary storage service component is missing")
 
 type App interface {
+	GetDataStorageAppDataPath() string
 	GetLogger() *zap.SugaredLogger
-	GetFileBackupFolder() string
-	GetFileBackupFolderMode() fs.FileMode
+	CreateBackupOnDisk(withLogFiles bool) error
 }
 
 // Storage is the struct that holds data about the connection
@@ -45,7 +43,7 @@ type Storage struct {
 
 // OpenStorage opens an existing sqlite database or creates a new one if needed.
 // It also creates tables. It then returns Storage.
-func OpenStorage(app App, dataPath string) (*Storage, error) {
+func OpenStorage(app App) (*Storage, error) {
 	store := new(Storage)
 	var err error
 
@@ -59,7 +57,7 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 	store.timeout = dbTimeout
 
 	// full path and append options to the Dsn for connString
-	dbWithPath := dataPath + DbFilename
+	dbWithPath := app.GetDataStorageAppDataPath() + "/" + DbFilename
 	connString := dbWithPath + "?" + dbOptions.Encode()
 
 	// check if db file exists
@@ -128,40 +126,9 @@ func OpenStorage(app App, dataPath string) (*Storage, error) {
 
 	// back up exisitng db before trying any migrations
 	if fileUserVersion != DbCurrentUserVersion {
-		backupFolder := app.GetFileBackupFolder()
-
-		// check for (and possibly make) backup folder
-		backupFolderStat, err := os.Stat(backupFolder)
+		err = app.CreateBackupOnDisk(false)
 		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				// make backup folder since doesn't exist
-				err = os.Mkdir(backupFolder, app.GetFileBackupFolderMode())
-				if err != nil {
-					return nil, fmt.Errorf("failed to make db backup directory (%s) for pre-migration db file backup", err)
-				}
-			} else {
-				return nil, fmt.Errorf("failed to stat db backup folder (%s) for pre-migration db file backup", err)
-			}
-		} else if !backupFolderStat.IsDir() {
-			return nil, fmt.Errorf("backup folder (%s) is not a directory (needed for pre-migration db file backup)", backupFolder)
-		}
-
-		// backup db file
-		dbFile, err := os.Open(dbWithPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to open db file for backup (%s)", err)
-		}
-
-		dbFileData, err := io.ReadAll(dbFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read db file for backup (%s)", err)
-		}
-
-		dbFile.Close()
-
-		err = os.WriteFile(backupFolder+"/lego-certhub."+time.Now().Format("2006.01.02-15.04.05")+".v"+strconv.Itoa(fileUserVersion)+".db", dbFileData, dbFileMode)
-		if err != nil {
-			return nil, fmt.Errorf("failed to write backup of old db file (%s)", err)
+			return nil, fmt.Errorf("failed to backup data before attempting db migration (%s)", err)
 		}
 	}
 

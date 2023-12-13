@@ -9,6 +9,7 @@ import (
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/app/auth"
+	"legocerthub-backend/pkg/domain/app/backup"
 	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
@@ -36,6 +37,20 @@ func create() (*Application, error) {
 
 	// startup log
 	app.logger.Infof("starting LeGo CertHub v%s", appVersion)
+
+	// output service
+	app.output, err = output.NewService(app)
+	if err != nil {
+		app.logger.Errorf("failed to configure app output (%s)", err)
+		return app, err
+	}
+
+	// app backup service
+	app.backup, err = backup.NewService(app)
+	if app.backup == nil || err != nil {
+		app.logger.Errorf("failed to configure app backup (%s)", err)
+		return app, err
+	}
 
 	// make app data dir if doesn't exist
 	_, err = os.Stat(dataStorageAppDataPath)
@@ -115,30 +130,23 @@ func create() (*Application, error) {
 	userAgent := fmt.Sprintf("LeGoCertHub/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
 	app.httpClient = httpclient.New(userAgent)
 
-	// output service
-	app.output, err = output.NewService(app)
-	if err != nil {
-		app.logger.Errorf("failed to configure app output (%s)", err)
-		return app, err
-	}
-
 	// if db file does not exist at new location, check old location and move file
 	// from old to new (if exists at old location)
-	if _, err := os.Stat(dataStorageAppDataPath + sqlite.DbFilename); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(dataStorageAppDataPath + "/" + sqlite.DbFilename); errors.Is(err, os.ErrNotExist) {
 		// stat old location
-		if _, err := os.Stat(dataStorageRootPath + sqlite.DbFilename); err == nil {
+		if _, err := os.Stat(dataStorageRootPath + "/" + sqlite.DbFilename); err == nil {
 			// exists at old location, move it
-			err = os.Rename(dataStorageRootPath+sqlite.DbFilename, dataStorageAppDataPath+sqlite.DbFilename)
+			err = os.Rename(dataStorageRootPath+"/"+sqlite.DbFilename, dataStorageAppDataPath+"/"+sqlite.DbFilename)
 			if err != nil {
 				app.logger.Errorf("failed to move app db file from old location to new location (%s)", err)
 				return app, err
 			}
-			app.logger.Infof("storage database moved from %s to %s", dataStorageRootPath+sqlite.DbFilename, dataStorageAppDataPath+sqlite.DbFilename)
+			app.logger.Infof("storage database moved from %s to %s", dataStorageRootPath+"/"+sqlite.DbFilename, dataStorageAppDataPath+"/"+sqlite.DbFilename)
 		}
 	}
 
 	// storage
-	app.storage, err = sqlite.OpenStorage(app, dataStorageAppDataPath)
+	app.storage, err = sqlite.OpenStorage(app)
 	if err != nil {
 		app.logger.Errorf("failed to configure app storage (%s)", err)
 		return app, err
