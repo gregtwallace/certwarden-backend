@@ -3,7 +3,6 @@ package backup
 import (
 	"errors"
 	"legocerthub-backend/pkg/output"
-	"log"
 	"path/filepath"
 
 	"go.uber.org/zap"
@@ -35,10 +34,6 @@ func NewService(app App) (*Service, error) {
 	service.cleanDataStorageRootPath = filepath.Clean(app.GetDataStorageRootPath())
 	service.cleanDataStorageLogPath = filepath.Clean(app.GetDataStorageLogPath())
 	service.cleanDataStorageBackupPath = filepath.Clean(app.GetDataStorageRootPath() + "/" + dataStorageBackupDirName)
-
-	log.Println(service.cleanDataStorageRootPath)
-	log.Println(service.cleanDataStorageLogPath)
-	log.Println(service.cleanDataStorageBackupPath)
 
 	// logger
 	service.logger = app.GetLogger()
