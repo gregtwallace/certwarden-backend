@@ -37,7 +37,7 @@ func (store *Storage) migrateV1toV2() (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	if fileUserVersion != 0 {
+	if fileUserVersion != oldSchemaVer {
 		return -1, fmt.Errorf("cannot update db schema, current version %d (expected %d)", fileUserVersion, oldSchemaVer)
 	}
 
