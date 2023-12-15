@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/authorizations"
+	"os/exec"
 	"sync"
 
 	"go.uber.org/zap"
@@ -23,6 +24,7 @@ type orderFulfiller struct {
 	isHttps               bool
 	serverCertificateName *string
 	loadHttpsCertificate  func() error
+	shellPath             string
 
 	highJobs chan orderFulfillerJob
 	lowJobs  chan orderFulfillerJob
@@ -35,9 +37,38 @@ type orderFulfiller struct {
 
 // CreateManager creates the manager with the requested number of workers
 func createOrderFulfiller(app App, workerCount int) *orderFulfiller {
+	logger := app.GetLogger()
+
+	// determine shell (os dependent)
+	// powershell
+	var shellPath string
+	var err error
+	shellPath, err = exec.LookPath("powershell.exe")
+	if err != nil {
+		logger.Debugf("unable to find powershell (%s)", err)
+		// then try bash
+		shellPath, err = exec.LookPath("bash")
+		if err != nil {
+			logger.Debugf("unable to find bash (%s)", err)
+			// then try zshell
+			shellPath, err = exec.LookPath("zsh")
+			if err != nil {
+				logger.Debugf("unable to find zshell (%s)", err)
+				// then try sh
+				shellPath, err = exec.LookPath("sh")
+				if err != nil {
+					logger.Debugf("unable to find sh (%s)", err)
+					// failed - disable post processing
+					logger.Errorf("unable to find a suitable shell for certificate post processing actions, post processing disabled (%s)")
+					shellPath = ""
+				}
+			}
+		}
+	}
+
 	of := &orderFulfiller{
 		shutdownContext:   app.GetShutdownContext(),
-		logger:            app.GetLogger(),
+		logger:            logger,
 		storage:           app.GetOrderStorage(),
 		acmeServerService: app.GetAcmeServerService(),
 		authorizations:    app.GetAuthsService(),
@@ -45,6 +76,7 @@ func createOrderFulfiller(app App, workerCount int) *orderFulfiller {
 		isHttps:               app.IsHttps(),
 		serverCertificateName: app.HttpsCertificateName(),
 		loadHttpsCertificate:  app.LoadHttpsCertificate,
+		shellPath:             shellPath,
 
 		workerJobs: make(map[int]*orderFulfillerJob),
 		highJobs:   make(chan orderFulfillerJob),

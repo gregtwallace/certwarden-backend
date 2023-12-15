@@ -17,8 +17,8 @@ type orderDb struct {
 	knownRevoked   bool
 	err            sql.NullString // stored as json object
 	expires        sql.NullInt32
-	dnsIdentifiers commaJoinedStrings // will be a comma separated list from storage
-	authorizations commaJoinedStrings // will be a comma separated list from storage
+	dnsIdentifiers jsonStringSlice // stored as json array
+	authorizations jsonStringSlice // stored as json array
 	finalize       string
 	finalizedKey   keyDb
 	certificateUrl sql.NullString

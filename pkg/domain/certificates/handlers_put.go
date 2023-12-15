@@ -13,20 +13,22 @@ import (
 // DetailsUpdatePayload is the struct for editing an existing cert. A number of
 // fields can be updated by the client on the fly (without ACME interaction).
 type DetailsUpdatePayload struct {
-	ID                 int      `json:"-"`
-	Name               *string  `json:"name"`
-	Description        *string  `json:"description"`
-	PrivateKeyId       *int     `json:"private_key_id"`
-	SubjectAltNames    []string `json:"subject_alts"`
-	Organization       *string  `json:"organization"`
-	OrganizationalUnit *string  `json:"organizational_unit"`
-	Country            *string  `json:"country"`
-	State              *string  `json:"state"`
-	City               *string  `json:"city"`
-	ApiKey             *string  `json:"api_key"`
-	ApiKeyNew          *string  `json:"api_key_new"`
-	ApiKeyViaUrl       *bool    `json:"api_key_via_url"`
-	UpdatedAt          int      `json:"-"`
+	ID                        int      `json:"-"`
+	Name                      *string  `json:"name"`
+	Description               *string  `json:"description"`
+	PrivateKeyId              *int     `json:"private_key_id"`
+	SubjectAltNames           []string `json:"subject_alts"`
+	Organization              *string  `json:"organization"`
+	OrganizationalUnit        *string  `json:"organizational_unit"`
+	Country                   *string  `json:"country"`
+	State                     *string  `json:"state"`
+	City                      *string  `json:"city"`
+	PostProcessingCommand     *string  `json:"post_processing_command"`
+	PostProcessingEnvironment []string `json:"post_processing_environment"`
+	ApiKey                    *string  `json:"api_key"`
+	ApiKeyNew                 *string  `json:"api_key_new"`
+	ApiKeyViaUrl              *bool    `json:"api_key_via_url"`
+	UpdatedAt                 int      `json:"-"`
 }
 
 // PutDetailsCert is a handler that sets various details about a cert and saves
@@ -93,6 +95,9 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 		return output.ErrValidationFailed
 	}
 	// TODO: Do any validation of CSR components?
+
+	// post processing command & env are optional but nothing to validate
+
 	// end validation
 
 	// add additional details to the payload before saving

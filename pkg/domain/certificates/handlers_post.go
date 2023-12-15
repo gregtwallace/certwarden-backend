@@ -17,22 +17,24 @@ import (
 
 // NewPayload is the struct for creating a new certificate
 type NewPayload struct {
-	Name                 *string  `json:"name"`
-	Description          *string  `json:"description"`
-	PrivateKeyID         *int     `json:"private_key_id"`
-	NewKeyAlgorithmValue *string  `json:"algorithm_value"`
-	AcmeAccountID        *int     `json:"acme_account_id"`
-	Subject              *string  `json:"subject"`
-	SubjectAltNames      []string `json:"subject_alts"`
-	Organization         *string  `json:"organization"`
-	OrganizationalUnit   *string  `json:"organizational_unit"`
-	Country              *string  `json:"country"`
-	State                *string  `json:"state"`
-	City                 *string  `json:"city"`
-	ApiKey               string   `json:"-"`
-	ApiKeyViaUrl         bool     `json:"-"`
-	CreatedAt            int      `json:"-"`
-	UpdatedAt            int      `json:"-"`
+	Name                      *string  `json:"name"`
+	Description               *string  `json:"description"`
+	PrivateKeyID              *int     `json:"private_key_id"`
+	NewKeyAlgorithmValue      *string  `json:"algorithm_value"`
+	AcmeAccountID             *int     `json:"acme_account_id"`
+	Subject                   *string  `json:"subject"`
+	SubjectAltNames           []string `json:"subject_alts"`
+	Organization              *string  `json:"organization"`
+	OrganizationalUnit        *string  `json:"organizational_unit"`
+	Country                   *string  `json:"country"`
+	State                     *string  `json:"state"`
+	City                      *string  `json:"city"`
+	PostProcessingCommand     *string  `json:"post_processing_command"`
+	PostProcessingEnvironment []string `json:"post_processing_environment"`
+	ApiKey                    string   `json:"-"`
+	ApiKeyViaUrl              bool     `json:"-"`
+	CreatedAt                 int      `json:"-"`
+	UpdatedAt                 int      `json:"-"`
 }
 
 // PostNewCert creates a new certificate object in storage. No actual encryption certificate
@@ -130,6 +132,13 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	}
 	if payload.City == nil {
 		payload.City = new(string)
+	}
+	// post processing command / env (don't check valid path, just let errors log if its bad)
+	if payload.PostProcessingCommand == nil {
+		payload.PostProcessingCommand = new(string)
+	}
+	if payload.PostProcessingEnvironment == nil {
+		payload.PostProcessingEnvironment = []string{}
 	}
 	// end validation
 

@@ -29,16 +29,18 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 			api_key = case when $10 is null then api_key else $10 end,
 			api_key_new = case when $11 is null then api_key_new else $11 end,
 			api_key_via_url = case when $12 is null then api_key_via_url else $12 end,
-			updated_at = $13
+			post_processing_command = case when $13 is null then post_processing_command else $13 end,
+			post_processing_environment = case when $14 is null then post_processing_environment else $14 end,
+			updated_at = $15
 		WHERE
-			id = $14
+			id = $16
 		`
 
 	_, err := store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.PrivateKeyId,
-		makeCommaJoinedString(payload.SubjectAltNames),
+		makeJsonStringSlice(payload.SubjectAltNames),
 		payload.Organization,
 		payload.OrganizationalUnit,
 		payload.Country,
@@ -47,6 +49,8 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 		payload.ApiKey,
 		payload.ApiKeyNew,
 		payload.ApiKeyViaUrl,
+		payload.PostProcessingCommand,
+		makeJsonStringSlice(payload.PostProcessingEnvironment),
 		payload.UpdatedAt,
 		payload.ID,
 	)

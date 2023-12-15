@@ -1,14 +1,22 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
-	"time"
+	"fmt"
 )
 
-// createDBTables creates a fresh set of tables in the db. This is used for new db
-// file creation and for recreation during migration. This is also used to ensure
-// all expected tables exist before renaming them to _old
-func createDBTables(tx *sql.Tx) error {
+// CHANGES v2 to v3:
+// - certificates:
+//     - Add 'post_processing_command' field/column
+//		 - Add 'post_processing_environment' field/column
+//		 - Modify 'subject_alts' from comma separated strings to valid json array object
+// - acme_orders:
+//		 - Modify 'dns_identifiers' from comma separated strings to valid json array object
+//		 - Modify 'authorizations' from comma separated strings to valid json array object
+
+// createDBTablesV3 creates a fresh set of tables in the db using schema version 2
+func createDBTablesV3(tx *sql.Tx) error {
 	// acme_servers
 	query := `CREATE TABLE IF NOT EXISTS acme_servers (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
@@ -92,6 +100,8 @@ func createDBTables(tx *sql.Tx) error {
 		api_key_via_url integer NOT NULL DEFAULT 0 CHECK(api_key_via_url IN (0,1)),
 		created_at integer NOT NULL,
 		updated_at integer NOT NULL,
+		post_processing_command text NOT NULL DEFAULT "",
+		post_processing_environment text NOT NULL DEFAULT "[]",
 		FOREIGN KEY (private_key_id)
 			REFERENCES private_keys (id)
 				ON DELETE RESTRICT
@@ -163,91 +173,81 @@ func createDBTables(tx *sql.Tx) error {
 	return nil
 }
 
-// insertDefaultAcmeServers inserts the default ACME Servers which are Let's Encrypt
-// and Let's Encrypt (Staging)
-func insertDefaultAcmeServers(tx *sql.Tx) error {
-	// add LE acme servers
-	query := `
-		INSERT INTO acme_servers (id, name, description, directory_url, is_staging, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-	`
+// migrateV2toV3 updates the storage db from user_version 2 to user_version 3, if it cannot
+// do so, an error is returned and modification is aborted
+func (store *Storage) migrateV2toV3() (int, error) {
+	oldSchemaVer := 2
+	newSchemaVer := 3
 
-	// LE Prod
-	_, err := tx.Exec(query,
-		0,
-		"Lets_Encrypt",
-		"Let's Encrypt Production Server",
-		"https://acme-v02.api.letsencrypt.org/directory",
-		false,
-		int(time.Now().Unix()),
-		int(time.Now().Unix()),
+	store.logger.Infof("updating database user_version from %d to %d", oldSchemaVer, newSchemaVer)
+
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	defer cancel()
+
+	// create sql transaction to roll back in the event an error occurs
+	tx, err := store.db.BeginTx(ctx, nil)
+	if err != nil {
+		return -1, err
+	}
+	defer tx.Rollback()
+
+	// verify correct current ver
+	query := `PRAGMA user_version`
+	row := tx.QueryRowContext(ctx, query)
+	fileUserVersion := -1
+	err = row.Scan(
+		&fileUserVersion,
 	)
 	if err != nil {
-		return err
+		return -1, err
+	}
+	if fileUserVersion != oldSchemaVer {
+		return -1, fmt.Errorf("cannot update db schema, current version %d (expected %d)", fileUserVersion, oldSchemaVer)
 	}
 
-	// LE Staging
-	_, err = tx.Exec(query,
-		1,
-		"Lets_Encrypt_Staging",
-		"Let's Encrypt Staging Server",
-		"https://acme-staging-v02.api.letsencrypt.org/directory",
-		true,
-		int(time.Now().Unix()),
-		int(time.Now().Unix()),
-	)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// renameOldDbTables renames the existing tables to append _old to the end
-// in preparation for re-creation of new tables. If any expected tables don't
-// exist, they are created blank and then renamed to _old (this happens when
-// a db version adds a new table)
-func renameOldDbTables(tx *sql.Tx) error {
-	// ensure all tables actually exist
-	err := createDBTables(tx)
-	if err != nil {
-		return err
-	}
-
-	// rename tables
-	query := `
-		ALTER TABLE acme_accounts RENAME TO acme_accounts_old;
-		ALTER TABLE acme_orders RENAME TO acme_orders_old;
-		ALTER TABLE acme_servers RENAME TO acme_servers_old;
-		ALTER TABLE certificates RENAME TO certificates_old;
-		ALTER TABLE private_keys RENAME TO private_keys_old;
-		ALTER TABLE users RENAME TO users_old;
+	// add columns
+	query = `
+		ALTER TABLE certificates ADD post_processing_command text NOT NULL DEFAULT "";
+		ALTER TABLE certificates ADD post_processing_environment text NOT NULL DEFAULT "[]"
 	`
 
 	_, err = tx.Exec(query)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
-	return nil
-}
+	// modify column data from comma joined strings to json arrays
+	query = `
+		UPDATE certificates
+			SET subject_alts = case when subject_alts is "" then "[]" else '["' || replace(subject_alts, ',', '","') || '"]' end;
 
-// removeOldDbTables drops all of the _old table variants as a cleanup step
-func removeOldDbTables(tx *sql.Tx) error {
-	// drop tables
-	query := `
-		DROP TABLE acme_orders_old;	
-		DROP TABLE certificates_old;
-		DROP TABLE acme_accounts_old;
-		DROP TABLE private_keys_old;
-		DROP TABLE acme_servers_old;
-		DROP TABLE users_old;
+		UPDATE acme_orders
+		SET
+			dns_identifiers = case when dns_identifiers is "" then "[]" else '["' || replace(dns_identifiers, ',', '","') || '"]' end,
+			authorizations = case when authorizations is "" then "[]" else '["' || replace(authorizations, ',', '","') || '"]' end;
 	`
 
-	_, err := tx.Exec(query)
+	_, err = tx.Exec(query)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
-	return nil
+	// update user_version
+	query = fmt.Sprintf(`
+		PRAGMA user_version = %d
+	`, newSchemaVer)
+
+	_, err = tx.Exec(query)
+	if err != nil {
+		return -1, err
+	}
+
+	// no errors, commit transaction
+	err = tx.Commit()
+	if err != nil {
+		return -1, err
+	}
+
+	store.logger.Infof("database user_version successfully upgraded from %d to %d", oldSchemaVer, newSchemaVer)
+	return newSchemaVer, nil
 }

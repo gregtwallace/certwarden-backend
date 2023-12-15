@@ -2,12 +2,210 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 )
 
 // CHANGES v1 to v2:
 // - certificates:
 //     - Delete 'challenge_method' field/column
+
+// renameOldDbV0Tables renames the existing tables to append _old to the end
+// in preparation for re-creation of new tables.
+func renameOldDbV1Tables(tx *sql.Tx) error {
+	// rename tables
+	query := `
+		ALTER TABLE acme_accounts RENAME TO acme_accounts_old;
+		ALTER TABLE acme_orders RENAME TO acme_orders_old;
+		ALTER TABLE acme_servers RENAME TO acme_servers_old;
+		ALTER TABLE certificates RENAME TO certificates_old;
+		ALTER TABLE private_keys RENAME TO private_keys_old;
+		ALTER TABLE users RENAME TO users_old;
+	`
+
+	_, err := tx.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// removeOldDbV0Tables drops all of the _old table variants as a cleanup step
+func removeOldDbV1Tables(tx *sql.Tx) error {
+	// drop tables
+	query := `
+		DROP TABLE acme_orders_old;	
+		DROP TABLE certificates_old;
+		DROP TABLE acme_accounts_old;
+		DROP TABLE private_keys_old;
+		DROP TABLE acme_servers_old;
+		DROP TABLE users_old;
+	`
+
+	_, err := tx.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createDBTablesV2 creates a fresh set of tables in the db using schema version 2
+func createDBTablesV2(tx *sql.Tx) error {
+	// acme_servers
+	query := `CREATE TABLE IF NOT EXISTS acme_servers (
+		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+		name text NOT NULL UNIQUE COLLATE NOCASE,
+		description text NOT NULL,
+		directory_url text NOT NULL UNIQUE,
+		is_staging integer NOT NULL DEFAULT 0 CHECK(is_staging IN (0,1)),
+		created_at integer NOT NULL,
+		updated_at integer NOT NULL
+	)`
+
+	_, err := tx.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	// private_keys
+	query = `CREATE TABLE IF NOT EXISTS private_keys (
+		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+		name text NOT NULL UNIQUE COLLATE NOCASE,
+		description text NOT NULL,
+		algorithm text NOT NULL,
+		pem text NOT NULL UNIQUE,
+		api_key text NOT NULL,
+		api_key_new text NOT NULL DEFAULT '',
+		api_key_disabled integer NOT NULL DEFAULT 0 CHECK(api_key_disabled IN (0,1)),
+		api_key_via_url integer NOT NULL DEFAULT 0 CHECK(api_key_via_url IN (0,1)),
+		created_at integer NOT NULL,
+		updated_at integer NOT NULL
+	)`
+
+	_, err = tx.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	// acme_accounts
+	query = `CREATE TABLE IF NOT EXISTS acme_accounts (
+		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+		name text NOT NULL UNIQUE COLLATE NOCASE,
+		private_key_id integer NOT NULL UNIQUE,
+		description text NOT NULL,
+		status text NOT NULL DEFAULT 'unknown',
+		email text NOT NULL,
+		accepted_tos integer NOT NULL DEFAULT 0 CHECK(accepted_tos IN (0,1)),
+		created_at integer NOT NULL,
+		updated_at integer NOT NULL,
+		kid text NOT NULL,
+		acme_server_id integer NOT NULL,
+		FOREIGN KEY (private_key_id)
+			REFERENCES private_keys (id)
+				ON DELETE RESTRICT
+				ON UPDATE NO ACTION,
+		FOREIGN KEY (acme_server_id)
+			REFERENCES acme_servers (id)
+				ON DELETE RESTRICT
+				ON UPDATE NO ACTION
+	)`
+
+	_, err = tx.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	// certificates
+	query = `CREATE TABLE IF NOT EXISTS certificates (
+		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+		private_key_id integer NOT NULL UNIQUE,
+		acme_account_id integer NOT NULL,
+		name text NOT NULL UNIQUE COLLATE NOCASE,
+		description text NOT NULL,
+		subject text NOT NULL,
+		subject_alts text NOT NULL,
+		csr_org text NOT NULL,
+		csr_ou text NOT NULL,
+		csr_country text NOT NULL,
+		csr_state text NOT NULL,
+		csr_city text NOT NULL,
+		api_key text NOT NULL,
+		api_key_new text NOT NULL DEFAULT '',
+		api_key_via_url integer NOT NULL DEFAULT 0 CHECK(api_key_via_url IN (0,1)),
+		created_at integer NOT NULL,
+		updated_at integer NOT NULL,
+		FOREIGN KEY (private_key_id)
+			REFERENCES private_keys (id)
+				ON DELETE RESTRICT
+				ON UPDATE NO ACTION,
+		FOREIGN KEY (acme_account_id)
+			REFERENCES acme_accounts (id)
+				ON DELETE RESTRICT
+				ON UPDATE NO ACTION
+	)`
+
+	_, err = tx.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	// ACME orders
+	query = `CREATE TABLE IF NOT EXISTS acme_orders (
+			id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+			acme_account_id integer NOT NULL,
+			certificate_id integer NOT NULL,
+			acme_location text NOT NULL UNIQUE,
+			status text NOT NULL,
+			known_revoked integer NOT NULL DEFAULT 0 CHECK(known_revoked IN (0,1)),
+			error text,
+			expires integer,
+			dns_identifiers text NOT NULL,
+			authorizations text NOT NULL,
+			finalize text NOT NULL,
+			finalized_key_id integer,
+			certificate_url text,
+			pem text,
+			valid_from integer,
+			valid_to integer,
+			created_at integer NOT NULL,
+			updated_at integer NOT NULL,
+			FOREIGN KEY (acme_account_id)
+				REFERENCES acme_accounts (id)
+					ON DELETE CASCADE
+					ON UPDATE NO ACTION,
+			FOREIGN KEY (finalized_key_id)
+				REFERENCES private_keys (id)
+					ON DELETE SET NULL
+					ON UPDATE NO ACTION,
+			FOREIGN KEY (certificate_id)
+				REFERENCES certificates (id)
+					ON DELETE CASCADE
+					ON UPDATE NO ACTION
+		)`
+
+	_, err = tx.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	// users (for login to LeGo)
+	query = `CREATE TABLE IF NOT EXISTS users (
+		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+		username text NOT NULL UNIQUE,
+		password_hash NOT NULL,
+		created_at integer NOT NULL,
+		updated_at integer NOT NULL
+	)`
+
+	_, err = tx.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // migrateV1toV2 updates the storage db from user_version 1 to user_version 2, if it cannot
 // do so, an error is returned and modification is aborted
@@ -42,13 +240,13 @@ func (store *Storage) migrateV1toV2() (int, error) {
 	}
 
 	// rename old data tables
-	err = renameOldDbTables(tx)
+	err = renameOldDbV1Tables(tx)
 	if err != nil {
 		return -1, err
 	}
 
 	// create new tables
-	err = createDBTables(tx)
+	err = createDBTablesV2(tx)
 	if err != nil {
 		return -1, err
 	}
@@ -90,7 +288,7 @@ func (store *Storage) migrateV1toV2() (int, error) {
 	}
 
 	// remove _old tables
-	err = removeOldDbTables(tx)
+	err = removeOldDbV1Tables(tx)
 	if err != nil {
 		return -1, err
 	}

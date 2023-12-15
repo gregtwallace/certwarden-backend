@@ -17,8 +17,9 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates
 	// insert the new cert
 	query := `
 	INSERT INTO certificates (name, description, private_key_id, acme_account_id, subject, subject_alts, 
-		csr_org, csr_ou, csr_country, csr_state, csr_city, created_at, updated_at, api_key, api_key_via_url)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		csr_org, csr_ou, csr_country, csr_state, csr_city, created_at, updated_at, api_key, api_key_via_url,
+		post_processing_command, post_processing_environment)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 	RETURNING id
 	`
 
@@ -29,7 +30,7 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates
 		payload.PrivateKeyID,
 		payload.AcmeAccountID,
 		payload.Subject,
-		makeCommaJoinedString(payload.SubjectAltNames),
+		makeJsonStringSlice(payload.SubjectAltNames),
 		payload.Organization,
 		payload.OrganizationalUnit,
 		payload.Country,
@@ -39,6 +40,8 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates
 		payload.UpdatedAt,
 		payload.ApiKey,
 		payload.ApiKeyViaUrl,
+		payload.PostProcessingCommand,
+		makeJsonStringSlice(payload.PostProcessingEnvironment),
 	).Scan(&id)
 
 	if err != nil {

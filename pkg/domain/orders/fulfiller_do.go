@@ -214,6 +214,14 @@ fulfillLoop:
 		}
 	}
 
+	// if order valid, run post-processing
+	if acmeOrder.Status == "valid" {
+		err = of.executePostProcessing(j.order.ID)
+		if err != nil {
+			of.logger.Errorf("worker %d: post processing of valid order failed (%s)", workerId, err)
+		}
+	}
+
 	// log error if loop exhausted somehow
 	if time.Since(startTime) >= timeoutLength {
 		of.logger.Errorf("worker %d: order id %d exhausted retry loop time and terminated with status %s (certificate name: %s, subject: %s)", workerId, j.order.ID, acmeOrder.Status, j.order.Certificate.Name, j.order.Certificate.Subject)

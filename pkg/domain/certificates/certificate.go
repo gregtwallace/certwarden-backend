@@ -8,23 +8,25 @@ import (
 
 // Certificate is a single certificate with all of its fields
 type Certificate struct {
-	ID                 int
-	Name               string
-	Description        string
-	CertificateKey     private_keys.Key
-	CertificateAccount acme_accounts.Account
-	Subject            string
-	SubjectAltNames    []string
-	Organization       string
-	OrganizationalUnit string
-	Country            string
-	State              string
-	City               string
-	CreatedAt          int
-	UpdatedAt          int
-	ApiKey             string
-	ApiKeyNew          string
-	ApiKeyViaUrl       bool
+	ID                        int
+	Name                      string
+	Description               string
+	CertificateKey            private_keys.Key
+	CertificateAccount        acme_accounts.Account
+	Subject                   string
+	SubjectAltNames           []string
+	Organization              string
+	OrganizationalUnit        string
+	Country                   string
+	State                     string
+	City                      string
+	CreatedAt                 int
+	UpdatedAt                 int
+	ApiKey                    string
+	ApiKeyNew                 string
+	ApiKeyViaUrl              bool
+	PostProcessingCommand     string
+	PostProcessingEnvironment []string
 }
 
 // certificateSummaryResponse is a JSON response containing only
@@ -85,15 +87,17 @@ func (cert Certificate) summaryResponse(service *Service) certificateSummaryResp
 // fields that can be returned as JSON
 type certificateDetailedResponse struct {
 	certificateSummaryResponse
-	Organization       string `json:"organization"`
-	OrganizationalUnit string `json:"organizational_unit"`
-	Country            string `json:"country"`
-	State              string `json:"state"`
-	City               string `json:"city"`
-	CreatedAt          int    `json:"created_at"`
-	UpdatedAt          int    `json:"updated_at"`
-	ApiKey             string `json:"api_key"`
-	ApiKeyNew          string `json:"api_key_new,omitempty"`
+	Organization              string   `json:"organization"`
+	OrganizationalUnit        string   `json:"organizational_unit"`
+	Country                   string   `json:"country"`
+	State                     string   `json:"state"`
+	City                      string   `json:"city"`
+	CreatedAt                 int      `json:"created_at"`
+	UpdatedAt                 int      `json:"updated_at"`
+	ApiKey                    string   `json:"api_key"`
+	ApiKeyNew                 string   `json:"api_key_new,omitempty"`
+	PostProcessingCommand     string   `json:"post_processing_command"`
+	PostProcessingEnvironment []string `json:"post_processing_environment"`
 }
 
 func (cert Certificate) detailedResponse(service *Service) certificateDetailedResponse {
@@ -108,6 +112,8 @@ func (cert Certificate) detailedResponse(service *Service) certificateDetailedRe
 		UpdatedAt:                  cert.UpdatedAt,
 		ApiKey:                     cert.ApiKey,
 		ApiKeyNew:                  cert.ApiKeyNew,
+		PostProcessingCommand:      cert.PostProcessingCommand,
+		PostProcessingEnvironment:  cert.PostProcessingEnvironment,
 	}
 }
 
