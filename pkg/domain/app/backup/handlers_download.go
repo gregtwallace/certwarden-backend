@@ -18,22 +18,16 @@ import (
 func (service *Service) DownloadBackupNowHandler(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get query for backup options
 	query := r.URL.Query()
-
-	withLogsParam := query.Get("withlogs")
 	withOnDiskBackupsParam := query.Get("withondiskbackups")
 
 	// set bools (use default if not explicitly opposite)
-	withLogs := true
 	withOnDiskBackups := false
-	if strings.ToLower(withLogsParam) == "false" {
-		withLogs = false
-	}
 	if strings.ToLower(withOnDiskBackupsParam) == "true" {
 		withOnDiskBackups = true
 	}
 
 	// make zip file
-	zipBytes, err := service.createDataBackup(withLogs, withOnDiskBackups)
+	zipBytes, err := service.createDataBackup(withOnDiskBackups)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrInternal

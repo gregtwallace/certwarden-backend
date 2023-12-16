@@ -19,9 +19,9 @@ const internalBackupFile = "backup.zip"
 const internalBackupHashFile = internalBackupFile + ".sha1"
 
 // createDataBackup creates a backup of the parent app's data root with optional
-// exclusions for the log and backup subdirectories. It returns a zip file of the
-// backup or an error if it failed.
-func (service *Service) createDataBackup(withLogFiles bool, withOnDiskBackups bool) (zipFileBytes []byte, err error) {
+// exclusion for the backup subdirectories. It returns a zip file of the backup
+// or an error if it failed.
+func (service *Service) createDataBackup(withOnDiskBackups bool) (zipFileBytes []byte, err error) {
 	// make buffer, hasher, and writer for internal backup zip
 	internalZipBuffer := new(bytes.Buffer)
 	internalZipHasher := sha1.New()
@@ -37,9 +37,6 @@ func (service *Service) createDataBackup(withLogFiles bool, withOnDiskBackups bo
 		// if folder, return err if skipping folder, else return nil
 		// and walker will get to it in a different iteration
 		if info.IsDir() {
-			if !withLogFiles && path == service.cleanDataStorageLogPath {
-				return filepath.SkipDir
-			}
 			if !withOnDiskBackups && path == service.cleanDataStorageBackupPath {
 				return filepath.SkipDir
 			}
@@ -144,9 +141,9 @@ func (service *Service) createDataBackup(withLogFiles bool, withOnDiskBackups bo
 
 // CreateBackupOnDisk backs up the app state and saves it to the local backup folder. It
 // optionally includes log files but never includes on disk backups.
-func (service *Service) CreateBackupOnDisk(withLogFiles bool) (backupFileDetails, error) {
+func (service *Service) CreateBackupOnDisk() (backupFileDetails, error) {
 	// make backup
-	zipFileData, err := service.createDataBackup(withLogFiles, false)
+	zipFileData, err := service.createDataBackup(false)
 	if err != nil {
 		return backupFileDetails{}, err
 	}

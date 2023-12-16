@@ -14,7 +14,7 @@ type backupFileMakeResponse struct {
 // makeDiskBackupNowHandler creates a new backup of the application in the backup
 // folder location; it does not send the backup to the client
 func (service *Service) MakeDiskBackupNowHandler(w http.ResponseWriter, r *http.Request) *output.Error {
-	backupFileDetails, err := service.CreateBackupOnDisk(true)
+	backupFileDetails, err := service.CreateBackupOnDisk()
 	if err != nil {
 		service.logger.Errorf("failed to make on disk backup (%s)", err)
 		return output.ErrInternal

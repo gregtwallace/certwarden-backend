@@ -91,12 +91,8 @@ func (app *Application) GetDataStorageAppDataPath() string {
 	return dataStorageAppDataPath
 }
 
-func (app *Application) GetDataStorageLogPath() string {
-	return dataStorageLogPath
-}
-
-func (app *Application) CreateBackupOnDisk(withLogFiles bool) error {
-	_, err := app.backup.CreateBackupOnDisk(withLogFiles)
+func (app *Application) CreateBackupOnDisk() error {
+	_, err := app.backup.CreateBackupOnDisk()
 	return err
 }
 

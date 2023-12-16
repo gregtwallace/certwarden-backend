@@ -31,7 +31,7 @@ var errServiceComponent = errors.New("necessary storage service component is mis
 type App interface {
 	GetDataStorageAppDataPath() string
 	GetLogger() *zap.SugaredLogger
-	CreateBackupOnDisk(withLogFiles bool) error
+	CreateBackupOnDisk() error
 }
 
 // Storage is the struct that holds data about the connection
@@ -126,7 +126,7 @@ func OpenStorage(app App) (*Storage, error) {
 
 	// back up exisitng db before trying any migrations
 	if fileUserVersion != DbCurrentUserVersion {
-		err = app.CreateBackupOnDisk(false)
+		err = app.CreateBackupOnDisk()
 		if err != nil {
 			return nil, fmt.Errorf("failed to backup data before attempting db migration (%s)", err)
 		}

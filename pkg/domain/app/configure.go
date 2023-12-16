@@ -160,7 +160,7 @@ func (app *Application) loadConfigFile() (err error) {
 	// if cfg version changed, backup old config and write config
 	if cfgVer != origCfgVer {
 		// backup
-		err = app.CreateBackupOnDisk(false)
+		err = app.CreateBackupOnDisk()
 		if err != nil {
 			return fmt.Errorf("failed to backup data before writing config schema migration (%s)", err)
 		}

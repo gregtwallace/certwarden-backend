@@ -13,7 +13,6 @@ var errServiceComponent = errors.New("necessary backup service component is miss
 // App interface is for connecting to the main app
 type App interface {
 	GetDataStorageRootPath() string
-	GetDataStorageLogPath() string
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 }
@@ -21,7 +20,6 @@ type App interface {
 // Keys service struct
 type Service struct {
 	cleanDataStorageRootPath   string
-	cleanDataStorageLogPath    string
 	cleanDataStorageBackupPath string
 	logger                     *zap.SugaredLogger
 	output                     *output.Service
@@ -32,7 +30,6 @@ func NewService(app App) (*Service, error) {
 	service := new(Service)
 
 	service.cleanDataStorageRootPath = filepath.Clean(app.GetDataStorageRootPath())
-	service.cleanDataStorageLogPath = filepath.Clean(app.GetDataStorageLogPath())
 	service.cleanDataStorageBackupPath = filepath.Clean(app.GetDataStorageRootPath() + "/" + dataStorageBackupDirName)
 
 	// logger
