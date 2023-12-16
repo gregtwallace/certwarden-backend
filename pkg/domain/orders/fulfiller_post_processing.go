@@ -41,19 +41,19 @@ func (of *orderFulfiller) executePostProcessing(orderID int) error {
 	environ := []string{}
 
 	// LEGO_PRIVATE_KEY_NAME
-	environ = append(environ, fmt.Sprintf("LEGO_PRIVATE_KEY_NAME=\"%s\"", order.FinalizedKey.Name))
+	environ = append(environ, fmt.Sprintf("LEGO_PRIVATE_KEY_NAME=%s", order.FinalizedKey.Name))
 
 	// LEGO_PRIVATE_KEY_PEM
-	environ = append(environ, fmt.Sprintf("LEGO_PRIVATE_KEY_PEM=\"%s\"", order.FinalizedKey.Pem))
+	environ = append(environ, fmt.Sprintf("LEGO_PRIVATE_KEY_PEM=%s", order.FinalizedKey.Pem))
 
 	// LEGO_CERTIFICATE_NAME
-	environ = append(environ, fmt.Sprintf("LEGO_CERTIFICATE_NAME=\"%s\"", order.Certificate.Name))
+	environ = append(environ, fmt.Sprintf("LEGO_CERTIFICATE_NAME=%s", order.Certificate.Name))
 
 	// LEGO_CERTIFICATE_PEM
-	environ = append(environ, fmt.Sprintf("LEGO_CERTIFICATE_PEM=\"%s\"", *order.Pem))
+	environ = append(environ, fmt.Sprintf("LEGO_CERTIFICATE_PEM=%s", *order.Pem))
 
 	// LEGO_CERTIFICATE_COMMON_NAME
-	environ = append(environ, fmt.Sprintf("LEGO_CERTIFICATE_COMMON_NAME=\"%s\"", order.Certificate.Subject))
+	environ = append(environ, fmt.Sprintf("LEGO_CERTIFICATE_COMMON_NAME=%s", order.Certificate.Subject))
 
 	// add custom values from user
 	environ = append(environ, order.Certificate.PostProcessingEnvironment...)
