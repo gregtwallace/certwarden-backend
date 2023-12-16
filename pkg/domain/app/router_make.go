@@ -131,8 +131,11 @@ func (app *Application) makeRouterAndRoutes() {
 
 	router.handleAPIRouteSecureDownload(http.MethodGet, apiUrlPath+"/v1/certificates/:certid/download", app.orders.DownloadCertNewestOrder)
 	router.handleAPIRouteSecureDownload(http.MethodGet, apiUrlPath+"/v1/certificates/:certid/orders/:orderid/download", app.orders.DownloadOneOrder)
+
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/certificates/:certid/orders/:orderid", app.orders.FulfillExistingOrder)
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/certificates/:certid/orders/:orderid/revoke", app.orders.RevokeOrder)
+
+	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/certificates/:certid/orders/:orderid/postprocess", app.orders.PostProcessOrder)
 
 	// download keys and certs
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/privatekeys/:name", app.download.DownloadKeyViaHeader)

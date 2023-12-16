@@ -216,9 +216,14 @@ fulfillLoop:
 
 	// if order valid, run post-processing
 	if acmeOrder.Status == "valid" {
-		err = of.executePostProcessing(j.order.ID)
+		order, err := of.storage.GetOneOrder(j.order.ID)
 		if err != nil {
-			of.logger.Errorf("worker %d: post processing of valid order failed (%s)", workerId, err)
+			of.logger.Errorf("failed to fetch order id %d for post processing (%s)", j.order.ID, err)
+		} else {
+			err = of.executePostProcessing(order)
+			if err != nil {
+				of.logger.Errorf("worker %d: post processing of valid order failed (%s)", workerId, err)
+			}
 		}
 	}
 

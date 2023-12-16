@@ -9,27 +9,26 @@ import (
 
 // executePostProcessing executes the order's certificate's post processing script
 // if the script field is blank, this is a no-op
-func (of *orderFulfiller) executePostProcessing(orderID int) error {
-	// fetch most up to date order object
-	order, err := of.storage.GetOneOrder(orderID)
-	if err != nil {
-		of.logger.Errorf("failed to fetch order id %d for post processing (%s)", orderID, err)
-		return err
-	}
+func (of *orderFulfiller) executePostProcessing(order Order) error {
+	of.logger.Infof("attempting to run post processing on order id %d (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
 
 	// if no post processing script, done
 	if order.Certificate.PostProcessingCommand == "" {
-		of.logger.Debugf("skipping post processing of order id %d (no post process command)", orderID)
+		of.logger.Debugf("skipping post processing of order id %d (no post process command)", order.ID)
 		return nil
 	}
 
 	// if app failed to get suitable shell at startup, post processing is disabled
 	if of.shellPath == "" {
-		return fmt.Errorf("failed to run post processing of order id %d (no suitable shell was found during app startup)", orderID)
+		return fmt.Errorf("failed to run post processing of order id %d (no suitable shell was found during app startup)", order.ID)
 	}
 
+	// nil checks
 	if order.Pem == nil {
 		return errors.New("order pem is nil (should never happen)")
+	}
+	if order.FinalizedKey == nil {
+		return errors.New("failed to run post processing of order id %s (finalized key no longer exists)")
 	}
 
 	// make environment; certain values are always automatically added
