@@ -6,8 +6,7 @@ import (
 )
 
 // RedactString removes the middle portion of a string and returns only the first and last
-// characters separated by asterisks. if the key is less than or equal to 12 chars only
-// asterisks are returned
+// characters separated by asterisks.
 func RedactString(s string) string {
 	// if s is less than or equal to 4 characters, do not redact; nothing sensitive
 	// should ever be this small

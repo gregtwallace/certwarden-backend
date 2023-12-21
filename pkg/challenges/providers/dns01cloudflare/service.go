@@ -25,7 +25,6 @@ type Service struct {
 	logger        *zap.SugaredLogger
 	httpClient    *httpclient.Client
 	cloudflareApi *cloudflare.API
-	domainIDs     map[string]string // domain_name[zone_id]
 }
 
 // ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
@@ -55,9 +54,6 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 	// http client for api calls
 	service.httpClient = app.GetHttpClient()
-
-	// make map for domains
-	service.domainIDs = make(map[string]string)
 
 	// cloudflare api
 	err := service.configureCloudflareAPI(cfg)
@@ -111,9 +107,8 @@ func (service *Service) apiIdentifier() string {
 }
 
 // redactedApiIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
-// (depending on which is in use for the API instance) and then redacts it to return
-// the first and last characters of the key separated with asterisks. This is useful
-// for logging issues without saving the full credential to logs.
+// (depending on which is in use for the API instance) and then partially redacts
+// it. This is useful for logging issues without saving the full credential to logs.
 func (service *Service) redactedApiIdentifier() string {
 	return output.RedactString(service.apiIdentifier())
 }

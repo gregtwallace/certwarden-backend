@@ -1,6 +1,7 @@
 package dns01cloudflare
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -11,15 +12,41 @@ import (
 // cloudflareResource returns the resource container for the specified resourceName.
 // If a matching resource isn't found, an error is returned.
 func (service *Service) cloudflareResource(resourceName string) (*cloudflare.ResourceContainer, error) {
-	// look for domain suffix
-	for domain := range service.domainIDs {
-		if strings.HasSuffix(resourceName, domain) {
-			return cloudflare.ZoneIdentifier(service.domainIDs[domain]), nil
+	// fetch list of zones
+	ctx, cancel := context.WithTimeout(context.Background(), apiCallTimeout)
+	defer cancel()
 
-		}
+	availableZones, err := service.cloudflareApi.ListZones(ctx)
+	if err != nil {
+		err = fmt.Errorf("api instance %s failed to list zones (%s)", service.redactedApiIdentifier(), err)
+		service.logger.Error(err)
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("dns01cloudflare could not find domain supporting resource name %s", resourceName)
+	// find the zone for this resource
+	resourceZone := cloudflare.Zone{}
+	for i := range availableZones {
+		// check if zone name is the suffix of resource name (i.e. this is the correct zone)
+		if strings.HasSuffix(resourceName, availableZones[i].Name) {
+			resourceZone = availableZones[i]
+			break
+		}
+	}
+	// defer err check to after perm (zone not found won't have needed permission)
+
+	// verify proper permission
+	properPermission := false
+	for i := range resourceZone.Permissions {
+		if resourceZone.Permissions[i] == "#dns_records:edit" {
+			properPermission = true
+			break
+		}
+	}
+	if !properPermission {
+		return nil, fmt.Errorf("dns01cloudflare could not find cloudflare zone with proper permission supporting resource name %s", resourceName)
+	}
+
+	return cloudflare.ZoneIdentifier(resourceZone.ID), nil
 }
 
 // cloudflareCreateDNSParams returns the cloudflare create dns record params for a given
