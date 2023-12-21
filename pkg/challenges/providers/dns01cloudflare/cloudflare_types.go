@@ -18,7 +18,7 @@ func (service *Service) cloudflareResource(resourceName string) (*cloudflare.Res
 
 	availableZones, err := service.cloudflareApi.ListZones(ctx)
 	if err != nil {
-		err = fmt.Errorf("api instance %s failed to list zones (%s)", service.redactedApiIdentifier(), err)
+		err = fmt.Errorf("dns01cloudflare api instance %s failed to list zones while searching for zone for %s (%s)", service.redactedApiIdentifier(), resourceName, err)
 		service.logger.Error(err)
 		return nil, err
 	}
