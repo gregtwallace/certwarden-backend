@@ -4,7 +4,6 @@ import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
 	"legocerthub-backend/pkg/output"
-	"os"
 	"os/exec"
 
 	"go.uber.org/zap"
@@ -12,7 +11,6 @@ import (
 
 var (
 	errServiceComponent = errors.New("necessary dns-01 manual script component is missing")
-	errScriptIsDir      = errors.New("dns-01 manual script is a path not a file")
 )
 
 // App interface is for connecting to the main app
@@ -93,24 +91,8 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	// environment vars
 	service.environmentVars = cfg.Environment.Unredacted()
 
-	// verify create script exists
-	fileInfo, err := os.Stat(cfg.CreateScript)
-	if err != nil {
-		return nil, err
-	}
-	if fileInfo.IsDir() {
-		return nil, errScriptIsDir
-	}
+	// set script locations
 	service.createScriptPath = cfg.CreateScript
-
-	// verify delete script exists
-	fileInfo, err = os.Stat(cfg.DeleteScript)
-	if err != nil {
-		return nil, err
-	}
-	if fileInfo.IsDir() {
-		return nil, errScriptIsDir
-	}
 	service.deleteScriptPath = cfg.DeleteScript
 
 	return service, nil
