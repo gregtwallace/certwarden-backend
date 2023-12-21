@@ -21,7 +21,7 @@ take advantage of.
 - 0 -> any:
   + Manual intervention is required, review config.default.yaml,
     config.example.yaml, and this log.
-- 1 -> 2 -> 3:
+- 1 -> 2 -> 3 -> 4:
   + Automatic migration will occur.
 
 
@@ -59,7 +59,16 @@ take advantage of.
 
 - 2023.11.29
   https://github.com/gregtwallace/legocerthub-backend/commit/172fea183414c51d531fc98016142774c24737d7
+  + config_version incremented from 2 to 3
   + `pprof_port` RENAMED to `pprof_http_port`
   + added `pprof_https_port` for pprof https port
+
+
+### [v0.17.0] - 2023.12.20
+- 2023.12.20
+  https://github.com/gregtwallace/legocerthub-backend/commit/b80d47f7eff2df37cb9dd3b71299335e811c3515
+  + config_version not incremented (no breaking changes)
+  + add `backup` section with options to enable and disable automatic backup and 
+    options to specify criteria for deletion of old backups.
 
 ### [v? TBD] - Next Version TBD

@@ -73,6 +73,21 @@
   # currently beta is the only channel
   'channel': 'beta'
 
+# Automatic on-disk backups of LeGo ./<data> folder
+'backup':
+  # do automatic backup and deletion of old backups?
+  'enabled': true
+  # how often to make an automatic backup (in days)
+  'interval_days': 14
+  'retention':
+    # after how many days should a backup be automatically deleted (unrecoverable)
+    # (0 or negative disables this deletion criteria)
+    'max_days': 365
+    # what is the max count of backups to keep on disk (oldest are removed when the
+    # count execeeds this threshold) (0 or negative disables this deletion criteria)
+    'max_count': -1
+    # If multiple criteria are specified, files are deleted when either criteria is met
+
 # Orders configuration
 'orders':
   # settings for automatic ordering when certs are close to expiring

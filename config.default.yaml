@@ -24,10 +24,16 @@
 'pprof_http_port': 4065
 'pprof_https_port': 4070
 
-
 'updater':
   'auto_check': true
   'channel': 'beta'
+
+'backup':
+  'enabled': true
+  'interval_days': 7
+  'retention':
+    'max_days': 180
+    'max_count': -1
 
 'orders':
   'auto_order_enable': true
