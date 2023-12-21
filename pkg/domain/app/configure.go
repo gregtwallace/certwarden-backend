@@ -8,6 +8,7 @@ import (
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
+	"legocerthub-backend/pkg/domain/app/backup"
 	"legocerthub-backend/pkg/domain/app/updater"
 	"legocerthub-backend/pkg/domain/orders"
 	"os"
@@ -46,6 +47,7 @@ type config struct {
 	EnablePprof               *bool             `yaml:"enable_pprof"`
 	PprofHttpsPort            *int              `yaml:"pprof_https_port"`
 	PprofHttpPort             *int              `yaml:"pprof_http_port"`
+	Backup                    backup.Config     `yaml:"backup"`
 	Updater                   updater.Config    `yaml:"updater"`
 	Orders                    orders.Config     `yaml:"orders"`
 	Challenges                challenges.Config `yaml:"challenges"`
@@ -254,6 +256,24 @@ func (app *Application) setDefaultConfigValues() {
 	if app.config.PprofHttpsPort == nil {
 		app.config.PprofHttpsPort = new(int)
 		*app.config.PprofHttpsPort = 4070
+	}
+
+	// backup
+	if app.config.Backup.Enabled == nil {
+		app.config.Backup.Enabled = new(bool)
+		*app.config.Backup.Enabled = backup.DefaultBackupEnabled
+	}
+	if app.config.Backup.IntervalDays == nil {
+		app.config.Backup.IntervalDays = new(int)
+		*app.config.Backup.IntervalDays = backup.DefaultBackupDays
+	}
+	if app.config.Backup.Retention.MaxDays == nil {
+		app.config.Backup.Retention.MaxDays = new(int)
+		*app.config.Backup.Retention.MaxDays = backup.DefaultBackupRetentionDays
+	}
+	if app.config.Backup.Retention.MaxCount == nil {
+		app.config.Backup.Retention.MaxCount = new(int)
+		*app.config.Backup.Retention.MaxCount = backup.DefaultBackupRetentionCount
 	}
 
 	// updater

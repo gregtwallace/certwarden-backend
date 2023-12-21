@@ -130,6 +130,12 @@ func create() (*Application, error) {
 	userAgent := fmt.Sprintf("LeGoCertHub/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
 	app.httpClient = httpclient.New(userAgent)
 
+	// start automatic backup service
+	app.backup.StartAutoBackupService(app, &app.config.Backup)
+	if err != nil {
+		return app, err
+	}
+
 	// if db file does not exist at new location, check old location and move file
 	// from old to new (if exists at old location)
 	if _, err := os.Stat(dataStorageAppDataPath + "/" + sqlite.DbFilename); errors.Is(err, os.ErrNotExist) {

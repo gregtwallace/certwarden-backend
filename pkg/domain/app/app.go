@@ -91,6 +91,19 @@ func (app *Application) GetDataStorageAppDataPath() string {
 	return dataStorageAppDataPath
 }
 
+// LockSQLForBackup locks sql storage from writes so that a copy can be read without
+// the risk of corruption. It returns a function to unlock the db after the backup
+// is completed.
+func (app *Application) LockSQLForBackup() (unlockFunc func(), err error) {
+	// if storage hasn't been setup yet, no risk of writes so this is no-op
+	if app.storage != nil {
+		return app.storage.LockDBForBackup()
+	}
+
+	// no-up unlock if there wasn't a real lock
+	return func() {}, nil
+}
+
 func (app *Application) CreateBackupOnDisk() error {
 	_, err := app.backup.CreateBackupOnDisk()
 	return err

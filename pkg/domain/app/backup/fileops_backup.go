@@ -22,6 +22,13 @@ const internalBackupHashFile = internalBackupFile + ".sha1"
 // exclusion for the backup subdirectories. It returns a zip file of the backup
 // or an error if it failed.
 func (service *Service) createDataBackup(withOnDiskBackups bool) (zipFileBytes []byte, err error) {
+	// lock sql and defer unlock
+	unlock, err := service.lockSQLForBackup()
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
+
 	// make buffer, hasher, and writer for internal backup zip
 	internalZipBuffer := new(bytes.Buffer)
 	internalZipHasher := sha1.New()
@@ -51,10 +58,6 @@ func (service *Service) createDataBackup(withOnDiskBackups bool) (zipFileBytes [
 		}
 		defer f.Close()
 
-		// make hasher
-		// hasher := sha1.New()
-		// fileDataWithHasher := io.TeeReader(f, hasher)
-
 		// create file in zip (trim root prefix off so path in zip matches data root)
 		zipFileInternalName := strings.TrimPrefix(path, service.cleanDataStorageRootPath+string(filepath.Separator))
 		zipFile, err := internalZipWriter.Create(zipFileInternalName)
@@ -69,21 +72,7 @@ func (service *Service) createDataBackup(withOnDiskBackups bool) (zipFileBytes [
 			return fmt.Errorf("failed to copy file %s into data backup (%s)", path, err)
 		}
 
-		// only write hashes for .yaml and .db files
-		// fExt := filepath.Ext(path)
-		// if fExt == ".yaml" || fExt == ".db" {
-		// 	// create hash file and write it as well
-		// 	zipFileHashFile, err := zipWriter.Create(zipFileInternalName + ".sha1")
-		// 	if err != nil {
-		// 		return fmt.Errorf("failed to make file %s hash file for data backup (%s)", path, err)
-		// 	}
-
-		// 	// copy hash (as hex string) to hash file in zip file
-		// 	_, err = io.WriteString(zipFileHashFile, fmt.Sprintf("%x", hasher.Sum(nil)))
-		// 	if err != nil {
-		// 		return fmt.Errorf("failed to copy file %s into data backup (%s)", path, err)
-		// 	}
-		// }
+		// unlock
 
 		return nil
 	}
@@ -157,6 +146,11 @@ func (service *Service) CreateBackupOnDisk() (backupFileDetails, error) {
 	}
 
 	service.logger.Infof("backup saved to disk (%s)", fileName)
+
+	err = service.deleteCountGreaterThan(*service.config.Retention.MaxCount)
+	if err != nil {
+		service.logger.Errorf("failed to delete backups over retention count (%s)", err)
+	}
 
 	// return info about new file
 	return backupFileDetails{

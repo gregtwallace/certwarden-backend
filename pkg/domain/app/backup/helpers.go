@@ -9,14 +9,6 @@ import (
 const backupFilePrefix = "lego_certhub_backup."
 const backupFileSuffix = ".zip"
 
-// backupFileDetails contains information about an on disk backup file
-type backupFileDetails struct {
-	Name      string `json:"name"`
-	Size      int    `json:"size"`
-	ModTime   int    `json:"modtime"`
-	CreatedAt *int   `json:"created_at,omitempty"`
-}
-
 // makeBackupZipFileName creates the filename for a new backup created now
 func makeBackupZipFileName() (filename string, createdAt int) {
 	createdTime := time.Now()
