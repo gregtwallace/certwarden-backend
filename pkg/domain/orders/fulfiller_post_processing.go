@@ -10,25 +10,31 @@ import (
 // executePostProcessing executes the order's certificate's post processing script
 // if the script field is blank, this is a no-op
 func (of *orderFulfiller) executePostProcessing(order Order) error {
-	of.logger.Infof("attempting to run post processing on order id %d (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
-
 	// if no post processing script, done
 	if order.Certificate.PostProcessingCommand == "" {
-		of.logger.Debugf("skipping post processing of order id %d (no post process command)", order.ID)
+		of.logger.Debugf("post processing %d: skipping (no post process command)", order.ID)
 		return nil
 	}
 
+	of.logger.Infof("post processing %d: attempting to run (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
+
 	// if app failed to get suitable shell at startup, post processing is disabled
 	if of.shellPath == "" {
-		return fmt.Errorf("failed to run post processing of order id %d (no suitable shell was found during app startup)", order.ID)
+		err := fmt.Errorf("post processing %d: failed to run post processing (no suitable shell was found during app startup)", order.ID)
+		of.logger.Error(err)
+		return err
 	}
 
 	// nil checks
 	if order.Pem == nil {
-		return errors.New("order pem is nil (should never happen)")
+		err := fmt.Errorf("post processing %d: order pem is nil (should never happen)", order.ID)
+		of.logger.Error(err)
+		return err
 	}
 	if order.FinalizedKey == nil {
-		return errors.New("failed to run post processing of order id %s (finalized key no longer exists)")
+		err := fmt.Errorf("post processing %d: failed to run post processing (finalized key no longer exists)", order.ID)
+		of.logger.Error(err)
+		return err
 	}
 
 	// make environment; certain values are always automatically added
@@ -73,13 +79,15 @@ func (of *orderFulfiller) executePostProcessing(order Order) error {
 		// try to get stderr and log it too
 		exitErr := new(exec.ExitError)
 		if errors.As(err, &exitErr) {
-			of.logger.Errorf("post processing std err: %s", exitErr.Stderr)
+			of.logger.Errorf("post processing %d: std err: %s", order.ID, exitErr.Stderr)
 		}
 
-		of.logger.Errorf("post processing error: %s", err)
+		of.logger.Errorf("post processing %d: error: %s", order.ID, err)
 		return err
 	}
-	of.logger.Debugf("post processing output: %s", string(result))
+	of.logger.Debugf("post processing %d: output: %s", order.ID, string(result))
+
+	of.logger.Infof("post processing %d: completed", order.ID)
 
 	return nil
 }
