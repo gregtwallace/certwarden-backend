@@ -104,6 +104,8 @@ func (service *Service) StartAutoBackupService(app App, cfg *Config) {
 	// start go routine for auto backups
 	shutdownWg.Add(1)
 	go func() {
+		nextBackup := lastBackupTime.Add(backupInterval)
+
 		for {
 			select {
 			case <-shutdownCtx.Done():
@@ -112,20 +114,21 @@ func (service *Service) StartAutoBackupService(app App, cfg *Config) {
 				shutdownWg.Done()
 				return
 
-			case <-time.After(time.Until(lastBackupTime.Add(backupInterval))):
+			case <-time.After(time.Until(nextBackup)):
 				// continue and run
 			}
 
 			// create a backup and update last backup time
 			newBackupFileDetails, err := service.CreateBackupOnDisk()
 			if err != nil {
-				service.logger.Errorf("failed to create automatic on disk backup (%s)", err)
+				// fail: try again in a day
+				nextBackup = time.Now().Add(24 * time.Hour)
 
-				// sleep a day and try again
-				time.Sleep(24 * time.Hour)
+				service.logger.Errorf("failed to create automatic on disk backup (%s), will try again at %s", err, nextBackup)
+
 			} else {
-				// success
-				lastBackupTime = time.Unix(int64(newBackupFileDetails.unixTime()), 0)
+				// success: run again after next interval
+				nextBackup = time.Unix(int64(newBackupFileDetails.unixTime()), 0).Add(backupInterval)
 
 				err = service.deleteCountGreaterThan(retentionCount)
 				if err != nil {
@@ -141,8 +144,7 @@ func (service *Service) StartAutoBackupService(app App, cfg *Config) {
 		go func() {
 			service.logger.Infof("starting data backup time based deletion service")
 
-			service.logger.Debugf("%s", oldestBackupTime.Add(retentionDuration))
-
+			nextDelete := oldestBackupTime.Add(retentionDuration)
 			for {
 				select {
 				case <-shutdownCtx.Done():
@@ -151,17 +153,21 @@ func (service *Service) StartAutoBackupService(app App, cfg *Config) {
 					shutdownWg.Done()
 					return
 
-				case <-time.After(time.Until(oldestBackupTime.Add(retentionDuration))):
+				case <-time.After(time.Until(nextDelete)):
 					// continue and run
 				}
 
 				// do delete
 				oldestBackupTime, err = service.deleteOlderThan(retentionDuration)
 				if err != nil {
-					service.logger.Errorf("failed to delete backups over retention time duration (%s)", err)
+					// fail: try again in a day
+					nextDelete = time.Now().Add(24 * time.Hour)
 
-					// sleep a day and try again
-					time.Sleep(24 * time.Hour)
+					service.logger.Errorf("failed to delete backups over retention time duration (%s), will try again at %s", err, nextDelete)
+
+				} else {
+					// success: run again when oldest backup hits threshhold
+					nextDelete = oldestBackupTime.Add(retentionDuration)
 				}
 			}
 		}()

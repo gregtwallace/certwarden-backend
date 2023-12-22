@@ -3,7 +3,9 @@ package backup
 import (
 	"context"
 	"errors"
+	"fmt"
 	"legocerthub-backend/pkg/output"
+	"os"
 	"path/filepath"
 	"sync"
 
@@ -49,6 +51,12 @@ func NewService(app App) (*Service, error) {
 	service.output = app.GetOutputter()
 	if service.output == nil {
 		return nil, errServiceComponent
+	}
+
+	// create backup storage folder, if doesn't exist
+	err := os.MkdirAll(service.cleanDataStorageBackupPath, 0755)
+	if err != nil {
+		return nil, fmt.Errorf("backup: failed to make directory for on disk backups (%s)", err)
 	}
 
 	// storage lock func
