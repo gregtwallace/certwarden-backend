@@ -18,8 +18,8 @@ const logFileBaseName = "lego-certhub"
 const logFileSuffix = ".log"
 const logFileName = logFileBaseName + logFileSuffix
 
-// defaultLogLevel is the default logging level when not in devMode
-// and the configured level isn't valid or specified
+// defaultLogLevel is the default logging level when the configured level
+// isn't valid or specified
 const defaultLogLevel = zapcore.InfoLevel
 
 // initZapLogger starts the app's logger. if app has not yet read config, it
