@@ -147,9 +147,12 @@ func (service *Service) CreateBackupOnDisk() (backupFileDetails, error) {
 
 	service.logger.Infof("backup saved to disk (%s)", fileName)
 
-	err = service.deleteCountGreaterThan(*service.config.Retention.MaxCount)
-	if err != nil {
-		service.logger.Errorf("failed to delete backups over retention count (%s)", err)
+	// only try to delete if retention config is set
+	if service.config != nil && service.config.Retention.MaxCount != nil {
+		err = service.deleteCountGreaterThan(*service.config.Retention.MaxCount)
+		if err != nil {
+			service.logger.Errorf("failed to delete backups over retention count (%s)", err)
+		}
 	}
 
 	// return info about new file
