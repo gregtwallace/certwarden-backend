@@ -18,15 +18,31 @@ func (mgr *Manager) ProviderFor(identifier acme.Identifier) (*provider, error) {
 		return nil, errors.New("acme identifier is not dns type (challenges pkg can only solve dns type)")
 	}
 
-	// check if identifier value ends in the domain
+	// if exact domain is in the list, return its provider
+	p, exists := mgr.dP[identifier.Value]
+	if exists {
+		return p, nil
+	}
+
+	// find best match from options (if there is a provider for a more specific subdomain, choose that one)
+	providerDomain := ""
 	for domain := range mgr.dP {
-		if strings.HasSuffix(identifier.Value, domain) {
-			return mgr.dP[domain], nil
+		// include period to avoid matching something like hellodomain.com to domain.com 's provider
+		if strings.HasSuffix(identifier.Value, "."+domain) {
+			// for a provider with the proper suffix, check length of existing match and update
+			// match if the new match is longer
+			if len(domain) > len(providerDomain) {
+				providerDomain = domain
+			}
 		}
+	}
+	// if a match was found, return its provider
+	if providerDomain != "" {
+		return mgr.dP[providerDomain], nil
 	}
 
 	// if domain was not found, return wild provider if it exists
-	p, exists := mgr.dP["*"]
+	p, exists = mgr.dP["*"]
 	if exists {
 		return p, nil
 	}
