@@ -1,24 +1,30 @@
 package providers
 
-// updateProvider updates the information in manager relating to a provider
-func (mgr *Manager) updateProvider(p *provider, newCfg providerConfig) {
-	// delete old provider/domains
-	mgr.unsafeDeleteProvider(p)
+// unsafeUpdateProviderDomains updates the domains serviced by a provider, if no domains
+// are specified, no modification is performed
+func (mgr *Manager) unsafeUpdateProviderDomains(p *provider, newDomains []string) {
+	// no domains == no-op
+	if newDomains == nil || len(newDomains) < 1 {
+		return
+	}
 
-	// update provider cfg to new one
-	p.Config = newCfg
+	// remove existing domain -> p mappings
+	for _, oldDomain := range p.Domains {
+		delete(mgr.dP, oldDomain)
+	}
 
-	// add new provider/domains
+	// update p's domains
+	p.Domains = newDomains
 
-	// add provider to providers map with empty domains
+	// add new blank domains slice (to overwrite pD)
 	mgr.pD[p] = []string{}
 
 	// add each domain
-	for _, domain := range newCfg.Domains() {
+	for _, newDomain := range newDomains {
 		// add domain to domains map
-		mgr.dP[domain] = p
+		mgr.dP[newDomain] = p
 
 		// append domain to providers map
-		mgr.pD[p] = append(mgr.pD[p], domain)
+		mgr.pD[p] = append(mgr.pD[p], newDomain)
 	}
 }

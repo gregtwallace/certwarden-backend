@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"legocerthub-backend/pkg/challenges"
 	"legocerthub-backend/pkg/challenges/dns_checker"
+	"legocerthub-backend/pkg/challenges/providers"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/domain/app/backup"
 	"legocerthub-backend/pkg/domain/app/updater"
@@ -330,9 +331,11 @@ func (app *Application) setDefaultConfigValues() {
 		http01Port := new(int)
 		*http01Port = 4060
 
-		app.config.Challenges.ProviderConfigs.Http01InternalConfigs = []*http01internal.Config{{
-			Doms: []string{"*"},
-			Port: http01Port,
+		app.config.Challenges.ProviderConfigs.Http01InternalConfigs = []providers.ConfigManagerHttp01Internal{{
+			Domains: []string{"*"},
+			Config: &http01internal.Config{
+				Port: http01Port,
+			},
 		}}
 	}
 }

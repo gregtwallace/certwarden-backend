@@ -38,15 +38,9 @@ func (service *Service) Stop() error { return nil }
 
 // Configuration options
 type Config struct {
-	Doms         []string                         `yaml:"domains" json:"domains"`
 	Environment  output.RedactedEnvironmentParams `yaml:"environment" json:"environment"`
 	CreateScript string                           `yaml:"create_script" json:"create_script"`
 	DeleteScript string                           `yaml:"delete_script" json:"delete_script"`
-}
-
-// Domains returns all of the domains specified in the Config
-func (cfg *Config) Domains() []string {
-	return cfg.Doms
 }
 
 // NewService creates a new service

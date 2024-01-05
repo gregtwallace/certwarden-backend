@@ -16,8 +16,14 @@ import (
 
 // modifyPayload is the needed payload to update an existing provider
 type modifyPayload struct {
-	ID                    int                     `json:"-"`
-	Tag                   string                  `json:"tag"`
+	// mandatory
+	ID  int    `json:"-"`
+	Tag string `json:"tag"`
+
+	// optional
+	Domains []string `json:"domains,omitempty"`
+
+	// plus only one of these
 	Http01InternalConfig  *http01internal.Config  `json:"http_01_internal,omitempty"`
 	Dns01ManualConfig     *dns01manual.Config     `json:"dns_01_manual,omitempty"`
 	Dns01AcmeDnsConfig    *dns01acmedns.Config    `json:"dns_01_acme_dns,omitempty"`
@@ -47,34 +53,6 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 		return output.ErrValidationFailed
 	}
 
-	// verify correct number of configs received
-	configCount := 0
-	var pCfg providerConfig
-	if payload.Http01InternalConfig != nil {
-		configCount++
-		pCfg = payload.Http01InternalConfig
-	}
-	if payload.Dns01ManualConfig != nil {
-		configCount++
-		pCfg = payload.Dns01ManualConfig
-	}
-	if payload.Dns01AcmeDnsConfig != nil {
-		configCount++
-		pCfg = payload.Dns01AcmeDnsConfig
-	}
-	if payload.Dns01AcmeShConfig != nil {
-		configCount++
-		pCfg = payload.Dns01AcmeShConfig
-	}
-	if payload.Dns01CloudflareConfig != nil {
-		configCount++
-		pCfg = payload.Dns01CloudflareConfig
-	}
-	if configCount != 1 {
-		mgr.logger.Debugf("new provider expects 1 config, received %d", configCount)
-		return output.ErrValidationFailed
-	}
-
 	// find provider
 	p := (*provider)(nil)
 	for oneP := range mgr.pD {
@@ -97,44 +75,99 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 		return output.ErrValidationFailed
 	}
 
-	// validate domains
-	err = mgr.unsafeValidateDomains(pCfg, p)
-	if err != nil {
-		mgr.logger.Debugf("failed to validate domains (%s)", err)
+	// if domains included, validate domains
+	if payload.Domains != nil {
+		err = mgr.unsafeValidateDomains(payload.Domains, p)
+		if err != nil {
+			mgr.logger.Debugf("failed to validate domains (%s)", err)
+			return output.ErrValidationFailed
+		}
+	}
+
+	// error if wrong config count received
+	configCount := 0
+	var pCfg providerConfig
+	if payload.Http01InternalConfig != nil {
+		configCount++
+		pCfg = payload.Http01InternalConfig
+	}
+	if payload.Dns01ManualConfig != nil {
+		configCount++
+		pCfg = payload.Dns01ManualConfig
+	}
+	if payload.Dns01AcmeDnsConfig != nil {
+		configCount++
+		pCfg = payload.Dns01AcmeDnsConfig
+	}
+	if payload.Dns01AcmeShConfig != nil {
+		configCount++
+		pCfg = payload.Dns01AcmeShConfig
+	}
+	if payload.Dns01CloudflareConfig != nil {
+		configCount++
+		pCfg = payload.Dns01CloudflareConfig
+	}
+
+	// check config count, also error on wrong config type
+	if configCount > 1 {
+		mgr.logger.Debugf("update provider expects max 1 config, received %d", configCount)
 		return output.ErrValidationFailed
+	} else if configCount == 1 {
+		// update provider service first (if cfg specified) so if fails, domains are unchanged
+		switch pServ := p.Service.(type) {
+		case *http01internal.Service:
+			if payload.Http01InternalConfig == nil {
+				mgr.logger.Debug("update provider wrong config received")
+				return output.ErrValidationFailed
+			}
+			err = pServ.UpdateService(mgr.childApp, payload.Http01InternalConfig)
+
+		case *dns01manual.Service:
+			if payload.Dns01ManualConfig == nil {
+				mgr.logger.Debug("update provider wrong config received")
+				return output.ErrValidationFailed
+			}
+			err = pServ.UpdateService(mgr.childApp, payload.Dns01ManualConfig)
+
+		case *dns01acmedns.Service:
+			if payload.Dns01AcmeDnsConfig == nil {
+				mgr.logger.Debug("update provider wrong config received")
+				return output.ErrValidationFailed
+			}
+			err = pServ.UpdateService(mgr.childApp, payload.Dns01AcmeDnsConfig)
+
+		case *dns01acmesh.Service:
+			if payload.Dns01AcmeShConfig == nil {
+				mgr.logger.Debug("update provider wrong config received")
+				return output.ErrValidationFailed
+			}
+			err = pServ.UpdateService(mgr.childApp, payload.Dns01AcmeShConfig)
+
+		case *dns01cloudflare.Service:
+			if payload.Dns01CloudflareConfig == nil {
+				mgr.logger.Debug("update provider wrong config received")
+				return output.ErrValidationFailed
+			}
+			err = pServ.UpdateService(mgr.childApp, payload.Dns01CloudflareConfig)
+
+		default:
+			// default fail
+			mgr.logger.Error("provider service is unsupported, please report this as a lego bug")
+			return output.ErrInternal
+		}
+
+		// common error check
+		if err != nil {
+			mgr.logger.Debugf("failed to update service (%s)", err)
+			return output.ErrValidationFailed
+		}
+
+		// success, update config
+		p.Config = pCfg
 	}
 
-	// actually do update
-	switch pServ := p.Service.(type) {
-	case *http01internal.Service:
-		err = pServ.UpdateService(mgr.childApp, payload.Http01InternalConfig)
-
-	case *dns01manual.Service:
-		err = pServ.UpdateService(mgr.childApp, payload.Dns01ManualConfig)
-
-	case *dns01acmedns.Service:
-		err = pServ.UpdateService(mgr.childApp, payload.Dns01AcmeDnsConfig)
-
-	case *dns01acmesh.Service:
-		err = pServ.UpdateService(mgr.childApp, payload.Dns01AcmeShConfig)
-
-	case *dns01cloudflare.Service:
-		err = pServ.UpdateService(mgr.childApp, payload.Dns01CloudflareConfig)
-
-	default:
-		// default fail
-		mgr.logger.Error("provider service is unsupported, please report this as a lego bug")
-		return output.ErrInternal
-	}
-
-	// common error check
-	if err != nil {
-		mgr.logger.Debugf("failed to update service (%s)", err)
-		return output.ErrValidationFailed
-	}
-
-	// update manager provider info
-	mgr.updateProvider(p, pCfg)
+	// actually do domains update
+	mgr.unsafeUpdateProviderDomains(p, payload.Domains)
 
 	// update config file
 	err = mgr.unsafeWriteProvidersConfig()

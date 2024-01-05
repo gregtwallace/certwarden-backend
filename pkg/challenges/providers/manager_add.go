@@ -15,10 +15,10 @@ import (
 // unsafeAddProvider creates the provider specified in cfg and adds it to
 // manager. It MUST be called from a Locked state OR during initial Manager
 // creation which is single threaded (and thus safe)
-func (mgr *Manager) unsafeAddProvider(cfg providerConfig) (*provider, error) {
+func (mgr *Manager) unsafeAddProvider(domains []string, cfg providerConfig) (*provider, error) {
 	// verify every domain ir properly formatted, or verify this is wildcard cfg (* only)
 	// and also verify all domains are available in manager
-	err := mgr.unsafeValidateDomains(cfg, nil)
+	err := mgr.unsafeValidateDomains(domains, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -61,6 +61,7 @@ func (mgr *Manager) unsafeAddProvider(cfg providerConfig) (*provider, error) {
 	p := &provider{
 		ID:      mgr.nextId,
 		Tag:     randomness.GenerateInsecureString(10),
+		Domains: domains,
 		Type:    typeOf,
 		Config:  cfg,
 		Service: serv,
@@ -73,7 +74,7 @@ func (mgr *Manager) unsafeAddProvider(cfg providerConfig) (*provider, error) {
 	mgr.pD[p] = []string{}
 
 	// add each domain
-	for _, domain := range cfg.Domains() {
+	for _, domain := range domains {
 		// add domain to domains map
 		mgr.dP[domain] = p
 

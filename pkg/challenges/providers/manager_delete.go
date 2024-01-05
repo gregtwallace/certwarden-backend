@@ -5,6 +5,7 @@ package providers
 func (mgr *Manager) unsafeDeleteProvider(p *provider) {
 	// get domains list for provider
 	domains := mgr.pD[p]
+
 	// delete each domain that used provider
 	for _, domain := range domains {
 		delete(mgr.dP, domain)

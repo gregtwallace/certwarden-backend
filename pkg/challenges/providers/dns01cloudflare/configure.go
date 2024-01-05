@@ -19,7 +19,6 @@ const apiCallTimeout = 10 * time.Second
 
 // Configuration options for an instance of Cloudflare provider
 type Config struct {
-	Doms []string `yaml:"domains" json:"domains"`
 	// Account
 	Account *struct {
 		Email        *string                `yaml:"email" json:"email"`
@@ -28,11 +27,6 @@ type Config struct {
 	// -- OR --
 	// Token
 	ApiToken *output.RedactedString `yaml:"api_token,omitempty" json:"api_token,omitempty"`
-}
-
-// Domains returns all of the domains specified in the Config
-func (cfg *Config) Domains() []string {
-	return cfg.Doms
 }
 
 // redactedIdentifier selects the correct identifier field and then returns the identifier

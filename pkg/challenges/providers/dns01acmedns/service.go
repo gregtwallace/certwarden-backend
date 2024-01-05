@@ -37,14 +37,8 @@ func (service *Service) Stop() error { return nil }
 
 // Configuration options
 type Config struct {
-	Doms        []string          `yaml:"domains" json:"domains"`
 	HostAddress string            `yaml:"acme_dns_address" json:"acme_dns_address"`
 	Resources   []acmeDnsResource `yaml:"resources" json:"resources"`
-}
-
-// Domains returns all of the domains specified in the Config
-func (cfg *Config) Domains() []string {
-	return cfg.Doms
 }
 
 // NewService creates a new service

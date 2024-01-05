@@ -24,19 +24,44 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 	for p := range mgr.pD {
 		switch realCfg := p.Config.(type) {
 		case *http01internal.Config:
-			mgrCfg.Http01InternalConfigs = append(mgrCfg.Http01InternalConfigs, realCfg)
+			mgrCfg.Http01InternalConfigs = append(mgrCfg.Http01InternalConfigs,
+				ConfigManagerHttp01Internal{
+					Domains: p.Domains,
+					Config:  realCfg,
+				},
+			)
 
 		case *dns01manual.Config:
-			mgrCfg.Dns01ManualConfigs = append(mgrCfg.Dns01ManualConfigs, realCfg)
+			mgrCfg.Dns01ManualConfigs = append(mgrCfg.Dns01ManualConfigs,
+				ConfigManagerDns01Manual{
+					Domains: p.Domains,
+					Config:  realCfg,
+				},
+			)
 
 		case *dns01acmedns.Config:
-			mgrCfg.Dns01AcmeDnsConfigs = append(mgrCfg.Dns01AcmeDnsConfigs, realCfg)
+			mgrCfg.Dns01AcmeDnsConfigs = append(mgrCfg.Dns01AcmeDnsConfigs,
+				ConfigManagerDns01AcmeDns{
+					Domains: p.Domains,
+					Config:  realCfg,
+				},
+			)
 
 		case *dns01acmesh.Config:
-			mgrCfg.Dns01AcmeShConfigs = append(mgrCfg.Dns01AcmeShConfigs, realCfg)
+			mgrCfg.Dns01AcmeShConfigs = append(mgrCfg.Dns01AcmeShConfigs,
+				ConfigManagerDns01AcmeSh{
+					Domains: p.Domains,
+					Config:  realCfg,
+				},
+			)
 
 		case *dns01cloudflare.Config:
-			mgrCfg.Dns01CloudflareConfigs = append(mgrCfg.Dns01CloudflareConfigs, realCfg)
+			mgrCfg.Dns01CloudflareConfigs = append(mgrCfg.Dns01CloudflareConfigs,
+				ConfigManagerDns01Cloudflare{
+					Domains: p.Domains,
+					Config:  realCfg,
+				},
+			)
 
 		default:
 			mgr.logger.Errorf("provider mgr couldn't append provider config for provider id %d, report as lego bug", p.ID)

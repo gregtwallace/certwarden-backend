@@ -69,13 +69,7 @@ func (service *Service) Stop() (err error) {
 
 // Configuration options
 type Config struct {
-	Doms []string `yaml:"domains" json:"domains"`
-	Port *int     `yaml:"port" json:"port"`
-}
-
-// Domains returns all of the domains specified in the Config
-func (cfg *Config) Domains() []string {
-	return cfg.Doms
+	Port *int `yaml:"port" json:"port"`
 }
 
 // NewService creates a new service

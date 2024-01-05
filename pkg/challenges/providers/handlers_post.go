@@ -13,6 +13,10 @@ import (
 
 // newPayload is used to add a provider
 type newPayload struct {
+	// mandatory
+	Domains []string `json:"domains"`
+
+	// + only one of these
 	Http01InternalConfig  *http01internal.Config  `json:"http_01_internal,omitempty"`
 	Dns01ManualConfig     *dns01manual.Config     `json:"dns_01_manual,omitempty"`
 	Dns01AcmeDnsConfig    *dns01acmedns.Config    `json:"dns_01_acme_dns,omitempty"`
@@ -58,19 +62,19 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 	// try to add the specified provider (actual action)
 	var p *provider
 	if payload.Http01InternalConfig != nil {
-		p, err = mgr.unsafeAddProvider(payload.Http01InternalConfig)
+		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Http01InternalConfig)
 
 	} else if payload.Dns01ManualConfig != nil {
-		p, err = mgr.unsafeAddProvider(payload.Dns01ManualConfig)
+		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Dns01ManualConfig)
 
 	} else if payload.Dns01AcmeDnsConfig != nil {
-		p, err = mgr.unsafeAddProvider(payload.Dns01AcmeDnsConfig)
+		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Dns01AcmeDnsConfig)
 
 	} else if payload.Dns01AcmeShConfig != nil {
-		p, err = mgr.unsafeAddProvider(payload.Dns01AcmeShConfig)
+		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Dns01AcmeShConfig)
 
 	} else if payload.Dns01CloudflareConfig != nil {
-		p, err = mgr.unsafeAddProvider(payload.Dns01CloudflareConfig)
+		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Dns01CloudflareConfig)
 
 	} else {
 		mgr.logger.Error("new provider cfg missing, this error should never trigger though, report lego bug")

@@ -61,9 +61,6 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, err
 	}
 
-	// debug log configured domains
-	service.logger.Infof("cloudflare instance %s configured domains: %s", service.redactedApiIdentifier(), cfg.Doms)
-
 	return service, nil
 }
 
