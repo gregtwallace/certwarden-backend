@@ -31,10 +31,14 @@ type NewPayload struct {
 	City                      *string  `json:"city"`
 	PostProcessingCommand     *string  `json:"post_processing_command"`
 	PostProcessingEnvironment []string `json:"post_processing_environment"`
-	ApiKey                    string   `json:"-"`
-	ApiKeyViaUrl              bool     `json:"-"`
-	CreatedAt                 int      `json:"-"`
-	UpdatedAt                 int      `json:"-"`
+	// for post processing client, user submits enable or not, if enable key is generated and stored
+	// bool is not stored anywhere (disabled == blank key value)
+	PostProcessingClientEnable *bool  `json:"post_processing_client_enable"`
+	PostProcessingClientKeyB64 string `json:"-"`
+	ApiKey                     string `json:"-"`
+	ApiKeyViaUrl               bool   `json:"-"`
+	CreatedAt                  int    `json:"-"`
+	UpdatedAt                  int    `json:"-"`
 }
 
 // PostNewCert creates a new certificate object in storage. No actual encryption certificate
@@ -140,6 +144,10 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	if payload.PostProcessingEnvironment == nil {
 		payload.PostProcessingEnvironment = []string{}
 	}
+	// post processing client enable
+	if payload.PostProcessingClientEnable == nil {
+		payload.PostProcessingClientEnable = new(bool)
+	}
 	// end validation
 
 	// if new key was generated, save it to storage
@@ -181,6 +189,14 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	payload.ApiKeyViaUrl = false
 	payload.CreatedAt = int(time.Now().Unix())
 	payload.UpdatedAt = payload.CreatedAt
+	// if client enabled, generate key to save (b64 raw url encoded)
+	if payload.PostProcessingClientEnable != nil && *payload.PostProcessingClientEnable {
+		payload.PostProcessingClientKeyB64, err = randomness.GenerateAES256KeyAsBase64RawUrl()
+		if err != nil {
+			service.logger.Errorf("failed to generate client key for certificate (%s)", err)
+			return output.ErrInternal
+		}
+	}
 
 	// save new cert
 	newCert, err := service.storage.PostNewCert(payload)
@@ -247,6 +263,55 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	response := &certificateResponse{}
 	response.StatusCode = http.StatusCreated
 	response.Message = "certificate new api key created"
+	response.Certificate = cert.detailedResponse(service)
+
+	err = service.output.WriteJSON(w, response)
+	if err != nil {
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
+	}
+
+	return nil
+}
+
+// MakeNewClientKey generates a new AES 256 encryption key and saves it to the specified
+// certificate
+func (service *Service) MakeNewClientKey(w http.ResponseWriter, r *http.Request) *output.Error {
+	// get id param
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
+	certId, err := strconv.Atoi(idParam)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// validation
+	// get cert (validate exists)
+	cert, outErr := service.GetCertificate(certId)
+	if outErr != nil {
+		return outErr
+	}
+	// validation -- end
+
+	// generate AES 256 key
+	clientKey, err := randomness.GenerateAES256KeyAsBase64RawUrl()
+	if err != nil {
+		service.logger.Errorf("failed to generate client key (%s)", err)
+		return output.ErrInternal
+	}
+
+	// update storage
+	err = service.storage.PutCertClientKey(certId, clientKey, int(time.Now().Unix()))
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+	cert.PostProcessingClientKeyB64 = clientKey
+
+	// write response
+	response := &certificateResponse{}
+	response.StatusCode = http.StatusCreated
+	response.Message = "certificate new client key created"
 	response.Certificate = cert.detailedResponse(service)
 
 	err = service.output.WriteJSON(w, response)

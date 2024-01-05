@@ -48,6 +48,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 		c.id, c.name, c.description, c.subject, c.subject_alts,
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
+		c.post_processing_client_key,
 		
 		/* cert's key */
 		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new,
@@ -153,6 +154,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			&oneOrder.certificate.apiKeyViaUrl,
 			&oneOrder.certificate.postProcessingCommand,
 			&oneOrder.certificate.postProcessingEnvironment,
+			&oneOrder.certificate.postProcessingClientKeyB64,
 
 			&oneOrder.certificate.certificateKeyDb.id,
 			&oneOrder.certificate.certificateKeyDb.name,
@@ -260,6 +262,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 		c.id, c.name, c.description, c.subject, c.subject_alts,
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
+		c.post_processing_client_key,
 		
 		/* cert's key */
 		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new, ck.api_key_disabled,
@@ -352,6 +355,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			&oneOrder.certificate.apiKeyViaUrl,
 			&oneOrder.certificate.postProcessingCommand,
 			&oneOrder.certificate.postProcessingEnvironment,
+			&oneOrder.certificate.postProcessingClientKeyB64,
 
 			&oneOrder.certificate.certificateKeyDb.id,
 			&oneOrder.certificate.certificateKeyDb.name,
@@ -578,6 +582,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		c.id, c.name, c.description, c.subject, c.subject_alts,
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
+		c.post_processing_client_key,
 		
 		/* cert's key */
 		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ak.api_key_new, ck.api_key_disabled,
@@ -652,6 +657,7 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		&oneOrder.certificate.apiKeyViaUrl,
 		&oneOrder.certificate.postProcessingCommand,
 		&oneOrder.certificate.postProcessingEnvironment,
+		&oneOrder.certificate.postProcessingClientKeyB64,
 
 		&oneOrder.certificate.certificateKeyDb.id,
 		&oneOrder.certificate.certificateKeyDb.name,
@@ -748,6 +754,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		c.id, c.name, c.description, c.subject, c.subject_alts,
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
+		c.post_processing_client_key,
 		
 		/* cert's key */
 		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ak.api_key_new, ck.api_key_disabled,
@@ -841,6 +848,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		&oneOrder.certificate.apiKeyViaUrl,
 		&oneOrder.certificate.postProcessingCommand,
 		&oneOrder.certificate.postProcessingEnvironment,
+		&oneOrder.certificate.postProcessingClientKeyB64,
 
 		&oneOrder.certificate.certificateKeyDb.id,
 		&oneOrder.certificate.certificateKeyDb.name,

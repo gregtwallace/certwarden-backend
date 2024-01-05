@@ -117,6 +117,8 @@ func (app *Application) makeRouterAndRoutes() {
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/certificates", app.certificates.PostNewCert)
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/certificates/:certid/apikey", app.certificates.StageNewApiKey)
 	router.handleAPIRouteSecure(http.MethodDelete, apiUrlPath+"/v1/certificates/:certid/apikey", app.certificates.RemoveOldApiKey)
+	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/certificates/:certid/clientkey", app.certificates.MakeNewClientKey)
+	router.handleAPIRouteSecure(http.MethodDelete, apiUrlPath+"/v1/certificates/:certid/clientkey", app.certificates.DisableClientKey)
 
 	router.handleAPIRouteSecure(http.MethodPut, apiUrlPath+"/v1/certificates/:certid", app.certificates.PutDetailsCert)
 

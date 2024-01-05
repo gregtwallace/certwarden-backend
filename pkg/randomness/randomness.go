@@ -2,12 +2,14 @@ package randomness
 
 import (
 	crypto_rand "crypto/rand"
+	"encoding/base64"
 	"math/big"
 	math_rand "math/rand"
 )
 
 // lengths
 const (
+	lengthAES256Key     = 32
 	lengthApiKey        = 32
 	lengthFrontendNonce = 26
 	lengthHexSecret     = 64
@@ -19,6 +21,32 @@ const (
 	charSetNumbersAndLetters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	charSetHex               = "0123456789abcdef"
 )
+
+// generateRandomByteSlice populates a byte slice of length with data from
+// crypto/range
+func generateRandomByteSlice(length int) ([]byte, error) {
+	slice := make([]byte, length)
+
+	_, err := crypto_rand.Read(slice)
+	if err != nil {
+		return nil, err
+	}
+
+	return slice, nil
+}
+
+// GenerateAES256KeyAsBase64RawUrl generates an AES 256 encryption key
+// (a 32-byte key) and then encodes the key in Base64 Raw URL format
+func GenerateAES256KeyAsBase64RawUrl() (string, error) {
+	// make key
+	key, err := generateRandomByteSlice(lengthAES256Key)
+	if err != nil {
+		return "", err
+	}
+
+	// return encoded key
+	return base64.RawURLEncoding.EncodeToString(key), nil
+}
 
 // generateSecureRandomInt returns a uniform random value in [0, max) that
 // is cryptographically random.

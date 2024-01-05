@@ -1,40 +1,152 @@
 package orders
 
 import (
+	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 )
 
-// executePostProcessing executes the order's certificate's post processing script
-// if the script field is blank, this is a no-op
-func (of *orderFulfiller) executePostProcessing(order Order) error {
-	// if no post processing script, done
-	if order.Certificate.PostProcessingCommand == "" {
-		of.logger.Debugf("post processing %d: skipping (no post process command)", order.ID)
-		return nil
+const postProcesssClientPostRoute = "/legocerthubclient/api/v1/install"
+
+// postProcessInnerClientPayload is the data that will be marshalled and
+// encrypted, then encoded, then embedded in the outer struct before sending to client
+type postProcessInnerClientPayload struct {
+	KeyPem  string `json:"key_pem"`
+	CertPem string `json:"cert_pem"`
+}
+
+// postProcessClientPayload is the actual payload that is sent to the lego
+// client
+type postProcessClientPayload struct {
+	// Payload is the base64 encoded string of the cipherData produced from encrypting innerPayload
+	Payload string `json:"payload"`
+}
+
+// executePostProcessingLeGoClient sends a data payload to the LeGo CertHub client located
+// at certificate's CN, using the encryption key specified on certificate
+func (of *orderFulfiller) executePostProcessingLeGoClient(order Order) {
+	// no-op if no client key
+	if order.Certificate.PostProcessingClientKeyB64 == "" {
+		of.logger.Debugf("post processing %d: skipping lego client notify (cert does not have a client key) (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
+		return
 	}
 
-	of.logger.Infof("post processing %d: attempting to run (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
+	of.logger.Infof("post processing %d: attempting to notify lego client (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
+
+	// decode AES key
+	aesKey, err := base64.RawURLEncoding.DecodeString(order.Certificate.PostProcessingClientKeyB64)
+	if err != nil {
+		of.logger.Errorf("post processing %d: notify lego client failed: invalid aes key (%s) (cert: %d, cn: %s)", order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		return
+	}
+
+	// verify pem exists (should never trigger)
+	if order.Pem == nil || order.FinalizedKey == nil {
+		of.logger.Errorf("post processing %d: notify lego client failed: something really weird happened and pem content is nil (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
+		return
+	}
+
+	// make inner payload for client
+	innerPayload := postProcessInnerClientPayload{
+		KeyPem:  *order.Pem,
+		CertPem: order.FinalizedKey.Pem,
+	}
+	innerPayloadJson, err := json.Marshal(innerPayload)
+	if err != nil {
+		of.logger.Errorf("post processing %d: notify lego client failed: failed to marshal inner payload (%s) (cert: %d, cn: %s)", order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		return
+	}
+
+	// make AES-GCM for encrypting
+	aes, err := aes.NewCipher(aesKey)
+	if err != nil {
+		of.logger.Errorf("post processing %d: notify lego client failed: failed to make cipher (%s) (cert: %d, cn: %s)", order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		return
+	}
+
+	gcm, err := cipher.NewGCM(aes)
+	if err != nil {
+		of.logger.Errorf("post processing %d: notify lego client failed: failed to make gcm AEAD (%s) (cert: %d, cn: %s)", order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		return
+	}
+
+	// make nonce and encrypt
+	nonce := make([]byte, gcm.NonceSize())
+	_, err = rand.Read(nonce)
+	if err != nil {
+		of.logger.Errorf("post processing %d: notify lego client failed: failed to make nonce (%s) (cert: %d, cn: %s)", order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		return
+	}
+	encryptedInnerData := gcm.Seal(nonce, nonce, innerPayloadJson, nil)
+
+	// make actual payload to send client
+	payload := postProcessClientPayload{
+		Payload: base64.RawURLEncoding.EncodeToString(encryptedInnerData),
+	}
+
+	dataPayload, err := json.Marshal(payload)
+	if err != nil {
+		of.logger.Errorf("post processing %d: notify lego client failed: failed to marshal outer payload (%s) (cert: %d, cn: %s)", order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		return
+	}
+
+	// send post to client
+	resp, err := of.httpClient.Post("https://"+order.Certificate.Subject+postProcesssClientPostRoute, "application/json", bytes.NewBuffer(dataPayload))
+	if err != nil {
+		of.logger.Errorf("post processing %d: notify lego client failed: failed to post to client (%s) (cert: %d, cn: %s)", order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		return
+	}
+
+	// ensure body is read and closed
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
+
+	// error if not 200
+	if resp.StatusCode != http.StatusOK {
+		of.logger.Errorf("post processing %d: notify lego client failed: post status %d (cert: %d, cn: %s)", order.ID, resp.StatusCode, order.Certificate.ID, order.Certificate.Subject)
+		return
+	}
+
+	of.logger.Infof("post processing %d: lego client notify completed", order.ID)
+}
+
+// executePostProcessingScript executes the certificate's post processing script, if the cert
+// does not have a script, this is a no-op
+func (of *orderFulfiller) executePostProcessingScript(order Order) {
+	// no-op if no command
+	if order.Certificate.PostProcessingCommand == "" {
+		of.logger.Debugf("post processing %d: skipping script (cert does not have a script to run) (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
+		return
+	}
+
+	of.logger.Infof("post processing %d: attempting to run script (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
 
 	// if app failed to get suitable shell at startup, post processing is disabled
 	if of.shellPath == "" {
-		err := fmt.Errorf("post processing %d: failed to run post processing (no suitable shell was found during app startup)", order.ID)
+		err := fmt.Errorf("post processing %d: script failed to run post processing (no suitable shell was found during app startup)", order.ID)
 		of.logger.Error(err)
-		return err
+		return
 	}
 
 	// nil checks
 	if order.Pem == nil {
-		err := fmt.Errorf("post processing %d: order pem is nil (should never happen)", order.ID)
+		err := fmt.Errorf("post processing %d: script failed: order pem is nil (should never happen)", order.ID)
 		of.logger.Error(err)
-		return err
+		return
 	}
 	if order.FinalizedKey == nil {
-		err := fmt.Errorf("post processing %d: failed to run post processing (finalized key no longer exists)", order.ID)
+		err := fmt.Errorf("post processing %d: script failed: finalized key no longer exists", order.ID)
 		of.logger.Error(err)
-		return err
+		return
 	}
 
 	// make environment; certain values are always automatically added
@@ -75,19 +187,31 @@ func (of *orderFulfiller) executePostProcessing(order Order) error {
 
 	// run script command
 	result, err := cmd.Output()
+	of.logger.Debugf("post processing %d: script output: %s", order.ID, string(result))
 	if err != nil {
 		// try to get stderr and log it too
 		exitErr := new(exec.ExitError)
 		if errors.As(err, &exitErr) {
-			of.logger.Errorf("post processing %d: std err: %s", order.ID, exitErr.Stderr)
+			of.logger.Errorf("post processing %d: script std err: %s", order.ID, exitErr.Stderr)
 		}
 
-		of.logger.Errorf("post processing %d: error: %s", order.ID, err)
-		return err
+		of.logger.Errorf("post processing %d: script failed: error: %s", order.ID, err)
+		return
 	}
-	of.logger.Debugf("post processing %d: output: %s", order.ID, string(result))
 
-	of.logger.Infof("post processing %d: completed", order.ID)
+	of.logger.Infof("post processing %d: script completed", order.ID)
+}
 
-	return nil
+// executePostProcessing executes the order's certificate's post processing script
+// if the script field is blank, this is a no-op
+func (of *orderFulfiller) executePostProcessing(order Order) {
+	of.logger.Infof("post processing %d: begin attempt", order.ID)
+
+	// run client post processing
+	of.executePostProcessingLeGoClient(order)
+
+	// run script post processing
+	of.executePostProcessingScript(order)
+
+	of.logger.Infof("post processing %d: end", order.ID)
 }

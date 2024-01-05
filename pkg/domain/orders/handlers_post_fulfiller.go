@@ -82,12 +82,7 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 
 	// go routing for post processing (use routine to avoid timeout on api call return)
 	go func() {
-		err = service.orderFulfiller.executePostProcessing(order)
-		if err != nil {
-			service.logger.Errorf("post processing of order id %d failed (%s)", orderId, err)
-		} else {
-			service.logger.Infof("post processing of order id %d complete", orderId)
-		}
+		service.orderFulfiller.executePostProcessing(order)
 	}()
 
 	// write response

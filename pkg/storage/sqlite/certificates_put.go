@@ -152,3 +152,32 @@ func (store *Storage) PutCertApiKey(certId int, apiKey string, updateTimeUnix in
 
 	return nil
 }
+
+// PutCertClientKey sets a cert's client key and updates the updated at time
+func (store *Storage) PutCertClientKey(certId int, newClientKeyB64 string, updateTimeUnix int) (err error) {
+	// database action
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		certificates
+	SET
+		post_processing_client_key = $1,
+		updated_at = $2
+	WHERE
+		id = $3
+	`
+
+	_, err = store.db.ExecContext(ctx, query,
+		newClientKeyB64,
+		updateTimeUnix,
+		certId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

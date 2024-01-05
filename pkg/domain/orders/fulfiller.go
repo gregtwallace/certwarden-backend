@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/authorizations"
+	"legocerthub-backend/pkg/httpclient"
 	"os/exec"
 	"sync"
 
@@ -24,6 +25,7 @@ type orderFulfiller struct {
 	isHttps               bool
 	serverCertificateName *string
 	loadHttpsCertificate  func() error
+	httpClient            *httpclient.Client
 	shellPath             string
 
 	highJobs chan orderFulfillerJob
@@ -76,6 +78,7 @@ func createOrderFulfiller(app App, workerCount int) *orderFulfiller {
 		isHttps:               app.IsHttps(),
 		serverCertificateName: app.HttpsCertificateName(),
 		loadHttpsCertificate:  app.LoadHttpsCertificate,
+		httpClient:            app.GetHttpClient(),
 		shellPath:             shellPath,
 
 		workerJobs: make(map[int]*orderFulfillerJob),

@@ -6,6 +6,7 @@ import (
 	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/authorizations"
 	"legocerthub-backend/pkg/domain/certificates"
+	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
 	"legocerthub-backend/pkg/pagination_sort"
 	"sync"
@@ -30,6 +31,7 @@ type App interface {
 	GetShutdownWaitGroup() *sync.WaitGroup
 
 	IsHttps() bool
+	GetHttpClient() *httpclient.Client
 	HttpsCertificateName() *string
 	LoadHttpsCertificate() error
 }

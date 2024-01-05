@@ -104,3 +104,45 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 
 	return nil
 }
+
+// DisableClientKey discards a cert's client key (replacing it with a blank string,
+// which disables the client functionality)
+func (service *Service) DisableClientKey(w http.ResponseWriter, r *http.Request) *output.Error {
+	// get id param
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
+	certId, err := strconv.Atoi(idParam)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// validation
+	// get cert (validate exists)
+	cert, outErr := service.GetCertificate(certId)
+	if outErr != nil {
+		return outErr
+	}
+	// validation -- end
+
+	// update storage
+	err = service.storage.PutCertClientKey(certId, "", int(time.Now().Unix()))
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+	cert.PostProcessingClientKeyB64 = ""
+
+	// write response
+	response := &certificateResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "certificate client key deleted (disabled)"
+	response.Certificate = cert.detailedResponse(service)
+
+	err = service.output.WriteJSON(w, response)
+	if err != nil {
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
+	}
+
+	return nil
+}

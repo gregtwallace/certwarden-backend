@@ -32,6 +32,7 @@ type Storage interface {
 	PutDetailsCert(payload DetailsUpdatePayload) (Certificate, error)
 	PutCertApiKey(certId int, apiKey string, updateTimeUnix int) (err error)
 	PutCertNewApiKey(certId int, newApiKey string, updateTimeUnix int) (err error)
+	PutCertClientKey(certId int, newClientKeyB64 string, updateTimeUnix int) (err error)
 
 	DeleteCert(id int) (err error)
 
