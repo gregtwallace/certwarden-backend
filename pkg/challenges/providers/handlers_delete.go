@@ -40,14 +40,14 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *outp
 	}
 
 	// if manager only has 1 provider, delete will never be allowed
-	if len(mgr.pD) <= 1 {
+	if len(mgr.providers) <= 1 {
 		mgr.logger.Debug("cannot delete provider if there is only 1 provider available")
 		return output.ErrValidationFailed
 	}
 
 	// find provider
 	p := (*provider)(nil)
-	for oneP := range mgr.pD {
+	for _, oneP := range mgr.providers {
 		if oneP.ID == payload.ID {
 
 			// once found, verify tag is correct

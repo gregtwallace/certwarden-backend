@@ -70,16 +70,13 @@ func (mgr *Manager) unsafeAddProvider(domains []string, cfg providerConfig) (*pr
 	// increment next id
 	mgr.nextId++
 
-	// add provider to providers map with empty domains
-	mgr.pD[p] = []string{}
+	// add provider to provider slice
+	mgr.providers = append(mgr.providers, p)
 
-	// add each domain
+	// add each domain to domain map
 	for _, domain := range domains {
 		// add domain to domains map
 		mgr.dP[domain] = p
-
-		// append domain to providers map
-		mgr.pD[p] = append(mgr.pD[p], domain)
 	}
 
 	return p, nil

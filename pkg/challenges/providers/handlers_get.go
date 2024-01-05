@@ -20,7 +20,7 @@ func (mgr *Manager) GetAllProviders(w http.ResponseWriter, r *http.Request) *out
 
 	// read all providers
 	var allProviders []provider
-	for p := range mgr.pD {
+	for _, p := range mgr.providers {
 		allProviders = append(allProviders, *p)
 	}
 
@@ -91,7 +91,7 @@ func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) *outp
 
 	// get the provider
 	var p *provider
-	for oneP := range mgr.pD {
+	for _, oneP := range mgr.providers {
 		if oneP.ID == id {
 			p = oneP
 			break

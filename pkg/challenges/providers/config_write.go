@@ -21,7 +21,7 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 	mgrCfg := &Config{}
 
 	// append every provider's config
-	for p := range mgr.pD {
+	for _, p := range mgr.providers {
 		switch realCfg := p.Config.(type) {
 		case *http01internal.Config:
 			mgrCfg.Http01InternalConfigs = append(mgrCfg.Http01InternalConfigs,

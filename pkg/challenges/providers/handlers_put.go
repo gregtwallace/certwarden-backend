@@ -55,7 +55,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 
 	// find provider
 	p := (*provider)(nil)
-	for oneP := range mgr.pD {
+	for _, oneP := range mgr.providers {
 		if oneP.ID == payload.ID {
 
 			// once found, verify tag is correct

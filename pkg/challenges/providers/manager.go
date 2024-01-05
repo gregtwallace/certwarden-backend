@@ -27,8 +27,8 @@ type Manager struct {
 	output     *output.Service
 	configFile string
 	nextId     int
-	dP         map[string]*provider   // domain -> provider
-	pD         map[*provider][]string // provider -> []domain
+	providers  []*provider
+	dP         map[string]*provider // domain -> provider
 	mu         sync.RWMutex
 }
 
@@ -40,8 +40,8 @@ func MakeManager(app application, cfg Config) (mgr *Manager, err error) {
 		output:     app.GetOutputter(),
 		configFile: app.GetConfigFilenameWithPath(),
 		nextId:     0,
-		dP:         make(map[string]*provider),   // domain -> provider
-		pD:         make(map[*provider][]string), // provider -> []domain
+		// []*providers
+		dP: make(map[string]*provider), // domain -> provider
 	}
 
 	// get all provider cfgs as array

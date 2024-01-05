@@ -16,15 +16,8 @@ func (mgr *Manager) unsafeUpdateProviderDomains(p *provider, newDomains []string
 	// update p's domains
 	p.Domains = newDomains
 
-	// add new blank domains slice (to overwrite pD)
-	mgr.pD[p] = []string{}
-
-	// add each domain
+	// add each new domain to map
 	for _, newDomain := range newDomains {
-		// add domain to domains map
 		mgr.dP[newDomain] = p
-
-		// append domain to providers map
-		mgr.pD[p] = append(mgr.pD[p], newDomain)
 	}
 }
