@@ -15,7 +15,8 @@ import (
 	"os/exec"
 )
 
-const postProcesssClientPostRoute = "/legocerthubclient/api/v1/install"
+const postProcessClientPostRoute = "/legocerthubclient/api/v1/install"
+const postProcessClientPort = 5055
 
 // postProcessInnerClientPayload is the data that will be marshalled and
 // encrypted, then encoded, then embedded in the outer struct before sending to client
@@ -57,8 +58,8 @@ func (of *orderFulfiller) executePostProcessingLeGoClient(order Order) {
 
 	// make inner payload for client
 	innerPayload := postProcessInnerClientPayload{
-		KeyPem:  *order.Pem,
-		CertPem: order.FinalizedKey.Pem,
+		KeyPem:  order.FinalizedKey.Pem,
+		CertPem: *order.Pem,
 	}
 	innerPayloadJson, err := json.Marshal(innerPayload)
 	if err != nil {
@@ -86,6 +87,7 @@ func (of *orderFulfiller) executePostProcessingLeGoClient(order Order) {
 		of.logger.Errorf("post processing %d: notify lego client failed: failed to make nonce (%s) (cert: %d, cn: %s)", order.ID, err, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
+	// note: dst==nonce on purpose (so nonce is prepended)
 	encryptedInnerData := gcm.Seal(nonce, nonce, innerPayloadJson, nil)
 
 	// make actual payload to send client
@@ -100,7 +102,8 @@ func (of *orderFulfiller) executePostProcessingLeGoClient(order Order) {
 	}
 
 	// send post to client
-	resp, err := of.httpClient.Post("https://"+order.Certificate.Subject+postProcesssClientPostRoute, "application/json", bytes.NewBuffer(dataPayload))
+	postTo := fmt.Sprintf("https://%s:%d%s", order.Certificate.Subject, postProcessClientPort, postProcessClientPostRoute)
+	resp, err := of.httpClient.Post(postTo, "application/json", bytes.NewBuffer(dataPayload))
 	if err != nil {
 		of.logger.Errorf("post processing %d: notify lego client failed: failed to post to client (%s) (cert: %d, cn: %s)", order.ID, err, order.Certificate.ID, order.Certificate.Subject)
 		return
