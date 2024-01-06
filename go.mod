@@ -6,7 +6,7 @@ require github.com/julienschmidt/httprouter v1.3.0
 
 require (
 	github.com/cenkalti/backoff/v4 v4.2.1
-	github.com/cloudflare/cloudflare-go v0.79.0
+	github.com/cloudflare/cloudflare-go v0.70.0
 	github.com/go-acme/lego/v4 v4.14.2
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.1
@@ -70,7 +70,6 @@ require (
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/go-resty/resty/v2 v2.7.0 // indirect
-	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
