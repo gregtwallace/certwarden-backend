@@ -10,9 +10,6 @@ import (
 
 // Provision adds the corresponding DNS record on Cloudflare.
 func (service *Service) Provision(domain, _, keyAuth string) error {
-	// no need to delete, just handle already exists error (which in theory isn't possible
-	// anyway because resourceContent should always change)
-
 	// get dns record
 	dnsRecordName, dnsRecordValue := acme.ValidationResourceDns01(domain, keyAuth)
 

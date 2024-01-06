@@ -9,18 +9,18 @@ import (
 )
 
 // challengeHandler responds to the ACME http-01 challenge path. If the requested
-// resourceName exists in this service's resources, the resourceValue is sent back to
-// the client. If the resourceName is not in the service's resources, a 404 reply is sent.
+// token exists in this service's resources, the keyAuth bytes are sent back to
+// the client. If the token is not in the service's resources, a 404 reply is sent.
 func (service *Service) challengeHandler(w http.ResponseWriter, r *http.Request) {
-	// resourceName from the client request
-	resourceName := httprouter.ParamsFromContext(r.Context()).ByName("resourcename")
+	// token from the client request
+	token := httprouter.ParamsFromContext(r.Context()).ByName("token")
 
 	// try to read resource
-	resourceValue, err := service.provisionedResources.Read(resourceName)
+	resourceValue, err := service.provisionedResources.Read(token)
 
 	// resource not available, 404
 	if err != nil {
-		service.logger.Debugf("http-01 challenge resource %s not found", resourceName)
+		service.logger.Debugf("http-01 challenge resource %s not found", token)
 
 		// write status 404
 		w.WriteHeader(http.StatusNotFound)
@@ -30,7 +30,7 @@ func (service *Service) challengeHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	// token was found, write it
-	service.logger.Debugf("writing resource (name: %s) to http-01 client", resourceName)
+	service.logger.Debugf("writing resource (name: %s) to http-01 client", token)
 
 	// convert value to content reader for output
 	contentReader := bytes.NewReader(resourceValue)

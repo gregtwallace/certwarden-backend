@@ -15,7 +15,7 @@ var (
 // to provision the actual resource. If the resource name is already in use, it waits until the name is free
 // and then proceeds.
 func (service *Service) provision(domain, token, keyAuth string, provider providers.Service) (err error) {
-	// loop to add resourceName to those currently provisioned and wait if not available
+	// loop to add domain to those currently provisioned and wait if not available
 	// if multiple callers are in the waiting state, it is random which will execute next
 	for {
 		// add domain to in use
@@ -28,9 +28,9 @@ func (service *Service) provision(domain, token, keyAuth string, provider provid
 
 		service.logger.Debugf("unable to add resource for %s to challenge work tracker; waiting for resource name to become free", domain)
 
-		// block until resourceName is free, timeout, or shutdown is called
+		// block until domain is free, timeout, or shutdown is called
 		select {
-		// signal channel close indicating resourceName should now be available
+		// signal channel close indicating domain should now be available
 		case <-signal:
 			// continue loop (i.e. retry adding)
 

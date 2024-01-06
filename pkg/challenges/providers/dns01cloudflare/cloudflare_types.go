@@ -9,7 +9,7 @@ import (
 	"github.com/cloudflare/cloudflare-go"
 )
 
-// cloudflareResource returns the resource container for the specified resourceName.
+// cloudflareResource returns the resource container for the specified dns record name.
 // If a matching resource isn't found, an error is returned.
 func (service *Service) cloudflareResource(dnsRecordName string) (*cloudflare.ResourceContainer, error) {
 	// fetch list of zones
