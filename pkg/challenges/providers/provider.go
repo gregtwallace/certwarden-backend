@@ -10,8 +10,8 @@ type providerConfig interface{}
 // service is an interface for a child provider service
 type Service interface {
 	AcmeChallengeType() acme.ChallengeType
-	Provision(resourceName, resourceContent string) (err error)
-	Deprovision(resourceName, resourceContent string) (err error)
+	Provision(domain, token, keyAuth string) (err error)
+	Deprovision(domain, token, keyAuth string) (err error)
 	Stop() error
 }
 

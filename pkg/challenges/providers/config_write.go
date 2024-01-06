@@ -6,6 +6,7 @@ import (
 	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
 	"legocerthub-backend/pkg/challenges/providers/dns01acmesh"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
+	"legocerthub-backend/pkg/challenges/providers/dns01goacme"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"os"
@@ -58,6 +59,14 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 		case *dns01cloudflare.Config:
 			mgrCfg.Dns01CloudflareConfigs = append(mgrCfg.Dns01CloudflareConfigs,
 				ConfigManagerDns01Cloudflare{
+					Domains: p.Domains,
+					Config:  realCfg,
+				},
+			)
+
+		case *dns01goacme.Config:
+			mgrCfg.Dns01GoAcmeConfigs = append(mgrCfg.Dns01GoAcmeConfigs,
+				ConfigManagerDns01GoAcme{
 					Domains: p.Domains,
 					Config:  realCfg,
 				},

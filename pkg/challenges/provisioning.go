@@ -14,19 +14,19 @@ var (
 // Provision adds the specified ACME Challenge resource name to the in use tracker and then calls the provider
 // to provision the actual resource. If the resource name is already in use, it waits until the name is free
 // and then proceeds.
-func (service *Service) provision(resourceName, resourceContent string, provider providers.Service) (err error) {
+func (service *Service) provision(domain, token, keyAuth string, provider providers.Service) (err error) {
 	// loop to add resourceName to those currently provisioned and wait if not available
 	// if multiple callers are in the waiting state, it is random which will execute next
 	for {
-		// add resourceName to in use
-		alreadyExisted, signal := service.resources.Add(resourceName)
+		// add domain to in use
+		alreadyExisted, signal := service.resources.Add(domain)
 		// if didn't already exist, break loop and provision
 		if !alreadyExisted {
-			service.logger.Debugf("added resource name %s to challenge work tracker", resourceName)
+			service.logger.Debugf("added resource for %s to challenge work tracker", domain)
 			break
 		}
 
-		service.logger.Debugf("unable to add resource name %s to challenge work tracker; waiting for resource name to become free", resourceName)
+		service.logger.Debugf("unable to add resource for %s to challenge work tracker; waiting for resource name to become free", domain)
 
 		// block until resourceName is free, timeout, or shutdown is called
 		select {
@@ -45,7 +45,7 @@ func (service *Service) provision(resourceName, resourceContent string, provider
 	}
 
 	// Provision with the appropriate provider
-	err = provider.Provision(resourceName, resourceContent)
+	err = provider.Provision(domain, token, keyAuth)
 	if err != nil {
 		return err
 	}
@@ -55,19 +55,19 @@ func (service *Service) provision(resourceName, resourceContent string, provider
 
 // Deprovision calls the provider to deprovision the actual resource. It then removes the resource name from
 // the in use (work) tracker to indicate the name is once again available for use.
-func (service *Service) deprovision(resourceName, resourceContent string, provider providers.Service) (err error) {
+func (service *Service) deprovision(domain, token, keyAuth string, provider providers.Service) (err error) {
 	// delete resource name from tracker (after the rest of the deprovisioning steps are done or failed)
 	defer func() {
-		err := service.resources.Remove(resourceName)
+		err := service.resources.Remove(domain)
 		if err != nil {
-			service.logger.Errorf("failed to remove resource name %s from work tracker (%s)", resourceName, err)
+			service.logger.Errorf("failed to remove resource for %s from work tracker (%s)", domain, err)
 		} else {
-			service.logger.Debugf("removed resource name %s from challenge work tracker", resourceName)
+			service.logger.Debugf("removed resource for %s from challenge work tracker", domain)
 		}
 	}()
 
 	// Deprovision with the appropriate provider
-	err = provider.Deprovision(resourceName, resourceContent)
+	err = provider.Deprovision(domain, token, keyAuth)
 	if err != nil {
 		return err
 	}

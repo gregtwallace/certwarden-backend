@@ -5,6 +5,7 @@ import (
 	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
 	"legocerthub-backend/pkg/challenges/providers/dns01acmesh"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
+	"legocerthub-backend/pkg/challenges/providers/dns01goacme"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/output"
@@ -29,6 +30,7 @@ type modifyPayload struct {
 	Dns01AcmeDnsConfig    *dns01acmedns.Config    `json:"dns_01_acme_dns,omitempty"`
 	Dns01AcmeShConfig     *dns01acmesh.Config     `json:"dns_01_acme_sh,omitempty"`
 	Dns01CloudflareConfig *dns01cloudflare.Config `json:"dns_01_cloudflare,omitempty"`
+	Dns01GoAcmeConfig     *dns01goacme.Config     `json:"dns_01_go_acme,omitempty"`
 }
 
 // ModifyProvider modifies the provider specified by the ID in manager with the specified
@@ -107,6 +109,10 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 		configCount++
 		pCfg = payload.Dns01CloudflareConfig
 	}
+	if payload.Dns01GoAcmeConfig != nil {
+		configCount++
+		pCfg = payload.Dns01GoAcmeConfig
+	}
 
 	// check config count, also error on wrong config type
 	if configCount > 1 {
@@ -149,6 +155,13 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 				return output.ErrValidationFailed
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Dns01CloudflareConfig)
+
+		case *dns01goacme.Service:
+			if payload.Dns01GoAcmeConfig == nil {
+				mgr.logger.Debug("update provider wrong config received")
+				return output.ErrValidationFailed
+			}
+			err = pServ.UpdateService(mgr.childApp, payload.Dns01GoAcmeConfig)
 
 		default:
 			// default fail

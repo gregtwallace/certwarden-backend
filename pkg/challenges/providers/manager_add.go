@@ -5,6 +5,7 @@ import (
 	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
 	"legocerthub-backend/pkg/challenges/providers/dns01acmesh"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
+	"legocerthub-backend/pkg/challenges/providers/dns01goacme"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/randomness"
@@ -41,6 +42,9 @@ func (mgr *Manager) unsafeAddProvider(domains []string, cfg providerConfig) (*pr
 
 	case *dns01cloudflare.Config:
 		serv, err = dns01cloudflare.NewService(mgr.childApp, realCfg)
+
+	case *dns01goacme.Config:
+		serv, err = dns01goacme.NewService(mgr.childApp, realCfg)
 
 	default:
 		// default fail

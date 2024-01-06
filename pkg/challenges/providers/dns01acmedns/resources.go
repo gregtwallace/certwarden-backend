@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"legocerthub-backend/pkg/acme"
 )
 
 // acmeDnsResource contains the needed configuration to update
@@ -65,32 +67,32 @@ func (service *Service) postUpdate(adr *acmeDnsResource, resourceContent string)
 	return nil
 }
 
-// getAcmeDnsResource returns the acme dns resource for resourceName. If no
+// getAcmeDnsResource returns the acme dns resource for domain. If no
 // record exists, an error is returned instead
-func (service *Service) getAcmeDnsResource(resourceName string) (*acmeDnsResource, error) {
-	// remove prepended _acme-challenge. string from resource name
-	resourceNameRealDomain := strings.TrimPrefix(resourceName, "_acme-challenge.")
-
+func (service *Service) getAcmeDnsResource(domain string) (*acmeDnsResource, error) {
 	for i := range service.acmeDnsResources {
-		if resourceNameRealDomain == service.acmeDnsResources[i].RealDomain {
+		if domain == service.acmeDnsResources[i].RealDomain {
 			return &service.acmeDnsResources[i], nil
 		}
 	}
 
-	return nil, fmt.Errorf("acme-dns resource not found for %s", resourceName)
+	return nil, fmt.Errorf("acme-dns resource not found for %s", domain)
 }
 
 // Provision updates the acme-dns resource corresponding to resourceName with
 // the resourceContent
-func (service *Service) Provision(resourceName, resourceContent string) error {
+func (service *Service) Provision(domain, _, keyAuth string) error {
 	// get acme-dns resource
-	adr, err := service.getAcmeDnsResource(resourceName)
+	adr, err := service.getAcmeDnsResource(domain)
 	if err != nil {
 		return err
 	}
 
+	// get dns record value for update
+	_, dnsRecordValue := acme.ValidationResourceDns01(domain, keyAuth)
+
 	// post update
-	err = service.postUpdate(adr, resourceContent)
+	err = service.postUpdate(adr, dnsRecordValue)
 	if err != nil {
 		return err
 	}
@@ -101,9 +103,9 @@ func (service *Service) Provision(resourceName, resourceContent string) error {
 // Derovision updates the acme-dns resource corresponding to resourceName with
 // a dummy value. This probably isn't really needed and this function could just
 // be an empty stub, but clearing the data doesn't hurt.
-func (service *Service) Deprovision(resourceName, resourceContent string) error {
+func (service *Service) Deprovision(domain, _, _ string) error {
 	// get acme-dns resource
-	adr, err := service.getAcmeDnsResource(resourceName)
+	adr, err := service.getAcmeDnsResource(domain)
 	if err != nil {
 		return err
 	}

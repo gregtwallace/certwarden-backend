@@ -5,6 +5,7 @@ import (
 	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
 	"legocerthub-backend/pkg/challenges/providers/dns01acmesh"
 	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
+	"legocerthub-backend/pkg/challenges/providers/dns01goacme"
 	"legocerthub-backend/pkg/challenges/providers/dns01manual"
 	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"legocerthub-backend/pkg/output"
@@ -22,6 +23,7 @@ type newPayload struct {
 	Dns01AcmeDnsConfig    *dns01acmedns.Config    `json:"dns_01_acme_dns,omitempty"`
 	Dns01AcmeShConfig     *dns01acmesh.Config     `json:"dns_01_acme_sh,omitempty"`
 	Dns01CloudflareConfig *dns01cloudflare.Config `json:"dns_01_cloudflare,omitempty"`
+	Dns01GoAcmeConfig     *dns01goacme.Config     `json:"dns_01_go_acme,omitempty"`
 }
 
 // CreateProvider creates a new provider using the specified configuration.
@@ -54,6 +56,9 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 	if payload.Dns01CloudflareConfig != nil {
 		configCount++
 	}
+	if payload.Dns01GoAcmeConfig != nil {
+		configCount++
+	}
 	if configCount != 1 {
 		mgr.logger.Debugf("new provider expects 1 config, received %d", configCount)
 		return output.ErrValidationFailed
@@ -75,6 +80,9 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 
 	} else if payload.Dns01CloudflareConfig != nil {
 		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Dns01CloudflareConfig)
+
+	} else if payload.Dns01GoAcmeConfig != nil {
+		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Dns01GoAcmeConfig)
 
 	} else {
 		mgr.logger.Error("new provider cfg missing, this error should never trigger though, report lego bug")

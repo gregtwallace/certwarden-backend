@@ -26,12 +26,12 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// range to the correct challenge to solve based on ACME Challenge Type (from provider)
-	providerChallengeType := provider.AcmeChallengeType()
+	challengeType := provider.AcmeChallengeType()
 	var challenge acme.Challenge
 	found := false
 
 	for i := range challenges {
-		if challenges[i].Type == providerChallengeType {
+		if challenges[i].Type == challengeType {
 			found = true
 			challenge = challenges[i]
 			break
@@ -41,21 +41,23 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		return "", errChallengeTypeNotFound
 	}
 
-	// create resource name and value
-	resourceName, resourceContent, err := challenge.ValidationResource(identifier, key)
+	// vars for provision/deprovision
+	domain := identifier.Value
+	token := challenge.Token
+	keyAuth, err := key.KeyAuthorization(token)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to make key auth (%s)", err)
 	}
 
 	// provision the needed resource for validation and defer deprovisioning
 	// add to wg to ensure deprovision completes during shutdown
 	service.shutdownWaitgroup.Add(1)
-	err = service.provision(resourceName, resourceContent, provider)
+	err = service.provision(domain, token, keyAuth, provider)
 	// do error check after Deprovision to ensure any records that were created
 	// get cleaned up, even if Provision errored.
 
 	defer func() {
-		err := service.deprovision(resourceName, resourceContent, provider)
+		err := service.deprovision(domain, token, keyAuth, provider)
 		if err != nil {
 			service.logger.Errorf("challenge solver deprovision failed (%s)", err)
 		}
@@ -69,10 +71,13 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// if using dns-01 provider, utilize dnsChecker
-	if providerChallengeType == acme.ChallengeTypeDns01 {
+	if challengeType == acme.ChallengeTypeDns01 {
 		if service.dnsChecker != nil {
+			// get dns record to check
+			dnsRecordName, dnsRecordValue := acme.ValidationResourceDns01(domain, keyAuth)
+
 			// check for propagation
-			propagated := service.dnsChecker.CheckTXTWithRetry(resourceName, resourceContent)
+			propagated := service.dnsChecker.CheckTXTWithRetry(dnsRecordName, dnsRecordValue)
 			// if failed to propagate
 			if !propagated {
 				return "", errDnsDidntPropagate

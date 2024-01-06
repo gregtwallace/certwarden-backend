@@ -6,17 +6,17 @@ import (
 )
 
 // makeCreateCommand creates the command to make a dns record
-func (service *Service) makeCreateCommand(resourceName, resourceContent string) *exec.Cmd {
-	return service.makeCommand(resourceName, resourceContent, false)
+func (service *Service) makeCreateCommand(dnsRecordName, dnsRecordValue string) *exec.Cmd {
+	return service.makeCommand(dnsRecordName, dnsRecordValue, false)
 }
 
 // makeDeleteCommand creates the command to delete a dns record
-func (service *Service) makeDeleteCommand(resourceName, resourceContent string) *exec.Cmd {
-	return service.makeCommand(resourceName, resourceContent, true)
+func (service *Service) makeDeleteCommand(dnsRecordName, dnsRecordValue string) *exec.Cmd {
+	return service.makeCommand(dnsRecordName, dnsRecordValue, true)
 }
 
 // makeCommand makes a command to create or delete a dns record
-func (service *Service) makeCommand(resourceName, resourceContent string, delete bool) *exec.Cmd {
+func (service *Service) makeCommand(dnsRecordName, dnsRecordValue string, delete bool) *exec.Cmd {
 	// create or delete?
 	scriptPath := service.createScriptPath
 	if delete {
@@ -28,10 +28,10 @@ func (service *Service) makeCommand(resourceName, resourceContent string, delete
 	args := []string{scriptPath}
 
 	// 1 - RecordName (e.g. _acme-challenge.www.example.com)
-	args = append(args, resourceName)
+	args = append(args, dnsRecordName)
 
 	// 2 - RecordValue (e.g. XKrxpRBosdIKFzxW_CT3KLZNf6q0HG9i01zxXp5CPBs)
-	args = append(args, resourceContent)
+	args = append(args, dnsRecordValue)
 
 	// make command
 	cmd := exec.Command(service.shellPath, args...)
