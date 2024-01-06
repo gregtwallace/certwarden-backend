@@ -132,8 +132,7 @@ func (service *Service) UpdateService(app App, cfg *Config) (err error) {
 			// if failed to make, restart old server
 			errRestart := service.startServer()
 			if errRestart != nil {
-				service.logger.Fatalf("failed to restart http 01 server leaving http 01 internal provider in an unstable state")
-				// ^ app terminates
+				service.logger.Panicf("failed to restart http 01 server leaving http 01 internal provider in an unstable state")
 				return errRestart
 			}
 			return err
