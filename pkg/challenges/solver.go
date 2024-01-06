@@ -127,8 +127,8 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// notify: info log challenge checks
-	notifyFunc := func(_err error, dur time.Duration) {
-		service.logger.Infof("challenge for %s not confirmed finalized (%s), will check again in %s", challenge.Url, err, dur.Round(100*time.Millisecond))
+	notifyFunc := func(funcErr error, dur time.Duration) {
+		service.logger.Infof("challenge for %s not confirmed finalized (%s), will check again in %s", challenge.Url, funcErr, dur.Round(100*time.Millisecond))
 	}
 
 	bo := randomness.BackoffACME(service.shutdownContext)
