@@ -113,6 +113,11 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 // Update Service updates the Service to use the new config
 func (service *Service) UpdateService(app App, cfg *Config) (err error) {
+	// if no config, error
+	if cfg == nil {
+		return errServiceComponent
+	}
+
 	// if port changed, stop server and remake service
 	if cfg.Port != nil && *cfg.Port != service.port {
 		// stop old server

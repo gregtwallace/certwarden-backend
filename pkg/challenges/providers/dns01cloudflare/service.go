@@ -66,6 +66,11 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 // Update Service updates the Service to use the new config
 func (service *Service) UpdateService(app App, cfg *Config) error {
+	// if no config, error
+	if cfg == nil {
+		return errServiceComponent
+	}
+
 	// try to fix redacted vals from client
 	if cfg.Account != nil {
 		cfg.Account.GlobalApiKey.TryUnredact(service.apiIdentifier())

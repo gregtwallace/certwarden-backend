@@ -73,6 +73,11 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 // Update Service updates the Service to use the new config
 func (service *Service) UpdateService(app App, cfg *Config) error {
+	// if no config, error
+	if cfg == nil {
+		return errServiceComponent
+	}
+
 	// don't need to do anything with "old" Service, just set a new one
 	newServ, err := NewService(app, cfg)
 	if err != nil {
