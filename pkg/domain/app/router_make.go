@@ -143,12 +143,14 @@ func (app *Application) makeRouterAndRoutes() {
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/privatekeys/:name", app.download.DownloadKeyViaHeader)
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/certificates/:name", app.download.DownloadCertViaHeader)
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/privatecerts/:name", app.download.DownloadPrivateCertViaHeader)
+	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/privatecertchains/:name", app.download.DownloadPrivateCertChainViaHeader)
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/certrootchains/:name", app.download.DownloadCertRootChainViaHeader)
 
 	// download keys and certs - via URL routes
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/privatekeys/:name/*apiKey", app.download.DownloadKeyViaUrl)
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/certificates/:name/*apiKey", app.download.DownloadCertViaUrl)
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/privatecerts/:name/*apiKey", app.download.DownloadPrivateCertViaUrl)
+	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/privatecertchains/:name/*apiKey", app.download.DownloadPrivateCertChainViaUrl)
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/certrootchains/:name/*apiKey", app.download.DownloadCertRootChainViaUrl)
 
 	// frontend (if enabled)

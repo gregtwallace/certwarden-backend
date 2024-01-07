@@ -13,20 +13,21 @@ import (
 
 // modified Order to allow implementation of custom pem functions
 // to properly output the desired content
-type privateCertificate orders.Order
+type privateCertificateChain orders.Order
 
-// privateCertificate Output Pem Methods
+// privateCertificateChain Output Pem Methods
 
 // PemFilename is the private cert filename
-func (pc privateCertificate) PemFilename() string {
-	return fmt.Sprintf("%s.certkey.pem", pc.Certificate.Name)
+func (pcc privateCertificateChain) PemFilename() string {
+	return fmt.Sprintf("%s.certchainkey.pem", pcc.Certificate.Name)
 }
 
-// PemContent returns the combined key + cert pem content without the cert chain
-func (pc privateCertificate) PemContent() string {
-	keyPem := pc.FinalizedKey.PemContent()
-	// don't include the cert chain
-	certPem := orders.Order(pc).PemContentNoChain()
+// PemContent returns the combined key + cert + chain pem content
+func (pcc privateCertificateChain) PemContent() string {
+	keyPem := pcc.FinalizedKey.PemContent()
+
+	// all cert pem data
+	certPem := orders.Order(pcc).PemContent()
 
 	// append key + LF + cert
 	return keyPem + string([]byte{10}) + certPem
@@ -34,17 +35,17 @@ func (pc privateCertificate) PemContent() string {
 
 // PemModtime compares the modtimes for the private certificate's key and certificate. It returns
 // whichever time is more recent.
-func (pc privateCertificate) PemModtime() time.Time {
+func (pcc privateCertificateChain) PemModtime() time.Time {
 	// if key is nil, return 0 time since Pem output of thie type will fail anyway without a key
-	if pc.FinalizedKey == nil {
+	if pcc.FinalizedKey == nil {
 		return time.Time{}
 	}
 
 	// key time
-	keyModtime := pc.FinalizedKey.PemModtime()
+	keyModtime := pcc.FinalizedKey.PemModtime()
 
 	// order (cert) time
-	certModtime := orders.Order(pc).PemModtime()
+	certModtime := orders.Order(pcc).PemModtime()
 
 	// return more recent of the two
 	if keyModtime.After(certModtime) {
@@ -53,10 +54,10 @@ func (pc privateCertificate) PemModtime() time.Time {
 	return certModtime
 }
 
-// end privateCertificate Output Pem Methods
+// end privateCertificateChain Output Pem Methods
 
-// DownloadPrivateCertViaHeader
-func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *http.Request) *output.Error {
+// DownloadPrivateCertChainViaHeader
+func (service *Service) DownloadPrivateCertChainViaHeader(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get cert name
 	params := httprouter.ParamsFromContext(r.Context())
 	certName := params.ByName("name")
@@ -65,7 +66,7 @@ func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *h
 	apiKeysCombined := getApiKeyFromHeader(w, r)
 
 	// fetch the private cert
-	privCert, err := service.getCertNewestValidPrivateCert(certName, apiKeysCombined, false)
+	privCert, err := service.getCertNewestValidPrivateCertChain(certName, apiKeysCombined, false)
 	if err != nil {
 		return err
 	}
@@ -76,8 +77,8 @@ func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *h
 	return nil
 }
 
-// DownloadPrivateCertViaUrl
-func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http.Request) *output.Error {
+// DownloadPrivateCertChainViaUrl
+func (service *Service) DownloadPrivateCertChainViaUrl(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get cert name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
 	certName := params.ByName("name")
@@ -85,7 +86,7 @@ func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http
 	apiKeysCombined := getApiKeyFromParams(params)
 
 	// fetch the private cert
-	privCert, err := service.getCertNewestValidPrivateCert(certName, apiKeysCombined, true)
+	privCert, err := service.getCertNewestValidPrivateCertChain(certName, apiKeysCombined, true)
 	if err != nil {
 		return err
 	}
@@ -96,18 +97,18 @@ func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http
 	return nil
 }
 
-// getCertNewestValidPrivateCert gets the appropriate order for the requested Cert and sets its type to
-// privateCertificate so the proper data is outputted.
+// getCertNewestValidPrivateCertChain gets the appropriate order for the requested Cert and sets its type to
+// privateCertificateChain so the proper data is outputted.
 // To avoid unauthorized output of a key, both the certificate and key apiKeys must be provided. The format
 // for this is the certificate apikey appended to the private key's apikey using a '.' as a separator.
 // It also checks the apiKeyViaUrl property if the client is making a request with the apiKey in the Url.
-func (service *Service) getCertNewestValidPrivateCert(certName string, apiKeysCombined string, apiKeyViaUrl bool) (privateCertificate, *output.Error) {
+func (service *Service) getCertNewestValidPrivateCertChain(certName string, apiKeysCombined string, apiKeyViaUrl bool) (privateCertificateChain, *output.Error) {
 	// separate the apiKeys
 	apiKeys := strings.Split(apiKeysCombined, ".")
 
 	// error if not exactly 2 apiKeys
 	if len(apiKeys) != 2 {
-		return privateCertificate{}, output.ErrUnauthorized
+		return privateCertificateChain{}, output.ErrUnauthorized
 	}
 
 	certApiKey := apiKeys[0]
@@ -116,21 +117,21 @@ func (service *Service) getCertNewestValidPrivateCert(certName string, apiKeysCo
 	// fetch the cert's newest valid order
 	order, err := service.getCertNewestValidOrder(certName, certApiKey, apiKeyViaUrl)
 	if err != nil {
-		return privateCertificate{}, err
+		return privateCertificateChain{}, err
 	}
 
 	// confirm the private key is valid
 	if order.FinalizedKey == nil {
 		service.logger.Debug(errFinalizedKeyMissing)
-		return privateCertificate{}, output.ErrNotFound
+		return privateCertificateChain{}, output.ErrNotFound
 	}
 
 	// validate the apiKey for the private key is correct
 	if order.FinalizedKey.ApiKey != keyApiKey {
 		service.logger.Debug(errWrongApiKey)
-		return privateCertificate{}, output.ErrUnauthorized
+		return privateCertificateChain{}, output.ErrUnauthorized
 	}
 
 	// return pem content
-	return privateCertificate(order), nil
+	return privateCertificateChain(order), nil
 }

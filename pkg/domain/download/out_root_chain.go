@@ -10,7 +10,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// rootChain is modified Order to allow implementation of custom pem functions
+// modified Order to allow implementation of custom pem functions
 // to properly output the desired content
 type rootChain orders.Order
 
