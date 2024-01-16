@@ -24,7 +24,7 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 
 	// log start and update wg
 	service.logger.Infof("starting automatic certificate ordering service; %d day expiration threshold; "+
-		"orders will be placed every day at %d:%d", *cfg.ValidRemainingDaysThreshold, refreshHour, refreshMinute)
+		"orders will be placed every day at %02d:%02d", *cfg.ValidRemainingDaysThreshold, refreshHour, refreshMinute)
 	wg.Add(1)
 
 	// service routine
