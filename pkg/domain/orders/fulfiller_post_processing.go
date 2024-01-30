@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 const postProcessClientPostRoute = "/legocerthubclient/api/v1/install"
@@ -175,8 +176,47 @@ func (of *orderFulfiller) executePostProcessingScript(order Order) {
 	// LEGO_CERTIFICATE_COMMON_NAME
 	environ = append(environ, fmt.Sprintf("LEGO_CERTIFICATE_COMMON_NAME=%s", order.Certificate.Subject))
 
-	// add custom values from user
-	environ = append(environ, order.Certificate.PostProcessingEnvironment...)
+	// user specified environment can have placeholders for the above values (so user can set
+	// their own name for the environment variable)
+	// {{PRIVATE_KEY_NAME}}					= the name of the private key used to finalize the order, as defined in LeGo
+	// {{PRIVATE_KEY_PEM}}					= the pem of the private key
+	// {{CERTIFICATE_NAME}}					= the name of the certificate as defined in LeGo
+	// {{CERTIFICATE_PEM}}					= the pem of the complete certificate chain for the order
+	// {{CERTIFICATE_COMMON_NAME}}	= the common name of the certificate
+
+	// update placeholders and set user values
+	for i := range order.Certificate.PostProcessingEnvironment {
+		envItemSplit := strings.SplitN(order.Certificate.PostProcessingEnvironment[i], "=", -1)
+
+		// only append properly formatted vars (i.e. VAR=someValue; len after = split == 2)
+		if len(envItemSplit) == 2 {
+			// do replacements if user val is a value that should be replaced
+			switch val := strings.ToUpper(envItemSplit[1]); val {
+			case "{{PRIVATE_KEY_NAME}}":
+				envItemSplit[1] = order.FinalizedKey.Name
+
+			case "{{PRIVATE_KEY_PEM}}":
+				envItemSplit[1] = order.FinalizedKey.Pem
+
+			case "{{CERTIFICATE_NAME}}":
+				envItemSplit[1] = order.Certificate.Name
+
+			case "{{CERTIFICATE_PEM}}":
+				envItemSplit[1] = *order.Pem
+
+			case "{{CERTIFICATE_COMMON_NAME}}":
+				envItemSplit[1] = order.Certificate.Subject
+
+			default:
+				// no-op - user specified some other value
+			}
+
+			// append to environment
+			environ = append(environ, envItemSplit[0]+"="+envItemSplit[1])
+		} else {
+			of.logger.Errorf("post processing %d: %s is not a properly formatted environment variable, it will be skipped", order.ID, order.Certificate.PostProcessingEnvironment[i])
+		}
+	}
 
 	// make args for command
 	// 0 - script name (e.g. /path/to/script.sh)
