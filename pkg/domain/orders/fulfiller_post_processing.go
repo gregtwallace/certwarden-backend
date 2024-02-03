@@ -123,32 +123,25 @@ func (of *orderFulfiller) executePostProcessingLeGoClient(order Order) {
 	of.logger.Infof("post processing %d: lego client notify completed", order.ID)
 }
 
-// executePostProcessingScript executes the certificate's post processing script, if the cert
-// does not have a script, this is a no-op
-func (of *orderFulfiller) executePostProcessingScript(order Order) {
+// executePostProcessingCommand executes the certificate's post processing command. if the cert
+// does not have a command, this is a no-op
+func (of *orderFulfiller) executePostProcessingCommand(order Order) {
 	// no-op if no command
 	if order.Certificate.PostProcessingCommand == "" {
-		of.logger.Debugf("post processing %d: skipping script (cert does not have a script to run) (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
+		of.logger.Debugf("post processing %d: skipping command (cert does not have a command to run) (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
 
-	of.logger.Infof("post processing %d: attempting to run script (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
-
-	// if app failed to get suitable shell at startup, post processing is disabled
-	if of.shellPath == "" {
-		err := fmt.Errorf("post processing %d: script failed to run post processing (no suitable shell was found during app startup)", order.ID)
-		of.logger.Error(err)
-		return
-	}
+	of.logger.Infof("post processing %d: attempting to run command (cert: %d, cn: %s)", order.ID, order.Certificate.ID, order.Certificate.Subject)
 
 	// nil checks
 	if order.Pem == nil {
-		err := fmt.Errorf("post processing %d: script failed: order pem is nil (should never happen)", order.ID)
+		err := fmt.Errorf("post processing %d: command failed: order pem is nil (should never happen)", order.ID)
 		of.logger.Error(err)
 		return
 	}
 	if order.FinalizedKey == nil {
-		err := fmt.Errorf("post processing %d: script failed: finalized key no longer exists", order.ID)
+		err := fmt.Errorf("post processing %d: command failed: finalized key no longer exists", order.ID)
 		of.logger.Error(err)
 		return
 	}
@@ -218,43 +211,85 @@ func (of *orderFulfiller) executePostProcessingScript(order Order) {
 		}
 	}
 
-	// make args for command
-	// 0 - script name (e.g. /path/to/script.sh)
-	args := []string{order.Certificate.PostProcessingCommand}
+	// open and read (up to) the first 512 bytes of post processing script/binary to decide if it is binary or not
+	f, err := os.Open(order.Certificate.PostProcessingCommand)
+	if err != nil {
+		of.logger.Debugf("post processing %d: script/binary failed to open: %w", order.ID, err)
+		return
+	}
+	defer f.Close()
 
-	// make command
-	cmd := exec.Command(of.shellPath, args...)
+	fInfo, err := f.Stat()
+	if err != nil {
+		of.logger.Debugf("post processing %d: script/binary failed to stat: %w", order.ID, err)
+		return
+	}
+
+	bufLen := 512
+	if fInfo.Size() < 512 {
+		bufLen = int(fInfo.Size())
+	}
+	firstBytes := make([]byte, bufLen)
+
+	_, err = io.ReadFull(f, firstBytes)
+	if err != nil {
+		of.logger.Debugf("post processing %d: script/binary failed to read: %w", order.ID, err)
+		return
+	}
+
+	// check if the file is binary and run it directly if so
+	cmd := &exec.Cmd{}
+	if http.DetectContentType(firstBytes) == "application/octet-stream" {
+		// binary found
+		cmd = exec.Command(order.Certificate.PostProcessingCommand)
+
+	} else {
+		// try to run as script if it wasn't an octet-stream
+		// if app failed to get suitable shell at startup, post processing is disabled
+		if of.shellPath == "" {
+			err := fmt.Errorf("post processing %d: commaind failed to run post processing script (no suitable shell was found during app startup)", order.ID)
+			of.logger.Error(err)
+			return
+		}
+
+		// make args for command
+		// 0 - script name (e.g. /path/to/script.sh)
+		args := []string{order.Certificate.PostProcessingCommand}
+
+		// make command
+		cmd = exec.Command(of.shellPath, args...)
+	}
 
 	// set command environment (default OS + environ from above)
 	cmd.Env = append(os.Environ(), environ...)
 
-	// run script command
+	// run command
 	result, err := cmd.Output()
-	of.logger.Debugf("post processing %d: script output: %s", order.ID, string(result))
+	of.logger.Debugf("post processing %d: command output: %s", order.ID, string(result))
 	if err != nil {
 		// try to get stderr and log it too
 		exitErr := new(exec.ExitError)
 		if errors.As(err, &exitErr) {
-			of.logger.Errorf("post processing %d: script std err: %s", order.ID, exitErr.Stderr)
+			of.logger.Errorf("post processing %d: command std err: %s", order.ID, exitErr.Stderr)
 		}
 
-		of.logger.Errorf("post processing %d: script failed: error: %s", order.ID, err)
+		of.logger.Errorf("post processing %d: command failed: error: %s", order.ID, err)
 		return
 	}
 
-	of.logger.Infof("post processing %d: script completed", order.ID)
+	of.logger.Infof("post processing %d: command completed", order.ID)
 }
 
-// executePostProcessing executes the order's certificate's post processing script
-// if the script field is blank, this is a no-op
+// executePostProcessing executes the order's certificate's post processing command
+// if the command field is blank, this is a no-op
 func (of *orderFulfiller) executePostProcessing(order Order) {
 	of.logger.Infof("post processing %d: begin attempt", order.ID)
 
 	// run client post processing
 	of.executePostProcessingLeGoClient(order)
 
-	// run script post processing
-	of.executePostProcessingScript(order)
+	// run command post processing
+	of.executePostProcessingCommand(order)
 
 	of.logger.Infof("post processing %d: end", order.ID)
 }
