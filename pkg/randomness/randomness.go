@@ -4,7 +4,7 @@ import (
 	crypto_rand "crypto/rand"
 	"encoding/base64"
 	"math/big"
-	math_rand "math/rand"
+	math_rand "math/rand/v2"
 )
 
 // lengths
@@ -101,18 +101,18 @@ func GenerateHexSecret() ([]byte, error) {
 
 // Insecure Randoms
 
-// GenerateInsecureString creates a random string of length length using the char
+// GenerateInsecureInt creates a random int between [0, max). It is NOT
+// cryptographically secure.
+func GenerateInsecureInt(max int) int {
+	return math_rand.IntN(max)
+}
+
+// GenerateInsecureString creates a random string of length 'length' using the char
 // set 0-9, A-Z, and a-z. It is NOT cryptographically secure.
 func GenerateInsecureString(length int) string {
 	bytes := make([]byte, length)
 	for i := range bytes {
-		bytes[i] = charSetNumbersAndLetters[math_rand.Int63()%int64(len(charSetNumbersAndLetters))]
+		bytes[i] = charSetNumbersAndLetters[GenerateInsecureInt(len(charSetNumbersAndLetters))]
 	}
 	return string(bytes)
-}
-
-// GenerateInsecureInt creates a random int between [0, max). It is NOT
-// cryptographically secure.
-func GenerateInsecureInt(max int) int {
-	return math_rand.Intn(max)
 }
