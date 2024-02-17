@@ -47,12 +47,19 @@ func (service *Service) Stop() (err error) {
 	service.stopServerFunc()
 
 	// wait for result of server shutdown
+	timeoutTimer := time.NewTimer(240 * time.Second)
+
 	select {
-	case <-time.After(240 * time.Second):
+	case <-timeoutTimer.C:
 		// shutdown timeout
 		err = errors.New("http-01 internal server shutdown timed out")
 		return err
 	case err = <-service.stopErrChan:
+		// ensure timer releases resources
+		if !timeoutTimer.Stop() {
+			<-timeoutTimer.C
+		}
+
 		// no-op, proceed to err check
 	}
 

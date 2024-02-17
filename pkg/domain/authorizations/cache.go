@@ -70,20 +70,27 @@ func (cache *cache) add(authUrl string, authStatus string, authErr error) {
 }
 
 // newExpirer starts a go routine that will expire the specified cache item
-// (authUrl) after the cache's ttl. Expirer can be cancel via its context,
+// (authUrl) after the cache's ttl. Expirer can be canceled via its context,
 // which is done in the event the same auth is added to the cache before the
 // prior auth has expired.
 func (cache *cache) newExpirer(authUrl string, ctx context.Context) {
 	go func() {
+		delayTimer := time.NewTimer(cache.ttl)
+
 		select {
 		// expire after the ttl elapses
-		case <-time.After(cache.ttl):
+		case <-delayTimer.C:
 			cache.auths[authUrl].cancelExpire() // done with the context
 			_ = cache.remove(authUrl)
 
 		// context was canceled
 		case <-ctx.Done():
-			// break
+			// ensure timer releases resources
+			if !delayTimer.Stop() {
+				<-delayTimer.C
+			}
+
+			// done
 		}
 	}()
 }

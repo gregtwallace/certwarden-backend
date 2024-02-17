@@ -123,14 +123,21 @@ func (service *Service) backgroundChecker(ctx context.Context, wg *sync.WaitGrou
 			}
 
 			// sleep or wait for shutdown context to be done
+			delayTimer := time.NewTimer(waitTime)
+
 			select {
 			case <-ctx.Done():
+				// ensure timer releases resources
+				if !delayTimer.Stop() {
+					<-delayTimer.C
+				}
+
 				// close routine
 				service.logger.Info("updater service shutdown complete")
 				wg.Done()
 				return
 
-			case <-time.After(waitTime):
+			case <-delayTimer.C:
 				// sleep and retry
 			}
 		}

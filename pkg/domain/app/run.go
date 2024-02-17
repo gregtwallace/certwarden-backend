@@ -241,10 +241,17 @@ func run() (restart bool) {
 		app.shutdownWaitgroup.Wait()
 	}()
 
+	timeoutTimer := time.NewTimer(maxWait)
+
 	select {
 	case <-waitChan:
+		// ensure timer releases resources
+		if !timeoutTimer.Stop() {
+			<-timeoutTimer.C
+		}
+
 		// continue, normal
-	case <-time.After(maxWait):
+	case <-timeoutTimer.C:
 		// timed out
 		app.logger.Panic("graceful shutdown of component(s) failed due to time out, forcing shutdown")
 	}

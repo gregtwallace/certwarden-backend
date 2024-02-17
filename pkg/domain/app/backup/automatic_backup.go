@@ -107,14 +107,21 @@ func (service *Service) StartAutoBackupService(app App, cfg *Config) {
 		nextBackup := lastBackupTime.Add(backupInterval)
 
 		for {
+			delayTimer := time.NewTimer(time.Until(nextBackup))
+
 			select {
 			case <-shutdownCtx.Done():
+				// ensure timer releases resources
+				if !delayTimer.Stop() {
+					<-delayTimer.C
+				}
+
 				// exit
 				service.logger.Info("automatic data backup service shutdown complete")
 				shutdownWg.Done()
 				return
 
-			case <-time.After(time.Until(nextBackup)):
+			case <-delayTimer.C:
 				// continue and run
 			}
 
@@ -146,14 +153,21 @@ func (service *Service) StartAutoBackupService(app App, cfg *Config) {
 
 			nextDelete := oldestBackupTime.Add(retentionDuration)
 			for {
+				delayTimer := time.NewTimer(time.Until(nextDelete))
+
 				select {
 				case <-shutdownCtx.Done():
+					// ensure timer releases resources
+					if !delayTimer.Stop() {
+						<-delayTimer.C
+					}
+
 					// exit
 					service.logger.Info("data backup time based deletion service shutdown complete")
 					shutdownWg.Done()
 					return
 
-				case <-time.After(time.Until(nextDelete)):
+				case <-delayTimer.C:
 					// continue and run
 				}
 

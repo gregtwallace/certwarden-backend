@@ -80,12 +80,19 @@ func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue strin
 		service.logger.Debugf("dns check (%s): skipping and sleeping %d seconds", fqdn, int(service.skipWait.Seconds()))
 
 		// sleep or cancel/error if shutdown is called
+		delayTimer := time.NewTimer(service.skipWait)
+
 		select {
 		case <-service.shutdownContext.Done():
+			// ensure timer releases resources
+			if !delayTimer.Stop() {
+				<-delayTimer.C
+			}
+
 			// cancel/error if shutting down
 			return false
 
-		case <-time.After(service.skipWait):
+		case <-delayTimer.C:
 			// sleep and retry
 		}
 

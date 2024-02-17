@@ -152,16 +152,23 @@ func (service *Service) backgroundDirManager(shutdownCtx context.Context, wg *sy
 
 			service.logger.Debugf("next directory refresh for %s will occur at %s", service.dirUri, nextRunTime.String())
 
-			// sleep or wait for shutdown context to be done
+			// delay or wait for shutdown context to be done
+			delayTimer := time.NewTimer(time.Until(nextRunTime))
+
 			select {
 			case <-shutdownCtx.Done():
+				// ensure timer releases resources
+				if !delayTimer.Stop() {
+					<-delayTimer.C
+				}
+
 				// end routine
 				service.logger.Infof("acme directory refresh service shutdown complete (%s)", service.dirUri)
 				wg.Done()
 				return
 
-			case <-time.After(time.Until(nextRunTime)):
-				// sleep until next regular run
+			case <-delayTimer.C:
+				// delay until next regular run
 			}
 		}
 	}()

@@ -126,16 +126,22 @@ func (service *Service) startCleanerService(ctx context.Context, wg *sync.WaitGr
 
 	go func() {
 		// wait time is based on expiration of session token
-		waitTime := 2 * sessionTokenExpiration
+		delayTimer := time.NewTimer(2 * sessionTokenExpiration)
+
 		for {
 			select {
 			case <-ctx.Done():
+				// ensure timer releases resources
+				if !delayTimer.Stop() {
+					<-delayTimer.C
+				}
+
 				// exit
 				service.logger.Info("auth session cleaner service shutdown complete")
 				wg.Done()
 				return
 
-			case <-time.After(waitTime):
+			case <-delayTimer.C:
 				// continue and run
 			}
 

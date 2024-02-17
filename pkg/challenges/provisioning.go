@@ -29,17 +29,29 @@ func (service *Service) provision(domain, token, keyAuth string, provider provid
 		service.logger.Debugf("unable to add resource for %s to challenge work tracker; waiting for resource name to become free", domain)
 
 		// block until domain is free, timeout, or shutdown is called
+		timeoutTimer := time.NewTimer(1 * time.Hour)
+
 		select {
 		// signal channel close indicating domain should now be available
 		case <-signal:
+			// ensure timer releases resources
+			if !timeoutTimer.Stop() {
+				<-timeoutTimer.C
+			}
+
 			// continue loop (i.e. retry adding)
 
 		// shutdown - return error
 		case <-service.shutdownContext.Done():
+			// ensure timer releases resources
+			if !timeoutTimer.Stop() {
+				<-timeoutTimer.C
+			}
+
 			return errShutdown
 
-		// timeout - return error if blocked for an hour (should never happen, but just in case to prevent hang)
-		case <-time.After(1 * time.Hour):
+		// timeout - return error if blocked too long (should never happen, but just in case to prevent hang)
+		case <-timeoutTimer.C:
 			return errNameUnavailable
 		}
 	}
