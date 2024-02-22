@@ -80,10 +80,12 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 		return output.ErrValidationFailed
 	}
 
-	// go routing for post processing (use routine to avoid timeout on api call return)
-	go func() {
-		service.orderFulfiller.executePostProcessing(order)
-	}()
+	// add to post processing
+	err = service.postProcess(order.ID, true)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
 
 	// write response
 	response := &output.JsonResponse{}

@@ -8,6 +8,8 @@ import (
 	"legocerthub-backend/pkg/domain/orders"
 	"legocerthub-backend/pkg/pagination_sort"
 	"legocerthub-backend/pkg/storage"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -566,12 +568,22 @@ func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, e
 	return orderId, nil
 }
 
-// GetOneOrder fetches a specific Order by ID
-func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
+// GetOrders fetches the Order for each ID in the orderIDs slice and returns the
+// slice of Order
+func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
-	query := `
+	// turn IDs into comma sep string
+	var stringIDs []string
+	for _, i := range orderIDs {
+		stringIDs = append(stringIDs, strconv.Itoa(i))
+	}
+	IDsString := strings.Join(stringIDs, ", ")
+
+	// WARNING: SQL Injection is possible if the variables are not properly
+	// validated prior to this query being assembled!
+	query := fmt.Sprintf(`
 	SELECT
 		/* order */
 		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, 
@@ -614,116 +626,136 @@ func (store *Storage) GetOneOrder(orderId int) (order orders.Order, err error) {
 		LEFT JOIN private_keys ak on (ca.private_key_id = ak.id)
 		LEFT JOIN private_keys fk on (ao.finalized_key_id = fk.id)
 	WHERE
-		ao.id = $1
-	ORDER BY
-		expires DESC
-	`
+		ao.id IN (%s)
+	`, IDsString)
 
-	row := store.db.QueryRowContext(ctx, query, orderId)
-
-	var oneOrder orderDb
-
-	err = row.Scan(
-		&oneOrder.id,
-		&oneOrder.location,
-		&oneOrder.status,
-		&oneOrder.knownRevoked,
-		&oneOrder.err,
-		&oneOrder.expires,
-		&oneOrder.dnsIdentifiers,
-		&oneOrder.authorizations,
-		&oneOrder.finalize,
-		&oneOrder.certificateUrl,
-		&oneOrder.pem,
-		&oneOrder.validFrom,
-		&oneOrder.validTo,
-		&oneOrder.createdAt,
-		&oneOrder.updatedAt,
-
-		&oneOrder.certificate.id,
-		&oneOrder.certificate.name,
-		&oneOrder.certificate.description,
-		&oneOrder.certificate.subject,
-		&oneOrder.certificate.subjectAltNames,
-		&oneOrder.certificate.organization,
-		&oneOrder.certificate.organizationalUnit,
-		&oneOrder.certificate.country,
-		&oneOrder.certificate.state,
-		&oneOrder.certificate.city,
-		&oneOrder.certificate.createdAt,
-		&oneOrder.certificate.updatedAt,
-		&oneOrder.certificate.apiKey,
-		&oneOrder.certificate.apiKeyNew,
-		&oneOrder.certificate.apiKeyViaUrl,
-		&oneOrder.certificate.postProcessingCommand,
-		&oneOrder.certificate.postProcessingEnvironment,
-		&oneOrder.certificate.postProcessingClientKeyB64,
-
-		&oneOrder.certificate.certificateKeyDb.id,
-		&oneOrder.certificate.certificateKeyDb.name,
-		&oneOrder.certificate.certificateKeyDb.description,
-		&oneOrder.certificate.certificateKeyDb.algorithmValue,
-		&oneOrder.certificate.certificateKeyDb.pem,
-		&oneOrder.certificate.certificateKeyDb.apiKey,
-		&oneOrder.certificate.certificateKeyDb.apiKeyNew,
-		&oneOrder.certificate.certificateKeyDb.apiKeyDisabled,
-		&oneOrder.certificate.certificateKeyDb.apiKeyViaUrl,
-		&oneOrder.certificate.certificateKeyDb.createdAt,
-		&oneOrder.certificate.certificateKeyDb.updatedAt,
-
-		&oneOrder.certificate.certificateAccountDb.id,
-		&oneOrder.certificate.certificateAccountDb.name,
-		&oneOrder.certificate.certificateAccountDb.description,
-		&oneOrder.certificate.certificateAccountDb.status,
-		&oneOrder.certificate.certificateAccountDb.email,
-		&oneOrder.certificate.certificateAccountDb.acceptedTos,
-		&oneOrder.certificate.certificateAccountDb.createdAt,
-		&oneOrder.certificate.certificateAccountDb.updatedAt,
-		&oneOrder.certificate.certificateAccountDb.kid,
-
-		&oneOrder.certificate.certificateAccountDb.accountServerDb.id,
-		&oneOrder.certificate.certificateAccountDb.accountServerDb.name,
-		&oneOrder.certificate.certificateAccountDb.accountServerDb.description,
-		&oneOrder.certificate.certificateAccountDb.accountServerDb.directoryUrl,
-		&oneOrder.certificate.certificateAccountDb.accountServerDb.isStaging,
-		&oneOrder.certificate.certificateAccountDb.accountServerDb.createdAt,
-		&oneOrder.certificate.certificateAccountDb.accountServerDb.updatedAt,
-
-		&oneOrder.certificate.certificateAccountDb.accountKeyDb.id,
-		&oneOrder.certificate.certificateAccountDb.accountKeyDb.name,
-		&oneOrder.certificate.certificateAccountDb.accountKeyDb.description,
-		&oneOrder.certificate.certificateAccountDb.accountKeyDb.algorithmValue,
-		&oneOrder.certificate.certificateAccountDb.accountKeyDb.pem,
-		&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKey,
-		&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyNew,
-		&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyDisabled,
-		&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyViaUrl,
-		&oneOrder.certificate.certificateAccountDb.accountKeyDb.createdAt,
-		&oneOrder.certificate.certificateAccountDb.accountKeyDb.updatedAt,
-
-		&oneOrder.finalizedKey.id,
-		&oneOrder.finalizedKey.name,
-		&oneOrder.finalizedKey.description,
-		&oneOrder.finalizedKey.algorithmValue,
-		&oneOrder.finalizedKey.pem,
-		&oneOrder.finalizedKey.apiKey,
-		&oneOrder.finalizedKey.apiKeyNew,
-		&oneOrder.finalizedKey.apiKeyDisabled,
-		&oneOrder.finalizedKey.apiKeyViaUrl,
-		&oneOrder.finalizedKey.createdAt,
-		&oneOrder.finalizedKey.updatedAt,
-	)
+	// query records
+	rows, err := store.db.QueryContext(ctx, query)
 	if err != nil {
-		// if no record exists
-		if errors.Is(err, sql.ErrNoRows) {
-			err = storage.ErrNoRecord
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var oneOrder orderDb
+
+		err = rows.Scan(
+			&oneOrder.id,
+			&oneOrder.location,
+			&oneOrder.status,
+			&oneOrder.knownRevoked,
+			&oneOrder.err,
+			&oneOrder.expires,
+			&oneOrder.dnsIdentifiers,
+			&oneOrder.authorizations,
+			&oneOrder.finalize,
+			&oneOrder.certificateUrl,
+			&oneOrder.pem,
+			&oneOrder.validFrom,
+			&oneOrder.validTo,
+			&oneOrder.createdAt,
+			&oneOrder.updatedAt,
+
+			&oneOrder.certificate.id,
+			&oneOrder.certificate.name,
+			&oneOrder.certificate.description,
+			&oneOrder.certificate.subject,
+			&oneOrder.certificate.subjectAltNames,
+			&oneOrder.certificate.organization,
+			&oneOrder.certificate.organizationalUnit,
+			&oneOrder.certificate.country,
+			&oneOrder.certificate.state,
+			&oneOrder.certificate.city,
+			&oneOrder.certificate.createdAt,
+			&oneOrder.certificate.updatedAt,
+			&oneOrder.certificate.apiKey,
+			&oneOrder.certificate.apiKeyNew,
+			&oneOrder.certificate.apiKeyViaUrl,
+			&oneOrder.certificate.postProcessingCommand,
+			&oneOrder.certificate.postProcessingEnvironment,
+			&oneOrder.certificate.postProcessingClientKeyB64,
+
+			&oneOrder.certificate.certificateKeyDb.id,
+			&oneOrder.certificate.certificateKeyDb.name,
+			&oneOrder.certificate.certificateKeyDb.description,
+			&oneOrder.certificate.certificateKeyDb.algorithmValue,
+			&oneOrder.certificate.certificateKeyDb.pem,
+			&oneOrder.certificate.certificateKeyDb.apiKey,
+			&oneOrder.certificate.certificateKeyDb.apiKeyNew,
+			&oneOrder.certificate.certificateKeyDb.apiKeyDisabled,
+			&oneOrder.certificate.certificateKeyDb.apiKeyViaUrl,
+			&oneOrder.certificate.certificateKeyDb.createdAt,
+			&oneOrder.certificate.certificateKeyDb.updatedAt,
+
+			&oneOrder.certificate.certificateAccountDb.id,
+			&oneOrder.certificate.certificateAccountDb.name,
+			&oneOrder.certificate.certificateAccountDb.description,
+			&oneOrder.certificate.certificateAccountDb.status,
+			&oneOrder.certificate.certificateAccountDb.email,
+			&oneOrder.certificate.certificateAccountDb.acceptedTos,
+			&oneOrder.certificate.certificateAccountDb.createdAt,
+			&oneOrder.certificate.certificateAccountDb.updatedAt,
+			&oneOrder.certificate.certificateAccountDb.kid,
+
+			&oneOrder.certificate.certificateAccountDb.accountServerDb.id,
+			&oneOrder.certificate.certificateAccountDb.accountServerDb.name,
+			&oneOrder.certificate.certificateAccountDb.accountServerDb.description,
+			&oneOrder.certificate.certificateAccountDb.accountServerDb.directoryUrl,
+			&oneOrder.certificate.certificateAccountDb.accountServerDb.isStaging,
+			&oneOrder.certificate.certificateAccountDb.accountServerDb.createdAt,
+			&oneOrder.certificate.certificateAccountDb.accountServerDb.updatedAt,
+
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.id,
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.name,
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.description,
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.algorithmValue,
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.pem,
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKey,
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyNew,
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyDisabled,
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.apiKeyViaUrl,
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.createdAt,
+			&oneOrder.certificate.certificateAccountDb.accountKeyDb.updatedAt,
+
+			&oneOrder.finalizedKey.id,
+			&oneOrder.finalizedKey.name,
+			&oneOrder.finalizedKey.description,
+			&oneOrder.finalizedKey.algorithmValue,
+			&oneOrder.finalizedKey.pem,
+			&oneOrder.finalizedKey.apiKey,
+			&oneOrder.finalizedKey.apiKeyNew,
+			&oneOrder.finalizedKey.apiKeyDisabled,
+			&oneOrder.finalizedKey.apiKeyViaUrl,
+			&oneOrder.finalizedKey.createdAt,
+			&oneOrder.finalizedKey.updatedAt,
+		)
+		if err != nil {
+			// if no record exists
+			if errors.Is(err, sql.ErrNoRows) {
+				err = storage.ErrNoRecord
+			}
+			return nil, err
 		}
+
+		// convert and append
+		orders = append(orders, oneOrder.toOrder(store))
+	}
+
+	return orders, nil
+}
+
+// GetOneOrder fetches a specific Order by ID
+func (store *Storage) GetOneOrder(orderID int) (order orders.Order, err error) {
+	result, err := store.GetOrders([]int{orderID})
+	if err != nil {
 		return orders.Order{}, err
 	}
 
-	order = oneOrder.toOrder(store)
+	if len(result) < 1 {
+		return orders.Order{}, storage.ErrNoRecord
+	}
 
-	return order, nil
+	return result[0], nil
 }
 
 // GetCertNewestValidOrderById returns the most recent valid order for the specified

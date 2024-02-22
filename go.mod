@@ -13,6 +13,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/rs/cors v1.10.1
+	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.17
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.17.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -123,7 +124,6 @@ require (
 	github.com/sacloud/go-http v0.1.6 // indirect
 	github.com/sacloud/iaas-api-go v1.11.1 // indirect
 	github.com/sacloud/packages-go v0.0.9 // indirect
-	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.17 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/smartystreets/go-aws-auth v0.0.0-20180515143844-0c1422d1fdb9 // indirect
 	github.com/softlayer/softlayer-go v1.1.2 // indirect
@@ -181,6 +181,8 @@ replace legocerthub-backend/pkg/challenges/providers/dns01manual => /pkg/challen
 replace legocerthub-backend/pkg/challenges/providers/http01internal => /pkg/challenges/providers/http01internal
 
 replace legocerthub-backend/pkg/datatypes => /pkg/datatypes
+
+replace legocerthub-backend/pkg/datatypes/job_manager => /pkg/datatypes/job_manager
 
 replace legocerthub-backend/pkg/domain/acme_accounts => /pkg/domain/acme_accounts
 

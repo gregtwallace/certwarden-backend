@@ -22,8 +22,7 @@ var (
 	ErrBadDirectoryURL  = &Error{StatusCode: 400, Message: "error: specified acme directory url is not https or did not return a valid directory json response"}
 
 	// order
-	ErrOrderInvalid     = &Error{StatusCode: 400, Message: "error: order status is invalid (which cannot be recovered from)"}
-	ErrOrderCantFulfill = &Error{StatusCode: 400, Message: "error: failed to order from acme (it is likely this order is already currently being processed)"}
+	ErrOrderInvalid = &Error{StatusCode: 400, Message: "error: order status is invalid (which cannot be recovered from)"}
 )
 
 // Error is the standardized error structure, it is the same as a regular message but also

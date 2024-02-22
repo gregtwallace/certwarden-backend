@@ -77,7 +77,7 @@ type orderKeySummaryResponse struct {
 	Name string `json:"name"`
 }
 
-func (order Order) summaryResponse(of *orderFulfiller) orderSummaryResponse {
+func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 	// depends on if FinalizedKey is set yet
 	var finalKey *orderKeySummaryResponse
 	if order.FinalizedKey != nil {
@@ -87,8 +87,13 @@ func (order Order) summaryResponse(of *orderFulfiller) orderSummaryResponse {
 		}
 	}
 
+	// check if job is in queue (priority is irrelevant for checking if exists, so just use false)
+	// should never error, so ignore err
+	fulfillJob, _ := service.makeFulfillingJob(order.ID, false)
+	fulfillingWorker := service.orderFulfilling.JobExists(fulfillJob)
+
 	return orderSummaryResponse{
-		FulfillmentWorker: of.checkForOrderId(order.ID),
+		FulfillmentWorker: fulfillingWorker,
 		ID:                order.ID,
 		Certificate: orderCertificateSummaryResponse{
 			ID:   order.Certificate.ID,
@@ -182,3 +187,19 @@ func (order Order) PemContentChainOnly() string {
 }
 
 // end Pem Output Methods
+
+// hasPostProcessingToDo returns if a given order object is configured in a way
+// that involves one or more post processing actions
+func (order *Order) hasPostProcessingToDo() bool {
+	// post processing action = LeGo Client
+	if order.Certificate.PostProcessingClientKeyB64 != "" {
+		return true
+	}
+
+	// post processing action = script or binary
+	if order.Certificate.PostProcessingCommand != "" {
+		return true
+	}
+
+	return false
+}

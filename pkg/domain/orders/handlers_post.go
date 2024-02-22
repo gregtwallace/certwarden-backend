@@ -45,7 +45,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) *output
 	response := &orderResponse{}
 	response.StatusCode = http.StatusCreated
 	response.Message = "created order"
-	response.Order = newOrder.summaryResponse(service.orderFulfiller)
+	response.Order = newOrder.summaryResponse(service)
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
@@ -83,11 +83,11 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 	}
 	// end validation
 
-	// kickoff order fulfillment (async)
-	err = service.orderFulfiller.addJob(orderId, true)
+	// add to order fulfillment queue
+	err = service.fulfillOrder(orderId, true)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrOrderCantFulfill
+		return output.ErrValidationFailed
 	}
 
 	// get order from db to return
@@ -100,7 +100,7 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 	response := &orderResponse{}
 	response.StatusCode = http.StatusCreated
 	response.Message = "attempting to fulfill order"
-	response.Order = order.summaryResponse(service.orderFulfiller)
+	response.Order = order.summaryResponse(service)
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
@@ -207,7 +207,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	response := &orderResponse{}
 	response.StatusCode = http.StatusOK
 	response.Message = "revoked order"
-	response.Order = order.summaryResponse(service.orderFulfiller)
+	response.Order = order.summaryResponse(service)
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {

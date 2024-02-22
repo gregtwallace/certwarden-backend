@@ -60,7 +60,7 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 	}
 
 	// kickoff order fulfillment (async)
-	err = service.orderFulfiller.addJob(orderId, highPriority)
+	err = service.fulfillOrder(orderId, highPriority)
 	// log error if something strange happened
 	if err != nil {
 		service.logger.Error(err)
