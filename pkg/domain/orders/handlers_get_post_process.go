@@ -5,25 +5,10 @@ import (
 	"net/http"
 )
 
-// orderJobResponse contains the json response struct for one order job
-type orderJobResponse struct {
-	AddedToQueue int                  `json:"added_to_queue"` // unix time job was requested
-	HighPriority bool                 `json:"high_priority"`
-	Order        orderSummaryResponse `json:"order"`
-}
-
-// orderWorkStatusResponse contains the full response to a GET request for the status
-// of the a work service
-type orderWorkStatusResponse struct {
-	output.JsonResponse
-	JobsWorking map[int]*orderJobResponse `json:"jobs_working"` // [workerid]
-	JobsWaiting []orderJobResponse        `json:"jobs_waiting"`
-}
-
 // GetFulfillWorkStatus returns all fulfilling jobs with workers and waiting in queue
-func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetPostProcessWorkStatus(w http.ResponseWriter, r *http.Request) *output.Error {
 	// get jobs from manager
-	mgrJobs := service.orderFulfilling.AllCurrentJobs()
+	mgrJobs := service.postProcessing.AllCurrentJobs()
 
 	// get Order IDs for all jobs (to query db)
 	orderIDs := []int{}
@@ -40,7 +25,7 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 	// lookup all orders in db
 	orders, err := service.storage.GetOrders(orderIDs)
 	if err != nil {
-		service.logger.Errorf("orders: failed to convert fulfilling jobs to order objects (%w)", err)
+		service.logger.Errorf("orders: failed to convert post process jobs to order objects (%w)", err)
 		return output.ErrInternal
 	}
 

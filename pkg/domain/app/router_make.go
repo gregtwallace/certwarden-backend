@@ -127,6 +127,7 @@ func (app *Application) makeRouterAndRoutes() {
 	// orders (for certificates)
 	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/orders/currentvalid", app.orders.GetAllValidCurrentOrders)
 	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/orders/fulfilling/status", app.orders.GetFulfillWorkStatus)
+	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/orders/post-process/status", app.orders.GetPostProcessWorkStatus)
 
 	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/certificates/:certid/orders", app.orders.GetCertOrders)
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/certificates/:certid/orders", app.orders.NewOrder)
