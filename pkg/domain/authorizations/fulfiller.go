@@ -65,7 +65,7 @@ func (service *Service) fulfillAuth(authUrl string, key acme.AccountKey, acmeSer
 	// block and return the cached result. If the cached result is an error, try to work
 	// the auth again.
 	for {
-		exists, signal := service.authsBeingWorked.Add(authUrl)
+		exists, signal := service.authsWorking.Add(authUrl, make(chan struct{}))
 		// if doesn't exist (not working) break from loop and call worker
 		if !exists {
 			break
@@ -87,8 +87,17 @@ func (service *Service) fulfillAuth(authUrl string, key acme.AccountKey, acmeSer
 
 	// defer removing auth once it has been worked
 	defer func() {
-		err := service.authsBeingWorked.Remove(authUrl)
-		if err != nil {
+		// delete func closes the signal channel before returning true
+		delFunc := func(key string, signal chan struct{}) bool {
+			if key == authUrl {
+				close(signal)
+				return true
+			}
+			return false
+		}
+
+		deletedOk := service.authsWorking.DeleteFunc(delFunc)
+		if !deletedOk {
 			service.logger.Error(err)
 		}
 	}()

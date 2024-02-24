@@ -19,7 +19,7 @@ func (service *Service) provision(domain, token, keyAuth string, provider provid
 	// if multiple callers are in the waiting state, it is random which will execute next
 	for {
 		// add domain to in use
-		alreadyExisted, signal := service.resources.Add(domain)
+		alreadyExisted, signal := service.resourcesInUse.Add(domain, make(chan struct{}))
 		// if didn't already exist, break loop and provision
 		if !alreadyExisted {
 			service.logger.Debugf("added resource for %s to challenge work tracker", domain)
@@ -70,8 +70,17 @@ func (service *Service) provision(domain, token, keyAuth string, provider provid
 func (service *Service) deprovision(domain, token, keyAuth string, provider providers.Service) (err error) {
 	// delete resource name from tracker (after the rest of the deprovisioning steps are done or failed)
 	defer func() {
-		err := service.resources.Remove(domain)
-		if err != nil {
+		// delete func closes the signal channel before returning true
+		delFunc := func(key string, signal chan struct{}) bool {
+			if key == domain {
+				close(signal)
+				return true
+			}
+			return false
+		}
+
+		deletedOk := service.resourcesInUse.DeleteFunc(delFunc)
+		if !deletedOk {
 			service.logger.Errorf("failed to remove resource for %s from work tracker (%s)", domain, err)
 		} else {
 			service.logger.Debugf("removed resource for %s from challenge work tracker", domain)

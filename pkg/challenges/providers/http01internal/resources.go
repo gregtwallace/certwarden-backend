@@ -20,11 +20,14 @@ func (service *Service) Provision(_, token, keyAuth string) error {
 
 // Deprovision removes a removes a resource from those being hosted
 func (service *Service) Deprovision(_, token, _ string) error {
-
 	// delete entry
-	err := service.provisionedResources.DeleteKey(token)
-	if err != nil {
-		return err
+	delFunc := func(tokenKey string, _ []byte) bool {
+		return tokenKey == token
+	}
+
+	deleteOk := service.provisionedResources.DeleteFunc(delFunc)
+	if !deleteOk {
+		return fmt.Errorf("http-01 resource %s failed to delete", token)
 	}
 
 	return nil

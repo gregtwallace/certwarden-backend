@@ -3,7 +3,8 @@ package auth
 import (
 	"context"
 	"errors"
-	"legocerthub-backend/pkg/datatypes"
+	"fmt"
+	"legocerthub-backend/pkg/datatypes/safemap"
 	"sync"
 	"time"
 )
@@ -13,13 +14,13 @@ var errAddExisting = errors.New("cannot add existing session id again, terminati
 
 // sessionManager stores and manages session data
 type sessionManager struct {
-	sessions *datatypes.SafeMap[tokenClaims] // map[uuid]sessionClaims
+	sessions *safemap.SafeMap[tokenClaims] // map[uuid]sessionClaims
 }
 
 // newSessionManager creates a new sessionManager
 func newSessionManager() *sessionManager {
 	sm := &sessionManager{
-		sessions: datatypes.NewSafeMap[tokenClaims](),
+		sessions: safemap.NewSafeMap[tokenClaims](),
 	}
 
 	return sm
@@ -58,10 +59,14 @@ func (sm *sessionManager) close(session tokenClaims) error {
 	}
 
 	// remove and check if trying to remove non-existent
-	err := sm.sessions.DeleteKey(uuidString)
-	if err != nil {
+	delFunc := func(key string, _ tokenClaims) bool {
+		return key == uuidString
+	}
+
+	deletedOk := sm.sessions.DeleteFunc(delFunc)
+	if !deletedOk {
 		sm.closeSubject(session)
-		return err
+		return fmt.Errorf("app auth: failed to close session %s, closing all sessions for %s", uuidString, session.Subject)
 	}
 
 	return nil
@@ -100,7 +105,7 @@ func (sm *sessionManager) closeSubject(sc tokenClaims) {
 	}
 
 	// run func against sessions map
-	sm.sessions.DeleteFunc(deleteFunc)
+	_ = sm.sessions.DeleteFunc(deleteFunc)
 }
 
 // startCleanerService starts a goroutine that is an indefinite for loop
@@ -146,7 +151,7 @@ func (service *Service) startCleanerService(ctx context.Context, wg *sync.WaitGr
 			}
 
 			// run delete func against sessions map
-			service.sessionManager.sessions.DeleteFunc(deleteFunc)
+			_ = service.sessionManager.sessions.DeleteFunc(deleteFunc)
 		}
 	}()
 }

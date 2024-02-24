@@ -1,4 +1,4 @@
-package datatypes
+package safemap
 
 import (
 	"errors"
@@ -55,34 +55,21 @@ func (sm *SafeMap[V]) Add(key string, value V) (bool, V) {
 	return false, value
 }
 
-// DeleteKey deletes the specified key from the map.
-// If no such key exists, an error is returned.
-func (sm *SafeMap[V]) DeleteKey(key string) error {
-	sm.mu.Lock()
-	defer sm.mu.Unlock()
-
-	// if key was not found, error
-	_, exists := sm.m[key]
-	if !exists {
-		return errMapKeyDoesntExist
-	}
-
-	// delete the key
-	delete(sm.m, key)
-
-	return nil
-}
-
 // DeleteFunc deletes any key/value pairs where the function passed in
-// returns true
-func (sm *SafeMap[V]) DeleteFunc(delFunc func(key string, value V) bool) {
+// returns true; it returns true if something was deleted, it returns
+// false if nothing was deleted
+func (sm *SafeMap[V]) DeleteFunc(delFunc func(key string, value V) bool) bool {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
 	// range through map and delete if delFunc returns true
+	didDelete := false
 	for key, val := range sm.m {
 		if delFunc(key, val) {
+			didDelete = true
 			delete(sm.m, key)
 		}
 	}
+
+	return didDelete
 }

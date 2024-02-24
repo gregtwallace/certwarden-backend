@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/datatypes"
+	"legocerthub-backend/pkg/datatypes/safemap"
 	"sync"
 	"time"
 
@@ -32,7 +32,7 @@ type Service struct {
 	stopServerFunc       context.CancelFunc
 	stopErrChan          chan error
 	port                 int
-	provisionedResources *datatypes.SafeMap[[]byte]
+	provisionedResources *safemap.SafeMap[[]byte]
 }
 
 // ChallengeType returns the ACME Challenge Type this provider uses, which is http-01
@@ -95,7 +95,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// allocate resources map
-	service.provisionedResources = datatypes.NewSafeMap[[]byte]()
+	service.provisionedResources = safemap.NewSafeMap[[]byte]()
 
 	// set port
 	if cfg.Port == nil {

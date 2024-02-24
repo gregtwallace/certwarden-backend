@@ -5,7 +5,7 @@ import (
 	"errors"
 	"legocerthub-backend/pkg/challenges/dns_checker"
 	"legocerthub-backend/pkg/challenges/providers"
-	"legocerthub-backend/pkg/datatypes"
+	"legocerthub-backend/pkg/datatypes/safemap"
 	"legocerthub-backend/pkg/httpclient"
 	"legocerthub-backend/pkg/output"
 	"sync"
@@ -45,7 +45,7 @@ type Service struct {
 	output            *output.Service
 	dnsChecker        *dns_checker.Service
 	Providers         *providers.Manager
-	resources         *datatypes.WorkTracker // tracks all resource names currently in use (regardless of provider)
+	resourcesInUse    *safemap.SafeMap[chan struct{}] // tracks all resource names currently in use (regardless of provider)
 }
 
 // NewService creates a new service
@@ -86,7 +86,7 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 	}
 
 	// make tracking map
-	service.resources = datatypes.NewWorkTracker()
+	service.resourcesInUse = safemap.NewSafeMap[chan struct{}]()
 
 	return service, nil
 }
