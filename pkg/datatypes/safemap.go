@@ -33,7 +33,7 @@ func (sm *SafeMap[V]) Read(key string) (V, error) {
 		return value, errMapKeyDoesntExist
 	}
 
-	return *new(V), nil
+	return value, nil
 }
 
 // Add creates the named key and inserts the specified value.
