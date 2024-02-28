@@ -45,7 +45,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 	query := fmt.Sprintf(`
 	SELECT 
 		c.id, c.name, c.description, c.subject, c.subject_alts, 
-		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
@@ -102,6 +102,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 			&oneCert.country,
 			&oneCert.state,
 			&oneCert.city,
+			&oneCert.csrExtraExtensions,
 			&oneCert.createdAt,
 			&oneCert.updatedAt,
 			&oneCert.apiKey,
@@ -160,7 +161,12 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 		}
 
 		// convert and append
-		certs = append(certs, oneCert.toCertificate())
+		oneCertConverted, err := oneCert.toCertificate()
+		if err != nil {
+			return nil, 0, err
+		}
+
+		certs = append(certs, oneCertConverted)
 	}
 
 	return certs, totalRows, nil
@@ -184,7 +190,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 	query := `
 	SELECT
 		c.id, c.name, c.description, c.subject, c.subject_alts,
-		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
@@ -225,6 +231,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		&oneCert.country,
 		&oneCert.state,
 		&oneCert.city,
+		&oneCert.csrExtraExtensions,
 		&oneCert.createdAt,
 		&oneCert.updatedAt,
 		&oneCert.apiKey,
@@ -286,5 +293,10 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 	}
 
 	// convert and return
-	return oneCert.toCertificate(), nil
+	oneCertConverted, err := oneCert.toCertificate()
+	if err != nil {
+		return certificates.Certificate{}, err
+	}
+
+	return oneCertConverted, nil
 }

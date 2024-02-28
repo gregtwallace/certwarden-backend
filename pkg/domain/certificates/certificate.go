@@ -20,6 +20,7 @@ type Certificate struct {
 	Country                    string
 	State                      string
 	City                       string
+	CSRExtraExtensions         []CertExtension
 	CreatedAt                  int
 	UpdatedAt                  int
 	ApiKey                     string
@@ -88,21 +89,29 @@ func (cert Certificate) summaryResponse() certificateSummaryResponse {
 // fields that can be returned as JSON
 type certificateDetailedResponse struct {
 	certificateSummaryResponse
-	Organization               string   `json:"organization"`
-	OrganizationalUnit         string   `json:"organizational_unit"`
-	Country                    string   `json:"country"`
-	State                      string   `json:"state"`
-	City                       string   `json:"city"`
-	CreatedAt                  int      `json:"created_at"`
-	UpdatedAt                  int      `json:"updated_at"`
-	ApiKey                     string   `json:"api_key"`
-	ApiKeyNew                  string   `json:"api_key_new,omitempty"`
-	PostProcessingCommand      string   `json:"post_processing_command"`
-	PostProcessingEnvironment  []string `json:"post_processing_environment"`
-	PostProcessingClientKeyB64 string   `json:"post_processing_client_key"`
+	Organization               string              `json:"organization"`
+	OrganizationalUnit         string              `json:"organizational_unit"`
+	Country                    string              `json:"country"`
+	State                      string              `json:"state"`
+	City                       string              `json:"city"`
+	CSRExtraExtensions         []CertExtensionJSON `json:"csr_extra_extensions"`
+	CreatedAt                  int                 `json:"created_at"`
+	UpdatedAt                  int                 `json:"updated_at"`
+	ApiKey                     string              `json:"api_key"`
+	ApiKeyNew                  string              `json:"api_key_new,omitempty"`
+	PostProcessingCommand      string              `json:"post_processing_command"`
+	PostProcessingEnvironment  []string            `json:"post_processing_environment"`
+	PostProcessingClientKeyB64 string              `json:"post_processing_client_key"`
 }
 
 func (cert Certificate) detailedResponse() certificateDetailedResponse {
+	// convert extensions to json output obj
+	extraExtensions := []CertExtensionJSON{}
+	for i := range cert.CSRExtraExtensions {
+		oneExt := cert.CSRExtraExtensions[i].toJSONObj()
+		extraExtensions = append(extraExtensions, oneExt)
+	}
+
 	return certificateDetailedResponse{
 		certificateSummaryResponse: cert.summaryResponse(),
 		Organization:               cert.Organization,
@@ -110,6 +119,7 @@ func (cert Certificate) detailedResponse() certificateDetailedResponse {
 		Country:                    cert.Country,
 		State:                      cert.State,
 		City:                       cert.City,
+		CSRExtraExtensions:         extraExtensions,
 		CreatedAt:                  cert.CreatedAt,
 		UpdatedAt:                  cert.UpdatedAt,
 		ApiKey:                     cert.ApiKey,

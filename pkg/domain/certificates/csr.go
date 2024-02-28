@@ -22,12 +22,19 @@ func (cert *Certificate) MakeCsrDer() (csr []byte, err error) {
 		// unused: Names, ExtraNames					[]AttributeTypeAndValue
 	}
 
+	// convert any extra extensions to proper pkix obj
+	extraExts := []pkix.Extension{}
+	for i := range cert.CSRExtraExtensions {
+		extraExts = append(extraExts, cert.CSRExtraExtensions[i].Extension)
+	}
+
 	// CSR template to create CSR from
 	template := x509.CertificateRequest{
 		SignatureAlgorithm: cert.CertificateKey.Algorithm.CsrSigningAlg(),
 		Subject:            subj,
 		DNSNames:           append([]string{cert.Subject}, cert.SubjectAltNames...),
-		// unused: EmailAddresses, IPAddresses, URIs, Attributes (deprecated), ExtraExtensions
+		// unused: EmailAddresses, IPAddresses, URIs, Attributes (deprecated)
+		ExtraExtensions: extraExts,
 	}
 
 	// cert's private key for signing

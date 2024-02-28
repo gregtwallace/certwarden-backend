@@ -17,20 +17,21 @@ import (
 
 // NewPayload is the struct for creating a new certificate
 type NewPayload struct {
-	Name                      *string  `json:"name"`
-	Description               *string  `json:"description"`
-	PrivateKeyID              *int     `json:"private_key_id"`
-	NewKeyAlgorithmValue      *string  `json:"algorithm_value"`
-	AcmeAccountID             *int     `json:"acme_account_id"`
-	Subject                   *string  `json:"subject"`
-	SubjectAltNames           []string `json:"subject_alts"`
-	Organization              *string  `json:"organization"`
-	OrganizationalUnit        *string  `json:"organizational_unit"`
-	Country                   *string  `json:"country"`
-	State                     *string  `json:"state"`
-	City                      *string  `json:"city"`
-	PostProcessingCommand     *string  `json:"post_processing_command"`
-	PostProcessingEnvironment []string `json:"post_processing_environment"`
+	Name                      *string             `json:"name"`
+	Description               *string             `json:"description"`
+	PrivateKeyID              *int                `json:"private_key_id"`
+	NewKeyAlgorithmValue      *string             `json:"algorithm_value"`
+	AcmeAccountID             *int                `json:"acme_account_id"`
+	Subject                   *string             `json:"subject"`
+	SubjectAltNames           []string            `json:"subject_alts"`
+	Organization              *string             `json:"organization"`
+	OrganizationalUnit        *string             `json:"organizational_unit"`
+	Country                   *string             `json:"country"`
+	State                     *string             `json:"state"`
+	City                      *string             `json:"city"`
+	CSRExtraExtensions        []CertExtensionJSON `json:"csr_extra_extensions"`
+	PostProcessingCommand     *string             `json:"post_processing_command"`
+	PostProcessingEnvironment []string            `json:"post_processing_environment"`
 	// for post processing client, user submits enable or not, if enable key is generated and stored
 	// bool is not stored anywhere (disabled == blank key value)
 	PostProcessingClientEnable *bool  `json:"post_processing_client_enable"`

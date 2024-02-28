@@ -48,7 +48,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts,
-		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
@@ -149,6 +149,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			&oneOrder.certificate.country,
 			&oneOrder.certificate.state,
 			&oneOrder.certificate.city,
+			&oneOrder.certificate.csrExtraExtensions,
 			&oneOrder.certificate.createdAt,
 			&oneOrder.certificate.updatedAt,
 			&oneOrder.certificate.apiKey,
@@ -218,8 +219,13 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			return nil, 0, err
 		}
 
-		convertedOrder := oneOrder.toOrder()
-		orders = append(orders, convertedOrder)
+		// convert and append
+		oneOrderConvert, err := oneOrder.toOrder()
+		if err != nil {
+			return nil, 0, err
+		}
+
+		orders = append(orders, oneOrderConvert)
 	}
 
 	return orders, totalRows, nil
@@ -262,7 +268,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts,
-		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
@@ -350,6 +356,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			&oneOrder.certificate.country,
 			&oneOrder.certificate.state,
 			&oneOrder.certificate.city,
+			&oneOrder.certificate.csrExtraExtensions,
 			&oneOrder.certificate.createdAt,
 			&oneOrder.certificate.updatedAt,
 			&oneOrder.certificate.apiKey,
@@ -419,9 +426,13 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			return nil, 0, err
 		}
 
-		convertedOrder := oneOrder.toOrder()
+		// convert and append
+		oneOrderConvert, err := oneOrder.toOrder()
+		if err != nil {
+			return nil, 0, err
+		}
 
-		orders = append(orders, convertedOrder)
+		orders = append(orders, oneOrderConvert)
 	}
 
 	return orders, totalRows, nil
@@ -592,7 +603,7 @@ func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err erro
 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts,
-		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
@@ -666,6 +677,7 @@ func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err erro
 			&oneOrder.certificate.country,
 			&oneOrder.certificate.state,
 			&oneOrder.certificate.city,
+			&oneOrder.certificate.csrExtraExtensions,
 			&oneOrder.certificate.createdAt,
 			&oneOrder.certificate.updatedAt,
 			&oneOrder.certificate.apiKey,
@@ -738,7 +750,11 @@ func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err erro
 		}
 
 		// convert and append
-		orders = append(orders, oneOrder.toOrder())
+		oneOrderConvert, err := oneOrder.toOrder()
+		if err != nil {
+			return nil, err
+		}
+		orders = append(orders, oneOrderConvert)
 	}
 
 	return orders, nil
@@ -784,7 +800,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts,
-		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.created_at, c.updated_at,
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
@@ -873,6 +889,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		&oneOrder.certificate.country,
 		&oneOrder.certificate.state,
 		&oneOrder.certificate.city,
+		&oneOrder.certificate.csrExtraExtensions,
 		&oneOrder.certificate.createdAt,
 		&oneOrder.certificate.updatedAt,
 		&oneOrder.certificate.apiKey,
@@ -944,7 +961,10 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		return orders.Order{}, err
 	}
 
-	order = oneOrder.toOrder()
+	order, err = oneOrder.toOrder()
+	if err != nil {
+		return orders.Order{}, err
+	}
 
 	return order, nil
 }

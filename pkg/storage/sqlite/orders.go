@@ -29,7 +29,7 @@ type orderDb struct {
 	updatedAt      int
 }
 
-func (order orderDb) toOrder() orders.Order {
+func (order orderDb) toOrder() (orders.Order, error) {
 	// handle if key is not null (id value would not be okay from coalesce if null)
 	var key *private_keys.Key
 	if order.finalizedKey.id >= 0 {
@@ -43,9 +43,15 @@ func (order orderDb) toOrder() orders.Order {
 		acmeErr = acme.NewAcmeError(&order.err.String)
 	}
 
+	// convert cert
+	cert, err := order.certificate.toCertificate()
+	if err != nil {
+		return orders.Order{}, err
+	}
+
 	return orders.Order{
 		ID:             order.id,
-		Certificate:    order.certificate.toCertificate(),
+		Certificate:    cert,
 		Location:       order.location,
 		Status:         order.status,
 		KnownRevoked:   order.knownRevoked,
@@ -61,5 +67,5 @@ func (order orderDb) toOrder() orders.Order {
 		ValidTo:        nullInt32ToInt(order.validTo),
 		CreatedAt:      order.createdAt,
 		UpdatedAt:      order.updatedAt,
-	}
+	}, nil
 }

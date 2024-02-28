@@ -19,7 +19,7 @@ import (
 // config for DB
 const dbTimeout = time.Duration(5 * time.Second)
 const DbFilename = "lego-certhub.db"
-const DbCurrentUserVersion = 4
+const DbCurrentUserVersion = 5
 const dbFileMode = 0600
 
 var dbOptions = url.Values{
@@ -164,6 +164,14 @@ func OpenStorage(app App) (*Storage, error) {
 		}
 	}
 
+	// upgrade if schema 4
+	if fileUserVersion == 4 {
+		fileUserVersion, err = store.migrateV4toV5()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// fail if still not correct
 	if fileUserVersion != DbCurrentUserVersion {
 		return nil, fmt.Errorf("db schema user_version is %d (expected %d) and automatic migration failed", fileUserVersion, DbCurrentUserVersion)
@@ -204,7 +212,7 @@ func (store *Storage) populateNewDb() error {
 	}
 
 	// create tables
-	err = createDBTablesV4(tx)
+	err = createDBTablesV5(tx)
 	if err != nil {
 		return err
 	}

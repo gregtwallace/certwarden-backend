@@ -19,6 +19,7 @@ type certificateDb struct {
 	country                    string
 	state                      string
 	city                       string
+	csrExtraExtensions         jsonCertExtensionSlice
 	createdAt                  int
 	updatedAt                  int
 	apiKey                     string
@@ -29,7 +30,12 @@ type certificateDb struct {
 	postProcessingClientKeyB64 string          // base64 raw url encoded AES 256 key
 }
 
-func (cert certificateDb) toCertificate() certificates.Certificate {
+func (cert certificateDb) toCertificate() (certificates.Certificate, error) {
+	certExt, err := cert.csrExtraExtensions.toCertExtensionSlice()
+	if err != nil {
+		return certificates.Certificate{}, err
+	}
+
 	return certificates.Certificate{
 		ID:                         cert.id,
 		Name:                       cert.name,
@@ -43,6 +49,7 @@ func (cert certificateDb) toCertificate() certificates.Certificate {
 		Country:                    cert.country,
 		State:                      cert.state,
 		City:                       cert.city,
+		CSRExtraExtensions:         certExt,
 		CreatedAt:                  cert.createdAt,
 		UpdatedAt:                  cert.updatedAt,
 		ApiKey:                     cert.apiKey,
@@ -51,5 +58,5 @@ func (cert certificateDb) toCertificate() certificates.Certificate {
 		PostProcessingCommand:      cert.postProcessingCommand,
 		PostProcessingEnvironment:  cert.postProcessingEnvironment.toSlice(),
 		PostProcessingClientKeyB64: cert.postProcessingClientKeyB64,
-	}
+	}, nil
 }
