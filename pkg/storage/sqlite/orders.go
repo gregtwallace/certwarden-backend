@@ -29,7 +29,7 @@ type orderDb struct {
 	updatedAt      int
 }
 
-func (order orderDb) toOrder(store *Storage) orders.Order {
+func (order orderDb) toOrder() orders.Order {
 	// handle if key is not null (id value would not be okay from coalesce if null)
 	var key *private_keys.Key
 	if order.finalizedKey.id >= 0 {
@@ -45,7 +45,7 @@ func (order orderDb) toOrder(store *Storage) orders.Order {
 
 	return orders.Order{
 		ID:             order.id,
-		Certificate:    order.certificate.toCertificate(store),
+		Certificate:    order.certificate.toCertificate(),
 		Location:       order.location,
 		Status:         order.status,
 		KnownRevoked:   order.knownRevoked,

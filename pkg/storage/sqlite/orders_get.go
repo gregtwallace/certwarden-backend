@@ -218,7 +218,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			return nil, 0, err
 		}
 
-		convertedOrder := oneOrder.toOrder(store)
+		convertedOrder := oneOrder.toOrder()
 		orders = append(orders, convertedOrder)
 	}
 
@@ -419,7 +419,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			return nil, 0, err
 		}
 
-		convertedOrder := oneOrder.toOrder(store)
+		convertedOrder := oneOrder.toOrder()
 
 		orders = append(orders, convertedOrder)
 	}
@@ -738,7 +738,7 @@ func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err erro
 		}
 
 		// convert and append
-		orders = append(orders, oneOrder.toOrder(store))
+		orders = append(orders, oneOrder.toOrder())
 	}
 
 	return orders, nil
@@ -944,7 +944,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		return orders.Order{}, err
 	}
 
-	order = oneOrder.toOrder(store)
+	order = oneOrder.toOrder()
 
 	return order, nil
 }

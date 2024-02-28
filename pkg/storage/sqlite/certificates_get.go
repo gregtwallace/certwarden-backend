@@ -160,7 +160,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 		}
 
 		// convert and append
-		certs = append(certs, oneCert.toCertificate(store))
+		certs = append(certs, oneCert.toCertificate())
 	}
 
 	return certs, totalRows, nil
@@ -286,5 +286,5 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 	}
 
 	// convert and return
-	return oneCert.toCertificate(store), nil
+	return oneCert.toCertificate(), nil
 }

@@ -141,9 +141,6 @@ func (store Storage) dbGetOneServer(acmeServerId int, name string) (acme_servers
 
 	// convert to Server
 	oneServer := oneServerDb.toServer()
-	if err != nil {
-		return acme_servers.Server{}, err
-	}
 
 	return oneServer, nil
 }

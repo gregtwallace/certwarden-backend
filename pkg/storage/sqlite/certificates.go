@@ -29,7 +29,7 @@ type certificateDb struct {
 	postProcessingClientKeyB64 string          // base64 raw url encoded AES 256 key
 }
 
-func (cert certificateDb) toCertificate(store *Storage) certificates.Certificate {
+func (cert certificateDb) toCertificate() certificates.Certificate {
 	return certificates.Certificate{
 		ID:                         cert.id,
 		Name:                       cert.name,

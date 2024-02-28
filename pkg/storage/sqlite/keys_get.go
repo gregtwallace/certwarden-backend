@@ -145,9 +145,6 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 
 	// convert to KeyExtended
 	oneKeyExt := oneKeyDb.toKey()
-	if err != nil {
-		return private_keys.Key{}, err
-	}
 
 	return oneKeyExt, nil
 }
