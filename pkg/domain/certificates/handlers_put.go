@@ -115,7 +115,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	response := &certificateResponse{}
 	response.StatusCode = http.StatusOK
 	response.Message = "updated certificate"
-	response.Certificate = updatedCert.detailedResponse(service)
+	response.Certificate = updatedCert.detailedResponse()
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {

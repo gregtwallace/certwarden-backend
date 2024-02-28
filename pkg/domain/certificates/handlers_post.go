@@ -209,7 +209,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	response := &certificateResponse{}
 	response.StatusCode = http.StatusCreated
 	response.Message = "created certificate"
-	response.Certificate = newCert.detailedResponse(service)
+	response.Certificate = newCert.detailedResponse()
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
@@ -263,7 +263,7 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	response := &certificateResponse{}
 	response.StatusCode = http.StatusCreated
 	response.Message = "certificate new api key created"
-	response.Certificate = cert.detailedResponse(service)
+	response.Certificate = cert.detailedResponse()
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
@@ -312,7 +312,7 @@ func (service *Service) MakeNewClientKey(w http.ResponseWriter, r *http.Request)
 	response := &certificateResponse{}
 	response.StatusCode = http.StatusCreated
 	response.Message = "certificate new client key created"
-	response.Certificate = cert.detailedResponse(service)
+	response.Certificate = cert.detailedResponse()
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {

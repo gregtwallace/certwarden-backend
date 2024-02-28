@@ -94,7 +94,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	response := &certificateResponse{}
 	response.StatusCode = http.StatusOK
 	response.Message = "certificate old api key deleted, new api key promoted"
-	response.Certificate = cert.detailedResponse(service)
+	response.Certificate = cert.detailedResponse()
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
@@ -136,7 +136,7 @@ func (service *Service) DisableClientKey(w http.ResponseWriter, r *http.Request)
 	response := &certificateResponse{}
 	response.StatusCode = http.StatusOK
 	response.Message = "certificate client key deleted (disabled)"
-	response.Certificate = cert.detailedResponse(service)
+	response.Certificate = cert.detailedResponse()
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
