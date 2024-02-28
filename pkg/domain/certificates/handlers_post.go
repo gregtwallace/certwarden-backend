@@ -138,6 +138,16 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	if payload.City == nil {
 		payload.City = new(string)
 	}
+
+	// CSR Extra Extensions - check each extra extension for proper formatting
+	for i := range payload.CSRExtraExtensions {
+		_, err = payload.CSRExtraExtensions[i].ToCertExtension()
+		if err != nil {
+			service.logger.Debug(err)
+			return output.ErrValidationFailed
+		}
+	}
+
 	// post processing command / env (don't check valid path, just let errors log if its bad)
 	if payload.PostProcessingCommand == nil {
 		payload.PostProcessingCommand = new(string)
