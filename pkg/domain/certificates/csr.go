@@ -9,14 +9,40 @@ import (
 
 // MakeCsrDer generates the CSR bytes for ACME to POST To a Finalize URL
 func (cert *Certificate) MakeCsrDer() (csr []byte, err error) {
+	// omit empty fields
+	org := []string{}
+	if cert.Organization != "" {
+		org = append(org, cert.Organization)
+	}
+
+	ou := []string{}
+	if cert.OrganizationalUnit != "" {
+		ou = append(ou, cert.OrganizationalUnit)
+	}
+
+	country := []string{}
+	if cert.Country != "" {
+		country = append(country, cert.Country)
+	}
+
+	province := []string{}
+	if cert.State != "" {
+		province = append(province, cert.State)
+	}
+
+	locality := []string{}
+	if cert.City != "" {
+		locality = append(locality, cert.City)
+	}
+
 	// create Subject
 	subj := pkix.Name{
 		CommonName:         cert.Subject,
-		Organization:       []string{cert.Organization},
-		OrganizationalUnit: []string{cert.OrganizationalUnit},
-		Country:            []string{cert.Country},
-		Province:           []string{cert.State},
-		Locality:           []string{cert.City},
+		Organization:       org,
+		OrganizationalUnit: ou,
+		Country:            country,
+		Province:           province,
+		Locality:           locality,
 		// unused: StreetAddress, PostalCode	[]string
 		// unused: SerialNumber               string
 		// unused: Names, ExtraNames					[]AttributeTypeAndValue
