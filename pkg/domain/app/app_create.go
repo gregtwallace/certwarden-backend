@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"legocerthub-backend/pkg/challenges"
-	"legocerthub-backend/pkg/datatypes"
+	"legocerthub-backend/pkg/datatypes/safecert"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/app/auth"
@@ -174,7 +174,7 @@ func create() (*Application, error) {
 
 	// load app's tls cert
 	// if error, server will instead operate over http
-	app.httpsCert = new(datatypes.SafeCert)
+	app.httpsCert = new(safecert.SafeCert)
 	err = app.LoadHttpsCertificate()
 	if err != nil {
 		// failed = not https

@@ -1,4 +1,4 @@
-package datatypes
+package safecert
 
 import (
 	"crypto/tls"

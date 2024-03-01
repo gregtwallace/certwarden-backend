@@ -184,6 +184,8 @@ replace legocerthub-backend/pkg/datatypes => /pkg/datatypes
 
 replace legocerthub-backend/pkg/datatypes/job_manager => /pkg/datatypes/job_manager
 
+replace legocerthub-backend/pkg/datatypes/safecert => /pkg/datatypes/safecert
+
 replace legocerthub-backend/pkg/datatypes/safemap => /pkg/datatypes/safemap
 
 replace legocerthub-backend/pkg/domain/acme_accounts => /pkg/domain/acme_accounts

@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 	"legocerthub-backend/pkg/challenges"
-	"legocerthub-backend/pkg/datatypes"
+	"legocerthub-backend/pkg/datatypes/safecert"
 	"legocerthub-backend/pkg/domain/acme_accounts"
 	"legocerthub-backend/pkg/domain/acme_servers"
 	"legocerthub-backend/pkg/domain/app/auth"
@@ -62,7 +62,7 @@ type Application struct {
 	shutdownContext   context.Context
 	shutdown          func(restart bool)
 	shutdownWaitgroup *sync.WaitGroup
-	httpsCert         *datatypes.SafeCert
+	httpsCert         *safecert.SafeCert
 	httpClient        *httpclient.Client
 	router            http.Handler
 	storage           *sqlite.Storage
