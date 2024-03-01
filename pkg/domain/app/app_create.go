@@ -132,9 +132,6 @@ func create() (*Application, error) {
 
 	// start automatic backup service
 	app.backup.StartAutoBackupService(app, &app.config.Backup)
-	if err != nil {
-		return app, err
-	}
 
 	// if db file does not exist at new location, check old location and move file
 	// from old to new (if exists at old location)
