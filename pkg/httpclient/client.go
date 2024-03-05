@@ -67,9 +67,15 @@ func (c *Client) do(method string, url string, body io.Reader, addlHeader http.H
 	return resp, nil
 }
 
+// Get does a get request to the specified url and additionally
+// specified headers.
+func (c *Client) GetWithHeader(url string, header http.Header) (*http.Response, error) {
+	return c.do(http.MethodGet, url, nil, header)
+}
+
 // Get does a get request to the specified url
 func (c *Client) Get(url string) (*http.Response, error) {
-	return c.do(http.MethodGet, url, nil, nil)
+	return c.GetWithHeader(url, nil)
 }
 
 // Head does a head request to the specified url
