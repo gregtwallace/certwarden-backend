@@ -115,7 +115,6 @@ func (sm *sessionManager) closeSubject(sc tokenClaims) {
 func (service *Service) startCleanerService(ctx context.Context, wg *sync.WaitGroup) {
 	// log start and update wg
 	service.logger.Info("starting auth session cleaner service")
-	wg.Add(1)
 
 	// delete func that checks values for expired session
 	deleteFunc := func(k string, v tokenClaims) bool {
@@ -129,7 +128,10 @@ func (service *Service) startCleanerService(ctx context.Context, wg *sync.WaitGr
 		return false
 	}
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
+
 		// wait time is based on expiration of session token
 		delayTimer := time.NewTimer(2 * sessionTokenExpiration)
 
@@ -143,7 +145,6 @@ func (service *Service) startCleanerService(ctx context.Context, wg *sync.WaitGr
 
 				// exit
 				service.logger.Info("auth session cleaner service shutdown complete")
-				wg.Done()
 				return
 
 			case <-delayTimer.C:

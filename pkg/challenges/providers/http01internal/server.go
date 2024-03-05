@@ -56,13 +56,15 @@ func (service *Service) startServer() (err error) {
 	// start server
 	service.shutdownWaitgroup.Add(1)
 	go func() {
+		defer service.shutdownWaitgroup.Done()
 		defer func() { _ = ln.Close }()
+
 		err := srv.Serve(ln)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			service.logger.Errorf("http01internal server returned error (%s)", err)
 		}
 		service.logger.Infof("http-01 challenge server (%s) shutdown complete", servAddr)
-		service.shutdownWaitgroup.Done()
+
 	}()
 
 	// monitor shutdown context

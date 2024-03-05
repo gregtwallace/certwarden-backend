@@ -97,6 +97,7 @@ func (app *Application) startPprof() error {
 	app.shutdownWaitgroup.Add(1)
 	go func() {
 		defer func() { _ = ln.Close }()
+		defer app.shutdownWaitgroup.Done()
 
 		// start server as https or http
 		var err error
@@ -111,8 +112,6 @@ func (app *Application) startPprof() error {
 		}
 		app.logger.Info("pprof server shutdown complete")
 
-		// shutdown wg done
-		app.shutdownWaitgroup.Done()
 	}()
 
 	// shutdown server on shutdown signal

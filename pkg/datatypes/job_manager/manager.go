@@ -54,17 +54,15 @@ func NewManager[V Job[V]](workerCount int, workLabel string, shutdownCtx context
 
 	// make workers
 	for i := 0; i < workerCount; i++ {
-		// add to wg
-		shutdownWg.Add(1)
-		defer shutdownWg.Done()
-
 		// make entry on map for worker tracking
 		var zeroVal V
 		mgr.workingJobs[i] = zeroVal
 
 		// start worker func w/ id
+		shutdownWg.Add(1)
 		go func(workerId int) {
 			// spawn worker
+			defer shutdownWg.Done()
 			logger.Debugf("%s worker %d: started", workLabel, workerId)
 
 		doingWork:

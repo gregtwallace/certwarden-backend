@@ -146,13 +146,14 @@ func run() (restart bool) {
 			// start server
 			app.shutdownWaitgroup.Add(1)
 			go func() {
+				defer app.shutdownWaitgroup.Done()
 				defer func() { _ = ln1.Close }()
+
 				err := redirectSrv.Serve(ln1)
 				if err != nil && !errors.Is(err, http.ErrServerClosed) {
 					app.logger.Errorf("http redirect server returned error (%s)", err)
 				}
 				app.logger.Info("http redirect server shutdown complete")
-				app.shutdownWaitgroup.Done()
 			}()
 		}
 
@@ -169,13 +170,14 @@ func run() (restart bool) {
 		// start server
 		app.shutdownWaitgroup.Add(1)
 		go func() {
+			defer app.shutdownWaitgroup.Done()
 			defer func() { _ = ln2.Close }()
+
 			err := srv.ServeTLS(ln2, "", "")
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				app.logger.Errorf("lego-certhub (https) server returned error (%s)", err)
 			}
 			app.logger.Info("https server shutdown complete")
-			app.shutdownWaitgroup.Done()
 		}()
 
 	} else {
@@ -193,13 +195,14 @@ func run() (restart bool) {
 		// start server
 		app.shutdownWaitgroup.Add(1)
 		go func() {
+			defer app.shutdownWaitgroup.Done()
 			defer func() { _ = ln3.Close }()
+
 			err := srv.Serve(ln3)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				app.logger.Errorf("insecure lego-certhub (http) server returned error (%s)", err)
 			}
 			app.logger.Info("http server shutdown complete")
-			app.shutdownWaitgroup.Done()
 		}()
 	}
 

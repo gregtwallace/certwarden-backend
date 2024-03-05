@@ -102,7 +102,6 @@ func (service *Service) updateAcmeServiceDirectory() error {
 func (service *Service) backgroundDirManager(shutdownCtx context.Context, wg *sync.WaitGroup) {
 	// log start and update wg
 	service.logger.Infof("starting acme directory refresh service (%s)", service.dirUri)
-	wg.Add(1)
 
 	// notify func to log dir update fails
 	notifyFunc := func(err error, dur time.Duration) {
@@ -113,7 +112,10 @@ func (service *Service) backgroundDirManager(shutdownCtx context.Context, wg *sy
 	refreshHour := 1 // 1am
 
 	// service routine
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
+
 		for {
 			// backoff object for retry of failed dir update
 			// not using randomness ACME bo because this one needs to be indefinite and have slower timing
@@ -164,7 +166,6 @@ func (service *Service) backgroundDirManager(shutdownCtx context.Context, wg *sy
 
 				// end routine
 				service.logger.Infof("acme directory refresh service shutdown complete (%s)", service.dirUri)
-				wg.Done()
 				return
 
 			case <-delayTimer.C:

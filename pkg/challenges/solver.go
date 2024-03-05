@@ -57,12 +57,13 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	// get cleaned up, even if Provision errored.
 
 	defer func() {
+		// wg done do shutdown can proceed after deprovision
+		defer service.shutdownWaitgroup.Done()
+
 		err := service.deprovision(domain, token, keyAuth, provider)
 		if err != nil {
 			service.logger.Errorf("challenge solver deprovision failed (%s)", err)
 		}
-		// wg done do shutdown can proceed after deprovision
-		service.shutdownWaitgroup.Done()
 	}()
 
 	// Provision error check

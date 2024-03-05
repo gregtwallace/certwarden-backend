@@ -104,6 +104,7 @@ func (service *Service) StartAutoBackupService(app App, cfg *Config) {
 	// start go routine for auto backups
 	shutdownWg.Add(1)
 	go func() {
+		defer shutdownWg.Done()
 		nextBackup := lastBackupTime.Add(backupInterval)
 
 		for {
@@ -118,7 +119,6 @@ func (service *Service) StartAutoBackupService(app App, cfg *Config) {
 
 				// exit
 				service.logger.Info("automatic data backup service shutdown complete")
-				shutdownWg.Done()
 				return
 
 			case <-delayTimer.C:
@@ -149,6 +149,7 @@ func (service *Service) StartAutoBackupService(app App, cfg *Config) {
 	if retentionDuration > 0 {
 		shutdownWg.Add(1)
 		go func() {
+			defer shutdownWg.Done()
 			service.logger.Infof("starting data backup time based deletion service")
 
 			nextDelete := oldestBackupTime.Add(retentionDuration)
@@ -164,7 +165,6 @@ func (service *Service) StartAutoBackupService(app App, cfg *Config) {
 
 					// exit
 					service.logger.Info("data backup time based deletion service shutdown complete")
-					shutdownWg.Done()
 					return
 
 				case <-delayTimer.C:

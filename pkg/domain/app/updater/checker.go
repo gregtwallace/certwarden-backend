@@ -105,10 +105,12 @@ func (service *Service) fetchNewVersion() error {
 func (service *Service) backgroundChecker(ctx context.Context, wg *sync.WaitGroup) {
 	// log start and update wg
 	service.logger.Info("starting updater service")
-	wg.Add(1)
 
 	// service routine
+	wg.Add(1)
 	go func(service *Service, ctx context.Context, wg *sync.WaitGroup) {
+		defer wg.Done()
+
 		// can adjust wait times if desired
 		defaultWaitTime := 24 * time.Hour
 
@@ -134,7 +136,6 @@ func (service *Service) backgroundChecker(ctx context.Context, wg *sync.WaitGrou
 
 				// close routine
 				service.logger.Info("updater service shutdown complete")
-				wg.Done()
 				return
 
 			case <-delayTimer.C:
