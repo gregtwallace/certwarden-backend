@@ -2,7 +2,6 @@ package acme
 
 import (
 	"encoding/json"
-	"net/http"
 )
 
 // ACME authorization response
@@ -15,7 +14,7 @@ type Authorization struct {
 }
 
 // Account response decoder
-func unmarshalAuthorization(bodyBytes []byte, headers http.Header) (response Authorization, err error) {
+func unmarshalAuthorization(bodyBytes []byte) (response Authorization, err error) {
 	err = json.Unmarshal(bodyBytes, &response)
 	if err != nil {
 		return Authorization{}, err
@@ -28,13 +27,13 @@ func unmarshalAuthorization(bodyBytes []byte, headers http.Header) (response Aut
 func (service *Service) GetAuth(authUrl string, accountKey AccountKey) (response Authorization, err error) {
 
 	// POST-as-GET
-	bodyBytes, headers, err := service.postAsGet(authUrl, accountKey)
+	bodyBytes, _, err := service.postAsGet(authUrl, accountKey)
 	if err != nil {
 		return Authorization{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalAuthorization(bodyBytes, headers)
+	response, err = unmarshalAuthorization(bodyBytes)
 	if err != nil {
 		return Authorization{}, err
 	}

@@ -2,7 +2,6 @@ package acme
 
 import (
 	"encoding/json"
-	"net/http"
 )
 
 // Define challenge types (per RFC 8555)
@@ -26,7 +25,7 @@ type Challenge struct {
 }
 
 // Account response decoder
-func unmarshalChallenge(bodyBytes []byte, headers http.Header) (response Challenge, err error) {
+func unmarshalChallenge(bodyBytes []byte) (response Challenge, err error) {
 	err = json.Unmarshal(bodyBytes, &response)
 	if err != nil {
 		return Challenge{}, err
@@ -40,13 +39,13 @@ func unmarshalChallenge(bodyBytes []byte, headers http.Header) (response Challen
 func (service *Service) ValidateChallenge(challengeUrl string, accountKey AccountKey) (response Challenge, err error) {
 
 	// post challenge with {} as payload signals the challenge is ready for validation
-	bodyBytes, headers, err := service.postToUrlSigned(struct{}{}, challengeUrl, accountKey)
+	bodyBytes, _, err := service.postToUrlSigned(struct{}{}, challengeUrl, accountKey)
 	if err != nil {
 		return Challenge{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalChallenge(bodyBytes, headers)
+	response, err = unmarshalChallenge(bodyBytes)
 	if err != nil {
 		return Challenge{}, err
 	}
@@ -57,13 +56,13 @@ func (service *Service) ValidateChallenge(challengeUrl string, accountKey Accoun
 // GetChallenge does a POST-as-GET to fetch the current state of the given challenge URL
 func (service *Service) GetChallenge(challengeUrl string, key AccountKey) (response Challenge, err error) {
 	// POST-as-GET
-	bodyBytes, headers, err := service.postAsGet(challengeUrl, key)
+	bodyBytes, _, err := service.postAsGet(challengeUrl, key)
 	if err != nil {
 		return Challenge{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalChallenge(bodyBytes, headers)
+	response, err = unmarshalChallenge(bodyBytes)
 	if err != nil {
 		return Challenge{}, err
 	}
