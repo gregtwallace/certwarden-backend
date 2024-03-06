@@ -3,7 +3,7 @@ package nonces
 import (
 	"errors"
 	"io"
-	"legocerthub-backend/pkg/datatypes"
+	"legocerthub-backend/pkg/datatypes/ringbuffer"
 	"legocerthub-backend/pkg/httpclient"
 )
 
@@ -11,7 +11,7 @@ import (
 type Manager struct {
 	httpClient  *httpclient.Client
 	newNonceUrl *string
-	nonces      *datatypes.RingBuffer[string]
+	nonces      *ringbuffer.RingBuffer[string]
 }
 
 // Manager buffer size
@@ -23,7 +23,7 @@ func NewManager(client *httpclient.Client, nonceUrl *string) *Manager {
 
 	manager.httpClient = client
 	manager.newNonceUrl = nonceUrl
-	manager.nonces = datatypes.NewRingBuffer[string](bufferSize)
+	manager.nonces = ringbuffer.NewRingBuffer[string](bufferSize)
 
 	return manager
 }
