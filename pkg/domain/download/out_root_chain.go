@@ -10,14 +10,13 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// modified Order to allow implementation of custom pem functions
+// modified Order to allow implementation of custom out functions
 // to properly output the desired content
 type rootChain orders.Order
 
-// rootChain Output Pem Methods
+// rootChain Output Methods
 
-// PemFilename is the chain filename
-func (rc rootChain) PemFilename() string {
+func (rc rootChain) FilenameNoExt() string {
 	return fmt.Sprintf("%s.chain.pem", rc.Certificate.Name)
 }
 
@@ -27,13 +26,12 @@ func (rc rootChain) PemContent() string {
 	return orders.Order(rc).PemContentChainOnly()
 }
 
-// PemModtime returns the time the rootChain's certificate resource was last updated at.
-func (rc rootChain) PemModtime() time.Time {
+func (rc rootChain) Modtime() time.Time {
 	// use Order default
-	return orders.Order(rc).PemModtime()
+	return orders.Order(rc).Modtime()
 }
 
-// end rootChain Output Pem Methods
+// end rootChain Output Methods
 
 // DownloadCertRootChainViaHeader is the handler to write just a
 // cert's chain to the client, if the proper apiKey is provided via

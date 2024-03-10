@@ -66,33 +66,21 @@ func (key Key) detailedResponse() keyDetailedResponse {
 	}
 }
 
-// Pem Output Methods
+// Output Methods
 
-// PemFilename returns the filename that should be sent to the client when Key
-// is sent to the client in Pem format
-func (key Key) PemFilename() string {
+func (key Key) FilenameNoExt() string {
 	return fmt.Sprintf("%s.key.pem", key.Name)
 }
 
-// PemContent returns the actual Pem data of the private key
 func (key Key) PemContent() string {
 	return key.Pem
 }
 
-// PemModtime returns the time the key resource was last updated at. Note: it is
-// possible for modtime to become newer without the pem actually changing
-// if other information on the key object was modified. This is acceptable
-// and preferred over other methods I considered to avoid this.
-// For example, since the Key PEM can never be modified, could use the created at
-// time instead. However, if cert's key is changed but the name is renamed back to
-// the name of the first key, the pem has effectively changed and if the 'new' key
-// actually has an older created timestamp this Modtime would be wrong and not signal
-// the need for an update.
-func (key Key) PemModtime() time.Time {
+func (key Key) Modtime() time.Time {
 	return time.Unix(int64(key.UpdatedAt), 0)
 }
 
-// end Pem Output Methods
+// end Output Methods
 
 // CryptoPrivateKey() provides a crypto.PrivateKey for the Key
 // for the Account

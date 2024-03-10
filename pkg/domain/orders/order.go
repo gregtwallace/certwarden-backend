@@ -125,16 +125,12 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 	}
 }
 
-// Pem Output Methods
+// Output Methods
 
-// PemFilename returns the filename that should be sent to the client when Order
-// is sent to the client in Pem format
-func (order Order) PemFilename() string {
+func (order Order) FilenameNoExt() string {
 	return fmt.Sprintf("%s.cert.pem", order.Certificate.Name)
 }
 
-// PemContent returns the actual Pem data of the order or an empty string
-// if the Pem does not exist
 func (order Order) PemContent() string {
 	// if Pem is nil, return empty
 	if order.Pem == nil {
@@ -144,12 +140,7 @@ func (order Order) PemContent() string {
 	return *order.Pem
 }
 
-// PemModtime returns the more recent of the time the order was last updated or the
-// order's certificate resource was last updated at.
-// It is possible for an order updated time to move backward for a "newer" cert resource
-// since a newer order could be revoked or a certificate could be renamed. Due to this
-// also check the certificate's time stamp.
-func (order Order) PemModtime() time.Time {
+func (order Order) Modtime() time.Time {
 	orderModtime := time.Unix(int64(order.UpdatedAt), 0)
 	certModtime := time.Unix(int64(order.Certificate.UpdatedAt), 0)
 
@@ -186,7 +177,7 @@ func (order Order) PemContentChainOnly() string {
 	return string(chain[beginIndex:])
 }
 
-// end Pem Output Methods
+// end Output Methods
 
 // hasPostProcessingToDo returns if a given order object is configured in a way
 // that involves one or more post processing actions

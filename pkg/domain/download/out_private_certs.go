@@ -11,18 +11,16 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// modified Order to allow implementation of custom pem functions
+// modified Order to allow implementation of custom out functions
 // to properly output the desired content
 type privateCertificate orders.Order
 
-// privateCertificate Output Pem Methods
+// privateCertificate Output Methods
 
-// PemFilename is the private cert filename
-func (pc privateCertificate) PemFilename() string {
+func (pc privateCertificate) FilenameNoExt() string {
 	return fmt.Sprintf("%s.certkey.pem", pc.Certificate.Name)
 }
 
-// PemContent returns the combined key + cert pem content without the cert chain
 func (pc privateCertificate) PemContent() string {
 	keyPem := pc.FinalizedKey.PemContent()
 	// don't include the cert chain
@@ -32,19 +30,17 @@ func (pc privateCertificate) PemContent() string {
 	return keyPem + string([]byte{10}) + certPem
 }
 
-// PemModtime compares the modtimes for the private certificate's key and certificate. It returns
-// whichever time is more recent.
-func (pc privateCertificate) PemModtime() time.Time {
+func (pc privateCertificate) Modtime() time.Time {
 	// if key is nil, return 0 time since Pem output of thie type will fail anyway without a key
 	if pc.FinalizedKey == nil {
 		return time.Time{}
 	}
 
 	// key time
-	keyModtime := pc.FinalizedKey.PemModtime()
+	keyModtime := pc.FinalizedKey.Modtime()
 
 	// order (cert) time
-	certModtime := orders.Order(pc).PemModtime()
+	certModtime := orders.Order(pc).Modtime()
 
 	// return more recent of the two
 	if keyModtime.After(certModtime) {
@@ -53,7 +49,7 @@ func (pc privateCertificate) PemModtime() time.Time {
 	return certModtime
 }
 
-// end privateCertificate Output Pem Methods
+// end privateCertificate Output Methods
 
 // DownloadPrivateCertViaHeader
 func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *http.Request) *output.Error {
