@@ -4,9 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/datatypes/environment"
 	"os"
-	"strings"
 
 	goacme_challenge "github.com/go-acme/lego/v4/challenge"
 	goacme_dns "github.com/go-acme/lego/v4/providers/dns"
@@ -31,14 +30,13 @@ type Config struct {
 	// Available in docs as "CLI flag name" or "Code"
 	DnsProviderName string `json:"dns_provider_name"`
 	// available options listed for each provider in go-acme docs
-	Environment output.RedactedEnvironmentParams `yaml:"environment" json:"environment"`
+	Environment []string `yaml:"environment" json:"environment"`
 }
 
 // provider Service struct
 type Service struct {
-	logger          *zap.SugaredLogger
-	environmentVars []string
-	goacmeProvider  goacme_challenge.Provider
+	logger         *zap.SugaredLogger
+	goacmeProvider goacme_challenge.Provider
 }
 
 // NewService creates a new service
@@ -56,16 +54,14 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// environment vars
-	service.environmentVars = cfg.Environment.Unredacted()
-
-	// set environment vars
-	for _, envVar := range service.environmentVars {
-		envVarPieces := strings.Split(envVar, "=")
-		if len(envVarPieces) != 2 {
-			return nil, errors.New("go-acme environment variable is improperly formatted, should be name=value")
-		}
-		err := os.Setenv(envVarPieces[0], envVarPieces[1])
+	// set environment
+	envParams, invalidParams := environment.NewParams(cfg.Environment)
+	envMap := envParams.KeyValMap()
+	if len(invalidParams) > 0 {
+		service.logger.Errorf("dns-01 go-acme some environment param(s) invalid and won't be used (%s)", invalidParams)
+	}
+	for key, val := range envMap {
+		err := os.Setenv(key, val)
 		if err != nil {
 			return nil, fmt.Errorf("go-acme failed to set environment variable (%s)", err)
 		}
@@ -78,14 +74,11 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, fmt.Errorf("failed to configure go-acme dns provider (%s)", err)
 	}
 
-	// clear environment vars (only needed during creation of go-acme provider)
-	for _, envVar := range service.environmentVars {
-		envVarPieces := strings.Split(envVar, "=")
-		// skip len check, already done during creation
-		err := os.Unsetenv(envVarPieces[0])
+	// clear environment (only needed during creation of the go-acme provider)
+	for key := range envMap {
+		err := os.Unsetenv(key)
 		if err != nil {
-			// don't exit, just log
-			service.logger.Errorf("go-acme failed to unset environment variable (%s)", err)
+			return nil, fmt.Errorf("go-acme failed to clear environment variable (%s)", err)
 		}
 	}
 
@@ -106,11 +99,6 @@ func (service *Service) UpdateService(app App, cfg *Config) error {
 	// if no config, error
 	if cfg == nil {
 		return errServiceComponent
-	}
-
-	// try to fix redacted vals from client
-	if cfg.Environment != nil {
-		cfg.Environment.TryUnredact(service.environmentVars)
 	}
 
 	// don't need to do anything with "old" Service, just set a new one

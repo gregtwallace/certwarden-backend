@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"legocerthub-backend/pkg/datatypes/environment"
 	"net/http"
 	"os"
 	"os/exec"
@@ -41,40 +42,37 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 	// {{CERTIFICATE_PEM}}					= the pem of the complete certificate chain for the order
 	// {{CERTIFICATE_COMMON_NAME}}	= the common name of the certificate
 
+	// make Params (which sanitizes the env params and handles things like removing quotes)
+	envParams, invalidParams := environment.NewParams(order.Certificate.PostProcessingEnvironment)
+	if len(invalidParams) > 0 {
+		j.service.logger.Errorf("post processing worker %d: order %d: %s are not properly formatted environment param(s), they will be skipped", workerID, order.ID, invalidParams)
+	}
+
+	// make environ from Params and update placeholders with proper values
 	environ := []string{}
+	for key, val := range envParams.KeyValMap() {
+		switch upperVal := strings.ToUpper(val); upperVal {
+		case "{{PRIVATE_KEY_NAME}}":
+			val = order.FinalizedKey.Name
 
-	// update placeholders and set user values
-	for i := range order.Certificate.PostProcessingEnvironment {
-		envItemSplit := strings.SplitN(order.Certificate.PostProcessingEnvironment[i], "=", -1)
+		case "{{PRIVATE_KEY_PEM}}":
+			val = order.FinalizedKey.Pem
 
-		// only append properly formatted vars (i.e. VAR=someValue; len after = split == 2)
-		if len(envItemSplit) == 2 {
-			// do replacements if user val is a value that should be replaced
-			switch val := strings.ToUpper(envItemSplit[1]); val {
-			case "{{PRIVATE_KEY_NAME}}":
-				envItemSplit[1] = order.FinalizedKey.Name
+		case "{{CERTIFICATE_NAME}}":
+			val = order.Certificate.Name
 
-			case "{{PRIVATE_KEY_PEM}}":
-				envItemSplit[1] = order.FinalizedKey.Pem
+		case "{{CERTIFICATE_PEM}}":
+			val = *order.Pem
 
-			case "{{CERTIFICATE_NAME}}":
-				envItemSplit[1] = order.Certificate.Name
+		case "{{CERTIFICATE_COMMON_NAME}}":
+			val = order.Certificate.Subject
 
-			case "{{CERTIFICATE_PEM}}":
-				envItemSplit[1] = *order.Pem
-
-			case "{{CERTIFICATE_COMMON_NAME}}":
-				envItemSplit[1] = order.Certificate.Subject
-
-			default:
-				// no-op - user specified some other value
-			}
-
-			// append to environment
-			environ = append(environ, envItemSplit[0]+"="+envItemSplit[1])
-		} else {
-			j.service.logger.Errorf("post processing worker %d: order %d: %s is not a properly formatted environment variable, it will be skipped", workerID, order.ID, order.Certificate.PostProcessingEnvironment[i])
+		default:
+			// no-op - user specified some other value
 		}
+
+		// append to environment
+		environ = append(environ, key+"="+val)
 	}
 
 	// open and read (up to) the first 512 bytes of post processing script/binary to decide if it is binary or not

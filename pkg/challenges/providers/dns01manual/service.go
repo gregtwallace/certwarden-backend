@@ -3,7 +3,7 @@ package dns01manual
 import (
 	"errors"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/datatypes/environment"
 	"os/exec"
 
 	"go.uber.org/zap"
@@ -20,11 +20,11 @@ type App interface {
 
 // provider Service struct
 type Service struct {
-	logger           *zap.SugaredLogger
-	shellPath        string
-	environmentVars  []string
-	createScriptPath string
-	deleteScriptPath string
+	logger            *zap.SugaredLogger
+	shellPath         string
+	environmentParams *environment.Params
+	createScriptPath  string
+	deleteScriptPath  string
 }
 
 // ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
@@ -38,9 +38,9 @@ func (service *Service) Stop() error { return nil }
 
 // Configuration options
 type Config struct {
-	Environment  output.RedactedEnvironmentParams `yaml:"environment" json:"environment"`
-	CreateScript string                           `yaml:"create_script" json:"create_script"`
-	DeleteScript string                           `yaml:"delete_script" json:"delete_script"`
+	Environment  []string `yaml:"environment" json:"environment"`
+	CreateScript string   `yaml:"create_script" json:"create_script"`
+	DeleteScript string   `yaml:"delete_script" json:"delete_script"`
 }
 
 // NewService creates a new service
@@ -83,7 +83,11 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// environment vars
-	service.environmentVars = cfg.Environment.Unredacted()
+	var invalidParams []string
+	service.environmentParams, invalidParams = environment.NewParams(cfg.Environment)
+	if len(invalidParams) > 0 {
+		service.logger.Errorf("dns-01 manual: some environment param(s) invalid and won't be used (%s)", invalidParams)
+	}
 
 	// set script locations
 	service.createScriptPath = cfg.CreateScript
@@ -97,11 +101,6 @@ func (service *Service) UpdateService(app App, cfg *Config) error {
 	// if no config, error
 	if cfg == nil {
 		return errServiceComponent
-	}
-
-	// try to fix redacted vals from client
-	if cfg.Environment != nil {
-		cfg.Environment.TryUnredact(service.environmentVars)
 	}
 
 	// don't need to do anything with "old" Service, just set a new one

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/output"
+	"legocerthub-backend/pkg/datatypes/environment"
 	"os"
 	"os/exec"
 	"runtime"
@@ -31,11 +31,11 @@ type App interface {
 
 // provider Service struct
 type Service struct {
-	logger          *zap.SugaredLogger
-	shellPath       string
-	shellScriptPath string
-	dnsHook         string
-	environmentVars []string
+	logger            *zap.SugaredLogger
+	shellPath         string
+	shellScriptPath   string
+	dnsHook           string
+	environmentParams *environment.Params
 }
 
 // ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
@@ -49,9 +49,9 @@ func (service *Service) Stop() error { return nil }
 
 // Configuration options
 type Config struct {
-	AcmeShPath  string                           `yaml:"acme_sh_path" json:"acme_sh_path"`
-	Environment output.RedactedEnvironmentParams `yaml:"environment" json:"environment"`
-	DnsHook     string                           `yaml:"dns_hook" json:"dns_hook"`
+	AcmeShPath  string   `yaml:"acme_sh_path" json:"acme_sh_path"`
+	Environment []string `yaml:"environment" json:"environment"`
+	DnsHook     string   `yaml:"dns_hook" json:"dns_hook"`
 }
 
 // NewService creates a new service
@@ -123,7 +123,11 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	service.dnsHook = cfg.DnsHook
 
 	// environment vars
-	service.environmentVars = cfg.Environment.Unredacted()
+	var invalidParams []string
+	service.environmentParams, invalidParams = environment.NewParams(cfg.Environment)
+	if len(invalidParams) > 0 {
+		service.logger.Errorf("dns-01 acme.sh some environment param(s) invalid and won't be used (%s)", invalidParams)
+	}
 
 	return service, nil
 }
@@ -133,11 +137,6 @@ func (service *Service) UpdateService(app App, cfg *Config) error {
 	// if no config, error
 	if cfg == nil {
 		return errServiceComponent
-	}
-
-	// try to fix redacted vals from client
-	if cfg.Environment != nil {
-		cfg.Environment.TryUnredact(service.environmentVars)
 	}
 
 	// don't need to do anything with "old" Service, just set a new one

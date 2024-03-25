@@ -34,7 +34,7 @@ func (service *Service) makeCommand(dnsRecordName, dnsRecordValue string, delete
 	cmd := exec.Command(service.shellPath, args...)
 
 	// set command environment
-	cmd.Env = append(os.Environ(), service.environmentVars...)
+	cmd.Env = append(os.Environ(), service.environmentParams.StringSlice()...)
 
 	return cmd
 }

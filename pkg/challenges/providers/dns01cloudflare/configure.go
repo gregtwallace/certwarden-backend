@@ -21,12 +21,12 @@ const apiCallTimeout = 10 * time.Second
 type Config struct {
 	// Account
 	Account *struct {
-		Email        *string                `yaml:"email" json:"email"`
-		GlobalApiKey *output.RedactedString `yaml:"global_api_key" json:"global_api_key"`
+		Email        *string `yaml:"email" json:"email"`
+		GlobalApiKey *string `yaml:"global_api_key" json:"global_api_key"`
 	} `yaml:"account,omitempty" json:"account,omitempty"`
 	// -- OR --
 	// Token
-	ApiToken *output.RedactedString `yaml:"api_token,omitempty" json:"api_token,omitempty"`
+	ApiToken *string `yaml:"api_token,omitempty" json:"api_token,omitempty"`
 }
 
 // redactedIdentifier selects the correct identifier field and then returns the identifier
@@ -34,12 +34,12 @@ type Config struct {
 func (cfg *Config) redactedIdentifier() string {
 	// if token specified
 	if cfg.ApiToken != nil {
-		return output.RedactString(string(*cfg.ApiToken))
+		return output.RedactString(*cfg.ApiToken)
 	}
 
 	// if global api key
 	if cfg.Account.GlobalApiKey != nil {
-		id := output.RedactString(string(*cfg.Account.GlobalApiKey))
+		id := output.RedactString(*cfg.Account.GlobalApiKey)
 		if cfg.Account.Email != nil {
 			id = id + " - " + *cfg.Account.Email
 		}
@@ -69,11 +69,11 @@ func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 	// if using apiToken
 	if cfg.ApiToken != nil {
 		// make api for the token
-		service.cloudflareApi, err = cloudflare.NewWithAPIToken(string(*cfg.ApiToken), service.httpClient.AsCloudflareOptions()...)
+		service.cloudflareApi, err = cloudflare.NewWithAPIToken(*cfg.ApiToken, service.httpClient.AsCloudflareOptions()...)
 		// defer to common err check
 	} else if cfg.Account != nil && cfg.Account.Email != nil && cfg.Account.GlobalApiKey != nil {
 		// else if using Account
-		service.cloudflareApi, err = cloudflare.New(string(*cfg.Account.GlobalApiKey), *cfg.Account.Email, service.httpClient.AsCloudflareOptions()...)
+		service.cloudflareApi, err = cloudflare.New(*cfg.Account.GlobalApiKey, *cfg.Account.Email, service.httpClient.AsCloudflareOptions()...)
 		// defer to common err check
 	} else {
 		// else incomplete config

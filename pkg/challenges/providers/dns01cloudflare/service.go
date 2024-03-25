@@ -71,14 +71,6 @@ func (service *Service) UpdateService(app App, cfg *Config) error {
 		return errServiceComponent
 	}
 
-	// try to fix redacted vals from client
-	if cfg.Account != nil {
-		cfg.Account.GlobalApiKey.TryUnredact(service.apiIdentifier())
-
-	} else if cfg.ApiToken != nil && cfg.ApiToken.Redacted() == service.redactedApiIdentifier() {
-		cfg.ApiToken.TryUnredact(service.apiIdentifier())
-	}
-
 	// don't need to do anything with "old" Service, just set a new one
 	newServ, err := NewService(app, cfg)
 	if err != nil {

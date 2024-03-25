@@ -180,6 +180,8 @@ replace legocerthub-backend/pkg/challenges/providers/dns01manual => /pkg/challen
 
 replace legocerthub-backend/pkg/challenges/providers/http01internal => /pkg/challenges/providers/http01internal
 
+replace legocerthub-backend/pkg/datatypes/environment => /pkg/datatypes/environment
+
 replace legocerthub-backend/pkg/datatypes/job_manager => /pkg/datatypes/job_manager
 
 replace legocerthub-backend/pkg/datatypes/ringbuffer => /pkg/datatypes/ringbuffer
