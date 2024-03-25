@@ -8,6 +8,7 @@ import (
 	"os"
 
 	goacme_challenge "github.com/go-acme/lego/v4/challenge"
+	goacme_dns01 "github.com/go-acme/lego/v4/challenge/dns01"
 	goacme_dns "github.com/go-acme/lego/v4/providers/dns"
 	"go.uber.org/zap"
 )
@@ -65,6 +66,19 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		if err != nil {
 			return nil, fmt.Errorf("go-acme failed to set environment variable (%s)", err)
 		}
+	}
+
+	// go-acme annoyingly does dns lookups - try to deduce the system dns servers
+	// and use them (if none found, no-op, which go-acme will use its default)
+	dnsServers := GetDNSServers()
+	if len(dnsServers) > 0 {
+		dnsServerStrings := []string{}
+		for _, dnsServ := range dnsServers {
+			dnsServerStrings = append(dnsServerStrings, dnsServ.String())
+		}
+		// note: AddRecursiveNameservers returns a func that sets go-acme's 'global' dns servers;
+		// call this func (use nil since the func doesn't actually use the challenge) to set the dns servers
+		goacme_dns01.AddRecursiveNameservers(dnsServerStrings)(nil)
 	}
 
 	// make go acme provider
