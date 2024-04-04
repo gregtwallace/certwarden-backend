@@ -29,26 +29,26 @@ func NewParams(envParams []string) (p *Params, invalidParams []string) {
 
 	// for each param, parse to get key and value
 	for _, oneParam := range envParams {
-		paramPieces := strings.Split(oneParam, "=")
-		if len(paramPieces) != 2 {
+		paramName, paramValue, sepFound := strings.Cut(oneParam, "=")
+		if !sepFound {
 			// invalid param, append to invalid
 			invalidParams = append(invalidParams, oneParam)
 			continue
 		}
 
 		// remove quoting, if present
-		if (strings.HasPrefix(paramPieces[0], "\"") && strings.HasSuffix(paramPieces[0], "\"")) ||
-			(strings.HasPrefix(paramPieces[0], "'") && strings.HasSuffix(paramPieces[0], "'")) {
-			paramPieces[0] = paramPieces[0][1 : len(paramPieces[0])-1]
+		if (strings.HasPrefix(paramName, "\"") && strings.HasSuffix(paramName, "\"")) ||
+			(strings.HasPrefix(paramName, "'") && strings.HasSuffix(paramName, "'")) {
+			paramName = paramName[1 : len(paramName)-1]
 		}
-		if (strings.HasPrefix(paramPieces[1], "\"") && strings.HasSuffix(paramPieces[1], "\"")) ||
-			(strings.HasPrefix(paramPieces[1], "'") && strings.HasSuffix(paramPieces[1], "'")) {
-			paramPieces[1] = paramPieces[1][1 : len(paramPieces[1])-1]
+		if (strings.HasPrefix(paramValue, "\"") && strings.HasSuffix(paramValue, "\"")) ||
+			(strings.HasPrefix(paramValue, "'") && strings.HasSuffix(paramValue, "'")) {
+			paramValue = paramValue[1 : len(paramValue)-1]
 		}
 
 		// add to valid slice & map
 		pSlice = append(pSlice, oneParam)
-		pMap[paramPieces[0]] = paramPieces[1]
+		pMap[paramName] = paramValue
 	}
 
 	p = &Params{
