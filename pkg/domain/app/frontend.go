@@ -88,9 +88,9 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		return output.ErrInternal
 	}
 
-	// TODO: REMOVE WHEN PROPER NONCE SUPPORT IN VITE!
-	// this modifies the code of the relevant module to be able to inject the nonce from meta tag
-	// if emotion_sheet-*.js file, modify code to enable getting nonce from index.html's meta tag
+	// TODO: Remove when Vite/Emotion can properly handle this.
+	// This modifies the code of the relevant module (emotion sheet) to inject the nonce from the
+	// html meta tag.
 	if strings.HasPrefix(fPath, "/assets/emotion_sheet-") && fExt == ".js" {
 		// read in file to serve
 		fBytes := make([]byte, fInfo.Size())
@@ -115,7 +115,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		http.ServeContent(w, r, fInfo.Name(), fInfo.ModTime(), strings.NewReader(fString))
 		return nil
 	}
-	// END - TODO: REMOVE WHEN PROPER NONCE SUPPORT IN VITE
+	// END - TODO: Remove when Vite/Emotion can properly handle this.
 
 	// if fExt is of an approved type, generate a nonce, do nonce injection, and set the CSP
 	if fExt == ".html" {
