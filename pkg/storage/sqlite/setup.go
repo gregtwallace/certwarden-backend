@@ -63,13 +63,27 @@ func OpenStorage(app App) (*Storage, error) {
 	// check if db file exists
 	dbExists := true
 	if _, err := os.Stat(dbWithPath); errors.Is(err, os.ErrNotExist) {
-		dbExists = false
-		store.logger.Warn("database file does not exist, creating a new one")
-		// create db file
-		err := os.WriteFile(dbWithPath, []byte{}, dbFileMode)
+		// if doesn't exist, check for old db file name (from pre-rename)
+		oldDbWithPath := app.GetDataStorageAppDataPath() + "/lego-certhub.db"
+		_, err := os.Stat(oldDbWithPath)
 		if err != nil {
-			store.logger.Errorf("failed to create new database file", err)
-			return nil, err
+			// neither new or old file name exist
+			dbExists = false
+			store.logger.Warn("database file does not exist, creating a new one")
+			// create db file
+			err := os.WriteFile(dbWithPath, []byte{}, dbFileMode)
+			if err != nil {
+				store.logger.Errorf("failed to create new database file", err)
+				return nil, err
+			}
+		} else {
+			// rename old db to new filename
+			err = os.Rename(oldDbWithPath, dbWithPath)
+			if err != nil {
+				store.logger.Errorf("failed to rename old database file to new filename", err)
+				return nil, err
+			}
+			store.logger.Info("old database file renamed to new database filename")
 		}
 	}
 
