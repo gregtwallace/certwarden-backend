@@ -1,8 +1,8 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/certificates"
 	"context"
-	"legocerthub-backend/pkg/domain/certificates"
 )
 
 // PostNewAccount inserts a new cert into the db

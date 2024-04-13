@@ -1,9 +1,9 @@
 package acme_servers
 
 import (
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/output"
 	"encoding/json"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
 	"time"

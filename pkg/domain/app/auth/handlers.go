@@ -1,9 +1,9 @@
 package auth
 
 import (
+	"certwarden-backend/pkg/output"
 	"encoding/json"
 	"fmt"
-	"legocerthub-backend/pkg/output"
 	"net/http"
 
 	"golang.org/x/crypto/bcrypt"

@@ -1,9 +1,9 @@
 package orders
 
 import (
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/domain/certificates"
 	"errors"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/domain/certificates"
 	"time"
 )
 

@@ -1,11 +1,11 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/app/auth"
+	"certwarden-backend/pkg/storage"
 	"context"
 	"database/sql"
 	"errors"
-	"legocerthub-backend/pkg/domain/app/auth"
-	"legocerthub-backend/pkg/storage"
 )
 
 // dbToUser converts the user db object to app object

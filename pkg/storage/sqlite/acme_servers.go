@@ -1,6 +1,6 @@
 package sqlite
 
-import "legocerthub-backend/pkg/domain/acme_servers"
+import "certwarden-backend/pkg/domain/acme_servers"
 
 // acmeServerDb is a single acme server, as database table fields
 // corresponds to acme_servers.Server

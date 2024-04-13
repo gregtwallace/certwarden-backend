@@ -1,10 +1,10 @@
 package auth
 
 import (
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/randomness"
 	"context"
 	"errors"
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/randomness"
 	"sync"
 
 	"go.uber.org/zap"
@@ -51,7 +51,7 @@ type Service struct {
 	sessionManager   *sessionManager
 }
 
-// NewService creates a new (local LeGo) users service
+// NewService creates a new users service
 func NewService(app App) (*Service, error) {
 	service := new(Service)
 	var err error

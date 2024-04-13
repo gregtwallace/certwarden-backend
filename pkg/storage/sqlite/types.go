@@ -1,8 +1,8 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/certificates"
 	"encoding/json"
-	"legocerthub-backend/pkg/domain/certificates"
 )
 
 // jsonStringSlice is a string type in storage that is a json formatted

@@ -2,9 +2,9 @@ package app
 
 import (
 	"bytes"
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/randomness"
 	"fmt"
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/randomness"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -21,9 +21,9 @@ const frontendEnvFile = frontendBuildDir + "/env.js"
 var noncePlaceholder = []byte("{SERVER-CSP-NONCE}")
 
 // setContentSecurityPolicy sets w's CSP to allow a very limited subset of content that the
-// LeGo react app loads.
+// react app loads.
 func setContentSecurityPolicy(w http.ResponseWriter, nonce []byte) {
-	// LeGo app's security policy
+	// app's security policy
 	nonceString := string(nonce)
 	var contentSecurityPolicy = []string{
 		"default-src 'none'",

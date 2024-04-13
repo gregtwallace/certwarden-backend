@@ -1,9 +1,9 @@
 package dns01manual
 
 import (
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/datatypes/environment"
 	"errors"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/datatypes/environment"
 	"os/exec"
 
 	"go.uber.org/zap"

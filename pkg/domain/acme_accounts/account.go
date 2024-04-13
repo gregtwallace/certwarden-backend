@@ -1,10 +1,10 @@
 package acme_accounts
 
 import (
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/domain/acme_servers"
-	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/domain/acme_servers"
+	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/domain/private_keys/key_crypto"
 )
 
 // Account is a single ACME account

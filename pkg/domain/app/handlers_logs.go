@@ -3,9 +3,9 @@ package app
 import (
 	"archive/zip"
 	"bytes"
+	"certwarden-backend/pkg/output"
 	"encoding/json"
 	"io"
-	"legocerthub-backend/pkg/output"
 	"net/http"
 	"os"
 	"strings"

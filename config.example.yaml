@@ -9,7 +9,7 @@
 # this week.  10+ chars, upper/lower case, & special chars is strongly recommended.
 
 # config_version is used to track changes in the config file schema. it must match
-# LeGo's expected schema version. If it does not, LeGo will try to migrate from the
+# Cert Warden's expected schema version. If it does not, Cert Warden will try to migrate from the
 # current schema. If it cannot, the server will not start and manual config editing
 # will be required.
 'config_version': 3
@@ -51,12 +51,12 @@
   - 'http://localhost:5173'
   - 'https://frontend.example.com:8099'
 
-# LeGo Server's https certificate
+# Cert Warden Server's https certificate
 # The name should match the 'name' field of the desired certificate in the
 # application. They relevant key is deduced based on the certificate.
 # If not specified (or invalid), the application launches over http instead
 # of https.
-'certificate_name': 'mylego.example.com'
+'certificate_name': 'certwarden.example.com'
 # The HTTP Strict Transport Security (HSTS) header is automatically added when running
 # in https. This setting will disable the header if you don't want HSTS.
 'disable_hsts': true
@@ -67,13 +67,13 @@
 'pprof_http_port': 8065
 'pprof_https_port': 8070
 
-# LeGo update checking functionality to alert you when new versions are available
+# Cert Warden update checking functionality to alert you when new versions are available
 'updater':
   'auto_check': true
   # currently beta is the only channel
   'channel': 'beta'
 
-# Automatic on-disk backups of LeGo ./<data> folder
+# Automatic on-disk backups of Cert Warden ./<data> folder
 'backup':
   # do automatic backup and deletion of old backups?
   'enabled': true
@@ -100,7 +100,7 @@
 
 # Challenge Providers
 'challenges':
-  # DNS Checker allows LeGo to verify DNS records have propagated before informing
+  # DNS Checker allows Cert Warden to verify DNS records have propagated before informing
   # the ACME server the challenge is ready. If no providers are configured that
   # use DNS, this functionality is automatically disabled.
   'dns_checker':
@@ -122,7 +122,7 @@
       - 'primary_ip': '45.90.28.0'
         'secondary_ip': '45.90.28.255'
 
-  # Providers are critical to LeGo's function. These are how you verify control over
+  # Providers are critical to Cert Warden's function. These are how you verify control over
   # the domains you issue certificates for. You must have at least one provider.
   # If you only use one provider (or otherwise want to fall back to one for any domain
   # not explicitly configured) you can specify a single domain for the provider as '*'
@@ -160,7 +160,7 @@
 
     # acme-dns server (https://github.com/joohoi/acme-dns)
     # each name must be pre-registered and configured individually
-    # LeGo only updates the challenge tokens automatically
+    # Cert Warden only updates the challenge tokens automatically
     'dns_01_acme_dns':
       - 'domains':
           - 'domain.com'
@@ -193,7 +193,7 @@
           - 'another.net'
         # path to the acme.sh script. /dnsapi subfolder must also exist and contain
         # the script for the relevant dns provider (hook script)
-        # acme.sh is installed with LeGo by default at the default path so
+        # acme.sh is installed with Cert Warden by default at the default path so
         # you should not need to change this
         'acme_sh_path': './scripts/acme.sh'
         # for environment and dns_hook, see:
@@ -216,7 +216,7 @@
           - 'ANOTHER_EXPORT_ENV=another_value'
         'dns_hook': 'dns_gd'
 
-    # native Cloudflare support baked into LeGo
+    # native Cloudflare support baked into Cert Warden
     # multiple instances can be created for various different keys and/or accounts
     'dns_01_cloudflare':
       # you can use an account OR

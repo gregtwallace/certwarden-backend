@@ -1,10 +1,10 @@
 package updater
 
 import (
+	"certwarden-backend/pkg/httpclient"
+	"certwarden-backend/pkg/output"
 	"context"
 	"errors"
-	"legocerthub-backend/pkg/httpclient"
-	"legocerthub-backend/pkg/output"
 	"sync"
 	"time"
 
@@ -50,7 +50,7 @@ type Config struct {
 	Channel   *Channel `yaml:"channel"`
 }
 
-// NewService creates a new (local LeGo) users service
+// NewService creates a new service
 func NewService(app App, cfg *Config) (*Service, error) {
 	service := new(Service)
 

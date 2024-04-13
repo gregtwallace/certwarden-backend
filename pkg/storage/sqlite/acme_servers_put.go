@@ -1,8 +1,8 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/acme_servers"
 	"context"
-	"legocerthub-backend/pkg/domain/acme_servers"
 )
 
 // PutServerUpdate updates details about an acme Server

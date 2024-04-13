@@ -1,7 +1,7 @@
 package download
 
 import (
-	"legocerthub-backend/pkg/output"
+	"certwarden-backend/pkg/output"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"

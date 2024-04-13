@@ -1,12 +1,12 @@
 package safecert
 
 import (
+	"certwarden-backend/pkg/httpclient"
 	"context"
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
 	"io"
-	"legocerthub-backend/pkg/httpclient"
 	"math/rand"
 	"net/http"
 	"time"

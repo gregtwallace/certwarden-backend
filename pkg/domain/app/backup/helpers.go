@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const backupFilePrefix = "lego_certhub_backup."
+const backupFilePrefix = "cert_warden_backup."
 const backupFileSuffix = ".zip"
 
 // makeBackupZipFileName creates the filename for a new backup created now

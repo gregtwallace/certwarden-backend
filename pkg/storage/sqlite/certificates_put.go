@@ -1,8 +1,8 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/certificates"
 	"context"
-	"legocerthub-backend/pkg/domain/certificates"
 	"time"
 )
 

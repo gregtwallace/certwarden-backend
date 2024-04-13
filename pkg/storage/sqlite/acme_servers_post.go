@@ -1,8 +1,8 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/acme_servers"
 	"context"
-	"legocerthub-backend/pkg/domain/acme_servers"
 )
 
 // PostNewServer saves the KeyExtended to the db as a new key

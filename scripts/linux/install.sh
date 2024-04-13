@@ -1,8 +1,8 @@
 #/bin/sh
 
 # install path and username
-lego_path="/opt/legocerthub"
-lego_user="legocerthub"
+install_path="/opt/certwarden"
+run_user="certwarden"
 
 
 # Check for root
@@ -13,23 +13,20 @@ script_path=$(dirname $0)
 cd "$script_path"
 
 # create user to run app
-useradd -r -s /bin/false "$lego_user"
+useradd -r -s /bin/false "$run_user"
 
 # copy all files to install path
-mkdir "$lego_path"
-cp -R ../* "$lego_path"
+mkdir "$path"
+cp -R ../* "$install_path"
 
 # permissions
-./set_permissions.sh "$lego_path" "$lego_user"
+./set_permissions.sh "$install_path" "$run_user"
 
 # allow binding to low port numbers
-case $(uname -m) in
-    x86_64) setcap CAP_NET_BIND_SERVICE=+eip /opt/legocerthub/lego-linux-amd64 ;;
-    arm)    setcap CAP_NET_BIND_SERVICE=+eip /opt/legocerthub/lego-linux-arm64 ;;
-esac
+setcap CAP_NET_BIND_SERVICE=+eip /opt/certwarden/certwarden
 
 # install and start service
-cp ./legocerthub.service /etc/systemd/system/legocerthub.service
+cp ./certwarden.service /etc/systemd/system/certwarden.service
 systemctl daemon-reload
-systemctl enable legocerthub
-systemctl start legocerthub
+systemctl enable certwarden
+systemctl start certwarden

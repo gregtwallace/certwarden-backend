@@ -1,8 +1,8 @@
 package challenges
 
 import (
+	"certwarden-backend/pkg/challenges/providers"
 	"errors"
-	"legocerthub-backend/pkg/challenges/providers"
 	"time"
 )
 

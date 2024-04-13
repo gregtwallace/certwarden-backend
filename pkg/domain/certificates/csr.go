@@ -1,10 +1,10 @@
 package certificates
 
 import (
+	"certwarden-backend/pkg/domain/private_keys/key_crypto"
 	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 )
 
 // MakeCsrDer generates the CSR bytes for ACME to POST To a Finalize URL

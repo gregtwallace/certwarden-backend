@@ -1,9 +1,9 @@
 package certificates
 
 import (
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/domain/acme_accounts"
+	"certwarden-backend/pkg/domain/private_keys"
 )
 
 // Certificate is a single certificate with all of its fields

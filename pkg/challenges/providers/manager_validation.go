@@ -1,9 +1,9 @@
 package providers
 
 import (
+	"certwarden-backend/pkg/validation"
 	"errors"
 	"fmt"
-	"legocerthub-backend/pkg/validation"
 )
 
 // unsafeValidateDomains verifies that the domains are all valid

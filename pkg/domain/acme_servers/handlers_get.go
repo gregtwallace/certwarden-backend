@@ -1,8 +1,8 @@
 package acme_servers
 
 import (
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/pagination_sort"
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/pagination_sort"
 	"net/http"
 	"strconv"
 

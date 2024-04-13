@@ -1,13 +1,13 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/acme_accounts"
+	"certwarden-backend/pkg/pagination_sort"
+	"certwarden-backend/pkg/storage"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/pagination_sort"
-	"legocerthub-backend/pkg/storage"
 )
 
 // GetAllAccounts returns a slice of all of the Accounts in the database

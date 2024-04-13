@@ -1,8 +1,8 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/acme_accounts"
 	"context"
-	"legocerthub-backend/pkg/domain/acme_accounts"
 )
 
 // PutNameDescAccount only updates the name and desc in the database

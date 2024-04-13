@@ -1,8 +1,8 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/private_keys"
 	"context"
-	"legocerthub-backend/pkg/domain/private_keys"
 )
 
 // PostNewKey saves the KeyExtended to the db as a new key

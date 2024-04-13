@@ -1,8 +1,8 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/storage"
 	"context"
-	"legocerthub-backend/pkg/storage"
 )
 
 // DeleteCert deletes a cert from the database

@@ -1,14 +1,14 @@
 package providers
 
 import (
+	"certwarden-backend/pkg/challenges/providers/dns01acmedns"
+	"certwarden-backend/pkg/challenges/providers/dns01acmesh"
+	"certwarden-backend/pkg/challenges/providers/dns01cloudflare"
+	"certwarden-backend/pkg/challenges/providers/dns01goacme"
+	"certwarden-backend/pkg/challenges/providers/dns01manual"
+	"certwarden-backend/pkg/challenges/providers/http01internal"
+	"certwarden-backend/pkg/randomness"
 	"errors"
-	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
-	"legocerthub-backend/pkg/challenges/providers/dns01acmesh"
-	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
-	"legocerthub-backend/pkg/challenges/providers/dns01goacme"
-	"legocerthub-backend/pkg/challenges/providers/dns01manual"
-	"legocerthub-backend/pkg/challenges/providers/http01internal"
-	"legocerthub-backend/pkg/randomness"
 	"reflect"
 	"strings"
 )

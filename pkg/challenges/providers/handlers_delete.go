@@ -1,9 +1,9 @@
 package providers
 
 import (
+	"certwarden-backend/pkg/output"
 	"encoding/json"
 	"fmt"
-	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
 

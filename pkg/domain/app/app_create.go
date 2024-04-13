@@ -1,24 +1,24 @@
 package app
 
 import (
+	"certwarden-backend/pkg/challenges"
+	"certwarden-backend/pkg/datatypes/safecert"
+	"certwarden-backend/pkg/domain/acme_accounts"
+	"certwarden-backend/pkg/domain/acme_servers"
+	"certwarden-backend/pkg/domain/app/auth"
+	"certwarden-backend/pkg/domain/app/backup"
+	"certwarden-backend/pkg/domain/app/updater"
+	"certwarden-backend/pkg/domain/authorizations"
+	"certwarden-backend/pkg/domain/certificates"
+	"certwarden-backend/pkg/domain/download"
+	"certwarden-backend/pkg/domain/orders"
+	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/httpclient"
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/storage/sqlite"
 	"context"
 	"errors"
 	"fmt"
-	"legocerthub-backend/pkg/challenges"
-	"legocerthub-backend/pkg/datatypes/safecert"
-	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/domain/acme_servers"
-	"legocerthub-backend/pkg/domain/app/auth"
-	"legocerthub-backend/pkg/domain/app/backup"
-	"legocerthub-backend/pkg/domain/app/updater"
-	"legocerthub-backend/pkg/domain/authorizations"
-	"legocerthub-backend/pkg/domain/certificates"
-	"legocerthub-backend/pkg/domain/download"
-	"legocerthub-backend/pkg/domain/orders"
-	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/httpclient"
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/storage/sqlite"
 	"os"
 	"os/signal"
 	"runtime"
@@ -36,7 +36,7 @@ func create() (*Application, error) {
 	app.initZapLogger()
 
 	// startup log
-	app.logger.Infof("starting LeGo CertHub v%s", appVersion)
+	app.logger.Infof("starting Cert Warden v%s", appVersion)
 
 	// output service
 	app.output, err = output.NewService(app)
@@ -127,7 +127,7 @@ func create() (*Application, error) {
 	app.shutdownWaitgroup = new(sync.WaitGroup)
 
 	// create http client
-	userAgent := fmt.Sprintf("LeGoCertHub/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
+	userAgent := fmt.Sprintf("CertWarden/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
 	app.httpClient = httpclient.New(userAgent)
 
 	// start automatic backup service

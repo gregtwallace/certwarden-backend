@@ -1,10 +1,10 @@
 package private_keys
 
 import (
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/storage"
+	"certwarden-backend/pkg/validation"
 	"errors"
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/storage"
-	"legocerthub-backend/pkg/validation"
 )
 
 var (

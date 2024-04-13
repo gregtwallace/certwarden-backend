@@ -1,13 +1,13 @@
 package challenges
 
 import (
+	"certwarden-backend/pkg/challenges/dns_checker"
+	"certwarden-backend/pkg/challenges/providers"
+	"certwarden-backend/pkg/datatypes/safemap"
+	"certwarden-backend/pkg/httpclient"
+	"certwarden-backend/pkg/output"
 	"context"
 	"errors"
-	"legocerthub-backend/pkg/challenges/dns_checker"
-	"legocerthub-backend/pkg/challenges/providers"
-	"legocerthub-backend/pkg/datatypes/safemap"
-	"legocerthub-backend/pkg/httpclient"
-	"legocerthub-backend/pkg/output"
 	"sync"
 
 	"go.uber.org/zap"

@@ -1,4 +1,4 @@
-module legocerthub-backend
+module certwarden-backend
 
 go 1.22.1
 
@@ -160,68 +160,68 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace legocerthub-backend/pkg/acme => /pkg/acme
+replace certwarden-backend/pkg/acme => /pkg/acme
 
-replace legocerthub-backend/pkg/acme/nonces => /pkg/acme/nonces
+replace certwarden-backend/pkg/acme/nonces => /pkg/acme/nonces
 
-replace legocerthub-backend/pkg/challenges => /pkg/challenges
+replace certwarden-backend/pkg/challenges => /pkg/challenges
 
-replace legocerthub-backend/pkg/challenges/dns_checker => /pkg/challenges/dns_checker
+replace certwarden-backend/pkg/challenges/dns_checker => /pkg/challenges/dns_checker
 
-replace legocerthub-backend/pkg/challenges/providers => /pkg/challenges/providers
+replace certwarden-backend/pkg/challenges/providers => /pkg/challenges/providers
 
-replace legocerthub-backend/pkg/challenges/providers/dns01acmedns => /pkg/challenges/providers/dns01acmedns
+replace certwarden-backend/pkg/challenges/providers/dns01acmedns => /pkg/challenges/providers/dns01acmedns
 
-replace legocerthub-backend/pkg/challenges/providers/dns01acmesh => /pkg/challenges/providers/dns01acmesh
+replace certwarden-backend/pkg/challenges/providers/dns01acmesh => /pkg/challenges/providers/dns01acmesh
 
-replace legocerthub-backend/pkg/challenges/providers/dns01cloudflare => /pkg/challenges/providers/dns01cloudflare
+replace certwarden-backend/pkg/challenges/providers/dns01cloudflare => /pkg/challenges/providers/dns01cloudflare
 
-replace legocerthub-backend/pkg/challenges/providers/dns01manual => /pkg/challenges/providers/dns01manual
+replace certwarden-backend/pkg/challenges/providers/dns01manual => /pkg/challenges/providers/dns01manual
 
-replace legocerthub-backend/pkg/challenges/providers/http01internal => /pkg/challenges/providers/http01internal
+replace certwarden-backend/pkg/challenges/providers/http01internal => /pkg/challenges/providers/http01internal
 
-replace legocerthub-backend/pkg/datatypes/environment => /pkg/datatypes/environment
+replace certwarden-backend/pkg/datatypes/environment => /pkg/datatypes/environment
 
-replace legocerthub-backend/pkg/datatypes/job_manager => /pkg/datatypes/job_manager
+replace certwarden-backend/pkg/datatypes/job_manager => /pkg/datatypes/job_manager
 
-replace legocerthub-backend/pkg/datatypes/ringbuffer => /pkg/datatypes/ringbuffer
+replace certwarden-backend/pkg/datatypes/ringbuffer => /pkg/datatypes/ringbuffer
 
-replace legocerthub-backend/pkg/datatypes/safecert => /pkg/datatypes/safecert
+replace certwarden-backend/pkg/datatypes/safecert => /pkg/datatypes/safecert
 
-replace legocerthub-backend/pkg/datatypes/safemap => /pkg/datatypes/safemap
+replace certwarden-backend/pkg/datatypes/safemap => /pkg/datatypes/safemap
 
-replace legocerthub-backend/pkg/domain/acme_accounts => /pkg/domain/acme_accounts
+replace certwarden-backend/pkg/domain/acme_accounts => /pkg/domain/acme_accounts
 
-replace legocerthub-backend/pkg/domain/acme_servers => /pkg/domain/acme_servers
+replace certwarden-backend/pkg/domain/acme_servers => /pkg/domain/acme_servers
 
-replace legocerthub-backend/pkg/domain/app => /pkg/domain/app
+replace certwarden-backend/pkg/domain/app => /pkg/domain/app
 
-replace legocerthub-backend/pkg/domain/app/auth => /pkg/domain/app/auth
+replace certwarden-backend/pkg/domain/app/auth => /pkg/domain/app/auth
 
-replace legocerthub-backend/pkg/domain/app/backup => /pkg/domain/app/backup
+replace certwarden-backend/pkg/domain/app/backup => /pkg/domain/app/backup
 
-replace legocerthub-backend/pkg/domain/app/updater => /pkg/domain/app/updater
+replace certwarden-backend/pkg/domain/app/updater => /pkg/domain/app/updater
 
-replace legocerthub-backend/pkg/domain/authorizations => /pkg/domain/authorizations
+replace certwarden-backend/pkg/domain/authorizations => /pkg/domain/authorizations
 
-replace legocerthub-backend/pkg/domain/certificates => /pkg/domain/certificates
+replace certwarden-backend/pkg/domain/certificates => /pkg/domain/certificates
 
-replace legocerthub-backend/pkg/domain/orders => /pkg/domain/orders
+replace certwarden-backend/pkg/domain/orders => /pkg/domain/orders
 
-replace legocerthub-backend/pkg/domain/private_keys => /pkg/domain/private_keys
+replace certwarden-backend/pkg/domain/private_keys => /pkg/domain/private_keys
 
-replace legocerthub-backend/pkg/domain/private_keys/key_crypto => /pkg/domain/private_keys/key_crypto
+replace certwarden-backend/pkg/domain/private_keys/key_crypto => /pkg/domain/private_keys/key_crypto
 
-replace legocerthub-backend/pkg/httpclient => /pkg/httpclient
+replace certwarden-backend/pkg/httpclient => /pkg/httpclient
 
-replace legocerthub-backend/pkg/output => /pkg/output
+replace certwarden-backend/pkg/output => /pkg/output
 
-replace legocerthub-backend/pkg/pagination_sort => /pkg/pagination_sort
+replace certwarden-backend/pkg/pagination_sort => /pkg/pagination_sort
 
-replace legocerthub-backend/pkg/storage => /pkg/storage
+replace certwarden-backend/pkg/storage => /pkg/storage
 
-replace legocerthub-backend/pkg/storage/sqlite => /pkg/storage/sqlite
+replace certwarden-backend/pkg/storage/sqlite => /pkg/storage/sqlite
 
-replace legocerthub-backend/pkg/randomness => /pkg/randomness
+replace certwarden-backend/pkg/randomness => /pkg/randomness
 
-replace legocerthub-backend/pkg/validation => /pkg/validation
+replace certwarden-backend/pkg/validation => /pkg/validation

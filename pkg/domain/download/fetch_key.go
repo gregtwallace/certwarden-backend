@@ -1,10 +1,10 @@
 package download
 
 import (
+	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/storage"
 	"errors"
-	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/storage"
 )
 
 // getKey returns the private key if the apiKey matches

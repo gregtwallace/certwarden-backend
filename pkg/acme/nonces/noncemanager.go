@@ -1,10 +1,10 @@
 package nonces
 
 import (
+	"certwarden-backend/pkg/datatypes/ringbuffer"
+	"certwarden-backend/pkg/httpclient"
 	"errors"
 	"io"
-	"legocerthub-backend/pkg/datatypes/ringbuffer"
-	"legocerthub-backend/pkg/httpclient"
 )
 
 // Manager is the NonceManager

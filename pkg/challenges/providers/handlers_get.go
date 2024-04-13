@@ -1,7 +1,7 @@
 package providers
 
 import (
-	"legocerthub-backend/pkg/output"
+	"certwarden-backend/pkg/output"
 	"net/http"
 	"strconv"
 

@@ -1,12 +1,12 @@
 package acme
 
 import (
+	"certwarden-backend/pkg/httpclient"
+	"certwarden-backend/pkg/randomness"
 	"context"
 	"encoding/json"
 	"errors"
 	"io"
-	"legocerthub-backend/pkg/httpclient"
-	"legocerthub-backend/pkg/randomness"
 	"reflect"
 	"sync"
 	"time"
@@ -146,7 +146,7 @@ func (service *Service) backgroundDirManager(shutdownCtx context.Context, wg *sy
 			// add random minute and second after above calc to avoid duplicate runs on same day
 			// (in event random #s are larger than previous, e.g. run at 5 min then 18 min it would
 			// run at 1:05 and 1:18 the same day)
-			// this randomness also prevents LeGo from updating all directories at the same exact time
+			// this randomness also prevents updating all directories at the same exact time
 			// add 1 minute to avoid extreme edge case where this code runs at exactly run hour
 			nextRunTime = nextRunTime.
 				Add(time.Duration(randomness.GenerateInsecureInt(60)+1) * time.Minute).

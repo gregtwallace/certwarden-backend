@@ -1,9 +1,9 @@
 package orders
 
 import (
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/randomness"
 	"errors"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/randomness"
 	"net/http"
 	"time"
 )
@@ -204,13 +204,13 @@ fulfillLoop:
 			}
 		}
 
-		// also update LeGo Server Cert (if this order was for the LeGo Server)
+		// also update Server Cert (if this order was for this app)
 		if j.service.serverCertificateName != nil && *j.service.serverCertificateName == order.Certificate.Name {
 			err = j.service.loadHttpsCertificateFunc()
 			if err != nil {
-				j.service.logger.Errorf("order fulfilling worker %d: failed to load lego's new https certificate (%s)", workerID, err)
+				j.service.logger.Errorf("order fulfilling worker %d: failed to load app's new https certificate (%s)", workerID, err)
 			} else {
-				j.service.logger.Debugf("order fulfilling worker %d: new lego https certificate loaded", workerID)
+				j.service.logger.Debugf("order fulfilling worker %d: new app https certificate loaded", workerID)
 			}
 		}
 	}

@@ -1,9 +1,9 @@
 package dns01acmedns
 
 import (
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/httpclient"
 	"errors"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/httpclient"
 
 	"go.uber.org/zap"
 )

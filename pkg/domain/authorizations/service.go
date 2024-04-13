@@ -1,10 +1,10 @@
 package authorizations
 
 import (
+	"certwarden-backend/pkg/challenges"
+	"certwarden-backend/pkg/datatypes/safemap"
+	"certwarden-backend/pkg/domain/acme_servers"
 	"errors"
-	"legocerthub-backend/pkg/challenges"
-	"legocerthub-backend/pkg/datatypes/safemap"
-	"legocerthub-backend/pkg/domain/acme_servers"
 
 	"go.uber.org/zap"
 )

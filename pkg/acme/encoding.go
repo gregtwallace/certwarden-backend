@@ -37,7 +37,7 @@ func encodeInt(integer int) (string, error) {
 	}
 
 	// trim off left 00s
-	// fixes: https://github.com/gregtwallace/legocerthub-backend/issues/1
+	// fixes: https://github.com/gregtwallace/certwarden-backend/issues/1
 	trimmedInt := bytes.TrimLeft(bytesBuf.Bytes(), "\x00")
 
 	return encodeString(trimmedInt), nil

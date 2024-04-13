@@ -1,9 +1,9 @@
 package private_keys
 
 import (
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/pagination_sort"
 	"errors"
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/pagination_sort"
 
 	"go.uber.org/zap"
 )

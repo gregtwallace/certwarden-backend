@@ -1,18 +1,18 @@
 package app
 
 import (
-	"legocerthub-backend/pkg/output"
+	"certwarden-backend/pkg/output"
 	"net/http"
 )
 
-// doShutdownHandler shuts LeGo down completely.
-// Note: LeGo may still restart if the caller is configured to restart it
+// doShutdownHandler shuts the app down completely.
+// Note: It may still restart if the caller is configured to restart it
 // if it stops (e.g. when running as a service).
 func (app *Application) doShutdownHandler(w http.ResponseWriter, r *http.Request) *output.Error {
 	// write response first since the action will shutdown server
 	response := &output.JsonResponse{}
 	response.StatusCode = http.StatusOK
-	response.Message = "lego shutting down"
+	response.Message = "shutting down"
 
 	err := app.output.WriteJSON(w, response)
 	if err != nil {
@@ -29,13 +29,13 @@ func (app *Application) doShutdownHandler(w http.ResponseWriter, r *http.Request
 	return nil
 }
 
-// doRestartHandler shuts LeGo down and then calls the OS to execute LeGo
+// doRestartHandler shuts the app down and then calls the OS to execute the app
 // again with the same args and environment as originally used.
 func (app *Application) doRestartHandler(w http.ResponseWriter, r *http.Request) *output.Error {
 	// write response first since the action will shutdown server
 	response := &output.JsonResponse{}
 	response.StatusCode = http.StatusOK
-	response.Message = "lego restarting"
+	response.Message = "restarting"
 
 	err := app.output.WriteJSON(w, response)
 	if err != nil {

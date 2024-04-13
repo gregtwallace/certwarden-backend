@@ -1,11 +1,11 @@
 package private_keys
 
 import (
+	"certwarden-backend/pkg/domain/private_keys/key_crypto"
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/randomness"
 	"encoding/json"
 	"errors"
-	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/randomness"
 	"net/http"
 	"strconv"
 	"time"

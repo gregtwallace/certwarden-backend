@@ -11,7 +11,7 @@ import (
 )
 
 // version.json URL
-const versionJsonURL = "https://www.legocerthub.com/version.json"
+const versionJsonURL = "https://www.certwarden.com/version.json"
 
 // errors
 var (

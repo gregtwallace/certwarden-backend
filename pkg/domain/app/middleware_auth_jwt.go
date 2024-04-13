@@ -1,9 +1,9 @@
 package app
 
 import (
+	"certwarden-backend/pkg/domain/app/auth"
+	"certwarden-backend/pkg/output"
 	"fmt"
-	"legocerthub-backend/pkg/domain/app/auth"
-	"legocerthub-backend/pkg/output"
 	"net/http"
 )
 

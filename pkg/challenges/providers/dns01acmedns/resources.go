@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"legocerthub-backend/pkg/acme"
+	"certwarden-backend/pkg/acme"
 )
 
 // acmeDnsResource contains the needed configuration to update

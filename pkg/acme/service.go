@@ -1,10 +1,10 @@
 package acme
 
 import (
+	"certwarden-backend/pkg/acme/nonces"
+	"certwarden-backend/pkg/httpclient"
 	"context"
 	"errors"
-	"legocerthub-backend/pkg/acme/nonces"
-	"legocerthub-backend/pkg/httpclient"
 	"sync"
 
 	"go.uber.org/zap"

@@ -1,15 +1,15 @@
 package orders
 
 import (
+	"certwarden-backend/pkg/datatypes/job_manager"
+	"certwarden-backend/pkg/domain/acme_servers"
+	"certwarden-backend/pkg/domain/authorizations"
+	"certwarden-backend/pkg/domain/certificates"
+	"certwarden-backend/pkg/httpclient"
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/pagination_sort"
 	"context"
 	"errors"
-	"legocerthub-backend/pkg/datatypes/job_manager"
-	"legocerthub-backend/pkg/domain/acme_servers"
-	"legocerthub-backend/pkg/domain/authorizations"
-	"legocerthub-backend/pkg/domain/certificates"
-	"legocerthub-backend/pkg/httpclient"
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/pagination_sort"
 	"os/exec"
 	"sync"
 	"time"
@@ -134,7 +134,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// needed to reload LeGo CertHub cert on update
+	// needed to reload App cert on update
 	service.serverCertificateName = app.HttpsCertificateName()
 	service.loadHttpsCertificateFunc = app.LoadHttpsCertificate
 

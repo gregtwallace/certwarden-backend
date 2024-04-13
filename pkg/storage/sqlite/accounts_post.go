@@ -1,8 +1,8 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/acme_accounts"
 	"context"
-	"legocerthub-backend/pkg/domain/acme_accounts"
 )
 
 // PostNewAccount inserts a new account into the db

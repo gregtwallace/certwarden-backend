@@ -1,10 +1,10 @@
 package providers
 
 import (
+	"certwarden-backend/pkg/httpclient"
+	"certwarden-backend/pkg/output"
 	"context"
 	"errors"
-	"legocerthub-backend/pkg/httpclient"
-	"legocerthub-backend/pkg/output"
 	"sync"
 
 	"go.uber.org/zap"

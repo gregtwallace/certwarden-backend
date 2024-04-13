@@ -1,11 +1,11 @@
 package download
 
 import (
+	"certwarden-backend/pkg/domain/certificates"
+	"certwarden-backend/pkg/domain/orders"
+	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/output"
 	"errors"
-	"legocerthub-backend/pkg/domain/certificates"
-	"legocerthub-backend/pkg/domain/orders"
-	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/output"
 
 	"go.uber.org/zap"
 )

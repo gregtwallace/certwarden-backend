@@ -14,7 +14,7 @@ import (
 const logFileDirName = "log"
 const dataStorageLogPath = dataStorageRootPath + "/" + logFileDirName
 
-const logFileBaseName = "lego-certhub"
+const logFileBaseName = "cert-warden"
 const logFileSuffix = ".log"
 const logFileName = logFileBaseName + logFileSuffix
 

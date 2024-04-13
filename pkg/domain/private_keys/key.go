@@ -1,9 +1,9 @@
 package private_keys
 
 import (
+	"certwarden-backend/pkg/domain/private_keys/key_crypto"
 	"crypto"
 	"fmt"
-	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
 	"time"
 )
 

@@ -17,7 +17,7 @@
 'frontend_show_debug_info': false
 'cors_permitted_crossorigins': null
 
-'certificate_name': 'legocerthub'
+'certificate_name': 'certwarden'
 'disable_hsts': false
 
 'enable_pprof': false

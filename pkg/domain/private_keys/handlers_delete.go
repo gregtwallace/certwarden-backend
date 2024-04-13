@@ -1,9 +1,9 @@
 package private_keys
 
 import (
+	"certwarden-backend/pkg/output"
 	"errors"
 	"fmt"
-	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
 	"time"

@@ -1,14 +1,14 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/pagination_sort"
+	"certwarden-backend/pkg/storage"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"legocerthub-backend/pkg/pagination_sort"
-	"legocerthub-backend/pkg/storage"
 
-	"legocerthub-backend/pkg/domain/certificates"
+	"certwarden-backend/pkg/domain/certificates"
 )
 
 func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates.Certificate, totalRowCount int, err error) {

@@ -1,7 +1,7 @@
 package providers
 
 import (
-	"legocerthub-backend/pkg/acme"
+	"certwarden-backend/pkg/acme"
 )
 
 // providerConfig is the interface provider configs must satisfy

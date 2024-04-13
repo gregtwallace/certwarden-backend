@@ -1,13 +1,13 @@
 package certificates
 
 import (
+	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/domain/private_keys/key_crypto"
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/randomness"
+	"certwarden-backend/pkg/validation"
 	"encoding/json"
 	"errors"
-	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/randomness"
-	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"strconv"
 	"time"

@@ -1,7 +1,7 @@
 package sqlite
 
 import (
-	"legocerthub-backend/pkg/domain/acme_accounts"
+	"certwarden-backend/pkg/domain/acme_accounts"
 )
 
 // accountDb is a single acme account, as database table fields

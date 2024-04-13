@@ -1,8 +1,8 @@
 package app
 
 import (
+	"certwarden-backend/pkg/output"
 	"fmt"
-	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strings"
 	"time"

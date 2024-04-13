@@ -1,10 +1,10 @@
 package dns01goacme
 
 import (
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/datatypes/environment"
 	"errors"
 	"fmt"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/datatypes/environment"
 	"os"
 
 	goacme_challenge "github.com/go-acme/lego/v4/challenge"

@@ -1,10 +1,10 @@
 package orders
 
 import (
+	"certwarden-backend/pkg/datatypes/environment"
 	"errors"
 	"fmt"
 	"io"
-	"legocerthub-backend/pkg/datatypes/environment"
 	"net/http"
 	"os"
 	"os/exec"
@@ -36,9 +36,9 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 
 	// user specified environment can have placeholders for certain values (so user can set
 	// their own name for the environment variable)
-	// {{PRIVATE_KEY_NAME}}					= the name of the private key used to finalize the order, as defined in LeGo
+	// {{PRIVATE_KEY_NAME}}					= the `Name` of the private key used to finalize the order
 	// {{PRIVATE_KEY_PEM}}					= the pem of the private key
-	// {{CERTIFICATE_NAME}}					= the name of the certificate as defined in LeGo
+	// {{CERTIFICATE_NAME}}					= the `Name` of the certificate
 	// {{CERTIFICATE_PEM}}					= the pem of the complete certificate chain for the order
 	// {{CERTIFICATE_COMMON_NAME}}	= the common name of the certificate
 
@@ -111,7 +111,7 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 		// try to run as script if it wasn't an octet-stream
 		// if app failed to get suitable shell at startup, post processing is disabled
 		if j.service.shellPath == "" {
-			j.service.logger.Errorf("post processing worker %d: order %d: commaind failed to run post processing script (no suitable shell was found during lego startup)", workerID, order.ID)
+			j.service.logger.Errorf("post processing worker %d: order %d: commaind failed to run post processing script (no suitable shell was found during startup)", workerID, order.ID)
 			return
 		}
 

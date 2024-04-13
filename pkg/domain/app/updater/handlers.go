@@ -1,8 +1,8 @@
 package updater
 
 import (
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/storage/sqlite"
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/storage/sqlite"
 	"net/http"
 )
 

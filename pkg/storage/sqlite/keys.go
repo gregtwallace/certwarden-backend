@@ -1,8 +1,8 @@
 package sqlite
 
 import (
-	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/domain/private_keys/key_crypto"
+	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/domain/private_keys/key_crypto"
 )
 
 // keyDb is a single private key, as database table fields

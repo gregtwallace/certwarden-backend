@@ -1,14 +1,14 @@
 package providers
 
 import (
+	"certwarden-backend/pkg/challenges/providers/dns01acmedns"
+	"certwarden-backend/pkg/challenges/providers/dns01acmesh"
+	"certwarden-backend/pkg/challenges/providers/dns01cloudflare"
+	"certwarden-backend/pkg/challenges/providers/dns01goacme"
+	"certwarden-backend/pkg/challenges/providers/dns01manual"
+	"certwarden-backend/pkg/challenges/providers/http01internal"
+	"certwarden-backend/pkg/output"
 	"encoding/json"
-	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
-	"legocerthub-backend/pkg/challenges/providers/dns01acmesh"
-	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
-	"legocerthub-backend/pkg/challenges/providers/dns01goacme"
-	"legocerthub-backend/pkg/challenges/providers/dns01manual"
-	"legocerthub-backend/pkg/challenges/providers/http01internal"
-	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
 
@@ -165,7 +165,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 
 		default:
 			// default fail
-			mgr.logger.Error("provider service is unsupported, please report this as a lego bug")
+			mgr.logger.Error("provider service is unsupported, please report this as a bug to developer")
 			return output.ErrInternal
 		}
 

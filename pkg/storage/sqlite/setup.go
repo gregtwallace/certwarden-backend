@@ -1,11 +1,11 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/app/auth"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"legocerthub-backend/pkg/domain/app/auth"
 	"net/url"
 	"os"
 	"strconv"
@@ -18,7 +18,7 @@ import (
 
 // config for DB
 const dbTimeout = time.Duration(5 * time.Second)
-const DbFilename = "lego-certhub.db"
+const DbFilename = "appdata.db"
 const DbCurrentUserVersion = 5
 const dbFileMode = 0600
 

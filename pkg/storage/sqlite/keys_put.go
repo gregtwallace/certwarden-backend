@@ -1,8 +1,8 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/private_keys"
 	"context"
-	"legocerthub-backend/pkg/domain/private_keys"
 )
 
 // PutKeyUpdate updates an existing key in the db using any non-null

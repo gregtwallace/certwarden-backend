@@ -1,9 +1,9 @@
 package acme_accounts
 
 import (
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/validation"
 	"encoding/json"
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/validation"
 	"net/http"
 	"time"
 )

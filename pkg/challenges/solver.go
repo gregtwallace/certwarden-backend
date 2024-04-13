@@ -1,10 +1,10 @@
 package challenges
 
 import (
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/randomness"
 	"errors"
 	"fmt"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/randomness"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -87,7 +87,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 			// dnschecker is needed but not configured, shouldn't happen but deal with it just in case
 			sleepWait := 240
 			service.logger.Error("dns checker is needed by solver but for some reason its not running, manually "+
-				"sleeping %s seconds, report this issue to lego dev", sleepWait)
+				"sleeping %s seconds, report this issue to developer", sleepWait)
 			time.Sleep(time.Duration(sleepWait) * time.Second)
 		}
 	}

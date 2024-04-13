@@ -1,14 +1,14 @@
 package acme_servers
 
 import (
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/output"
 	"encoding/json"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/output"
 	"net/http"
 	"time"
 )
 
-// NewPayload is used to post a new Server to LeGo
+// NewPayload is used to post a new Server
 type NewPayload struct {
 	Name         *string `json:"name"`
 	Description  *string `json:"description"`

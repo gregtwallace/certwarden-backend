@@ -1,6 +1,6 @@
 package acme_accounts
 
-import "legocerthub-backend/pkg/acme"
+import "certwarden-backend/pkg/acme"
 
 // AcmeAccount is the ACME Account object plus some additional
 // details for storage.

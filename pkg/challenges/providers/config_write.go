@@ -1,14 +1,14 @@
 package providers
 
 import (
+	"certwarden-backend/pkg/challenges/providers/dns01acmedns"
+	"certwarden-backend/pkg/challenges/providers/dns01acmesh"
+	"certwarden-backend/pkg/challenges/providers/dns01cloudflare"
+	"certwarden-backend/pkg/challenges/providers/dns01goacme"
+	"certwarden-backend/pkg/challenges/providers/dns01manual"
+	"certwarden-backend/pkg/challenges/providers/http01internal"
 	"errors"
 	"io/fs"
-	"legocerthub-backend/pkg/challenges/providers/dns01acmedns"
-	"legocerthub-backend/pkg/challenges/providers/dns01acmesh"
-	"legocerthub-backend/pkg/challenges/providers/dns01cloudflare"
-	"legocerthub-backend/pkg/challenges/providers/dns01goacme"
-	"legocerthub-backend/pkg/challenges/providers/dns01manual"
-	"legocerthub-backend/pkg/challenges/providers/http01internal"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -73,7 +73,7 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 			)
 
 		default:
-			mgr.logger.Errorf("provider mgr couldn't append provider config for provider id %d, report as lego bug", p.ID)
+			mgr.logger.Errorf("provider mgr couldn't append provider config for provider id %d, report as bug to developer", p.ID)
 		}
 	}
 

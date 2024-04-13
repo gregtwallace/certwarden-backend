@@ -1,8 +1,8 @@
 package app
 
 import (
-	"legocerthub-backend/pkg/domain/app/auth"
-	"legocerthub-backend/pkg/output"
+	"certwarden-backend/pkg/domain/app/auth"
+	"certwarden-backend/pkg/output"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"

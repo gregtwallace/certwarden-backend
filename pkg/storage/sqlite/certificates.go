@@ -1,7 +1,7 @@
 package sqlite
 
 import (
-	"legocerthub-backend/pkg/domain/certificates"
+	"certwarden-backend/pkg/domain/certificates"
 )
 
 // certificateDb is a single certificate, as database table fields

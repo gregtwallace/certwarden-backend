@@ -14,7 +14,7 @@ var (
 	ErrDeleteInUse    = &Error{StatusCode: 409, Message: "error: record in use, can't delete"}
 
 	// write
-	ErrWriteConfigFailed = &Error{StatusCode: 500, Message: "error: failed to write lego config file"}
+	ErrWriteConfigFailed = &Error{StatusCode: 500, Message: "error: failed to write config file"}
 	ErrWriteJsonError    = &Error{StatusCode: 500, Message: "error: json response write error"}
 
 	// validation

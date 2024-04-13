@@ -7,7 +7,7 @@ import (
 )
 
 // base path
-const baseUrlPath = "/legocerthub"
+const baseUrlPath = "/certwarden"
 
 // backend api paths
 const apiUrlPath = baseUrlPath + "/api"

@@ -1,13 +1,13 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/pagination_sort"
+	"certwarden-backend/pkg/storage"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/pagination_sort"
-	"legocerthub-backend/pkg/storage"
 )
 
 // GetAllKeys returns a slice of all Keys in the db

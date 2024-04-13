@@ -1,11 +1,11 @@
 package certificates
 
 import (
+	"certwarden-backend/pkg/domain/acme_accounts"
+	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/pagination_sort"
 	"errors"
-	"legocerthub-backend/pkg/domain/acme_accounts"
-	"legocerthub-backend/pkg/domain/private_keys"
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/pagination_sort"
 
 	"go.uber.org/zap"
 )

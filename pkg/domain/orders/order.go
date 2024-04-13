@@ -2,11 +2,11 @@ package orders
 
 import (
 	"bytes"
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/domain/certificates"
+	"certwarden-backend/pkg/domain/private_keys"
 	"encoding/pem"
 	"fmt"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/domain/certificates"
-	"legocerthub-backend/pkg/domain/private_keys"
 	"time"
 )
 
@@ -182,7 +182,7 @@ func (order Order) PemContentChainOnly() string {
 // hasPostProcessingToDo returns if a given order object is configured in a way
 // that involves one or more post processing actions
 func (order *Order) hasPostProcessingToDo() bool {
-	// post processing action = LeGo Client
+	// post processing action = Client
 	if order.Certificate.PostProcessingClientKeyB64 != "" {
 		return true
 	}

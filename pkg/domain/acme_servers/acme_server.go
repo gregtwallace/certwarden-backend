@@ -1,9 +1,9 @@
 package acme_servers
 
 import (
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/pagination_sort"
 	"fmt"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/pagination_sort"
 )
 
 // Server is the struct for an ACME Server

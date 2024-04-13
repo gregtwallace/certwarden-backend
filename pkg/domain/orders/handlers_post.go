@@ -1,10 +1,10 @@
 package orders
 
 import (
+	"certwarden-backend/pkg/acme"
+	"certwarden-backend/pkg/output"
 	"encoding/json"
 	"errors"
-	"legocerthub-backend/pkg/acme"
-	"legocerthub-backend/pkg/output"
 	"net/http"
 	"strconv"
 

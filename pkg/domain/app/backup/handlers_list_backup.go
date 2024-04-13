@@ -1,7 +1,7 @@
 package backup
 
 import (
-	"legocerthub-backend/pkg/output"
+	"certwarden-backend/pkg/output"
 	"net/http"
 )
 

@@ -1,10 +1,10 @@
 package app
 
 import (
+	"certwarden-backend/pkg/output"
 	"context"
 	"errors"
 	"fmt"
-	"legocerthub-backend/pkg/output"
 	"net"
 	"net/http"
 	"net/http/pprof"

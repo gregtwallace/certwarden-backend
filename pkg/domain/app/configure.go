@@ -1,17 +1,17 @@
 package app
 
 import (
+	"certwarden-backend/pkg/challenges"
+	"certwarden-backend/pkg/challenges/dns_checker"
+	"certwarden-backend/pkg/challenges/providers"
+	"certwarden-backend/pkg/challenges/providers/http01internal"
+	"certwarden-backend/pkg/domain/app/backup"
+	"certwarden-backend/pkg/domain/app/updater"
+	"certwarden-backend/pkg/domain/orders"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
-	"legocerthub-backend/pkg/challenges"
-	"legocerthub-backend/pkg/challenges/dns_checker"
-	"legocerthub-backend/pkg/challenges/providers"
-	"legocerthub-backend/pkg/challenges/providers/http01internal"
-	"legocerthub-backend/pkg/domain/app/backup"
-	"legocerthub-backend/pkg/domain/app/updater"
-	"legocerthub-backend/pkg/domain/orders"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -92,7 +92,7 @@ func (app *Application) loadConfigFile() (err error) {
 			app.logger.Infof("config file moved from %s to %s", dataStorageRootPath+"/"+configFile, configFilenameWithPath)
 		} else {
 			// config doesn't exist at old location either
-			app.logger.Warn("LeGo config file does not exist, creating one")
+			app.logger.Warn("config file does not exist, creating one")
 
 			// new config file content
 			newCfgFile := fmt.Sprintf("\"config_version\": %d\n", appConfigVersion)
@@ -100,7 +100,7 @@ func (app *Application) loadConfigFile() (err error) {
 			// write file
 			err := os.WriteFile(configFilenameWithPath, []byte(newCfgFile), configFileMode)
 			if err != nil {
-				return fmt.Errorf("failed to create new LeGo config file (%s)", err)
+				return fmt.Errorf("failed to create new config file (%s)", err)
 			}
 		}
 	}
@@ -188,7 +188,7 @@ func (app *Application) loadConfigFile() (err error) {
 	app.config = new(config)
 	err = yaml.Unmarshal(cfgFileData, app.config)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal config file into lego config struct (%s)", err)
+		return fmt.Errorf("failed to unmarshal config file into config struct (%s)", err)
 	}
 
 	// set defaults on anything that wasn't specified
@@ -234,7 +234,7 @@ func (app *Application) setDefaultConfigValues() {
 	}
 	if app.config.CertificateName == nil {
 		app.config.CertificateName = new(string)
-		*app.config.CertificateName = "legocerthub"
+		*app.config.CertificateName = "certwarden"
 	}
 	if app.config.DisableHSTS == nil {
 		app.config.DisableHSTS = new(bool)

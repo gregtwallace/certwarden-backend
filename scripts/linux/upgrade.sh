@@ -1,8 +1,8 @@
 #/bin/sh
 
 # install path and username
-lego_path="/opt/legocerthub"
-lego_user="legocerthub"
+install_path="/opt/certwarden"
+run_user="certwarden"
 
 
 # Check for root
@@ -12,21 +12,18 @@ if [ "$(id -u)" -ne 0 ]; then echo "Please run as root." >&2; exit 1; fi
 script_path=$(dirname $0)
 cd "$script_path"
 
-# stop LeGo
-systemctl stop legocerthub
+# stop
+systemctl stop certwarden
 
 # copy new files
-rm -r "$lego_path"/frontend_build
-cp -R ../* "$lego_path"
+rm -r "$install_path"/frontend_build
+cp -R ../* "$install_path"
 
 # permissions
-./set_permissions.sh "$lego_path" "$lego_user"
+./set_permissions.sh "$install_path" "$run_user"
 
 # allow binding to low port numbers
-case $(uname -m) in
-    x86_64) setcap CAP_NET_BIND_SERVICE=+eip /opt/legocerthub/lego-linux-amd64 ;;
-    arm)    setcap CAP_NET_BIND_SERVICE=+eip /opt/legocerthub/lego-linux-arm64 ;;
-esac
+setcap CAP_NET_BIND_SERVICE=+eip /opt/certwarden/certwarden
 
 # restart service
-systemctl start legocerthub
+systemctl start certwarden

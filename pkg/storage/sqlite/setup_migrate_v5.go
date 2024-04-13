@@ -153,7 +153,7 @@ func createDBTablesV5(tx *sql.Tx) error {
 		return err
 	}
 
-	// users (for login to LeGo)
+	// users (for login to app)
 	query = `CREATE TABLE IF NOT EXISTS users (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		username text NOT NULL UNIQUE,

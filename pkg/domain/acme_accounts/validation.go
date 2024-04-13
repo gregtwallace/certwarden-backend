@@ -1,11 +1,11 @@
 package acme_accounts
 
 import (
+	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/pagination_sort"
+	"certwarden-backend/pkg/storage"
+	"certwarden-backend/pkg/validation"
 	"errors"
-	"legocerthub-backend/pkg/output"
-	"legocerthub-backend/pkg/pagination_sort"
-	"legocerthub-backend/pkg/storage"
-	"legocerthub-backend/pkg/validation"
 )
 
 var (

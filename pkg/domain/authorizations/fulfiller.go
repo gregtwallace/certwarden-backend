@@ -1,8 +1,8 @@
 package authorizations
 
 import (
+	"certwarden-backend/pkg/acme"
 	"errors"
-	"legocerthub-backend/pkg/acme"
 	"sync"
 )
 

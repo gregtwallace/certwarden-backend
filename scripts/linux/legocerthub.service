@@ -1,13 +1,13 @@
 [Unit]
-Description=LeGo Certhub
+Description=Cert Warden
 
 [Service]
 Type=simple
-User=legocerthub
+User=certwarden
 Restart=always
 RestartSec=5s
-WorkingDirectory=/opt/legocerthub
-ExecStart=/opt/legocerthub/lego-linux-amd64
+WorkingDirectory=/opt/certwarden
+ExecStart=/opt/certwarden/certwarden
 
 [Install]
 WantedBy=multi-user.target

@@ -1,9 +1,9 @@
 package sqlite
 
 import (
+	"certwarden-backend/pkg/domain/orders"
 	"context"
 	"database/sql"
-	"legocerthub-backend/pkg/domain/orders"
 )
 
 // PostNewOrder makes a new order in the db. An error is returned if the order

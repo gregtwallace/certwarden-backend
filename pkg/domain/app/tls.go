@@ -16,7 +16,7 @@ func (app *Application) tlsConf() *tls.Config {
 	return tlsConf
 }
 
-// HttpsCertificateName returns the name of the certificate LeGo is using.
+// HttpsCertificateName returns the db `Name` of the certificate this app is using.
 // This allows orders package to call the refresh function whenever the app's
 // certificate is reordered.
 func (app *Application) HttpsCertificateName() *string {
@@ -32,7 +32,7 @@ func (app *Application) LoadHttpsCertificate() error {
 		return errors.New("cannot load https certificate, server is in http mode")
 	}
 
-	// get order for LeGo server
+	// get order for this app
 	order, err := app.storage.GetCertNewestValidOrderByName(*app.config.CertificateName)
 	if err != nil {
 		return err
