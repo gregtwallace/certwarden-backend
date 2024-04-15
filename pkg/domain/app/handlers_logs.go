@@ -86,35 +86,41 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	// range all files in log directory
 	for i := range files {
 		// ignore directories
-		if !files[i].IsDir() {
-			name := files[i].Name()
+		if files[i].IsDir() {
+			continue
+		}
 
-			// confirm prefix and suffix then add (aka ensure non-log files that are accidentally in
-			// this folder are not zipped up and returned to client)
-			if strings.HasPrefix(name, logFileBaseName) && strings.HasSuffix(name, logFileSuffix) {
+		name := files[i].Name()
 
-				// open log file
-				logFile, err := os.Open(dataStorageLogPath + "/" + name)
-				if err != nil {
-					app.logger.Error(err)
-					return output.ErrInternal
-				}
-				defer logFile.Close()
+		// confirm prefix and suffix then add (aka ensure non-log files that are accidentally in
+		// this folder are not zipped up and returned to client)
+		// also check for old log file names (pre- app rename)
+		if !((strings.HasPrefix(name, logFileBaseName) || strings.HasPrefix(name, "lego-certhub")) &&
+			strings.HasSuffix(name, logFileSuffix)) {
 
-				// create file in zip
-				zipFile, err := zipWriter.Create(name)
-				if err != nil {
-					app.logger.Error(err)
-					return output.ErrInternal
-				}
+			continue
+		}
 
-				// copy log file to zip file
-				_, err = io.Copy(zipFile, logFile)
-				if err != nil {
-					app.logger.Error(err)
-					return output.ErrInternal
-				}
-			}
+		// open log file
+		logFile, err := os.Open(dataStorageLogPath + "/" + name)
+		if err != nil {
+			app.logger.Error(err)
+			return output.ErrInternal
+		}
+		defer logFile.Close()
+
+		// create file in zip
+		zipFile, err := zipWriter.Create(name)
+		if err != nil {
+			app.logger.Error(err)
+			return output.ErrInternal
+		}
+
+		// copy log file to zip file
+		_, err = io.Copy(zipFile, logFile)
+		if err != nil {
+			app.logger.Error(err)
+			return output.ErrInternal
 		}
 	}
 
