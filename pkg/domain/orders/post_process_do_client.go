@@ -109,6 +109,25 @@ func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
 	defer resp.Body.Close()
 	_, _ = io.Copy(io.Discard, resp.Body)
 
+	// if got 404 (route not found), try old route
+	// TODO: Remove backwards compat
+	if resp.StatusCode == http.StatusNotFound {
+		postTo = fmt.Sprintf("https://%s:%d%s", order.Certificate.Subject, postProcessClientPort, "/legocerthubclient/api/v1/install")
+		resp, err = j.service.httpClient.Post(postTo, "application/json", bytes.NewBuffer(dataPayload))
+
+		if err != nil {
+			j.service.logger.Errorf("post processing worker %d: order %d: notify client failed: failed to post pre-rename route to client (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+			return
+		}
+
+		// Log WARN so user knows to update client
+		j.service.logger.Warnf("post processing worker %d: order %d: notify client used pre-app rename route; update client asap (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
+
+		// ensure body is read and closed
+		defer resp.Body.Close()
+		_, _ = io.Copy(io.Discard, resp.Body)
+	}
+
 	// error if not 200
 	if resp.StatusCode != http.StatusOK {
 		j.service.logger.Errorf("post processing worker %d: order %d: notify client failed: post status %d (cert: %d, cn: %s)", workerID, order.ID, resp.StatusCode, order.Certificate.ID, order.Certificate.Subject)
