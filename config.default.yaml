@@ -17,7 +17,7 @@
 'frontend_show_debug_info': false
 'cors_permitted_crossorigins': null
 
-'certificate_name': 'certwarden'
+'certificate_name': 'serverdefault'
 'disable_hsts': false
 
 'enable_pprof': false

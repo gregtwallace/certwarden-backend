@@ -8,7 +8,7 @@ import (
 
 // CHANGES v5 to v6:
 // - certificates:
-//     - If a certificate with the name `legocerthub` exists, rename it to `certwarden`
+//     - If a certificate with the name `legocerthub` exists, rename it to `serverdefault`
 // Note: DB Schema doesn't actually change from 5 to 6.
 
 // createDBTablesV6 creates a fresh set of tables in the db using schema version 6
@@ -203,10 +203,10 @@ func (store *Storage) migrateV5toV6() (int, error) {
 		return -1, fmt.Errorf("cannot update db schema, current version %d (expected %d)", fileUserVersion, oldSchemaVer)
 	}
 
-	// if it exists, rename certificate `legocerthub` to `certwarden`
+	// if it exists, rename certificate `legocerthub` to `serverdefault`
 	query = `
 		UPDATE certificates
-		SET name = 'certwarden'
+		SET name = 'serverdefault'
 		WHERE name = 'legocerthub'
 	`
 	_, err = tx.ExecContext(ctx, query)
