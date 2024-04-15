@@ -17,7 +17,7 @@ func (service *Service) DeleteDiskBackupHandler(w http.ResponseWriter, r *http.R
 	filenameParam := httprouter.ParamsFromContext(r.Context()).ByName("filename")
 
 	// validate filename is in the form of a backup file (prevent unauthorized file download)
-	if !isBackupFile(filenameParam) {
+	if !isBackupFileName(filenameParam) {
 		return output.ErrValidationFailed
 	}
 

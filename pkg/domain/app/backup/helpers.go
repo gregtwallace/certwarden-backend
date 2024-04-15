@@ -1,7 +1,6 @@
 package backup
 
 import (
-	"regexp"
 	"strings"
 	"time"
 )
@@ -30,12 +29,10 @@ func backupZipTime(name string) (time.Time, error) {
 	return fileTime, nil
 }
 
-// isBackupFile returns true if the fileName string provided starts with the
+// isBackupFileName returns true if the fileName string provided starts with the
 // backup file prefix and ends in the proper file extension; it also only permits
 // certain characters in the filename to avoid things like path traversal
-func isBackupFile(fileName string) bool {
-	// regex for start prefix, contains on alpha numeric, - _ .   and ends in suffix
-	regex := regexp.MustCompile(`^` + regexp.QuoteMeta(backupFilePrefix) + `[A-Za-z0-9-_.]+` + regexp.QuoteMeta(backupFileSuffix) + `$`)
-
-	return regex.MatchString(fileName)
+func isBackupFileName(fileName string) bool {
+	return (strings.HasPrefix(fileName, backupFilePrefix) || strings.HasPrefix(fileName, "lego_certhub_backup.")) &&
+		strings.HasSuffix(fileName, backupFileSuffix)
 }

@@ -35,39 +35,42 @@ func (service *Service) listBackupFiles() ([]backupFileDetails, error) {
 	backupFilesInfo := []backupFileDetails{}
 	for i := range files {
 		// ignore directories
-		if !files[i].IsDir() {
-
-			// get name
-			bakFile := backupFileDetails{}
-			bakFile.Name = files[i].Name()
-
-			// only list if it is a backup file
-			if isBackupFile(bakFile.Name) {
-				// stat file
-				fStat, err := files[i].Info()
-				if err != nil {
-					// if cant stat, bad file, skip it
-					service.logger.Warnf("backup file %s in backup dir that cant be stat'd (%s)", bakFile.Name, err)
-					continue
-				}
-
-				// populate file properties
-				bakFile.Size = int(fStat.Size())
-				bakFile.ModTime = int(fStat.ModTime().Unix())
-
-				// calculate created at from filename, omit if doesn't decode
-				nameTime, err := backupZipTime(bakFile.Name)
-				if err != nil {
-					service.logger.Warnf("backup file with improperly formatted timestamp in backup dir (err decoding time: %s)", err)
-				} else {
-					bakFile.CreatedAt = new(int)
-					*bakFile.CreatedAt = int(nameTime.Unix())
-				}
-
-				// add to list
-				backupFilesInfo = append(backupFilesInfo, bakFile)
-			}
+		if files[i].IsDir() {
+			continue
 		}
+
+		// get name
+		bakFile := backupFileDetails{}
+		bakFile.Name = files[i].Name()
+
+		// only list if it is a backup file
+		if !isBackupFileName(bakFile.Name) {
+			continue
+		}
+
+		// stat file
+		fStat, err := files[i].Info()
+		if err != nil {
+			// if cant stat, bad file, skip it
+			service.logger.Warnf("backup file %s in backup dir that cant be stat'd (%s)", bakFile.Name, err)
+			continue
+		}
+
+		// populate file properties
+		bakFile.Size = int(fStat.Size())
+		bakFile.ModTime = int(fStat.ModTime().Unix())
+
+		// calculate created at from filename, omit if doesn't decode
+		nameTime, err := backupZipTime(bakFile.Name)
+		if err != nil {
+			service.logger.Warnf("backup file with improperly formatted timestamp in backup dir (err decoding time: %s)", err)
+		} else {
+			bakFile.CreatedAt = new(int)
+			*bakFile.CreatedAt = int(nameTime.Unix())
+		}
+
+		// add to list
+		backupFilesInfo = append(backupFilesInfo, bakFile)
 	}
 
 	return backupFilesInfo, nil

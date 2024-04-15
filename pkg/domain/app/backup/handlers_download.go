@@ -47,7 +47,7 @@ func (service *Service) DownloadDiskBackupHandler(w http.ResponseWriter, r *http
 	filenameParam := httprouter.ParamsFromContext(r.Context()).ByName("filename")
 
 	// validate filename is in the form of a backup file (prevent unauthorized file download)
-	if !isBackupFile(filenameParam) {
+	if !isBackupFileName(filenameParam) {
 		return output.ErrValidationFailed
 	}
 
