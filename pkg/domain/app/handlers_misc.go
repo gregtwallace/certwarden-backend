@@ -4,6 +4,7 @@ import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/storage/sqlite"
 	"net/http"
+	"strings"
 )
 
 // serverStatusResponse
@@ -45,4 +46,21 @@ func healthHandler(w http.ResponseWriter, r *http.Request) *output.Error {
 	w.WriteHeader(http.StatusNoContent)
 
 	return nil
+}
+
+// redirectOldLeGoName is a handler to redirect old LeGo routes to the new ones
+// TODO: Remove eventually.
+func (app *Application) redirectOldLeGoName(w http.ResponseWriter, r *http.Request) {
+	// if this isn't the old LeGo base path, throw an error (should never happen but
+	// just in case to stop any infinite redirect)
+	pathSuffix, hasPrefix := strings.CutPrefix(r.URL.Path, "/legocerthub")
+	if !hasPrefix {
+		app.logger.Errorf("client: %s: redirect error (wrong base path)", r.RemoteAddr)
+	}
+	newPath := baseUrlPath + pathSuffix
+
+	// log warning so user knows clients that need to be updated
+	app.logger.Warnf("client: %s: old base path (pre- app rename) redirected; update client asap", r.RemoteAddr)
+
+	http.Redirect(w, r, newPath, http.StatusMovedPermanently)
 }
