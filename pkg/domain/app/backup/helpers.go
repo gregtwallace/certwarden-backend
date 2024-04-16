@@ -21,6 +21,9 @@ func backupZipTime(name string) (time.Time, error) {
 	name = strings.ReplaceAll(name, "--", ":")
 	timeString := strings.TrimSuffix(strings.TrimPrefix(name, backupFilePrefix), backupFileSuffix)
 
+	// TODO: remove after dropping old file support
+	timeString = strings.TrimPrefix(timeString, "lego_certhub_backup.")
+
 	fileTime, err := time.Parse(time.RFC3339, timeString)
 	if err != nil {
 		return time.Time{}, err
