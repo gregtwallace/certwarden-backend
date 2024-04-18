@@ -1,6 +1,7 @@
 package environment
 
 import (
+	"regexp"
 	"strings"
 )
 
@@ -31,7 +32,7 @@ func NewParams(envParams []string) (p *Params, invalidParams []string) {
 	for _, oneParam := range envParams {
 		paramName, paramValue, sepFound := strings.Cut(oneParam, "=")
 		if !sepFound {
-			// invalid param, append to invalid
+			// invalid param (no equal sign), append to invalid
 			invalidParams = append(invalidParams, oneParam)
 			continue
 		}
@@ -44,6 +45,15 @@ func NewParams(envParams []string) (p *Params, invalidParams []string) {
 		if (strings.HasPrefix(paramValue, "\"") && strings.HasSuffix(paramValue, "\"")) ||
 			(strings.HasPrefix(paramValue, "'") && strings.HasSuffix(paramValue, "'")) {
 			paramValue = paramValue[1 : len(paramValue)-1]
+		}
+
+		// validate paramName - must be at least len(1), start with letter, and only contain letters,
+		// numbers, and _
+		re := regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_]*$`)
+		if !re.MatchString(paramName) {
+			// invalid param (bad form), append to invalid
+			invalidParams = append(invalidParams, oneParam)
+			continue
 		}
 
 		// add to valid slice & map
