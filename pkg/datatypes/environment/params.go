@@ -57,7 +57,7 @@ func NewParams(envParams []string) (p *Params, invalidParams []string) {
 		}
 
 		// add to valid slice & map
-		pSlice = append(pSlice, oneParam)
+		pSlice = append(pSlice, paramName+"="+paramValue)
 		pMap[paramName] = paramValue
 	}
 
