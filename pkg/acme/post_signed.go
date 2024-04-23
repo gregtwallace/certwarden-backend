@@ -158,6 +158,10 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 			// if acme error and it is specifically bad nonce, set header nonce and continue
 			// to next loop iteration
 			if acmeError.Type == "urn:ietf:params:acme:error:badNonce" {
+				// no alternative nonce as server MUST return a valid nonce with the badNonce error;
+				// RFC8555 s6.5: "An error response with the "badNonce" error type MUST include a
+				// Replay-Nonce header field with a fresh nonce that the server will accept in a
+				// retry of the original query"
 				header.Nonce = response.Header.Get("Replay-Nonce")
 
 				// no need to sleep, remote server is working ok
