@@ -5,7 +5,7 @@ func (j *postProcessJob) Do(workerID int) {
 	// get order
 	order, err := j.service.storage.GetOneOrder(j.orderID)
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: failed to get order %d from db for post processing (%w)", workerID, j.orderID, err)
+		j.service.logger.Errorf("post processing worker %d: failed to get order %d from db for post processing (%s)", workerID, j.orderID, err)
 		return // done, failed
 	}
 

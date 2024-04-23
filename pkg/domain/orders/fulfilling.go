@@ -20,7 +20,7 @@ func (service *Service) makeFulfillingJob(orderID int, highPriority bool) (*orde
 	// get order (i.e. validate it exists)
 	order, err := service.storage.GetOneOrder(orderID)
 	if err != nil {
-		return nil, fmt.Errorf("order fulfilling: failed to make fulfill job for order id %d (%w)", orderID, err)
+		return nil, fmt.Errorf("order fulfilling: failed to make fulfill job for order id %d (%s)", orderID, err)
 	}
 
 	// cant fulfill if already in a final state

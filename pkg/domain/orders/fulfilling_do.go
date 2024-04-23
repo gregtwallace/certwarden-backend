@@ -16,7 +16,7 @@ func (j *orderFulfillJob) Do(workerID int) {
 	// get the relevant order from db
 	order, err := j.service.storage.GetOneOrder(j.orderID)
 	if err != nil {
-		j.service.logger.Errorf("order fulfilling worker %d: error: %w", workerID, err)
+		j.service.logger.Errorf("order fulfilling worker %d: error: %s", workerID, err)
 		return // done, failed
 	}
 
@@ -27,21 +27,21 @@ func (j *orderFulfillJob) Do(workerID int) {
 	defer func() {
 		err = j.service.storage.UpdateCertUpdatedTime(order.Certificate.ID)
 		if err != nil {
-			j.service.logger.Errorf("order fulfilling worker %d: update cert time error: %w", workerID, err)
+			j.service.logger.Errorf("order fulfilling worker %d: update cert time error: %s", workerID, err)
 		}
 	}()
 
 	// get account key
 	key, err := order.Certificate.CertificateAccount.AcmeAccountKey()
 	if err != nil {
-		j.service.logger.Errorf("order fulfilling worker %d: get account key error: %w", workerID, err)
+		j.service.logger.Errorf("order fulfilling worker %d: get account key error: %s", workerID, err)
 		return // done, failed
 	}
 
 	// make cert CSR
 	csr, err := order.Certificate.MakeCsrDer()
 	if err != nil {
-		j.service.logger.Errorf("order fulfilling worker %d: make csr error: %w", workerID, err)
+		j.service.logger.Errorf("order fulfilling worker %d: make csr error: %s", workerID, err)
 		return // done, failed
 	}
 
@@ -51,7 +51,7 @@ func (j *orderFulfillJob) Do(workerID int) {
 	// acmeService to avoid repeated logic
 	acmeService, err := j.service.acmeServerService.AcmeService(order.Certificate.CertificateAccount.AcmeServer.ID)
 	if err != nil {
-		j.service.logger.Errorf("order fulfilling worker %d: select acme service error: %w", workerID, err)
+		j.service.logger.Errorf("order fulfilling worker %d: select acme service error: %s", workerID, err)
 		return // done, failed
 	}
 
@@ -80,7 +80,7 @@ fulfillLoop:
 				return // done, permanent status
 			}
 
-			j.service.logger.Errorf("order fulfilling worker %d: get order error: %w", workerID, err)
+			j.service.logger.Errorf("order fulfilling worker %d: get order error: %s", workerID, err)
 			return // done, failed
 		}
 
@@ -98,7 +98,7 @@ fulfillLoop:
 			var authStatus string
 			authStatus, err = j.service.authorizations.FulfillAuths(acmeOrder.Authorizations, key, acmeService)
 			if err != nil {
-				j.service.logger.Errorf("order fulfilling worker %d: fulfill auths error: %w", workerID, err)
+				j.service.logger.Errorf("order fulfilling worker %d: fulfill auths error: %s", workerID, err)
 				return // done, failed
 			}
 
@@ -115,14 +115,14 @@ fulfillLoop:
 			// save finalized_key_id in storage
 			err = j.service.storage.UpdateFinalizedKey(order.ID, order.Certificate.CertificateKey.ID)
 			if err != nil {
-				j.service.logger.Errorf("order fulfilling worker %d: update finalized key error: %w", workerID, err)
+				j.service.logger.Errorf("order fulfilling worker %d: update finalized key error: %s", workerID, err)
 				return // done, failed
 			}
 
 			// finalize the order
 			_, err = acmeService.FinalizeOrder(acmeOrder.Finalize, csr, key)
 			if err != nil {
-				j.service.logger.Errorf("order fulfilling worker %d: finalize order error: %w", workerID, err)
+				j.service.logger.Errorf("order fulfilling worker %d: finalize order error: %s", workerID, err)
 				return // done, failed
 			}
 
@@ -142,14 +142,14 @@ fulfillLoop:
 
 			certPemChain, err := acmeService.DownloadCertificate(*acmeOrder.Certificate, key)
 			if err != nil {
-				j.service.logger.Errorf("order fulfilling worker %d: download cert error: %w", workerID, err)
+				j.service.logger.Errorf("order fulfilling worker %d: download cert error: %s", workerID, err)
 				return // done, failed
 			}
 
 			// process pem and save to storage
 			err = j.savePemChain(order.ID, certPemChain)
 			if err != nil {
-				j.service.logger.Errorf("order fulfilling worker %d: save pem error: %w", workerID, err)
+				j.service.logger.Errorf("order fulfilling worker %d: save pem error: %s", workerID, err)
 				return // done, failed
 			}
 
@@ -176,7 +176,7 @@ fulfillLoop:
 			}
 
 		case "invalid": // break, irrecoverable
-			j.service.logger.Infof("order fulfilling worker %d: order status invalid; acme error: %w", workerID, acmeOrder.Error)
+			j.service.logger.Infof("order fulfilling worker %d: order status invalid; acme error: %s", workerID, acmeOrder.Error)
 			break fulfillLoop
 
 		// Note: there is no 'expired' Status case. If the order expires it simply moves to 'invalid'.
@@ -191,7 +191,7 @@ fulfillLoop:
 	// update order in storage (regardless of loop outcome)
 	err = j.service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(order.ID, acmeOrder))
 	if err != nil {
-		j.service.logger.Errorf("order fulfilling worker %d: update order db error: %w", workerID, err)
+		j.service.logger.Errorf("order fulfilling worker %d: update order db error: %s", workerID, err)
 	}
 
 	// if order valid, do post processing
@@ -200,7 +200,7 @@ fulfillLoop:
 		if order.hasPostProcessingToDo() {
 			err = j.service.postProcess(j.orderID, j.IsHighPriority())
 			if err != nil {
-				j.service.logger.Errorf("order fulfilling worker %d: failed to post process (%w)")
+				j.service.logger.Errorf("order fulfilling worker %d: failed to post process (%s)")
 			}
 		}
 

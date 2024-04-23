@@ -78,14 +78,14 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 	// open and read (up to) the first 512 bytes of post processing script/binary to decide if it is binary or not
 	f, err := os.Open(order.Certificate.PostProcessingCommand)
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: script/binary failed to open: %w", workerID, order.ID, err)
+		j.service.logger.Errorf("post processing worker %d: order %d: script/binary failed to open: %s", workerID, order.ID, err)
 		return
 	}
 	defer f.Close()
 
 	fInfo, err := f.Stat()
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: script/binary failed to stat: %w", workerID, order.ID, err)
+		j.service.logger.Errorf("post processing worker %d: order %d: script/binary failed to stat: %s", workerID, order.ID, err)
 		return
 	}
 
@@ -97,7 +97,7 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 
 	_, err = io.ReadFull(f, firstBytes)
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: script/binary failed to read: %w", workerID, order.ID, err)
+		j.service.logger.Errorf("post processing worker %d: order %d: script/binary failed to read: %s", workerID, order.ID, err)
 		return
 	}
 

@@ -16,7 +16,7 @@ func (service *Service) fulfillOrder(orderID int, isHighPriority bool) (err erro
 	// add to the Job Manager
 	err = service.orderFulfilling.AddJob(newJob)
 	if err != nil {
-		return fmt.Errorf("order fulfilling: failed to add order id %d (%w)", orderID, err)
+		return fmt.Errorf("order fulfilling: failed to add order id %d (%s)", orderID, err)
 	}
 
 	return nil
