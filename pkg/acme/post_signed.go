@@ -164,6 +164,23 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 				// retry of the original query"
 				header.Nonce = response.Header.Get("Replay-Nonce")
 
+				// BANDAID for non-compliant ACME servers
+				// if ACME server doesn't comply with spec (i.e. nonce header was empty); get a new
+				// nonce from nonce manager
+				if header.Nonce == "" {
+					service.logger.Warn("acme signed post: err badNonce but acme server did not provide new nonce in error response (server violates the spec; report it to the server dev)")
+
+					var mgrErr error
+					header.Nonce, mgrErr = service.nonceManager.Nonce()
+					if mgrErr != nil {
+						// acme server didn't give proper nonce and getting one from nonce manager also failed;
+						// break and return original acmeError
+						service.logger.Errorf("acme signed post: failed to get new nonce after badNonce error (%s)", mgrErr)
+						break
+					}
+				}
+				// BANDAID - END
+
 				// no need to sleep, remote server is working ok
 				continue
 			}
