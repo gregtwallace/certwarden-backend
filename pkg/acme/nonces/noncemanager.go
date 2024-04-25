@@ -31,7 +31,7 @@ func NewManager(client *httpclient.Client, nonceUrl *string) *Manager {
 // fetchNonce gets a nonce from the manager's newNonceUrl
 // if fetching fails or the header does not contain a nonce,
 // an error is returned
-func (manager *Manager) fetchNonce() (nonce string, err error) {
+func (manager *Manager) fetchNonce() (string, error) {
 	response, err := manager.httpClient.Head(*manager.newNonceUrl)
 	if err != nil {
 		return "", err
@@ -44,7 +44,7 @@ func (manager *Manager) fetchNonce() (nonce string, err error) {
 	_, _ = io.Copy(io.Discard, response.Body)
 
 	// make sure the nonce isn't blank
-	nonce = response.Header.Get("Replay-Nonce")
+	nonce := response.Header.Get("Replay-Nonce")
 	if nonce == "" {
 		return "", errors.New("failed to fetch nonce, no value in header")
 	}
@@ -55,9 +55,9 @@ func (manager *Manager) fetchNonce() (nonce string, err error) {
 // Nonce returns the oldest nonce from the nonce buffer.
 // If the buffer cannot be read, a new nonce will be acquired by
 // fetching from the newNonceUrl
-func (manager *Manager) Nonce() (nonce string, err error) {
+func (manager *Manager) Nonce() (string, error) {
 	// try to read, if error fetch new
-	nonce, err = manager.nonces.Read()
+	nonce, err := manager.nonces.Read()
 
 	// if read failed, fetch from url
 	if err != nil {
@@ -70,14 +70,14 @@ func (manager *Manager) Nonce() (nonce string, err error) {
 // SaveNonce saves the nonce string to the nonces buffer. If the
 // buffer is full, the oldest nonce is evicted and the new nonce
 // is saved.
-func (manager *Manager) SaveNonce(nonce string) (err error) {
+func (manager *Manager) SaveNonce(nonce string) error {
 	// if nonce is empty, don't save
 	if nonce == "" {
 		return errors.New("cannot save empty nonce")
 	}
 
 	// write new nonce and evict oldest if buffer is full
-	err = manager.nonces.Write(nonce, true)
+	err := manager.nonces.Write(nonce, true)
 	if err != nil {
 		return err
 	}
