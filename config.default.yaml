@@ -45,12 +45,12 @@
   'dns_checker':
     'skip_check_wait_seconds': null
     'dns_services':
-      - 'primary_ip': '1.1.1.1'
-        'secondary_ip': '1.0.0.1'
-      - 'primary_ip': '9.9.9.9'
-        'secondary_ip': '149.112.112.112'
-      - 'primary_ip': '8.8.8.8'
-        'secondary_ip': '8.8.4.4'
+      - 'primary': '1.1.1.1'
+        'secondary': '1.0.0.1'
+      - 'primary': '9.9.9.9'
+        'secondary': '149.112.112.112'
+      - 'primary': '8.8.8.8'
+        'secondary': '8.8.4.4'
   'providers':
     # If any provider is configured, the default will not be
     'http_01_internal':

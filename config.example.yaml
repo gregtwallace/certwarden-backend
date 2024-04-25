@@ -117,10 +117,10 @@
       # internal dns usually has long cache and doesn't truly check propagation
       # if you don't want external dns checking, use skip_check above
       # primary and secondary should be for the same provider
-      - 'primary_ip': '208.67.222.222'
-        'secondary_ip': '208.67.220.220'
-      - 'primary_ip': '45.90.28.0'
-        'secondary_ip': '45.90.28.255'
+      - 'primary': '208.67.222.222'
+        'secondary': '208.67.220.220'
+      - 'primary': '45.90.28.0'
+        'secondary': '45.90.28.255'
 
   # Providers are critical to Cert Warden's function. These are how you verify control over
   # the domains you issue certificates for. You must have at least one provider.
