@@ -39,22 +39,25 @@ func NewService(app App, cfg Config) (service *Service, err error) {
 	if service.logger == nil {
 		return nil, errServiceComponent
 	}
-	service.logger.Debug("starting dns_checker service")
+	service.logger.Debug("dns_checker: starting service")
 
 	// shutdown context
 	service.shutdownContext = app.GetShutdownContext()
 
 	// configure resolvers (unless skipping check)
 	if cfg.SkipCheckWaitSeconds != nil {
-		service.logger.Warnf("dns record validation disabled, will manually sleep %d seconds instead", *cfg.SkipCheckWaitSeconds)
+		service.logger.Warnf("dns checker: dns record validation disabled, will manually sleep %d seconds instead", *cfg.SkipCheckWaitSeconds)
 		service.skipWait = time.Duration(*cfg.SkipCheckWaitSeconds) * time.Second
 	} else {
 		service.dnsResolvers, err = makeResolvers(cfg.DnsServices)
 		if err != nil {
 			// if failed to make resolvers, fallback to sleeping
 			fallbackSleepSeconds := 120
-			service.logger.Errorf("failed to configure dns checker resolvers (%s), will sleep %d seconds instead of validating dns records", err, fallbackSleepSeconds)
+			service.logger.Errorf("dns checker: failed to configure resolvers (%s), will sleep %d seconds instead of validating dns records", err, fallbackSleepSeconds)
 			service.skipWait = time.Duration(fallbackSleepSeconds) * time.Second
+		} else {
+			// success
+			service.logger.Debugf("dns checker: configured dns server pairs: %s", cfg.DnsServices)
 		}
 	}
 
