@@ -115,7 +115,6 @@ type UpdateAccountPayload struct {
 
 // UpdateAccount posts a secure message to the kid of the account
 // initially support only exists to update the email address
-// TODO: key rotation and account deactivation
 func (service *Service) UpdateAccount(payload UpdateAccountPayload, accountKey AccountKey) (response Account, err error) {
 
 	// post account update
