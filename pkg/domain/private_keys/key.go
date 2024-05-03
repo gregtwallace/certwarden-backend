@@ -69,7 +69,7 @@ func (key Key) detailedResponse() keyDetailedResponse {
 // Output Methods
 
 func (key Key) FilenameNoExt() string {
-	return fmt.Sprintf("%s.key.pem", key.Name)
+	return fmt.Sprintf("%s.key", key.Name)
 }
 
 func (key Key) PemContent() string {

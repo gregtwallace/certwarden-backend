@@ -17,7 +17,7 @@ type rootChain orders.Order
 // rootChain Output Methods
 
 func (rc rootChain) FilenameNoExt() string {
-	return fmt.Sprintf("%s.chain.pem", rc.Certificate.Name)
+	return fmt.Sprintf("%s.chain", rc.Certificate.Name)
 }
 
 // PemContent returns the PemContentChainOnly instead of what order would

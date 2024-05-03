@@ -18,7 +18,7 @@ type privateCertificate orders.Order
 // privateCertificate Output Methods
 
 func (pc privateCertificate) FilenameNoExt() string {
-	return fmt.Sprintf("%s.certkey.pem", pc.Certificate.Name)
+	return fmt.Sprintf("%s.certkey", pc.Certificate.Name)
 }
 
 func (pc privateCertificate) PemContent() string {

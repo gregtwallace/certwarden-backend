@@ -18,7 +18,7 @@ type privateCertificateChain orders.Order
 // privateCertificateChain Output Methods
 
 func (pcc privateCertificateChain) FilenameNoExt() string {
-	return fmt.Sprintf("%s.certchainkey.pem", pcc.Certificate.Name)
+	return fmt.Sprintf("%s.certchainkey", pcc.Certificate.Name)
 }
 
 // PemContent returns the combined key + cert + chain pem content

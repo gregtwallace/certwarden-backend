@@ -128,7 +128,7 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 // Output Methods
 
 func (order Order) FilenameNoExt() string {
-	return fmt.Sprintf("%s.cert.pem", order.Certificate.Name)
+	return fmt.Sprintf("%s.cert", order.Certificate.Name)
 }
 
 func (order Order) PemContent() string {
