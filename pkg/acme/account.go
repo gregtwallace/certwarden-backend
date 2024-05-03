@@ -107,6 +107,23 @@ func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.
 	return response, nil
 }
 
+// GetAccount does a POST-as-GET to fetch the current state of the given accountKey's Account
+func (service *Service) GetAccount(accountKey AccountKey) (response Account, err error) {
+	// POST-as-GET
+	bodyBytes, headers, err := service.postAsGet(accountKey.Kid, accountKey)
+	if err != nil {
+		return Account{}, err
+	}
+
+	// unmarshal response
+	response, err = unmarshalAccount(bodyBytes, headers)
+	if err != nil {
+		return Account{}, err
+	}
+
+	return response, nil
+}
+
 // UpdateAccountPayload is the payload used to update ACME accounts
 type UpdateAccountPayload struct {
 	Contact []string `json:"contact,omitempty"`
@@ -116,7 +133,6 @@ type UpdateAccountPayload struct {
 // UpdateAccount posts a secure message to the kid of the account
 // initially support only exists to update the email address
 func (service *Service) UpdateAccount(payload UpdateAccountPayload, accountKey AccountKey) (response Account, err error) {
-
 	// post account update
 	bodyBytes, headers, err := service.postToUrlSigned(payload, accountKey.Kid, accountKey)
 	if err != nil {

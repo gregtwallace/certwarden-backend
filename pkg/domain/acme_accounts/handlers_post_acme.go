@@ -19,7 +19,6 @@ type registerPayload struct {
 
 // NewAcmeAccount sends the account information to the ACME new-account endpoint
 // which effectively registers the account with ACME
-// endpoint: /api/v1/acmeaccounts/:id/new-account
 func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *output.Error {
 	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
 
@@ -43,7 +42,7 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *
 	account, err := service.storage.GetOneAccountById(idParam)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.ErrValidationFailed
 	}
 
 	// get crypto key
@@ -89,6 +88,87 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *
 	response := &accountResponse{}
 	response.StatusCode = http.StatusOK
 	response.Message = "registered account"
+	response.Account = updatedAcctDetailedResp
+
+	err = service.output.WriteJSON(w, response)
+	if err != nil {
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.ErrWriteJsonError
+	}
+
+	return nil
+}
+
+// RefreshAcmeAccount gets the current state of the ACME Account object from the
+// ACME Server and updates it in the database. The object is also returned to the
+// client.
+func (service *Service) RefreshAcmeAccount(w http.ResponseWriter, r *http.Request) *output.Error {
+	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+
+	// convert id param to an integer
+	idParam, err := strconv.Atoi(idParamStr)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+
+	// validation - confirm account exists and has a kid / URL
+	// fetch the relevant account
+	account, err := service.storage.GetOneAccountById(idParam)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrValidationFailed
+	}
+
+	// get acme AccountKey
+	acmeAccountKey, err := account.AcmeAccountKey()
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// if kid/url is blank, can't GET account object
+	if acmeAccountKey.Kid == "" {
+		service.logger.Debug(err)
+		return output.ErrValidationFailed
+	}
+	// end validation
+
+	// GET from ACME server
+	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	var acmeAccount AcmeAccount
+	acmeAccount.Account, err = acmeService.GetAccount(acmeAccountKey)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrInternal
+	}
+
+	// add additional details to the acmeAccount before saving
+	acmeAccount.ID = idParam
+	acmeAccount.UpdatedAt = int(time.Now().Unix())
+
+	// save ACME response to account
+	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccount)
+	if err != nil {
+		service.logger.Error(err)
+		return output.ErrStorageGeneric
+	}
+
+	updatedAcctDetailedResp, err := updatedAcct.detailedResponse(service)
+	if err != nil {
+		service.logger.Errorf("failed to generate account summary response (%s)", err)
+		return output.ErrInternal
+	}
+
+	// write response
+	response := &accountResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "account state fetched and updated"
 	response.Account = updatedAcctDetailedResp
 
 	err = service.output.WriteJSON(w, response)
