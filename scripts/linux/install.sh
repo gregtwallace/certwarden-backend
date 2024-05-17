@@ -16,7 +16,7 @@ cd "$script_path"
 useradd -r -s /bin/false "$run_user"
 
 # copy all files to install path
-mkdir "$path"
+mkdir "$install_path"
 cp -R ../* "$install_path"
 
 # permissions
