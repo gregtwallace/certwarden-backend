@@ -67,9 +67,9 @@ func middlewareApplyReturnValHandling(next handlerFunc, sensitive bool, logger *
 			timeToServe = time.Since(start)
 
 			if writeErr != nil {
-				logger.Errorf("client %s: %s %s: failed to serve error response (json write error: %s)", r.RemoteAddr, r.Method, trimmedURI, writeErr)
+				logger.Errorf("client %s: %s %s: failed to serve err response (json write err: %s)", r.RemoteAddr, r.Method, trimmedURI, writeErr)
 			} else {
-				logMsg := fmt.Sprintf("client %s: %s %s %v: served error response", r.RemoteAddr, r.Method, trimmedURI, timeToServe)
+				logMsg := fmt.Sprintf("client %s: %s %s %v: served err response", r.RemoteAddr, r.Method, trimmedURI, timeToServe)
 				if sensitive {
 					logger.Info(logMsg)
 				} else {
@@ -79,7 +79,7 @@ func middlewareApplyReturnValHandling(next handlerFunc, sensitive bool, logger *
 
 			// no error
 		} else if sensitive {
-			logger.Infof("client %s: %s %s %v: served without error", r.RemoteAddr, r.Method, trimmedURI, timeToServe)
+			logger.Infof("client %s: %s %s %v: served successfully", r.RemoteAddr, r.Method, trimmedURI, timeToServe)
 		}
 	}
 }
