@@ -234,7 +234,7 @@ func (app *Application) setDefaultConfigValues() {
 	}
 	if app.config.CertificateName == nil {
 		app.config.CertificateName = new(string)
-		*app.config.CertificateName = "certwarden"
+		*app.config.CertificateName = "serverdefault"
 	}
 	if app.config.DisableHSTS == nil {
 		app.config.DisableHSTS = new(bool)
