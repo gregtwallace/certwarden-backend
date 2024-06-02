@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	errServiceComponent = errors.New("necessary challenges service component is missing")
+	errServiceComponent = errors.New("challenges: necessary service component is missing")
 )
 
 // App interface is for connecting to the main app
@@ -74,14 +74,14 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 	// configure challenge providers
 	service.Providers, err = providers.MakeManager(app, cfg.ProviderConfigs)
 	if err != nil {
-		service.logger.Errorf("failed to configure challenge provider(s) (%s)", err)
+		service.logger.Errorf("challenges: failed to configure challenge provider(s) (%s)", err)
 		return nil, err
 	}
 
 	// create dns checker regardless of if using dns (since providers can change)
 	service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
 	if err != nil {
-		service.logger.Errorf("failed to configure dns checker (%s)", err)
+		service.logger.Errorf("challenges: failed to configure dns checker (%s)", err)
 		return nil, err
 	}
 

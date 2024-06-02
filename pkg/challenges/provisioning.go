@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	errShutdown        = errors.New("challenge solving aborted due to challenges shutdown")
-	errNameUnavailable = errors.New("failed to add challenge record due to resource name never becoming free (timeout)")
+	errShutdown        = errors.New("challenges: solving aborted due to challenges shutdown")
+	errNameUnavailable = errors.New("challenges: failed to add challenge record due to resource name never becoming free (timeout)")
 )
 
 // Provision adds the specified ACME Challenge resource name to the in use tracker and then calls the provider
@@ -22,11 +22,11 @@ func (service *Service) provision(domain, token, keyAuth string, provider provid
 		alreadyExisted, signal := service.resourcesInUse.Add(domain, make(chan struct{}))
 		// if didn't already exist, break loop and provision
 		if !alreadyExisted {
-			service.logger.Debugf("added resource for %s to challenge work tracker", domain)
+			service.logger.Debugf("challenges: added resource for %s to work tracker", domain)
 			break
 		}
 
-		service.logger.Debugf("unable to add resource for %s to challenge work tracker; waiting for resource name to become free", domain)
+		service.logger.Debugf("challenges: unable to add resource for %s to work tracker; waiting for resource name to become free", domain)
 
 		// block until domain is free, timeout, or shutdown is called
 		timeoutTimer := time.NewTimer(1 * time.Hour)
@@ -81,9 +81,9 @@ func (service *Service) deprovision(domain, token, keyAuth string, provider prov
 
 		deletedOk := service.resourcesInUse.DeleteFunc(delFunc)
 		if !deletedOk {
-			service.logger.Errorf("failed to remove resource for %s from work tracker (%s)", domain, err)
+			service.logger.Errorf("challenges: failed to remove resource for %s from work tracker (%s)", domain, err)
 		} else {
-			service.logger.Debugf("removed resource for %s from challenge work tracker", domain)
+			service.logger.Debugf("challenges: removed resource for %s from work tracker", domain)
 		}
 	}()
 

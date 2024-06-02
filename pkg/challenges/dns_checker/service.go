@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var errServiceComponent = errors.New("necessary challenges service component is missing")
+var errServiceComponent = errors.New("dns_checker: necessary service component is missing")
 
 // App interface is for connecting to the main app
 type App interface {
@@ -46,18 +46,18 @@ func NewService(app App, cfg Config) (service *Service, err error) {
 
 	// configure resolvers (unless skipping check)
 	if cfg.SkipCheckWaitSeconds != nil {
-		service.logger.Warnf("dns checker: dns record validation disabled, will manually sleep %d seconds instead", *cfg.SkipCheckWaitSeconds)
+		service.logger.Warnf("dns_checker: dns record validation disabled, will manually sleep %d seconds instead", *cfg.SkipCheckWaitSeconds)
 		service.skipWait = time.Duration(*cfg.SkipCheckWaitSeconds) * time.Second
 	} else {
 		service.dnsResolvers, err = makeResolvers(cfg.DnsServices)
 		if err != nil {
 			// if failed to make resolvers, fallback to sleeping
 			fallbackSleepSeconds := 120
-			service.logger.Errorf("dns checker: failed to configure resolvers (%s), will sleep %d seconds instead of validating dns records", err, fallbackSleepSeconds)
+			service.logger.Errorf("dns_checker: failed to configure resolvers (%s), will sleep %d seconds instead of validating dns records", err, fallbackSleepSeconds)
 			service.skipWait = time.Duration(fallbackSleepSeconds) * time.Second
 		} else {
 			// success
-			service.logger.Debugf("dns checker: configured dns server pairs: %s", cfg.DnsServices)
+			service.logger.Debugf("dns_checker: configured dns server pairs: %s", cfg.DnsServices)
 		}
 	}
 

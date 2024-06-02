@@ -1,7 +1,6 @@
 package dns_checker
 
 import (
-	"errors"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -22,17 +21,9 @@ const (
 // backoff until that times out and then return false if propagation still hasn't occurred.
 func (service *Service) CheckTXTWithRetry(fqdn string, recordValue string) (propagated bool) {
 	// func to try with exponential backoff
-	checkAllServicesFunc := func() (bool, error) {
+	checkAllServicesFunc := func() error {
 		// check for propagation
-		propagated := service.checkDnsRecordAllServices(fqdn, recordValue, txtRecord)
-
-		// if propagated, done & success
-		if propagated {
-			return true, nil
-		}
-
-		// return err to trigger retry
-		return false, errors.New("try again")
+		return service.checkDnsRecordPropagationAllServices(fqdn, recordValue, txtRecord)
 	}
 
 	// backoff properties
@@ -45,16 +36,13 @@ func (service *Service) CheckTXTWithRetry(fqdn string, recordValue string) (prop
 
 	boWithContext := backoff.WithContext(bo, service.shutdownContext)
 
-	// log failures
-	notifyFunc := func(_err error, dur time.Duration) {
-		service.logger.Infof("dns TXT record %s value %s is still not propagated, will check again in %s", fqdn, recordValue, dur.Round(100*time.Millisecond))
+	// log failures / delays
+	notifyFunc := func(err error, dur time.Duration) {
+		service.logger.Infof("dns_checker: %s, will check again in %s", err, dur.Round(100*time.Millisecond))
 	}
 
 	// (re)try with backoff
-	propagated, err := backoff.RetryNotifyWithData(checkAllServicesFunc, boWithContext, notifyFunc)
-	if err != nil || !propagated {
-		return false
-	}
+	err := backoff.RetryNotify(checkAllServicesFunc, boWithContext, notifyFunc)
 
-	return true
+	return err == nil
 }

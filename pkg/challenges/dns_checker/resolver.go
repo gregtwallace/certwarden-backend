@@ -11,7 +11,7 @@ import (
 const timeoutSeconds = 5
 
 var (
-	errBlankIP = errors.New("can't create resolver, ip address is blank")
+	errBlankIP = errors.New("dns_checker: can't create resolver, ip address is blank")
 )
 
 // makeResolvers generates all of the resolver pairs for a slice

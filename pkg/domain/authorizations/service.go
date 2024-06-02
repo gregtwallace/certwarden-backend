@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var errServiceComponent = errors.New("necessary authorizations service component is missing")
+var errServiceComponent = errors.New("authorizations: necessary service component is missing")
 
 // App interface is for connecting to the main app
 type App interface {
@@ -24,7 +24,6 @@ type Service struct {
 	acmeServerService *acme_servers.Service
 	challenges        *challenges.Service
 	authsWorking      *safemap.SafeMap[chan struct{}] // tracks auths currently being worked
-	cache             *cache                          // tracks results of auths after worked
 }
 
 // NewService creates a new service
@@ -51,9 +50,6 @@ func NewService(app App) (service *Service, err error) {
 
 	// initialize working
 	service.authsWorking = safemap.NewSafeMap[chan struct{}]()
-
-	// initialize cache
-	service.cache = newCache()
 
 	return service, nil
 }

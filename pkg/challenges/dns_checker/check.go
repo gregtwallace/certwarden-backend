@@ -3,6 +3,7 @@ package dns_checker
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -14,8 +15,8 @@ import (
 // functioningRequirement is the portion of DNS services that must not fail to
 // resolve in order for a check to not produce an Error.
 const (
-	propagationRequirement = 1.0
 	functioningRequirement = 0.5
+	propagationRequirement = 1.0
 )
 
 // checkDnsRecord checks if the fqdn has a record of the specified type, set to the specified
@@ -26,7 +27,7 @@ func checkDnsRecord(fqdn string, recordValue string, recordType dnsRecordType, r
 
 	// nil check
 	if r == nil {
-		return false, errors.New("can't check record, resolver is nil")
+		return false, errors.New("dns_checker: can't check record, resolver is nil (should never happen)")
 	}
 
 	// timeout context
@@ -41,7 +42,7 @@ func checkDnsRecord(fqdn string, recordValue string, recordType dnsRecordType, r
 
 	// any other (unsupported)
 	default:
-		return false, errors.New("unsupported dns record type")
+		return false, errors.New("dns_checker: unsupported dns record type (should never happen)")
 	}
 
 	// error check
@@ -69,19 +70,17 @@ func checkDnsRecord(fqdn string, recordValue string, recordType dnsRecordType, r
 	return false, nil
 }
 
-// checkDnsRecordAllServices sends concurrent dns requests using all configured
-// resolvers to check for the existence of the specified record. If the propagation
-// requirement is met, TRUE is returned. An Error is returned if the functioning
-// requirement is not met.
-func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue string, recordType dnsRecordType) (exists bool) {
+// checkDnsRecordPropagationAllServices sends concurrent dns requests using all configured
+// resolvers to check for the existence of the specified record. If both the
+// functional resolver threshold and propagation thresholds are met, nil is
+// returned, otherwise an error is returned.
+func (service *Service) checkDnsRecordPropagationAllServices(fqdn string, recordValue string, recordType dnsRecordType) error {
 	// if no resolvers (i.e. configured to skip)
 	if service.dnsResolvers == nil {
 		// sleep the skip wait and then return true (assume propagated)
-		service.logger.Debugf("dns check (%s): skipping and sleeping %d seconds", fqdn, int(service.skipWait.Seconds()))
+		service.logger.Debugf("dns_checker: skipping check of %s and sleeping %d seconds", fqdn, int(service.skipWait.Seconds()))
 
-		// sleep or cancel/error if shutdown is called
 		delayTimer := time.NewTimer(service.skipWait)
-
 		select {
 		case <-service.shutdownContext.Done():
 			// ensure timer releases resources
@@ -89,14 +88,14 @@ func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue strin
 				<-delayTimer.C
 			}
 
-			// cancel/error if shutting down
-			return false
+			// cancel if shutting down
+			return errors.New("dns_checker: shutting down")
 
 		case <-delayTimer.C:
-			// sleep and retry
+			// no-op, continue
 		}
 
-		return true
+		return nil
 	}
 
 	// use waitgroup for concurrent checking
@@ -112,6 +111,10 @@ func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue strin
 		go func(i int) {
 			defer wg.Done()
 			result, e := service.dnsResolvers[i].checkDnsRecord(fqdn, recordValue, recordType)
+			if e != nil {
+				// should not be getting errors, so write each to log if we get any
+				service.logger.Errorf("dns_checker: check %s failed (%s)", fqdn, e)
+			}
 			wgResults <- result
 			wgErrors <- e
 		}(i)
@@ -124,36 +127,36 @@ func (service *Service) checkDnsRecordAllServices(fqdn string, recordValue strin
 	close(wgResults)
 	close(wgErrors)
 
-	// make array of all returned errors
-	returnedErrs := []error{}
+	// count functioning (total - any that returned err) & functional calc rate
+	functionalCount := resolverTotal
 	for err := range wgErrors {
 		if err != nil {
-			returnedErrs = append(returnedErrs, err)
+			functionalCount--
 		}
 	}
+	functionalRate := float32(functionalCount) / float32(resolverTotal)
 
-	// calculate dns resolver failure rate
-	errCount := len(returnedErrs)
-	errRate := float32(errCount) / float32(resolverTotal)
-	service.logger.Debugf("dns check (%s): resolver fail count: %d, resolver fail rate: %.2f, resolver fail threshold: %.2f", fqdn, errCount, errRate, functioningRequirement)
-
-	// if error rate is greater than tolerable, return not propagated
-	if errRate > (1 - functioningRequirement) {
-		return false
-	}
-
-	// error rate was acceptable, check results
-	successCount := 0
+	// count propagation confirmed result & calculate propagation rate
+	propagationCount := 0
 	for existed := range wgResults {
 		if existed {
-			successCount++
+			propagationCount++
 		}
 	}
+	propagationRate := float32(propagationCount) / float32(functionalCount)
 
-	// calculate propagation
-	propagationRate := float32(successCount) / float32(resolverTotal-errCount)
-	service.logger.Debugf("dns check (%s): propagation success count: %d, resolver count: %d, propagation rate: %.2f, propagation requirement: %.2f", fqdn, successCount, resolverTotal, propagationRate, propagationRequirement)
+	// debug log counts and rates
+	functionalErr := fmt.Errorf("check %s: functional: %d, functional %%: %.2f (min %%: %.2f)", fqdn, functionalCount, functionalRate, functioningRequirement)
+	service.logger.Debugf("dns_checker: %s", functionalErr)
+	propagationErr := fmt.Errorf("check %s: propagated: %d, propagated %%: %.2f (min %%: %.2f)", fqdn, propagationCount, propagationRate, propagationRequirement)
+	service.logger.Debugf("dns_checker: %s", propagationErr)
 
-	// return true if rate >= requirement
-	return propagationRate >= propagationRequirement
+	// return err if threshold(s) not met
+	if functionalRate < functioningRequirement {
+		return functionalErr
+	} else if propagationRate < propagationRequirement {
+		return propagationErr
+	}
+
+	return nil
 }

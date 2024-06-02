@@ -11,18 +11,18 @@ import (
 )
 
 var (
-	errDnsDidntPropagate         = errors.New("solving failed: dns record didn't propagate")
-	errChallengeRetriesExhausted = errors.New("solving failed: challenge failed to move to final state")
-	errChallengeTypeNotFound     = errors.New("solving failed: provider's challenge type not found in challenges array (possibly trying to use a wildcard with http-01)")
+	errDnsDidntPropagate         = errors.New("challenges: solving failed: dns record didn't propagate")
+	errChallengeRetriesExhausted = errors.New("challenges: solving failed: challenge failed to move to final state (timeout)")
+	errChallengeTypeNotFound     = errors.New("challenges: solving failed: provider's challenge type not found in challenges array (possibly trying to use a wildcard with http-01)")
 )
 
 // Solve accepts an ACME identifier and a slice of challenges and then solves the challenge using a provider
 // for the specific domain. If no provider exists or solving otherwise fails, an error is returned.
-func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, key acme.AccountKey, acmeService *acme.Service) (status string, err error) {
+func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, key acme.AccountKey, acmeService *acme.Service) (err error) {
 	// get provider for identifier
 	provider, err := service.Providers.ProviderFor(identifier)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// range to the correct challenge to solve based on ACME Challenge Type (from provider)
@@ -38,7 +38,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		}
 	}
 	if !found {
-		return "", errChallengeTypeNotFound
+		return errChallengeTypeNotFound
 	}
 
 	// vars for provision/deprovision
@@ -46,7 +46,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	token := challenge.Token
 	keyAuth, err := key.KeyAuthorization(token)
 	if err != nil {
-		return "", fmt.Errorf("failed to make key auth (%s)", err)
+		return fmt.Errorf("challenges: failed to make key auth (%s)", err)
 	}
 
 	// provision the needed resource for validation and defer deprovisioning
@@ -62,13 +62,13 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 
 		err := service.deprovision(domain, token, keyAuth, provider)
 		if err != nil {
-			service.logger.Errorf("challenge solver deprovision failed (%s)", err)
+			service.logger.Errorf("challenges: deprovision failed (%s)", err)
 		}
 	}()
 
 	// Provision error check
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// if using dns-01 provider, utilize dnsChecker
@@ -81,12 +81,12 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 			propagated := service.dnsChecker.CheckTXTWithRetry(dnsRecordName, dnsRecordValue)
 			// if failed to propagate
 			if !propagated {
-				return "", errDnsDidntPropagate
+				return errDnsDidntPropagate
 			}
 		} else {
 			// dnschecker is needed but not configured, shouldn't happen but deal with it just in case
 			sleepWait := 240
-			service.logger.Error("dns checker is needed by solver but for some reason its not running, manually "+
+			service.logger.Error("challenges: dns checker is needed by solver but for some reason its not running, manually "+
 				"sleeping %s seconds, report this issue to developer", sleepWait)
 			time.Sleep(time.Duration(sleepWait) * time.Second)
 		}
@@ -97,9 +97,9 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	// valid or invalid state.
 
 	// inform ACME that the challenge is ready
-	_, err = acmeService.ValidateChallenge(challenge.Url, key)
+	challenge, err = acmeService.ValidateChallenge(challenge.Url, key)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// sleep a little before first check
@@ -115,7 +115,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 
 		// log error if invalid
 		if challenge.Status == "invalid" {
-			service.logger.Infof("challenge status invalid; acme error: %s", challenge.Error)
+			service.logger.Infof("challenges: challenge %s status invalid; acme error: %s", challenge.Url, challenge.Error)
 		}
 
 		// done if Status has reached a final status
@@ -124,20 +124,20 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		}
 
 		// not a final status
-		return fmt.Errorf("current status (%s) is not a final status", challenge.Status)
+		return fmt.Errorf("challenge %s status (%s) not a final status", challenge.Status, challenge.Url)
 	}
 
 	// notify: info log challenge checks
 	notifyFunc := func(funcErr error, dur time.Duration) {
-		service.logger.Infof("challenge for %s not confirmed finalized (%s), will check again in %s", challenge.Url, funcErr, dur.Round(100*time.Millisecond))
+		service.logger.Infof("challenges: %s, will check again in %s", funcErr, dur.Round(100*time.Millisecond))
 	}
 
 	bo := randomness.BackoffACME(service.shutdownContext)
 	err = backoff.RetryNotify(challCheckFunc, bo, notifyFunc)
 	// if err returned, retry was exhausted
 	if err != nil {
-		return "", errChallengeRetriesExhausted
+		return errors.Join(errChallengeRetriesExhausted, err)
 	}
 
-	return challenge.Status, nil
+	return nil
 }

@@ -18,7 +18,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var errServiceComponent = errors.New("necessary orders service component is missing")
+var errServiceComponent = errors.New("orders: necessary service component is missing")
 
 // App interface is for connecting to the main app
 type App interface {
@@ -142,19 +142,19 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	var err error
 	service.shellPath, err = exec.LookPath("powershell.exe")
 	if err != nil {
-		service.logger.Debugf("unable to find powershell (%s)", err)
+		service.logger.Debugf("orders: unable to find powershell (%s)", err)
 		// then try bash
 		service.shellPath, err = exec.LookPath("bash")
 		if err != nil {
-			service.logger.Debugf("unable to find bash (%s)", err)
+			service.logger.Debugf("orders: unable to find bash (%s)", err)
 			// then try zshell
 			service.shellPath, err = exec.LookPath("zsh")
 			if err != nil {
-				logger.Debugf("unable to find zshell (%s)", err)
+				logger.Debugf("orders: unable to find zshell (%s)", err)
 				// then try sh
 				service.shellPath, err = exec.LookPath("sh")
 				if err != nil {
-					logger.Debugf("unable to find sh (%s)", err)
+					logger.Debugf("orders: unable to find sh (%s)", err)
 					// failed - disable post processing
 					logger.Errorf("orders: unable to find a suitable shell for certificate post processing scripts (scripts disabled)")
 					service.shellPath = ""
