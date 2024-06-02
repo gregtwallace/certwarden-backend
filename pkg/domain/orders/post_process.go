@@ -21,17 +21,17 @@ func (service *Service) makePostProcessJob(orderID int, highPriority bool) (*pos
 	// get order
 	order, err := service.storage.GetOneOrder(orderID)
 	if err != nil {
-		return nil, fmt.Errorf("post processing: failed to make post process job for order id %d (%s)", orderID, err)
+		return nil, fmt.Errorf("orders: post processing: failed to make post process job for order id %d (%s)", orderID, err)
 	}
 
 	// fail add if order isn't valid
 	if order.Status != "valid" {
-		return nil, fmt.Errorf("post processing: failed to make post process job for order id %d (status is not 'valid')", orderID)
+		return nil, fmt.Errorf("orders: post processing: failed to make post process job for order id %d (status is not 'valid')", orderID)
 	}
 
 	// confirm order actually has post processing to do
 	if !order.hasPostProcessingToDo() {
-		return nil, fmt.Errorf("post processing: failed to make post process job for order id %d (certificate %s has no post processing configured)", orderID, order.Certificate.Name)
+		return nil, fmt.Errorf("orders: post processing: failed to make post process job for order id %d (certificate %s has no post processing configured)", orderID, order.Certificate.Name)
 	}
 
 	return &postProcessJob{

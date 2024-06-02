@@ -16,7 +16,7 @@ func (service *Service) postProcess(orderID int, isHighPriority bool) (err error
 	// add to the Job Manager
 	err = service.postProcessing.AddJob(newJob)
 	if err != nil {
-		return fmt.Errorf("post processing: failed to add order id %d (%s)", orderID, err)
+		return fmt.Errorf("orders: post processing: failed to add order id %d (%s)", orderID, err)
 	}
 
 	return nil

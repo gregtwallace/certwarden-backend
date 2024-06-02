@@ -76,7 +76,7 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 			finalKeyName = order.FinalizedKey.Name
 		}
 
-		service.logger.Debug(fmt.Errorf("cant post process order %d (status: %s, knownrevoked: %t, final key name %s, validTo: %d, now: %d )", orderId, order.Status, order.KnownRevoked, finalKeyName, validTo, time.Now().Unix()))
+		service.logger.Debug(fmt.Errorf("orders: cant post process order %d (status: %s, knownrevoked: %t, final key name %s, validTo: %d, now: %d )", orderId, order.Status, order.KnownRevoked, finalKeyName, validTo, time.Now().Unix()))
 		return output.ErrValidationFailed
 	}
 
@@ -90,11 +90,11 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 	// write response
 	response := &output.JsonResponse{}
 	response.StatusCode = http.StatusOK
-	response.Message = fmt.Sprintf("post processing of order id %d executing", orderId)
+	response.Message = fmt.Sprintf("orders: post processing of order id %d executing", orderId)
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		service.logger.Errorf("failed to write json (%s)", err)
+		service.logger.Errorf("orders: failed to write json (%s)", err)
 		return output.ErrWriteJsonError
 	}
 

@@ -33,22 +33,22 @@ type postProcessClientPayload struct {
 func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
 	// no-op if no client key
 	if order.Certificate.PostProcessingClientKeyB64 == "" {
-		j.service.logger.Debugf("post processing worker %d: order %d: skipping client notify (cert does not have a client key) (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
+		j.service.logger.Debugf("orders: post processing worker %d: order %d: skipping client notify (cert does not have a client key) (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
 
-	j.service.logger.Infof("post processing worker %d: order %d: attempting to notify client (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
+	j.service.logger.Infof("orders: post processing worker %d: order %d: attempting to notify client (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
 
 	// decode AES key
 	aesKey, err := base64.RawURLEncoding.DecodeString(order.Certificate.PostProcessingClientKeyB64)
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: notify client failed: invalid aes key (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: invalid aes key (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
 
 	// verify pem exists (should never trigger)
 	if order.Pem == nil || order.FinalizedKey == nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: notify client failed: something really weird happened and pem content is nil (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: something really weird happened and pem content is nil (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
 
@@ -59,20 +59,20 @@ func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
 	}
 	innerPayloadJson, err := json.Marshal(innerPayload)
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: notify client failed: failed to marshal inner payload (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to marshal inner payload (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
 
 	// make AES-GCM for encrypting
 	aes, err := aes.NewCipher(aesKey)
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: notify client failed: failed to make cipher (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to make cipher (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
 
 	gcm, err := cipher.NewGCM(aes)
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: notify client failed: failed to make gcm AEAD (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to make gcm AEAD (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
 
@@ -80,7 +80,7 @@ func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
 	nonce := make([]byte, gcm.NonceSize())
 	_, err = rand.Read(nonce)
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: notify client failed: failed to make nonce (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to make nonce (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
 	// note: dst==nonce on purpose (so nonce is prepended)
@@ -93,7 +93,7 @@ func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
 
 	dataPayload, err := json.Marshal(payload)
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: notify client failed: failed to marshal outer payload (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to marshal outer payload (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
 
@@ -101,7 +101,7 @@ func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
 	postTo := fmt.Sprintf("https://%s:%d%s", order.Certificate.Subject, postProcessClientPort, postProcessClientPostRoute)
 	resp, err := j.service.httpClient.Post(postTo, "application/json", bytes.NewBuffer(dataPayload))
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: notify client failed: failed to post to client (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to post to client (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
 
@@ -116,12 +116,12 @@ func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
 		resp, err = j.service.httpClient.Post(postTo, "application/json", bytes.NewBuffer(dataPayload))
 
 		if err != nil {
-			j.service.logger.Errorf("post processing worker %d: order %d: notify client failed: failed to post pre-rename route to client (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
+			j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to post pre-rename route to client (%s) (cert: %d, cn: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject)
 			return
 		}
 
 		// Log WARN so user knows to update client
-		j.service.logger.Warnf("post processing worker %d: order %d: notify client used pre-app rename route; update client asap (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
+		j.service.logger.Warnf("orders: post processing worker %d: order %d: notify client used pre-app rename route; update client asap (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
 
 		// ensure body is read and closed
 		defer resp.Body.Close()
@@ -130,9 +130,9 @@ func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
 
 	// error if not 200
 	if resp.StatusCode != http.StatusOK {
-		j.service.logger.Errorf("post processing worker %d: order %d: notify client failed: post status %d (cert: %d, cn: %s)", workerID, order.ID, resp.StatusCode, order.Certificate.ID, order.Certificate.Subject)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: post status %d (cert: %d, cn: %s)", workerID, order.ID, resp.StatusCode, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
 
-	j.service.logger.Infof("post processing worker %d: order %d: client notify completed", workerID, order.ID)
+	j.service.logger.Infof("orders: post processing worker %d: order %d: client notify completed", workerID, order.ID)
 }

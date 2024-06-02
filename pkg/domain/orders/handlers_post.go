@@ -49,7 +49,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) *output
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		service.logger.Errorf("failed to write json (%s)", err)
+		service.logger.Errorf("orders: failed to write json (%s)", err)
 		return output.ErrWriteJsonError
 	}
 
@@ -211,7 +211,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		service.logger.Errorf("failed to write json (%s)", err)
+		service.logger.Errorf("orders: failed to write json (%s)", err)
 		return output.ErrWriteJsonError
 	}
 

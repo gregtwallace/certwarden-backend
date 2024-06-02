@@ -9,14 +9,14 @@ import (
 )
 
 var (
-	errCertIdBad  = errors.New("certificate id is invalid")
-	errOrderIdBad = errors.New("order id is invalid")
-	errIdMismatch = errors.New("order id does not match cert")
+	errCertIdBad  = errors.New("orders: certificate id is invalid")
+	errOrderIdBad = errors.New("orders: order id is invalid")
+	errIdMismatch = errors.New("orders: order id does not match cert")
 
-	errNoPemContent = errors.New("order doesnt have pem content")
+	errNoPemContent = errors.New("orders: order doesnt have pem content")
 
-	errOrderRetryFinal      = errors.New("can't retry an order that is in a final state (valid or invalid)")
-	errOrderRevokeBadReason = errors.New("bad revocation reason code")
+	errOrderRetryFinal      = errors.New("orders: can't retry an order that is in a final state (valid or invalid)")
+	errOrderRevokeBadReason = errors.New("orders: bad revocation reason code")
 )
 
 // getOrder returns the Order specified by the ids, so long as the Order belongs

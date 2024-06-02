@@ -92,7 +92,7 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 	// serve final response
 	err = service.output.WriteJSON(w, jobsResp)
 	if err != nil {
-		service.logger.Errorf("failed to write json (%s)", err)
+		service.logger.Errorf("orders: failed to write json (%s)", err)
 		return output.ErrWriteJsonError
 	}
 	return nil

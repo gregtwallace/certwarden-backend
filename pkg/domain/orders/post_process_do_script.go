@@ -16,20 +16,20 @@ import (
 func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) {
 	// no-op if no command
 	if order.Certificate.PostProcessingCommand == "" {
-		j.service.logger.Debugf("post processing worker %d: order %d: skipping command (cert does not have a command to run) (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
+		j.service.logger.Debugf("orders: post processing worker %d: order %d: skipping command (cert does not have a command to run) (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
 		return
 	}
 
-	j.service.logger.Infof("post processing worker %d: order %d: attempting to run command (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
+	j.service.logger.Infof("orders: post processing worker %d: order %d: attempting to run command (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)
 
 	// nil checks
 	if order.Pem == nil {
-		err := fmt.Errorf("post processing worker %d: order %d: command failed: order pem is nil (should never happen)", workerID, order.ID)
+		err := fmt.Errorf("orders: post processing worker %d: order %d: command failed: order pem is nil (should never happen)", workerID, order.ID)
 		j.service.logger.Error(err)
 		return
 	}
 	if order.FinalizedKey == nil {
-		err := fmt.Errorf("post processing worker %d: order %d: command failed: finalized key no longer exists", workerID, order.ID)
+		err := fmt.Errorf("orders: post processing worker %d: order %d: command failed: finalized key no longer exists", workerID, order.ID)
 		j.service.logger.Error(err)
 		return
 	}
@@ -45,7 +45,7 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 	// make Params (which sanitizes the env params and handles things like removing quotes)
 	envParams, invalidParams := environment.NewParams(order.Certificate.PostProcessingEnvironment)
 	if len(invalidParams) > 0 {
-		j.service.logger.Errorf("post processing worker %d: order %d: %s are not properly formatted environment param(s), they will be skipped", workerID, order.ID, invalidParams)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: %s are not properly formatted environment param(s), they will be skipped", workerID, order.ID, invalidParams)
 	}
 
 	// make environ from Params and update placeholders with proper values
@@ -78,14 +78,14 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 	// open and read (up to) the first 512 bytes of post processing script/binary to decide if it is binary or not
 	f, err := os.Open(order.Certificate.PostProcessingCommand)
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: script/binary failed to open: %s", workerID, order.ID, err)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: script/binary failed to open: %s", workerID, order.ID, err)
 		return
 	}
 	defer f.Close()
 
 	fInfo, err := f.Stat()
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: script/binary failed to stat: %s", workerID, order.ID, err)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: script/binary failed to stat: %s", workerID, order.ID, err)
 		return
 	}
 
@@ -97,7 +97,7 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 
 	_, err = io.ReadFull(f, firstBytes)
 	if err != nil {
-		j.service.logger.Errorf("post processing worker %d: order %d: script/binary failed to read: %s", workerID, order.ID, err)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: script/binary failed to read: %s", workerID, order.ID, err)
 		return
 	}
 
@@ -111,7 +111,7 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 		// try to run as script if it wasn't an octet-stream
 		// if app failed to get suitable shell at startup, post processing is disabled
 		if j.service.shellPath == "" {
-			j.service.logger.Errorf("post processing worker %d: order %d: commaind failed to run post processing script (no suitable shell was found during startup)", workerID, order.ID)
+			j.service.logger.Errorf("orders: post processing worker %d: order %d: commaind failed to run post processing script (no suitable shell was found during startup)", workerID, order.ID)
 			return
 		}
 
@@ -128,17 +128,17 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 
 	// run command
 	result, err := cmd.Output()
-	j.service.logger.Debugf("post processing worker %d: order %d: command output: %s", workerID, order.ID, string(result))
+	j.service.logger.Debugf("orders: post processing worker %d: order %d: command output: %s", workerID, order.ID, string(result))
 	if err != nil {
 		// try to get stderr and log it too
 		exitErr := new(exec.ExitError)
 		if errors.As(err, &exitErr) {
-			j.service.logger.Errorf("post processing worker %d: order %d: command std err: %s", workerID, order.ID, exitErr.Stderr)
+			j.service.logger.Errorf("orders: post processing worker %d: order %d: command std err: %s", workerID, order.ID, exitErr.Stderr)
 		}
 
-		j.service.logger.Errorf("post processing worker %d: order %d: command failed: error: %s", workerID, order.ID, err)
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: command failed: error: %s", workerID, order.ID, err)
 		return
 	}
 
-	j.service.logger.Infof("post processing worker %d: order %d: command completed", workerID, order.ID)
+	j.service.logger.Infof("orders: post processing worker %d: order %d: command completed", workerID, order.ID)
 }

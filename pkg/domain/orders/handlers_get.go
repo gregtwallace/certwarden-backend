@@ -66,7 +66,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		service.logger.Errorf("failed to write json (%s)", err)
+		service.logger.Errorf("orders: failed to write json (%s)", err)
 		return output.ErrWriteJsonError
 	}
 
@@ -107,7 +107,7 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
-		service.logger.Errorf("failed to write json (%s)", err)
+		service.logger.Errorf("orders: failed to write json (%s)", err)
 		return output.ErrWriteJsonError
 	}
 

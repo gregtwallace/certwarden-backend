@@ -33,7 +33,7 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		service.logger.Error(err)
 		return Order{}, output.ErrInternal
 	}
-	service.logger.Debugf("new order location: %s", acmeResponse.Location)
+	service.logger.Debugf("orders: new order location: %s", acmeResponse.Location)
 
 	// populate new order payload
 	payload := makeNewOrderAcmePayload(cert, acmeResponse)

@@ -23,7 +23,7 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 	refreshMinute := *cfg.RefreshTimeMinute
 
 	// log start and update wg
-	service.logger.Infof("starting automatic certificate ordering service; %d day expiration threshold; "+
+	service.logger.Infof("orders: starting automatic certificate ordering service; %d day expiration threshold; "+
 		"orders will be placed every day at %02d:%02d", *cfg.ValidRemainingDaysThreshold, refreshHour, refreshMinute)
 	wg.Add(1)
 
@@ -61,7 +61,7 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 				}
 
 				// close routine
-				service.logger.Info("automatic certificate ordering service shutdown complete")
+				service.logger.Info("orders: automatic certificate ordering service shutdown complete")
 				return
 
 			case <-delayTimer.C:
@@ -71,7 +71,7 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 			// complete existing orders that are not 'valid' or 'invalid' (i.e. not completed)
 			err := service.retryIncompleteOrders()
 			if err != nil {
-				service.logger.Errorf("error retying incomplete orders: %s", err)
+				service.logger.Errorf("orders: error retying incomplete orders: %s", err)
 			}
 
 			// order expiring certificates
@@ -83,7 +83,7 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 // retryIncompleteOrders retries all incomplete orders within storage. this should
 // move all orders to valid or invalid state.
 func (service *Service) retryIncompleteOrders() (err error) {
-	service.logger.Info("adding incomplete orders to order queue")
+	service.logger.Info("orders: adding incomplete orders to order queue")
 
 	// get all incomplete order ids from storage
 	incompleteOrderIds, err := service.storage.GetAllIncompleteOrderIds()
@@ -96,23 +96,23 @@ func (service *Service) retryIncompleteOrders() (err error) {
 		err = service.fulfillOrder(orderId, false)
 		if err != nil {
 			// log error, but keep going through remaining range
-			service.logger.Errorf("failed to add order %d to processing queue (%s)", orderId, err)
+			service.logger.Errorf("orders: failed to add order %d to processing queue (%s)", orderId, err)
 		}
 	}
 
-	service.logger.Info("incomplete orders added to order queue")
+	service.logger.Info("orders: incomplete orders added to order queue")
 	return nil
 }
 
 // orderExpiringCerts automatically orders any certficates that are valid but have a valid_to
 // timestamp within the specified threshold
 func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration) {
-	service.logger.Info("adding expiring certificates to order queue")
+	service.logger.Info("orders: adding expiring certificates to order queue")
 
 	// get slice of all expiring certificate ids
 	expiringCertIds, err := service.storage.GetExpiringCertIds(remainingDaysThreshold)
 	if err != nil {
-		service.logger.Errorf("error ordering expiring certs: %s", err)
+		service.logger.Errorf("orders: error ordering expiring certs: %s", err)
 		return
 	}
 
@@ -125,22 +125,22 @@ func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration)
 			// unable to get existing incomplete order -> place new order
 			// if error other than NoRows, log it
 			if err != sql.ErrNoRows {
-				service.logger.Errorf("failed to fetch newest incomplete order id for cert %d (%s)", certId, err)
+				service.logger.Errorf("orders: failed to fetch newest incomplete order id for cert %d (%s)", certId, err)
 			}
 
 			// place new order
-			service.logger.Debugf("placing new order for expiring cert %d", certId)
+			service.logger.Debugf("orders: placing new order for expiring cert %d", certId)
 			_, outErr := service.placeNewOrderAndFulfill(certId, false)
 			if outErr != nil {
-				service.logger.Errorf("failed to place new order for cert %d (%s)", certId, err)
+				service.logger.Errorf("orders: failed to place new order for cert %d (%s)", certId, err)
 			}
 
 		} else {
 			// no error, retry existing order
-			service.logger.Debugf("retrying order %d to refresh cert %d", orderId, certId)
+			service.logger.Debugf("orders: retrying order %d to refresh cert %d", orderId, certId)
 			err = service.fulfillOrder(orderId, false)
 			if err != nil {
-				service.logger.Errorf("failed to retry order %d for cert %d (%s)", orderId, certId, err)
+				service.logger.Errorf("orders: failed to retry order %d for cert %d (%s)", orderId, certId, err)
 			}
 		}
 
@@ -156,7 +156,7 @@ func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration)
 			}
 
 			// abort refreshing due to shutdown
-			service.logger.Info("expiring certificates refresh canceled due to shutdown")
+			service.logger.Info("orders: expiring certificates refresh canceled due to shutdown")
 			return
 
 		case <-delayTimer.C:
@@ -164,5 +164,5 @@ func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration)
 		}
 	}
 
-	service.logger.Info("expiring certificates added to order queue")
+	service.logger.Info("orders: expiring certificates added to order queue")
 }
