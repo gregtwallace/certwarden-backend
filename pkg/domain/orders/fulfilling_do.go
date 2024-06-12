@@ -128,7 +128,7 @@ fulfillLoop:
 				continue
 			}
 
-			certPemChain, err := acmeService.DownloadCertificate(*acmeOrder.Certificate, key)
+			certPemChain, err := acmeService.DownloadCertificate(*acmeOrder.Certificate, key, nil)
 			if err != nil {
 				j.service.logger.Errorf("orders: fulfilling worker %d: download cert error: %s", workerID, err)
 				return // done, failed
