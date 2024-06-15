@@ -107,7 +107,7 @@ func (service *Service) DownloadCertificate(certificateUrl string, accountKey Ac
 	rootCN, err := validateCertificate(bodyBytes, defaultHeaders)
 	// if default chain didn't validate, log issue and continue to alts
 	if err != nil {
-		service.logger.Warnf("acme: %s default cert chain failed safety check (see: rfc8555 s 11.4) (%s); will try others if available", certificateUrl, err)
+		service.logger.Warnf("acme: %s default cert chain failed validation (see: rfc8555 s 11.4) (%s); will try others if available", certificateUrl, err)
 		// don't return, instead try any alt chains first
 	} else {
 		// return now if no preferred chain specified, OR if this chain is the preferred chain
@@ -130,7 +130,7 @@ func (service *Service) DownloadCertificate(certificateUrl string, accountKey Ac
 		httpLinks, err := httplink.Parse(headerLink)
 		if err != nil {
 			// if failed to parse, discard this Link header and continue
-			service.logger.Debugf("acme: bad Link header in certificate download response (%s)", err)
+			service.logger.Warnf("acme: %s sent bad Link header in certificate download response (%s)", err)
 			continue
 		}
 
@@ -157,7 +157,7 @@ func (service *Service) DownloadCertificate(certificateUrl string, accountKey Ac
 		rootCN, err = validateCertificate(bodyBytes, headers)
 		// if default chain didn't validate, log issue
 		if err != nil {
-			service.logger.Warnf("acme: %s alt cert chain failed safety check (see: rfc8555 s 11.4) (%s); will try others if available", altChainURL.String(), err)
+			service.logger.Warnf("acme: %s alt cert chain failed validation (see: rfc8555 s 11.4) (%s); will try others if available", altChainURL.String(), err)
 			// don't return, continue to next alt to keep trying
 			continue
 		}
@@ -185,6 +185,6 @@ func (service *Service) DownloadCertificate(certificateUrl string, accountKey Ac
 	}
 
 	// at least one valid chain was found (even though preferred didn't match), return that one
-	service.logger.Debugf("acme: went through all alt chains of %s without preferred chain match, returning default chain", certificateUrl)
+	service.logger.Warnf("acme: went through all alt chains of %s without preferred chain match, returning default chain", certificateUrl)
 	return defaultChain, nil
 }
