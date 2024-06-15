@@ -35,7 +35,7 @@ type protectedHeader struct {
 
 // postToUrlSigned posts the payload to the specified url, using the specified AccountKeyInfo
 // and returns the response body (data / bytes) and headers from ACME
-func (service *Service) postToUrlSigned(payload any, url string, accountKey AccountKey) (body []byte, headers http.Header, err error) {
+func (service *Service) postToUrlSigned(payload any, url string, accountKey AccountKey) (jsonResp json.RawMessage, headers http.Header, err error) {
 	// message is what will ultimately be posted to ACME
 	var message acmeSignedMessage
 
@@ -97,7 +97,6 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 
 	// post
 	var response *http.Response
-	var bodyBytes []byte
 
 	// loop to retry on badNonce error, capped at 4 tries
 	for i := 0; i < 4; i++ {
@@ -114,7 +113,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		}
 
 		// marshal for posting
-		var messageBodyJson []byte
+		var messageBodyJson json.RawMessage
 		messageBodyJson, err = json.Marshal(message)
 		if err != nil {
 			return nil, nil, err
@@ -131,7 +130,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		defer response.Body.Close()
 
 		// read body of response
-		bodyBytes, err = io.ReadAll(response.Body)
+		jsonResp, err = io.ReadAll(response.Body)
 		if err != nil {
 			// if body read fails, try post again
 			continue
@@ -141,16 +140,16 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		// indent (if possible) before debug logging
 		if service.logger.Level() == zapcore.DebugLevel {
 			var prettyBytes bytes.Buffer
-			prettyErr := json.Indent(&prettyBytes, bodyBytes, "", "\t")
+			prettyErr := json.Indent(&prettyBytes, jsonResp, "", "\t")
 			if prettyErr != nil {
-				service.logger.Debugf("acme signed post response code: %d ; body: %s", response.StatusCode, string(bodyBytes))
+				service.logger.Debugf("acme signed post response code: %d ; body: %s", response.StatusCode, string(jsonResp))
 			} else {
 				service.logger.Debugf("acme signed post response code: %d ; body: %s", response.StatusCode, prettyBytes.String())
 			}
 		}
 
 		// try to decode AcmeError
-		acmeError := unmarshalErrorResponse(bodyBytes)
+		acmeError := unmarshalErrorResponse(jsonResp)
 		if acmeError != nil {
 			// set err to check after loop ends
 			err = acmeError
@@ -209,11 +208,11 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		return nil, nil, fmt.Errorf("acme error: status code %d", response.StatusCode)
 	}
 
-	return bodyBytes, response.Header, nil
+	return jsonResp, response.Header, nil
 }
 
 // postAsGet implements POST-as-GET as specified in rfc8555 6.3.
 // Specific functions that use this will also need to be defined
-func (service *Service) postAsGet(url string, accountKey AccountKey) (body []byte, headers http.Header, err error) {
+func (service *Service) postAsGet(url string, accountKey AccountKey) (jsonResp json.RawMessage, headers http.Header, err error) {
 	return service.postToUrlSigned("", url, accountKey)
 }

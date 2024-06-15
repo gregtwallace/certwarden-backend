@@ -25,47 +25,46 @@ type Challenge struct {
 }
 
 // Account response decoder
-func unmarshalChallenge(bodyBytes []byte) (response Challenge, err error) {
-	err = json.Unmarshal(bodyBytes, &response)
+func unmarshalChallenge(jsonResp json.RawMessage) (chall Challenge, err error) {
+	err = json.Unmarshal(jsonResp, &chall)
 	if err != nil {
 		return Challenge{}, err
 	}
 
-	return response, nil
+	return chall, nil
 }
 
 // NewOrder posts a an empty object to the challenge URL which informs ACME that the
 // challenge is ready to be validated
-func (service *Service) ValidateChallenge(challengeUrl string, accountKey AccountKey) (response Challenge, err error) {
-
+func (service *Service) ValidateChallenge(challengeUrl string, accountKey AccountKey) (chall Challenge, err error) {
 	// post challenge with {} as payload signals the challenge is ready for validation
-	bodyBytes, _, err := service.postToUrlSigned(struct{}{}, challengeUrl, accountKey)
+	jsonResp, _, err := service.postToUrlSigned(struct{}{}, challengeUrl, accountKey)
 	if err != nil {
 		return Challenge{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalChallenge(bodyBytes)
+	chall, err = unmarshalChallenge(jsonResp)
 	if err != nil {
 		return Challenge{}, err
 	}
 
-	return response, nil
+	return chall, nil
 }
 
 // GetChallenge does a POST-as-GET to fetch the current state of the given challenge URL
-func (service *Service) GetChallenge(challengeUrl string, key AccountKey) (response Challenge, err error) {
+func (service *Service) GetChallenge(challengeUrl string, key AccountKey) (chall Challenge, err error) {
 	// POST-as-GET
-	bodyBytes, _, err := service.postAsGet(challengeUrl, key)
+	jsonResp, _, err := service.postAsGet(challengeUrl, key)
 	if err != nil {
 		return Challenge{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalChallenge(bodyBytes)
+	chall, err = unmarshalChallenge(jsonResp)
 	if err != nil {
 		return Challenge{}, err
 	}
 
-	return response, nil
+	return chall, nil
 }

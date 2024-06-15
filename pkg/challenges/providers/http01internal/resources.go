@@ -1,9 +1,12 @@
 package http01internal
 
-import "fmt"
+import (
+	"certwarden-backend/pkg/acme"
+	"fmt"
+)
 
 // Provision adds a resource to host
-func (service *Service) Provision(_, token, keyAuth string) error {
+func (service *Service) Provision(_ string, token string, keyAuth acme.KeyAuth) error {
 	// add new entry
 	exists, _ := service.provisionedResources.Add(token, []byte(keyAuth))
 
@@ -19,7 +22,7 @@ func (service *Service) Provision(_, token, keyAuth string) error {
 }
 
 // Deprovision removes a removes a resource from those being hosted
-func (service *Service) Deprovision(_, token, _ string) error {
+func (service *Service) Deprovision(_ string, token string, _ acme.KeyAuth) error {
 	// delete entry
 	delFunc := func(tokenKey string, _ []byte) bool {
 		return tokenKey == token

@@ -11,9 +11,11 @@ type AccountKey struct {
 	Kid string
 }
 
+type KeyAuth string
+
 // KeyAuthorization uses the AccountKey to create the Key Authorization for a given
 // challenge token
-func (accountKey *AccountKey) KeyAuthorization(token string) (keyAuth string, err error) {
+func (accountKey *AccountKey) KeyAuthorization(token string) (keyAuth KeyAuth, err error) {
 	// get jwk
 	jwk, err := accountKey.jwk()
 	if err != nil {
@@ -26,7 +28,5 @@ func (accountKey *AccountKey) KeyAuthorization(token string) (keyAuth string, er
 		return "", err
 	}
 
-	keyAuth = strings.Join([]string{token, encodedThumbprint}, ".")
-
-	return keyAuth, nil
+	return KeyAuth(strings.Join([]string{token, encodedThumbprint}, ".")), nil
 }

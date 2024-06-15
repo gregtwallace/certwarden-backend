@@ -37,8 +37,8 @@ type Account struct {
 }
 
 // Account response decoder
-func unmarshalAccount(bodyBytes []byte, headers http.Header) (response Account, err error) {
-	err = json.Unmarshal(bodyBytes, &response)
+func unmarshalAccount(jsonResp json.RawMessage, headers http.Header) (acct Account, err error) {
+	err = json.Unmarshal(jsonResp, &acct)
 	if err != nil {
 		return Account{}, err
 	}
@@ -47,13 +47,13 @@ func unmarshalAccount(bodyBytes []byte, headers http.Header) (response Account, 
 	// ACME only returns this if not posting with kid, so have some logic
 	// to set it to null if it isn't returned from the server
 	if headers.Get("Location") != "" {
-		response.Location = new(string)
-		*response.Location = headers.Get("Location")
+		acct.Location = new(string)
+		*acct.Location = headers.Get("Location")
 	} else {
-		response.Location = nil
+		acct.Location = nil
 	}
 
-	return response, nil
+	return acct, nil
 }
 
 // Email() returns an email address from the first string in the Contact slice.
@@ -68,7 +68,7 @@ func (response *Account) Email() string {
 }
 
 // NewAccount posts a secure message to the NewAccount URL of the directory
-func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.PrivateKey) (response Account, err error) {
+func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.PrivateKey) (acct Account, err error) {
 	// Create ACME accountKey
 	// Register account should never use kid, it must always use JWK
 	accountKey := AccountKey{
@@ -93,35 +93,35 @@ func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.
 	}
 
 	// post new-account
-	bodyBytes, headers, err := service.postToUrlSigned(acmePayload, url, accountKey)
+	jsonResp, headers, err := service.postToUrlSigned(acmePayload, url, accountKey)
 	if err != nil {
 		return Account{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalAccount(bodyBytes, headers)
+	acct, err = unmarshalAccount(jsonResp, headers)
 	if err != nil {
 		return Account{}, err
 	}
 
-	return response, nil
+	return acct, nil
 }
 
 // GetAccount does a POST-as-GET to fetch the current state of the given accountKey's Account
-func (service *Service) GetAccount(accountKey AccountKey) (response Account, err error) {
+func (service *Service) GetAccount(accountKey AccountKey) (acct Account, err error) {
 	// POST-as-GET
-	bodyBytes, headers, err := service.postAsGet(accountKey.Kid, accountKey)
+	jsonResp, headers, err := service.postAsGet(accountKey.Kid, accountKey)
 	if err != nil {
 		return Account{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalAccount(bodyBytes, headers)
+	acct, err = unmarshalAccount(jsonResp, headers)
 	if err != nil {
 		return Account{}, err
 	}
 
-	return response, nil
+	return acct, nil
 }
 
 // UpdateAccountPayload is the payload used to update ACME accounts
@@ -132,44 +132,44 @@ type UpdateAccountPayload struct {
 
 // UpdateAccount posts a secure message to the kid of the account
 // initially support only exists to update the email address
-func (service *Service) UpdateAccount(payload UpdateAccountPayload, accountKey AccountKey) (response Account, err error) {
+func (service *Service) UpdateAccount(payload UpdateAccountPayload, accountKey AccountKey) (acct Account, err error) {
 	// post account update
-	bodyBytes, headers, err := service.postToUrlSigned(payload, accountKey.Kid, accountKey)
+	jsonResp, headers, err := service.postToUrlSigned(payload, accountKey.Kid, accountKey)
 	if err != nil {
 		return Account{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalAccount(bodyBytes, headers)
+	acct, err = unmarshalAccount(jsonResp, headers)
 	if err != nil {
 		return Account{}, err
 	}
 
-	return response, nil
+	return acct, nil
 }
 
 // DeactivateAccount posts deactivated status to the ACME account
 // Once deactivated, accounts cannot be re-enabled. This action is DANGEROUS
 // and should only be done when there is a complete understanding of the repurcussions.
-func (service *Service) DeactivateAccount(accountKey AccountKey) (response Account, err error) {
+func (service *Service) DeactivateAccount(accountKey AccountKey) (acct Account, err error) {
 	// deactivate payload is always the same
 	payload := UpdateAccountPayload{
 		Status: "deactivated",
 	}
 
 	// post account update
-	bodyBytes, headers, err := service.postToUrlSigned(payload, accountKey.Kid, accountKey)
+	jsonResp, headers, err := service.postToUrlSigned(payload, accountKey.Kid, accountKey)
 	if err != nil {
 		return Account{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalAccount(bodyBytes, headers)
+	acct, err = unmarshalAccount(jsonResp, headers)
 	if err != nil {
 		return Account{}, err
 	}
 
-	return response, nil
+	return acct, nil
 }
 
 // RolloverAccountKey rolls over the specified account's key to the newKey. This essentially

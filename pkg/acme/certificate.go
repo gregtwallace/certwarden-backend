@@ -11,9 +11,9 @@ type revokePayload struct {
 // RevokeCertificate revokes the certificate pem (or pem chain) that is passed in
 // using the specfied reason code and account. If ACME revokes the cert, no content
 // is returned. Otherwise, if revocation fails, error is returned.
-func (service *Service) RevokeCertificate(pemCert string, reasonCode int, accountKey AccountKey) (err error) {
+func (service *Service) RevokeCertificate(certPem string, reasonCode int, accountKey AccountKey) (err error) {
 	// decode pem (if a chain, take the first cert and discard the rest)
-	pemBlock, _ := pem.Decode([]byte(pemCert))
+	pemBlock, _ := pem.Decode([]byte(certPem))
 
 	// encode the pem bytes for ACME
 	derCert := encodeString(pemBlock.Bytes)

@@ -29,54 +29,54 @@ type Order struct {
 }
 
 // Account response decoder
-func unmarshalOrder(bodyBytes []byte, headers http.Header) (response Order, err error) {
-	err = json.Unmarshal(bodyBytes, &response)
+func unmarshalOrder(jsonResp []byte, headers http.Header) (order Order, err error) {
+	err = json.Unmarshal(jsonResp, &order)
 	if err != nil {
 		return Order{}, err
 	}
 
 	// order location (url) isn't part of the JSON response, add it from the header.
-	response.Location = headers.Get("Location")
+	order.Location = headers.Get("Location")
 
-	return response, nil
+	return order, nil
 }
 
 // NewOrder posts a secure message to the NewOrder URL of the directory
-func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey) (response Order, err error) {
+func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey) (order Order, err error) {
 	// post new-order
-	bodyBytes, headers, err := service.postToUrlSigned(payload, service.dir.NewOrder, accountKey)
+	jsonResp, headers, err := service.postToUrlSigned(payload, service.dir.NewOrder, accountKey)
 	if err != nil {
 		return Order{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalOrder(bodyBytes, headers)
+	order, err = unmarshalOrder(jsonResp, headers)
 	if err != nil {
 		return Order{}, err
 	}
 
-	return response, nil
+	return order, nil
 }
 
 // GetOrder does a POST-as-GET to fetch the current state of the given order URL
-func (service *Service) GetOrder(orderUrl string, accountKey AccountKey) (response Order, err error) {
+func (service *Service) GetOrder(orderUrl string, accountKey AccountKey) (order Order, err error) {
 	// POST-as-GET
-	bodyBytes, headers, err := service.postAsGet(orderUrl, accountKey)
+	jsonResp, headers, err := service.postAsGet(orderUrl, accountKey)
 	if err != nil {
 		return Order{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalOrder(bodyBytes, headers)
+	order, err = unmarshalOrder(jsonResp, headers)
 	if err != nil {
 		return Order{}, err
 	}
 
-	return response, nil
+	return order, nil
 }
 
 // FinalizeOrder posts the specified CSR to the specified finalize URL
-func (service *Service) FinalizeOrder(finalizeUrl string, derCsr []byte, accountKey AccountKey) (response Order, err error) {
+func (service *Service) FinalizeOrder(finalizeUrl string, derCsr []byte, accountKey AccountKey) (order Order, err error) {
 	// pretty log CSR names if in debug
 	if service.logger.Level() == zapcore.DebugLevel {
 		csr, prettyErr := x509.ParseCertificateRequest(derCsr)
@@ -100,16 +100,16 @@ func (service *Service) FinalizeOrder(finalizeUrl string, derCsr []byte, account
 	}
 
 	// post csr to finalize URL
-	bodyBytes, headers, err := service.postToUrlSigned(payload, finalizeUrl, accountKey)
+	jsonResp, headers, err := service.postToUrlSigned(payload, finalizeUrl, accountKey)
 	if err != nil {
 		return Order{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalOrder(bodyBytes, headers)
+	order, err = unmarshalOrder(jsonResp, headers)
 	if err != nil {
 		return Order{}, err
 	}
 
-	return response, nil
+	return order, nil
 }

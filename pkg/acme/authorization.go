@@ -14,29 +14,29 @@ type Authorization struct {
 }
 
 // Account response decoder
-func unmarshalAuthorization(bodyBytes []byte) (response Authorization, err error) {
-	err = json.Unmarshal(bodyBytes, &response)
+func unmarshalAuthorization(jsonResp json.RawMessage) (auth Authorization, err error) {
+	err = json.Unmarshal(jsonResp, &auth)
 	if err != nil {
 		return Authorization{}, err
 	}
 
-	return response, nil
+	return auth, nil
 }
 
-// GetAuth does a POST-as-GET to feth an authorization object
-func (service *Service) GetAuth(authUrl string, accountKey AccountKey) (response Authorization, err error) {
+// GetAuth does a POST-as-GET to fetch an authorization object
+func (service *Service) GetAuth(authUrl string, accountKey AccountKey) (auth Authorization, err error) {
 
 	// POST-as-GET
-	bodyBytes, _, err := service.postAsGet(authUrl, accountKey)
+	jsonResp, _, err := service.postAsGet(authUrl, accountKey)
 	if err != nil {
 		return Authorization{}, err
 	}
 
 	// unmarshal response
-	response, err = unmarshalAuthorization(bodyBytes)
+	auth, err = unmarshalAuthorization(jsonResp)
 	if err != nil {
 		return Authorization{}, err
 	}
 
-	return response, nil
+	return auth, nil
 }

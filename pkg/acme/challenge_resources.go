@@ -6,7 +6,7 @@ import (
 
 // ValidationResourceDns01 returns the dnsRecord name and value to provision
 // in response to a Dns01 challenge for a given domain and keyAuth
-func ValidationResourceDns01(domain, keyAuth string) (dnsRecordName, dnsRecordValue string) {
+func ValidationResourceDns01(domain string, keyAuth KeyAuth) (dnsRecordName string, dnsRecordValue string) {
 	// dns record name is just the domain prepended with the special acme prefix
 	dnsRecordName = "_acme-challenge." + domain
 
