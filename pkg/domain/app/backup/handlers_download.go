@@ -22,7 +22,7 @@ func (service *Service) DownloadBackupNowHandler(w http.ResponseWriter, r *http.
 
 	// set bools (use default if not explicitly opposite)
 	withOnDiskBackups := false
-	if strings.ToLower(withOnDiskBackupsParam) == "true" {
+	if strings.EqualFold(withOnDiskBackupsParam, "true") {
 		withOnDiskBackups = true
 	}
 
