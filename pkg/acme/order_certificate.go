@@ -111,7 +111,7 @@ func (service *Service) DownloadCertificate(certificateUrl string, accountKey Ac
 		// don't return, instead try any alt chains first
 	} else {
 		// return now if no preferred chain specified, OR if this chain is the preferred chain
-		if preferredChain == nil || *preferredChain == rootCN {
+		if preferredChain == nil || strings.EqualFold(*preferredChain, rootCN) {
 			return string(bodyBytes), nil
 		}
 
@@ -136,7 +136,7 @@ func (service *Service) DownloadCertificate(certificateUrl string, accountKey Ac
 
 		// check if each Link is the right rel type, add it to the list of alt chain URLs
 		for _, httpLink := range httpLinks {
-			if httpLink.Params.Get("rel") == "alternate" {
+			if strings.EqualFold(httpLink.Params.Get("rel"), "alternate") {
 				altChainUrls = append(altChainUrls, httpLink.URL)
 			}
 		}
@@ -165,7 +165,7 @@ func (service *Service) DownloadCertificate(certificateUrl string, accountKey Ac
 		// this chain is now confirmed valid
 
 		// return this chain if no preferred chain specified, OR if this chain is the preferred chain
-		if preferredChain == nil || *preferredChain == rootCN {
+		if preferredChain == nil || strings.EqualFold(*preferredChain, rootCN) {
 			return string(bodyBytes), nil
 		}
 
