@@ -146,9 +146,9 @@ func (service *Service) checkDnsRecordPropagationAllServices(fqdn string, record
 	propagationRate := float32(propagationCount) / float32(functionalCount)
 
 	// debug log counts and rates
-	functionalErr := fmt.Errorf("check %s: functional: %d, functional %%: %.2f (min %%: %.2f)", fqdn, functionalCount, functionalRate, functioningRequirement)
+	functionalErr := fmt.Errorf("check %s: functional: %d (%.0f%%, min: %.0f%%)", fqdn, functionalCount, functionalRate*100, functioningRequirement*100)
 	service.logger.Debugf("dns_checker: %s", functionalErr)
-	propagationErr := fmt.Errorf("check %s: propagated: %d, propagated %%: %.2f (min %%: %.2f)", fqdn, propagationCount, propagationRate, propagationRequirement)
+	propagationErr := fmt.Errorf("check %s: propagated: %d (%.0f%%, min: %.0f%%)", fqdn, propagationCount, propagationRate*100, propagationRequirement*100)
 	service.logger.Debugf("dns_checker: %s", propagationErr)
 
 	// return err if threshold(s) not met
