@@ -22,36 +22,36 @@ var (
 // key is always formatted in the exact same manner to prevent adding duplicate keys
 // to storage (i.e. since formatting is exact, the db unique constraint should always
 // catch duplicates)
-func ValidateAndStandardizeKeyPem(keyPem string) (sanitizedKeyPem string, alg Algorithm, err error) {
+func ValidateAndStandardizeKeyPem(rawKeyPem string) (standardizedKeyPem string, alg Algorithm, err error) {
 	// remove leading and trailing whitespace
-	keyPem = strings.TrimSpace(keyPem)
+	rawKeyPem = strings.TrimSpace(rawKeyPem)
 
 	// check for exactly one beginning clause
-	count := strings.Count(keyPem, "-----BEGIN")
+	count := strings.Count(rawKeyPem, "-----BEGIN")
 	if count != 1 {
 		return "", UnknownAlgorithm, errUnsupportedPem
 	}
 
 	// check for exactly one ending clause
-	count = strings.Count(keyPem, "-----END")
+	count = strings.Count(rawKeyPem, "-----END")
 	if count != 1 {
 		return "", UnknownAlgorithm, errUnsupportedPem
 	}
 
 	// error if pem does not start exactly as required
-	valid := strings.HasPrefix(keyPem, "-----BEGIN")
+	valid := strings.HasPrefix(rawKeyPem, "-----BEGIN")
 	if !valid {
 		return "", UnknownAlgorithm, errUnsupportedPem
 	}
 
 	// error if pem does not end exactly as required
-	valid = strings.HasSuffix(keyPem, "KEY-----")
+	valid = strings.HasSuffix(rawKeyPem, "KEY-----")
 	if !valid {
 		return "", UnknownAlgorithm, errUnsupportedPem
 	}
 
 	// split pem into beginning, content, and end to sanitize the content
-	split := strings.SplitN(keyPem, "PRIVATE KEY-----", 2)
+	split := strings.SplitN(rawKeyPem, "PRIVATE KEY-----", 2)
 	begin := split[0] + "PRIVATE KEY-----"
 
 	split = strings.SplitN(split[1], "-----END", 2)
@@ -59,32 +59,44 @@ func ValidateAndStandardizeKeyPem(keyPem string) (sanitizedKeyPem string, alg Al
 
 	content := split[0]
 
-	// remove all whitespace chars from content and then re-add a unix
-	// line break after every 64th rune (standard for pem)
-	contentRunes := []rune{}
-	runeCount := 0
+	// properly format the PEM content, using LF for line breaks and discarding
+	// any extra/other space or line break characters
+	// rfc7468 s.2 specifies "parsers SHOULD ignore whitespace and other non-
+	// base64 characters and MUST handle different newline conventions."
+	// This process WILL ignore whitespace characters as part of the standardization
+	// process, but WILL NOT ignore non-base64 characters.
+	standardizedContent := []rune{}
+	lineRuneCount := 0
 	for _, r := range content {
-		if !unicode.IsSpace(r) {
-			contentRunes = append(contentRunes, r)
-			runeCount += 1
-			// after every 64th, append LF (unix new line)
-			if runeCount%64 == 0 {
-				contentRunes = append(contentRunes, rune(10))
-			}
+		// drop any pre-existing space chars in content (standardized spaces are added below)
+		if unicode.IsSpace(r) {
+			continue
 		}
+
+		// rfc7468 s.2 - wrap after every 64th char
+		// if current line is at 64, add standardized LF (unix new line) and reset line rune counter
+		// before appending the rune
+		if lineRuneCount == 64 {
+			standardizedContent = append(standardizedContent, rune(10))
+			lineRuneCount = 0
+		}
+
+		// append the rune to standardizedContent and increment line rune counter
+		standardizedContent = append(standardizedContent, r)
+		lineRuneCount++
 	}
 
 	// reassemble pem in standardized format
 	// begin, LF, content, LF, end, LF
-	sanitizedKeyPem = begin + string(byte(10)) + string(contentRunes) + string(byte(10)) + end + string(byte(10))
+	standardizedKeyPem = begin + string(byte(10)) + string(standardizedContent) + string(byte(10)) + end + string(byte(10))
 
 	// get the algorithm value of the new key & confirm it is supported
-	_, algorithmValue, err := pemStringDecode(sanitizedKeyPem, UnknownAlgorithm)
+	_, alg, err = pemStringDecode(standardizedKeyPem, UnknownAlgorithm)
 	if err != nil {
 		return "", UnknownAlgorithm, err
 	}
 
-	return sanitizedKeyPem, algorithmValue, nil
+	return standardizedKeyPem, alg, nil
 }
 
 // PemStringToKey returns the PrivateKey for a given pem string
