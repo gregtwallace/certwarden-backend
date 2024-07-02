@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -26,38 +27,28 @@ func ValidateAndStandardizeKeyPem(rawKeyPem string) (standardizedKeyPem string, 
 	// remove leading and trailing whitespace
 	rawKeyPem = strings.TrimSpace(rawKeyPem)
 
-	// check for exactly one beginning clause
-	count := strings.Count(rawKeyPem, "-----BEGIN")
-	if count != 1 {
+	// check for exactly one beginning & one ending clause
+	if strings.Count(rawKeyPem, "-----BEGIN") != 1 ||
+		strings.Count(rawKeyPem, "-----END") != 1 {
 		return "", UnknownAlgorithm, errUnsupportedPem
 	}
 
-	// check for exactly one ending clause
-	count = strings.Count(rawKeyPem, "-----END")
-	if count != 1 {
+	// check for proper start and end
+	if !strings.HasPrefix(rawKeyPem, "-----BEGIN") ||
+		!strings.HasSuffix(rawKeyPem, "-----") {
 		return "", UnknownAlgorithm, errUnsupportedPem
 	}
 
-	// error if pem does not start exactly as required
-	valid := strings.HasPrefix(rawKeyPem, "-----BEGIN")
-	if !valid {
+	// split pem into beginning, content, and end
+	keyRegex := regexp.MustCompile(`^(-----BEGIN.*-----)([\s\S]*)(-----END.*-----)$`)
+	rawKeyPemPieces := keyRegex.FindStringSubmatch(rawKeyPem)
+	if len(rawKeyPemPieces) != 4 {
 		return "", UnknownAlgorithm, errUnsupportedPem
 	}
-
-	// error if pem does not end exactly as required
-	valid = strings.HasSuffix(rawKeyPem, "KEY-----")
-	if !valid {
-		return "", UnknownAlgorithm, errUnsupportedPem
-	}
-
-	// split pem into beginning, content, and end to sanitize the content
-	split := strings.SplitN(rawKeyPem, "PRIVATE KEY-----", 2)
-	begin := split[0] + "PRIVATE KEY-----"
-
-	split = strings.SplitN(split[1], "-----END", 2)
-	end := "-----END" + split[1]
-
-	content := split[0]
+	// ignore [0], it is the full match
+	beginLine := rawKeyPemPieces[1]
+	content := rawKeyPemPieces[2]
+	endLine := rawKeyPemPieces[3]
 
 	// properly format the PEM content, using LF for line breaks and discarding
 	// any extra/other space or line break characters
@@ -88,7 +79,10 @@ func ValidateAndStandardizeKeyPem(rawKeyPem string) (standardizedKeyPem string, 
 
 	// reassemble pem in standardized format
 	// begin, LF, content, LF, end, LF
-	standardizedKeyPem = begin + string(byte(10)) + string(standardizedContent) + string(byte(10)) + end + string(byte(10))
+	standardizedKeyPem =
+		beginLine + string(byte(10)) +
+			string(standardizedContent) + string(byte(10)) +
+			endLine + string(byte(10))
 
 	// get the algorithm value of the new key & confirm it is supported
 	_, alg, err = pemStringDecode(standardizedKeyPem, UnknownAlgorithm)
