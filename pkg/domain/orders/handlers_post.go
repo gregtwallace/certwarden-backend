@@ -114,7 +114,7 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 // revokePayload allows clients to specify the revocation reason, it is not
 // required
 type revokePayload struct {
-	Reason int `json:"reason"`
+	ReasonCode int `json:"reason_code"`
 }
 
 // RevokeOrder is a handler that will revoke an order if it is valid and not
@@ -146,7 +146,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 
 	// validation / get order
 	// revocation reason (see: rfc5280 section-5.3.1)
-	err = service.validRevocationReason(payload.Reason)
+	err = service.validRevocationReason(payload.ReasonCode)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.ErrValidationFailed
@@ -173,7 +173,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 		return output.ErrInternal
 	}
 
-	err = acmeService.RevokeCertificate(*order.Pem, payload.Reason, key)
+	err = acmeService.RevokeCertificate(*order.Pem, payload.ReasonCode, key)
 	if err != nil {
 		// fail on any non-ACME error OR fail on ACME error if it is not 'already revoked' error type
 		acmeErr := new(acme.Error)
