@@ -173,13 +173,6 @@ func (app *Application) makeRouterAndRoutes() {
 		router.handleFrontend(http.MethodGet, frontendUrlPath+"/*anything(unused)", app.frontendFileHandler)
 	}
 
-	// redirect for old LeGo routes (only GET as only clients should be impacted and they only use GET)
-	// TODO: Remove eventually.
-	router.r.HandlerFunc(http.MethodGet, "/legocerthub/*restOfPath", app.redirectOldLeGoName)
-	// router.r.HandlerFunc(http.MethodPost, "/legocerthub/*restOfPath", app.redirectOldLeGoName)
-	// router.r.HandlerFunc(http.MethodPut, "/legocerthub/*restOfPath", app.redirectOldLeGoName)
-	// router.r.HandlerFunc(http.MethodDelete, "/legocerthub/*restOfPath", app.redirectOldLeGoName)
-
 	// invalid route
 	router.r.NotFound = app.handlerNotFound()
 
