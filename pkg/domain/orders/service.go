@@ -52,7 +52,7 @@ type Storage interface {
 	PutOrderAcme(payload UpdateAcmeOrderPayload) (err error)
 	PutOrderInvalid(orderId int) (err error)
 	UpdateFinalizedKey(orderId int, keyId int) (err error)
-	UpdateOrderCert(orderId int, CertPayload CertPayload) (err error)
+	UpdateOrderCert(orderId int, CertPayload *CertPayload) (err error)
 	RevokeOrder(orderId int) (err error)
 
 	GetAllValidCurrentOrders(q pagination_sort.Query) (orders []Order, totalRows int, err error)

@@ -9,19 +9,33 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/google/webpackager/resource/httplink"
 )
 
-// validateCertificate checks that the ACME server returned a valid cert/chain response
-// when this client downloaded a certificate. If valid, the Subject Common Name for the
-// issuer of the topmost certificate in the chain is returned. If not valid, an error
-// is returned.
-func validateCertificate(bodyBytes []byte, headers http.Header) (rootCN string, err error) {
+// Certificate is a struct that contains the certificate pem returned by the ACME
+// server as well as some information about the cert
+type Certificate struct {
+	pem         string
+	notBefore   time.Time
+	notAfter    time.Time
+	chainRootCN string
+}
+
+func (c *Certificate) PEM() string          { return c.pem }
+func (c *Certificate) NotBefore() time.Time { return c.notBefore }
+func (c *Certificate) NotAfter() time.Time  { return c.notAfter }
+func (c *Certificate) ChainRootCN() string  { return c.chainRootCN }
+
+// responseToCertificate checks that the ACME server returned a valid cert/chain response
+// when this client downloaded a certificate. If valid, the response is parsed into the
+// Certificate struct. If not valid, an error is returned.
+func responseToCertificate(bodyBytes []byte, headers http.Header) (*Certificate, error) {
 	// this server only supports pem (application/pem-certificate-chain)
 	contentType := headers.Get("Content-type")
 	if contentType != "application/pem-certificate-chain" {
-		return "", errors.New("certificate content type is not application/pem-certificate-chain")
+		return nil, errors.New("certificate content type is not application/pem-certificate-chain")
 	}
 
 	// validate ACME server didn't return malicious pem (see: RFC8555 s 11.4)
@@ -32,7 +46,7 @@ func validateCertificate(bodyBytes []byte, headers http.Header) (rootCN string, 
 	// if there is never a begin, invalid pem
 	i := strings.Index(pemCheck, beginString)
 	if i == -1 {
-		return "", errors.New("certificate missing BEGIN")
+		return nil, errors.New("certificate missing BEGIN")
 	}
 
 	// check every begin to ensure it is followed by CERTIFICATE
@@ -40,21 +54,22 @@ func validateCertificate(bodyBytes []byte, headers http.Header) (rootCN string, 
 		pemCheck = pemCheck[(i + len(beginString)):]
 
 		if !strings.HasPrefix(pemCheck, mustBeFollowedBy) {
-			return "", errors.New("certificate has at least one BEGIN not followed by CERTIFICATE")
+			return nil, errors.New("certificate has at least one BEGIN not followed by CERTIFICATE")
 		}
 	}
 
-	// parse chain and do more extensive validation
-	var cert tls.Certificate
-	var certDERBlock *pem.Block
+	// make return struct
+	cert := &Certificate{
+		pem: string(bodyBytes),
+	}
 
-	// copy body to avoid mutating it
-	certPEMBlock := make([]byte, len(bodyBytes))
-	_ = copy(certPEMBlock, bodyBytes)
+	// parse chain and do more extensive validation
+	var tlsCert tls.Certificate
+	var certDERBlock *pem.Block
 
 	for {
 		// try to decode each pem block
-		certDERBlock, certPEMBlock = pem.Decode(certPEMBlock)
+		certDERBlock, bodyBytes = pem.Decode(bodyBytes)
 
 		// no more pem blocks
 		if certDERBlock == nil {
@@ -63,27 +78,38 @@ func validateCertificate(bodyBytes []byte, headers http.Header) (rootCN string, 
 
 		// check the found block
 		if certDERBlock.Type == "CERTIFICATE" {
-			cert.Certificate = append(cert.Certificate, certDERBlock.Bytes)
+			tlsCert.Certificate = append(tlsCert.Certificate, certDERBlock.Bytes)
 		} else {
 			// found a PEM block that is NOT a certificate; error (should not happen due
 			// to above BEGIN CERTIFICATE check, but just in case)
-			return "", errors.New("certificate has at least one non- CERTIFICATE pem block")
+			return nil, errors.New("certificate has at least one non- CERTIFICATE pem block")
 		}
 	}
 
 	// ensure at least one valid pem certificate block was decoded
-	if len(cert.Certificate) < 1 {
-		return "", errors.New("no valid CERTIFICATE pem blocks")
+	if len(tlsCert.Certificate) < 1 {
+		return nil, errors.New("no valid CERTIFICATE pem blocks")
 	}
 
-	// get topmost cert's Issuer CN
-	derTopCert := cert.Certificate[len(cert.Certificate)-1]
+	// parse topmost cert to get issuer CN (which should be root CN)
+	derTopCert := tlsCert.Certificate[len(tlsCert.Certificate)-1]
 	topCert, err := x509.ParseCertificate(derTopCert)
 	if err != nil {
-		return "", errors.New("failed to parse top cert in chain")
+		return nil, errors.New("failed to parse top cert in chain")
 	}
 
-	return topCert.Issuer.CommonName, nil
+	cert.chainRootCN = topCert.Issuer.CommonName
+
+	// parse bottom most cert (aka the Leaf) to get valid times
+	derLeafCert := tlsCert.Certificate[0]
+	leafCert, err := x509.ParseCertificate(derLeafCert)
+	if err != nil {
+		return nil, errors.New("failed to parse leaf cert in chain")
+	}
+	cert.notBefore = leafCert.NotBefore
+	cert.notAfter = leafCert.NotAfter
+
+	return cert, nil
 }
 
 // DownloadCertificate uses POST-as-GET to download a valid certificate from the specified
@@ -94,29 +120,29 @@ func validateCertificate(bodyBytes []byte, headers http.Header) (rootCN string, 
 // If a preferredChain is specified, prefer the chain whose topmost certificate was issued
 // from this Subject Common Name (assuming the basic sanity checks pass). If no match or the
 // sanity check fails, the default chain is returned instead.
-func (service *Service) DownloadCertificate(certificateUrl string, accountKey AccountKey, preferredChain *string) (pemChain string, err error) {
-	defaultChain := ""
+func (service *Service) DownloadCertificate(certificateUrl string, accountKey AccountKey, preferredChain string) (*Certificate, error) {
+	var defaultChainCert *Certificate
 
 	// POST-as-GET
 	bodyBytes, defaultHeaders, err := service.postAsGet(certificateUrl, accountKey)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// validate initial response
-	rootCN, err := validateCertificate(bodyBytes, defaultHeaders)
+	cert, err := responseToCertificate(bodyBytes, defaultHeaders)
 	// if default chain didn't validate, log issue and continue to alts
 	if err != nil {
 		service.logger.Warnf("acme: %s default cert chain failed validation (see: rfc8555 s 11.4) (%s); will try others if available", certificateUrl, err)
 		// don't return, instead try any alt chains first
 	} else {
 		// return now if no preferred chain specified, OR if this chain is the preferred chain
-		if preferredChain == nil || strings.EqualFold(*preferredChain, rootCN) {
-			return string(bodyBytes), nil
+		if preferredChain == "" || strings.EqualFold(preferredChain, cert.ChainRootCN()) {
+			return cert, nil
 		}
 
-		// validated but not the preferred chain we're seeking -- set this as default chain
-		defaultChain = string(bodyBytes)
+		// validated but not the preferred chain we're seeking -- set this as default
+		defaultChainCert = cert
 	}
 
 	// at this point, either the default chain didn't validate, or it wasn't preferred, so
@@ -154,7 +180,7 @@ func (service *Service) DownloadCertificate(certificateUrl string, accountKey Ac
 		}
 
 		// validate alt chain
-		rootCN, err = validateCertificate(bodyBytes, headers)
+		cert, err = responseToCertificate(bodyBytes, headers)
 		// if default chain didn't validate, log issue
 		if err != nil {
 			service.logger.Warnf("acme: %s alt cert chain failed validation (see: rfc8555 s 11.4) (%s); will try others if available", altChainURL.String(), err)
@@ -165,13 +191,13 @@ func (service *Service) DownloadCertificate(certificateUrl string, accountKey Ac
 		// this chain is now confirmed valid
 
 		// return this chain if no preferred chain specified, OR if this chain is the preferred chain
-		if preferredChain == nil || strings.EqualFold(*preferredChain, rootCN) {
-			return string(bodyBytes), nil
+		if preferredChain == "" || strings.EqualFold(preferredChain, cert.ChainRootCN()) {
+			return cert, nil
 		}
 
 		// set defaultChain if there isn't one yet
-		if defaultChain == "" {
-			defaultChain = string(bodyBytes)
+		if defaultChainCert == nil {
+			defaultChainCert = cert
 		}
 
 		// preferred chain is set and this chain did not match, continue loop to keep trying alts
@@ -180,11 +206,11 @@ func (service *Service) DownloadCertificate(certificateUrl string, accountKey Ac
 	// made it through all of the alt chains without success (either no valid chain at all and/or no chain match preferred chain
 
 	// check if defaultChain was set by any valid chain; if not, error as no valid chains
-	if defaultChain == "" {
-		return "", fmt.Errorf("acme: no valid cert chains found for %s", certificateUrl)
+	if defaultChainCert == nil {
+		return nil, fmt.Errorf("acme: no valid cert chains found for %s", certificateUrl)
 	}
 
 	// at least one valid chain was found (even though preferred didn't match), return that one
 	service.logger.Warnf("acme: went through all alt chains of %s without preferred chain match, returning default chain", certificateUrl)
-	return defaultChain, nil
+	return defaultChainCert, nil
 }

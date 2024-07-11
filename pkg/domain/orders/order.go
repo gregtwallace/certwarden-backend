@@ -28,6 +28,7 @@ type Order struct {
 	Pem            *string
 	ValidFrom      *int
 	ValidTo        *int
+	ChainRootCN    *string
 	CreatedAt      int
 	UpdatedAt      int
 }
@@ -45,6 +46,7 @@ type orderSummaryResponse struct {
 	FinalizedKey      *orderKeySummaryResponse        `json:"finalized_key"`
 	ValidFrom         *int                            `json:"valid_from"`
 	ValidTo           *int                            `json:"valid_to"`
+	ChainRootCN       *string                         `json:"chain_root_cn"`
 	CreatedAt         int                             `json:"created_at"`
 	UpdatedAt         int                             `json:"updated_at"`
 }
@@ -120,6 +122,7 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 		FinalizedKey:   finalKey,
 		ValidFrom:      order.ValidFrom,
 		ValidTo:        order.ValidTo,
+		ChainRootCN:    order.ChainRootCN,
 		CreatedAt:      order.CreatedAt,
 		UpdatedAt:      order.UpdatedAt,
 	}

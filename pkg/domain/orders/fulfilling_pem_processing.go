@@ -1,8 +1,10 @@
 package orders
 
 import (
+	"certwarden-backend/pkg/acme"
 	"crypto/x509"
 	"encoding/pem"
+	"time"
 )
 
 // this relates to the order's issued certificate, not to be conflated with the 'certificates'
@@ -10,25 +12,17 @@ import (
 
 // CertPayload is the data to store for an issued certificate
 type CertPayload struct {
-	Pem       string
-	ValidFrom int
-	ValidTo   int
+	AcmeCert  *acme.Certificate
+	UpdatedAt time.Time
 }
 
 // savePemChain calls a func to determine the valid from and to dates for the issued pem chain
 // and then saves the pem chain and valid dates to storage
-func (j *orderFulfillJob) savePemChain(orderId int, pemChain string) (err error) {
-	// calculate dates
-	validFrom, validTo, err := validDates(pemChain)
-	if err != nil {
-		return err
-	}
-
+func (j *orderFulfillJob) saveAcmeCert(orderId int, cert *acme.Certificate) (err error) {
 	// payload to save
-	payload := CertPayload{
-		Pem:       pemChain,
-		ValidFrom: validFrom,
-		ValidTo:   validTo,
+	payload := &CertPayload{
+		AcmeCert:  cert,
+		UpdatedAt: time.Now(),
 	}
 
 	// save to storage

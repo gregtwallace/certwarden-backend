@@ -20,6 +20,7 @@ type certificateDb struct {
 	state                      string
 	city                       string
 	csrExtraExtensions         jsonCertExtensionSlice
+	preferredRootCN            string
 	createdAt                  int
 	updatedAt                  int
 	apiKey                     string
@@ -50,6 +51,7 @@ func (cert certificateDb) toCertificate() (certificates.Certificate, error) {
 		State:                      cert.state,
 		City:                       cert.city,
 		CSRExtraExtensions:         certExt,
+		PreferredRootCN:            cert.preferredRootCN,
 		CreatedAt:                  cert.createdAt,
 		UpdatedAt:                  cert.updatedAt,
 		ApiKey:                     cert.apiKey,

@@ -27,14 +27,15 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 			csr_state = case when $8 is null then csr_state else $8 end,
 			csr_city = case when $9 is null then csr_city else $9 end,
 			csr_extra_extensions = case when $10 is null then csr_city else $10 end,
-			api_key = case when $11 is null then api_key else $11 end,
-			api_key_new = case when $12 is null then api_key_new else $12 end,
-			api_key_via_url = case when $13 is null then api_key_via_url else $13 end,
-			post_processing_command = case when $14 is null then post_processing_command else $14 end,
-			post_processing_environment = case when $15 is null then post_processing_environment else $15 end,
-			updated_at = $16
+			preferred_root_cn = case when $11 is null then preferred_root_cn else $11 end,
+			api_key = case when $12 is null then api_key else $12 end,
+			api_key_new = case when $13 is null then api_key_new else $13 end,
+			api_key_via_url = case when $14 is null then api_key_via_url else $14 end,
+			post_processing_command = case when $15 is null then post_processing_command else $15 end,
+			post_processing_environment = case when $16 is null then post_processing_environment else $16 end,
+			updated_at = $17
 		WHERE
-			id = $17
+			id = $18
 		`
 
 	_, err := store.db.ExecContext(ctx, query,
@@ -48,6 +49,7 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 		payload.State,
 		payload.City,
 		makeJsonCertExtensionSlice(payload.CSRExtraExtensions),
+		payload.PreferredRootCN,
 		payload.ApiKey,
 		payload.ApiKeyNew,
 		payload.ApiKeyViaUrl,

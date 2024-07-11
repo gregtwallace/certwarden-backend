@@ -21,6 +21,7 @@ type Certificate struct {
 	State                      string
 	City                       string
 	CSRExtraExtensions         []CertExtension
+	PreferredRootCN            string
 	CreatedAt                  int
 	UpdatedAt                  int
 	ApiKey                     string
@@ -95,6 +96,7 @@ type certificateDetailedResponse struct {
 	State                      string              `json:"state"`
 	City                       string              `json:"city"`
 	CSRExtraExtensions         []CertExtensionJSON `json:"csr_extra_extensions"`
+	PreferredRootCN            string              `json:"preferred_root_cn"`
 	CreatedAt                  int                 `json:"created_at"`
 	UpdatedAt                  int                 `json:"updated_at"`
 	ApiKey                     string              `json:"api_key"`
@@ -120,6 +122,7 @@ func (cert Certificate) detailedResponse() certificateDetailedResponse {
 		State:                      cert.State,
 		City:                       cert.City,
 		CSRExtraExtensions:         extraExtensions,
+		PreferredRootCN:            cert.PreferredRootCN,
 		CreatedAt:                  cert.CreatedAt,
 		UpdatedAt:                  cert.UpdatedAt,
 		ApiKey:                     cert.ApiKey,

@@ -30,6 +30,7 @@ type NewPayload struct {
 	State                     *string             `json:"state"`
 	City                      *string             `json:"city"`
 	CSRExtraExtensions        []CertExtensionJSON `json:"csr_extra_extensions"`
+	PreferredRootCN           *string             `json:"preferred_root_cn"`
 	PostProcessingCommand     *string             `json:"post_processing_command"`
 	PostProcessingEnvironment []string            `json:"post_processing_environment"`
 	// for post processing client, user submits enable or not, if enable key is generated and stored
@@ -146,6 +147,10 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 			service.logger.Debug(err)
 			return output.ErrValidationFailed
 		}
+	}
+
+	if payload.PreferredRootCN == nil {
+		payload.PreferredRootCN = new(string)
 	}
 
 	// post processing command / env (don't check valid path, just let errors log if its bad)

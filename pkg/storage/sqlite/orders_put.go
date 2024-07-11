@@ -112,7 +112,7 @@ func (store *Storage) UpdateFinalizedKey(orderId int, keyId int) (err error) {
 }
 
 // UpdateOrderCert updates the specified order ID with the specified certificate data
-func (store *Storage) UpdateOrderCert(orderId int, payload orders.CertPayload) (err error) {
+func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
 
@@ -126,16 +126,18 @@ func (store *Storage) UpdateOrderCert(orderId int, payload orders.CertPayload) (
 			pem = $1,
 			valid_from = $2,
 			valid_to = $3,
-			updated_at = $4
+			chain_root_cn = $4,
+			updated_at = $5
 		WHERE
-			id = $5
+			id = $6
 		`
 
 	_, err = store.db.ExecContext(ctx, query,
-		payload.Pem,
-		payload.ValidFrom,
-		payload.ValidTo,
-		timeNow(),
+		payload.AcmeCert.PEM(),
+		payload.AcmeCert.NotBefore().Unix(),
+		payload.AcmeCert.NotAfter().Unix(),
+		payload.AcmeCert.ChainRootCN(),
+		payload.UpdatedAt.Unix(),
 		orderId,
 	)
 

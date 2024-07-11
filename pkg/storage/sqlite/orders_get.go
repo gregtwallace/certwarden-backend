@@ -43,14 +43,14 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 	SELECT
 		/* order */
 		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, 
-		ao.authorizations, ao.finalize, ao.certificate_url, ao.valid_from, ao.valid_to, ao.created_at,
-		ao.updated_at, 
+		ao.authorizations, ao.finalize, ao.certificate_url, ao.valid_from, ao.valid_to, ao.chain_root_cn,
+		ao.created_at, ao.updated_at, 
 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts,
-		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.created_at, c.updated_at,
-		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
-		c.post_processing_client_key,
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
+		c.created_at, c.updated_at, c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, 
+		c.post_processing_environment, c.post_processing_client_key,
 		
 		/* cert's key */
 		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new,
@@ -136,6 +136,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			&oneOrder.certificateUrl,
 			&oneOrder.validFrom,
 			&oneOrder.validTo,
+			&oneOrder.chainRootCN,
 			&oneOrder.createdAt,
 			&oneOrder.updatedAt,
 
@@ -150,6 +151,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			&oneOrder.certificate.state,
 			&oneOrder.certificate.city,
 			&oneOrder.certificate.csrExtraExtensions,
+			&oneOrder.certificate.preferredRootCN,
 			&oneOrder.certificate.createdAt,
 			&oneOrder.certificate.updatedAt,
 			&oneOrder.certificate.apiKey,
@@ -263,12 +265,13 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 	SELECT
 		/* order */
 		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, 
-		ao.authorizations, ao.finalize, ao.certificate_url, ao.pem, ao.valid_from, ao.valid_to, ao.created_at,
-		ao.updated_at, 
+		ao.authorizations, ao.finalize, ao.certificate_url, ao.pem, ao.valid_from, ao.valid_to, ao.chain_root_cn,
+		ao.created_at, ao.updated_at, 
 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts,
-		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.created_at, c.updated_at,
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
+		c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
@@ -343,6 +346,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			&oneOrder.pem,
 			&oneOrder.validFrom,
 			&oneOrder.validTo,
+			&oneOrder.chainRootCN,
 			&oneOrder.createdAt,
 			&oneOrder.updatedAt,
 
@@ -357,6 +361,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			&oneOrder.certificate.state,
 			&oneOrder.certificate.city,
 			&oneOrder.certificate.csrExtraExtensions,
+			&oneOrder.certificate.preferredRootCN,
 			&oneOrder.certificate.createdAt,
 			&oneOrder.certificate.updatedAt,
 			&oneOrder.certificate.apiKey,
@@ -598,12 +603,13 @@ func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err erro
 	SELECT
 		/* order */
 		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, 
-		ao.authorizations, ao.finalize, ao.certificate_url, ao.pem, ao.valid_from, ao.valid_to, ao.created_at,
-		ao.updated_at, 
+		ao.authorizations, ao.finalize, ao.certificate_url, ao.pem, ao.valid_from, ao.valid_to, ao.chain_root_cn,
+		ao.created_at, ao.updated_at, 
 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts,
-		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.created_at, c.updated_at,
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
+		c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
@@ -664,6 +670,7 @@ func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err erro
 			&oneOrder.pem,
 			&oneOrder.validFrom,
 			&oneOrder.validTo,
+			&oneOrder.chainRootCN,
 			&oneOrder.createdAt,
 			&oneOrder.updatedAt,
 
@@ -678,6 +685,7 @@ func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err erro
 			&oneOrder.certificate.state,
 			&oneOrder.certificate.city,
 			&oneOrder.certificate.csrExtraExtensions,
+			&oneOrder.certificate.preferredRootCN,
 			&oneOrder.certificate.createdAt,
 			&oneOrder.certificate.updatedAt,
 			&oneOrder.certificate.apiKey,
@@ -795,12 +803,13 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 	SELECT
 		/* order */
 		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, 
-		ao.authorizations, ao.finalize, ao.certificate_url, ao.pem, ao.valid_from, ao.valid_to, ao.created_at,
-		ao.updated_at, 
+		ao.authorizations, ao.finalize, ao.certificate_url, ao.pem, ao.valid_from, ao.valid_to, ao.chain_root_cn,
+		ao.created_at, ao.updated_at, 
 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts,
-		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.created_at, c.updated_at,
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
+		c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
@@ -876,6 +885,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		&oneOrder.pem,
 		&oneOrder.validFrom,
 		&oneOrder.validTo,
+		&oneOrder.chainRootCN,
 		&oneOrder.createdAt,
 		&oneOrder.updatedAt,
 
@@ -890,6 +900,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		&oneOrder.certificate.state,
 		&oneOrder.certificate.city,
 		&oneOrder.certificate.csrExtraExtensions,
+		&oneOrder.certificate.preferredRootCN,
 		&oneOrder.certificate.createdAt,
 		&oneOrder.certificate.updatedAt,
 		&oneOrder.certificate.apiKey,

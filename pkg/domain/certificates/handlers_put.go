@@ -24,6 +24,7 @@ type DetailsUpdatePayload struct {
 	State                     *string             `json:"state"`
 	City                      *string             `json:"city"`
 	CSRExtraExtensions        []CertExtensionJSON `json:"csr_extra_extensions"`
+	PreferredRootCN           *string             `json:"preferred_root_cn"`
 	PostProcessingCommand     *string             `json:"post_processing_command"`
 	PostProcessingEnvironment []string            `json:"post_processing_environment"`
 	ApiKey                    *string             `json:"api_key"`

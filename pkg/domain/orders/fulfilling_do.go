@@ -128,14 +128,14 @@ fulfillLoop:
 				continue
 			}
 
-			certPemChain, err := acmeService.DownloadCertificate(*acmeOrder.Certificate, key, nil)
+			cert, err := acmeService.DownloadCertificate(*acmeOrder.Certificate, key, order.Certificate.PreferredRootCN)
 			if err != nil {
 				j.service.logger.Errorf("orders: fulfilling worker %d: download cert error: %s", workerID, err)
 				return // done, failed
 			}
 
 			// process pem and save to storage
-			err = j.savePemChain(order.ID, certPemChain)
+			err = j.saveAcmeCert(order.ID, cert)
 			if err != nil {
 				j.service.logger.Errorf("orders: fulfilling worker %d: save pem error: %s", workerID, err)
 				return // done, failed

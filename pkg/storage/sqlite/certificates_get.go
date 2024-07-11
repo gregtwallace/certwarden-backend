@@ -45,7 +45,8 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 	query := fmt.Sprintf(`
 	SELECT 
 		c.id, c.name, c.description, c.subject, c.subject_alts, 
-		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.created_at, c.updated_at,
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
+		c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
@@ -103,6 +104,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 			&oneCert.state,
 			&oneCert.city,
 			&oneCert.csrExtraExtensions,
+			&oneCert.preferredRootCN,
 			&oneCert.createdAt,
 			&oneCert.updatedAt,
 			&oneCert.apiKey,
@@ -190,7 +192,8 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 	query := `
 	SELECT
 		c.id, c.name, c.description, c.subject, c.subject_alts,
-		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.created_at, c.updated_at,
+		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
+		c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
@@ -232,6 +235,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		&oneCert.state,
 		&oneCert.city,
 		&oneCert.csrExtraExtensions,
+		&oneCert.preferredRootCN,
 		&oneCert.createdAt,
 		&oneCert.updatedAt,
 		&oneCert.apiKey,

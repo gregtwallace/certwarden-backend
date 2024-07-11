@@ -23,6 +23,7 @@ type orderDb struct {
 	finalizedKey   keyDb
 	certificateUrl sql.NullString
 	pem            sql.NullString
+	chainRootCN    sql.NullString
 	validFrom      sql.NullInt32
 	validTo        sql.NullInt32
 	createdAt      int
@@ -65,6 +66,7 @@ func (order orderDb) toOrder() (orders.Order, error) {
 		Pem:            nullStringToString(order.pem),
 		ValidFrom:      nullInt32ToInt(order.validFrom),
 		ValidTo:        nullInt32ToInt(order.validTo),
+		ChainRootCN:    nullStringToString(order.chainRootCN),
 		CreatedAt:      order.createdAt,
 		UpdatedAt:      order.updatedAt,
 	}, nil
