@@ -72,3 +72,7 @@ take advantage of.
     options to specify criteria for deletion of old backups.
 
 ### [v? TBD] - Next Version TBD
+- 2024.08.05
+  xxx
+  + auto ordering value `valid_remaining_days_threshold` removed and instead will be calculated 
+    based on percentage of a certificate's validity remaining

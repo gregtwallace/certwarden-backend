@@ -12,7 +12,6 @@ import (
 	"errors"
 	"os/exec"
 	"sync"
-	"time"
 
 	"github.com/scaleway/scaleway-sdk-go/logger"
 	"go.uber.org/zap"
@@ -57,7 +56,6 @@ type Storage interface {
 
 	GetAllValidCurrentOrders(q pagination_sort.Query) (orders []Order, totalRows int, err error)
 	GetAllIncompleteOrderIds() (orderIds []int, err error)
-	GetExpiringCertIds(maxTimeRemaining time.Duration) (certIds []int, err error)
 	GetNewestIncompleteCertOrderId(certId int) (orderId int, err error)
 
 	// certs
@@ -66,10 +64,9 @@ type Storage interface {
 
 // Configuration options
 type Config struct {
-	AutomaticOrderingEnable     *bool `yaml:"auto_order_enable"`
-	ValidRemainingDaysThreshold *int  `yaml:"valid_remaining_days_threshold"`
-	RefreshTimeHour             *int  `yaml:"refresh_time_hour"`
-	RefreshTimeMinute           *int  `yaml:"refresh_time_minute"`
+	AutomaticOrderingEnable *bool `yaml:"auto_order_enable"`
+	RefreshTimeHour         *int  `yaml:"refresh_time_hour"`
+	RefreshTimeMinute       *int  `yaml:"refresh_time_minute"`
 }
 
 // service struct

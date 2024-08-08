@@ -63,20 +63,14 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 	}
 
 	// verify valid, not known revoked, not past validTo, and finalized key isn't deleted; else don't post process it
-	if order.Status != "valid" || order.KnownRevoked || order.ValidTo == nil || *order.ValidTo <= int(time.Now().Unix()) || order.FinalizedKey == nil {
-		// avoid nil
-		validTo := 0
-		if order.ValidTo != nil {
-			validTo = *order.ValidTo
-		}
-
+	if order.Status != "valid" || order.KnownRevoked || order.ValidTo == nil || order.ValidTo.Before(time.Now()) || order.FinalizedKey == nil {
 		// avoid nil
 		finalKeyName := "[deleted]"
 		if order.FinalizedKey != nil {
 			finalKeyName = order.FinalizedKey.Name
 		}
 
-		service.logger.Debug(fmt.Errorf("orders: cant post process order %d (status: %s, knownrevoked: %t, final key name %s, validTo: %d, now: %d )", orderId, order.Status, order.KnownRevoked, finalKeyName, validTo, time.Now().Unix()))
+		service.logger.Debug(fmt.Errorf("orders: cant post process order %d (status: %s, knownrevoked: %t, final key name: %s, validTo: %s)", orderId, order.Status, order.KnownRevoked, finalKeyName, order.ValidTo))
 		return output.ErrValidationFailed
 	}
 

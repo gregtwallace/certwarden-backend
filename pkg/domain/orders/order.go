@@ -26,8 +26,8 @@ type Order struct {
 	FinalizedKey   *private_keys.Key
 	CertificateUrl *string
 	Pem            *string
-	ValidFrom      *int
-	ValidTo        *int
+	ValidFrom      *time.Time
+	ValidTo        *time.Time
 	ChainRootCN    *string
 	CreatedAt      int
 	UpdatedAt      int
@@ -94,6 +94,18 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 	fulfillJob, _ := service.makeFulfillingJob(order.ID, false)
 	fulfillingWorker := service.orderFulfilling.JobExists(fulfillJob)
 
+	var validFromUnix *int
+	if order.ValidFrom != nil {
+		validFromUnixVal := int(order.ValidFrom.Unix())
+		validFromUnix = &validFromUnixVal
+	}
+
+	var validToUnix *int
+	if order.ValidTo != nil {
+		validToUnixVal := int(order.ValidTo.Unix())
+		validToUnix = &validToUnixVal
+	}
+
 	return orderSummaryResponse{
 		FulfillmentWorker: fulfillingWorker,
 		ID:                order.ID,
@@ -120,8 +132,8 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 		Error:          order.Error,
 		DnsIdentifiers: order.DnsIdentifiers,
 		FinalizedKey:   finalKey,
-		ValidFrom:      order.ValidFrom,
-		ValidTo:        order.ValidTo,
+		ValidFrom:      validFromUnix,
+		ValidTo:        validToUnix,
 		ChainRootCN:    order.ChainRootCN,
 		CreatedAt:      order.CreatedAt,
 		UpdatedAt:      order.UpdatedAt,

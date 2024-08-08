@@ -92,8 +92,6 @@
 'orders':
   # settings for automatic ordering when certs are close to expiring
   'auto_order_enable': true
-  # auto order certs with less than this number of days remaining of validity
-  'valid_remaining_days_threshold': 20
   # time for the daily ordering to occur
   'refresh_time_hour': 1
   'refresh_time_minute': 35

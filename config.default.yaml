@@ -37,7 +37,6 @@
 
 'orders':
   'auto_order_enable': true
-  'valid_remaining_days_threshold': 40
   'refresh_time_hour': 3
   'refresh_time_minute': 12
 

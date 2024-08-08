@@ -292,10 +292,6 @@ func (app *Application) setDefaultConfigValues() {
 		app.config.Orders.AutomaticOrderingEnable = new(bool)
 		*app.config.Orders.AutomaticOrderingEnable = true
 	}
-	if app.config.Orders.ValidRemainingDaysThreshold == nil {
-		app.config.Orders.ValidRemainingDaysThreshold = new(int)
-		*app.config.Orders.ValidRemainingDaysThreshold = 40
-	}
 	if app.config.Orders.RefreshTimeHour == nil {
 		app.config.Orders.RefreshTimeHour = new(int)
 		*app.config.Orders.RefreshTimeHour = 3

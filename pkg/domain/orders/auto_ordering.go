@@ -1,11 +1,24 @@
 package orders
 
 import (
+	"certwarden-backend/pkg/pagination_sort"
 	"certwarden-backend/pkg/randomness"
 	"context"
 	"database/sql"
 	"sync"
 	"time"
+)
+
+// expiringAfterElapsedRatio is the ratio of a certificate's elapsed validity / total validity
+// after which the certificate should be considered expiring
+// KEEP IN SYNC with frontend `FlagExpireDays.tsx` consts
+const (
+	// expiringRemainingValidFraction is the fraction of valid time remaining on a certificate below
+	// which the certificate is considered expiring
+	expiringRemainingValidFraction = 0.333
+	// expiringMinDaysRemaining is the number of days of valid time remaining (regardless of percentage
+	// of valid time) after which a certificate is considered expiring
+	expiringMinRemaining = time.Duration(10 * 24 * time.Hour)
 )
 
 // startAutoOrderService starts a go routine that completes existing orders that are
@@ -18,13 +31,12 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 	}
 
 	// calculate timing based on config
-	remainingDaysThreshold := time.Duration(*cfg.ValidRemainingDaysThreshold) * (24 * time.Hour)
 	refreshHour := *cfg.RefreshTimeHour
 	refreshMinute := *cfg.RefreshTimeMinute
 
 	// log start and update wg
-	service.logger.Infof("orders: starting automatic certificate ordering service; %d day expiration threshold; "+
-		"orders will be placed every day at %02d:%02d", *cfg.ValidRemainingDaysThreshold, refreshHour, refreshMinute)
+	service.logger.Infof("orders: starting automatic certificate ordering service; percent valid remaining threshold: %.0f%%; expiration threshold: %.01f days; "+
+		"orders will be placed every day at %02d:%02d", expiringRemainingValidFraction*100, (expiringMinRemaining.Hours() / 24), refreshHour, refreshMinute)
 	wg.Add(1)
 
 	// service routine
@@ -75,7 +87,7 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 			}
 
 			// order expiring certificates
-			service.orderExpiringCerts(remainingDaysThreshold)
+			service.orderExpiringCerts()
 		}
 	}()
 }
@@ -104,43 +116,71 @@ func (service *Service) retryIncompleteOrders() (err error) {
 	return nil
 }
 
-// orderExpiringCerts automatically orders any certficates that are valid but have a valid_to
-// timestamp within the specified threshold
-func (service *Service) orderExpiringCerts(remainingDaysThreshold time.Duration) {
+// orderExpiringCerts automatically orders any certficates that have surpassed their expiration
+// threshold (either percentage wise or the hardcoded backstop value)
+func (service *Service) orderExpiringCerts() {
 	service.logger.Info("orders: adding expiring certificates to order queue")
 
-	// get slice of all expiring certificate ids
-	expiringCertIds, err := service.storage.GetExpiringCertIds(remainingDaysThreshold)
+	// get slice of all currently valid orders (to evaluate re-order criteria)
+	allValidOrders, _, err := service.storage.GetAllValidCurrentOrders(pagination_sort.Query{})
 	if err != nil {
 		service.logger.Errorf("orders: error ordering expiring certs: %s", err)
 		return
 	}
 
-	// address each expiring cert
-	for _, certId := range expiringCertIds {
-		// check for an existing incomplete order
-		orderId, err := service.storage.GetNewestIncompleteCertOrderId(certId)
+	// use a common Now time
+	now := time.Now()
 
+	// review every currently valid cert
+	for _, validOrder := range allValidOrders {
+		// nil checks (should not be possible)
+		if validOrder.ValidFrom == nil {
+			service.logger.Errorf("orders: valid order somehow missing validFrom time")
+			continue
+		}
+		if validOrder.ValidTo == nil {
+			service.logger.Errorf("orders: valid order somehow missing validTo time")
+			continue
+		}
+
+		// calculate the threshhold dates using the ratio and backstop values
+		// Option 1: validTo - (validTo - validFrom) * expiringRemainingValidFraction
+		totalDuration := validOrder.ValidTo.Sub(*validOrder.ValidFrom)
+		remainingValidFractionThresholdDate := validOrder.ValidTo.Add(-1 * time.Duration(float64(totalDuration)*expiringRemainingValidFraction))
+
+		// Option 2: validTo - expiringMinRemaining
+		remainingValidMinThresholdDate := validOrder.ValidTo.Add(-1 * expiringMinRemaining)
+
+		// abort if not past either threshold (% remaining and backstop time remaining)
+		if now.Before(remainingValidFractionThresholdDate) && now.Before(remainingValidMinThresholdDate) {
+			// Now is before the thresholds, so not expiring, skip this one
+			continue
+		}
+
+		// this order is considered expiring -- proceed
+
+		// check for an existing incomplete order
+		orderId, err := service.storage.GetNewestIncompleteCertOrderId(validOrder.Certificate.ID)
 		if err != nil {
 			// unable to get existing incomplete order -> place new order
 			// if error other than NoRows, log it
 			if err != sql.ErrNoRows {
-				service.logger.Errorf("orders: failed to fetch newest incomplete order id for cert %d (%s)", certId, err)
+				service.logger.Errorf("orders: failed to fetch newest incomplete order id for cert %s (%s); will try to place new order", validOrder.Certificate.Name, err)
 			}
 
 			// place new order
-			service.logger.Debugf("orders: placing new order for expiring cert %d", certId)
-			_, outErr := service.placeNewOrderAndFulfill(certId, false)
+			service.logger.Debugf("orders: placing new order for expiring cert %s", validOrder.Certificate.Name)
+			_, outErr := service.placeNewOrderAndFulfill(validOrder.Certificate.ID, false)
 			if outErr != nil {
-				service.logger.Errorf("orders: failed to place new order for cert %d (%s)", certId, err)
+				service.logger.Errorf("orders: failed to place new order for cert %s (%s)", validOrder.Certificate.Name, err)
 			}
 
 		} else {
 			// no error, retry existing order
-			service.logger.Debugf("orders: retrying order %d to refresh cert %d", orderId, certId)
+			service.logger.Debugf("orders: retrying order %d to refresh cert %s", orderId, validOrder.Certificate.Name)
 			err = service.fulfillOrder(orderId, false)
 			if err != nil {
-				service.logger.Errorf("orders: failed to retry order %d for cert %d (%s)", orderId, certId, err)
+				service.logger.Errorf("orders: failed to retry order %d for cert %s (%s)", orderId, validOrder.Certificate.Name, err)
 			}
 		}
 

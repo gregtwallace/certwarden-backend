@@ -87,7 +87,7 @@ func (service *Service) getOrderForRevocation(certId, orderId int) (Order, *outp
 	}
 
 	// confirm order is valid, not already revoked, and not expired (time)
-	if !(order.Status == "valid" && !order.KnownRevoked && int(time.Now().Unix()) < *order.ValidTo) {
+	if !(order.Status == "valid" && !order.KnownRevoked && time.Now().Before(*order.ValidTo)) {
 		return Order{}, output.ErrValidationFailed
 	}
 
