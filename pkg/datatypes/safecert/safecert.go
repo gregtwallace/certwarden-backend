@@ -6,7 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"io"
-	"math/rand"
+	"math/rand/v2"
 	"sync"
 
 	"golang.org/x/crypto/ocsp"
@@ -95,7 +95,7 @@ func (sc *SafeCert) Update(tlsCert *tls.Certificate) {
 		// issuer not in tlsCert but can try to get it if there are URLS in the
 		// leaf certificate (randomly choose which URL to start with and then loop
 		// through them until find working or run out of options)
-		startIndex := rand.Intn(len(sc.leafCert.IssuingCertificateURL))
+		startIndex := rand.IntN(len(sc.leafCert.IssuingCertificateURL))
 		issuerOk := false
 		for i := 0; i < len(sc.leafCert.IssuingCertificateURL); i++ {
 			issuerCertResp, err := sc.httpClient.Get(sc.leafCert.IssuingCertificateURL[(startIndex+i)%len(sc.leafCert.IssuingCertificateURL)])

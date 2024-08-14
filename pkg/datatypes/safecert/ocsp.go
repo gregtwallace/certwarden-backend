@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"io"
-	"math/rand"
+	"math/rand/v2"
 	"net/http"
 	"time"
 
@@ -48,7 +48,7 @@ func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *httpcli
 	headers.Set("Accept", "application/ocsp-response")
 
 	// randomly select starting ocsp server from list
-	serverIndex := rand.Intn(len(leafCert.OCSPServer))
+	serverIndex := rand.IntN(len(leafCert.OCSPServer))
 
 	// fetch response (try each server until valid response, or run out of servers)
 	var ocspResp *ocsp.Response
