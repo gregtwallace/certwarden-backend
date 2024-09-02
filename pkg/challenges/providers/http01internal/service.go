@@ -26,13 +26,14 @@ type App interface {
 
 // provider Service struct
 type Service struct {
-	logger               *zap.SugaredLogger
-	shutdownContext      context.Context
-	shutdownWaitgroup    *sync.WaitGroup
-	stopServerFunc       context.CancelFunc
-	stopErrChan          chan error
-	port                 int
-	provisionedResources *safemap.SafeMap[[]byte]
+	logger            *zap.SugaredLogger
+	shutdownContext   context.Context
+	shutdownWaitgroup *sync.WaitGroup
+	stopServerFunc    context.CancelFunc
+	stopErrChan       chan error
+	port              int
+	// map[token]keyAuth - token is the http resource and keyAuth is the data served
+	provisionedResources *safemap.SafeMap[acme.KeyAuth]
 }
 
 // ChallengeType returns the ACME Challenge Type this provider uses, which is http-01
@@ -95,7 +96,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// allocate resources map
-	service.provisionedResources = safemap.NewSafeMap[[]byte]()
+	service.provisionedResources = safemap.NewSafeMap[acme.KeyAuth]()
 
 	// set port
 	if cfg.Port == nil {

@@ -8,7 +8,7 @@ import (
 // Provision adds a resource to host
 func (service *Service) Provision(_ string, token string, keyAuth acme.KeyAuth) error {
 	// add new entry
-	exists, _ := service.provisionedResources.Add(token, []byte(keyAuth))
+	exists, _ := service.provisionedResources.Add(token, keyAuth)
 
 	// if it already exists, log an error and fail (should never happen if challenges is working
 	// properly)
@@ -24,7 +24,7 @@ func (service *Service) Provision(_ string, token string, keyAuth acme.KeyAuth) 
 // Deprovision removes a removes a resource from those being hosted
 func (service *Service) Deprovision(_ string, token string, _ acme.KeyAuth) error {
 	// delete entry
-	delFunc := func(tokenKey string, _ []byte) bool {
+	delFunc := func(tokenKey string, _ acme.KeyAuth) bool {
 		return tokenKey == token
 	}
 

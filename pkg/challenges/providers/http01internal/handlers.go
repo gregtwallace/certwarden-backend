@@ -16,7 +16,7 @@ func (service *Service) challengeHandler(w http.ResponseWriter, r *http.Request)
 	token := httprouter.ParamsFromContext(r.Context()).ByName("token")
 
 	// try to read resource
-	resourceValue, err := service.provisionedResources.Read(token)
+	keyAuth, err := service.provisionedResources.Read(token)
 
 	// resource not available, 404
 	if err != nil {
@@ -33,7 +33,7 @@ func (service *Service) challengeHandler(w http.ResponseWriter, r *http.Request)
 	service.logger.Debugf("writing resource (name: %s) to http-01 client", token)
 
 	// convert value to content reader for output
-	contentReader := bytes.NewReader(resourceValue)
+	contentReader := bytes.NewReader([]byte(keyAuth))
 
 	// Set Content-Type explicitly
 	w.Header().Set("Content-Type", "application/octet-stream")
