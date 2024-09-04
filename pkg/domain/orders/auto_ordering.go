@@ -122,7 +122,7 @@ func (service *Service) orderExpiringCerts() {
 	service.logger.Info("orders: adding expiring certificates to order queue")
 
 	// get slice of all currently valid orders (to evaluate re-order criteria)
-	allValidOrders, _, err := service.storage.GetAllValidCurrentOrders(pagination_sort.QueryAll)
+	allValidOrders, _, err := service.storage.GetAllValidCurrentOrders(pagination_sort.Query{})
 	if err != nil {
 		service.logger.Errorf("orders: error ordering expiring certs: %s", err)
 		return

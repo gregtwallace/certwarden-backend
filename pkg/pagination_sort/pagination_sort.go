@@ -21,6 +21,11 @@ type Query struct {
 // funcs to access Query members. These allow access to data but prevent changing
 // it outside of this pkg.
 func (q Query) Limit() int {
+	// for default value, return -1 which will query ALL results
+	if q.limit == 0 {
+		return -1
+	}
+
 	return q.limit
 }
 func (q Query) Offset() int {
@@ -35,12 +40,6 @@ func (q Query) SortDirection() string {
 	}
 
 	return "asc"
-}
-
-// QueryAll is a query that returns all records
-var QueryAll = Query{
-	limit:  -1,
-	offset: 0,
 }
 
 var validFieldNames = []string{

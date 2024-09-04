@@ -75,7 +75,7 @@ func (service *Service) nameValid(accountName string, accountId *int) bool {
 // GetUsableAccounts returns a list of accounts that have status == valid
 // and have also accepted the ToS (which is probably redundant)
 func (service *Service) GetUsableAccounts() ([]Account, error) {
-	accounts, _, err := service.storage.GetAllAccounts(pagination_sort.QueryAll)
+	accounts, _, err := service.storage.GetAllAccounts(pagination_sort.Query{})
 	if err != nil {
 		return nil, err
 	}

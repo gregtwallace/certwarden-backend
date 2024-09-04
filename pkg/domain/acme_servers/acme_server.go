@@ -87,7 +87,7 @@ func (serv Server) detailedResponse(service *Service) (serverDetailedResponse, e
 // ListAllServersSummaries returns a slice of summaries about all configured Servers
 func (service *Service) ListAllServersSummaries() ([]ServerSummaryResponse, error) {
 	// fetch from storage
-	servers, _, err := service.storage.GetAllAcmeServers(pagination_sort.QueryAll)
+	servers, _, err := service.storage.GetAllAcmeServers(pagination_sort.Query{})
 	if err != nil {
 		return nil, err
 	}

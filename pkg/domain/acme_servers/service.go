@@ -93,7 +93,7 @@ func NewService(app App) (*Service, error) {
 	service.acmeServers = make(map[int]*acme.Service)
 
 	// get server list from storage
-	servers, _, err := service.storage.GetAllAcmeServers(pagination_sort.QueryAll)
+	servers, _, err := service.storage.GetAllAcmeServers(pagination_sort.Query{})
 	if err != nil {
 		return nil, err
 	}
