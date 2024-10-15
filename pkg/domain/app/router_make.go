@@ -147,6 +147,7 @@ func (app *Application) makeRouterAndRoutes() {
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/privatecerts/:name", app.download.DownloadPrivateCertViaHeader)
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/privatecertchains/:name", app.download.DownloadPrivateCertChainViaHeader)
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/certrootchains/:name", app.download.DownloadCertRootChainViaHeader)
+	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/pfx/:name", app.download.DownloadPfxViaHeader)
 
 	// download keys and certs - via URL routes
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/privatekeys/:name/*apiKey", app.download.DownloadKeyViaUrl)
@@ -154,6 +155,7 @@ func (app *Application) makeRouterAndRoutes() {
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/privatecerts/:name/*apiKey", app.download.DownloadPrivateCertViaUrl)
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/privatecertchains/:name/*apiKey", app.download.DownloadPrivateCertChainViaUrl)
 	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/certrootchains/:name/*apiKey", app.download.DownloadCertRootChainViaUrl)
+	router.handleAPIRouteDownloadWithAPIKey(http.MethodGet, apiKeyDownloadUrlPath+"/pfx/:name/*apiKey", app.download.DownloadPfxViaUrl)
 
 	// frontend (if enabled)
 	if *app.config.FrontendServe {
