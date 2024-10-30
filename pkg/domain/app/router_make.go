@@ -161,7 +161,11 @@ func (app *Application) makeRouterAndRoutes() {
 		app.logger.Infof("frontend hosting enabled and available at: %s", frontendUrlPath)
 
 		// configure environment file
-		setFrontendEnv(app.config.FrontendShowDebugInfo)
+		err := setFrontendEnv(app.config.FrontendShowDebugInfo)
+		if err != nil {
+			// don't fail, just error log the problem (sane default values should be in place)
+			app.logger.Errorf("frontend: failed to set frontend environment (%s)", err)
+		}
 
 		// redirect root to frontend app
 		router.handleFrontend(http.MethodGet, "/", redirectToFrontendHandler)
