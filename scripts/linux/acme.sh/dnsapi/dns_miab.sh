@@ -1,24 +1,24 @@
 #!/usr/bin/env sh
+# shellcheck disable=SC2034
+dns_miab_info='Mail-in-a-Box
+Site: MailInaBox.email
+Docs: github.com/acmesh-official/acme.sh/wiki/dnsapi2#dns_miab
+Options:
+ MIAB_Username Admin username
+ MIAB_Password Admin password
+ MIAB_Server Server hostname. FQDN of your_MIAB Server
+Issues: github.com/acmesh-official/acme.sh/issues/2550
+Author: Darven Dissek, William Gertz
+'
 
-# Name: dns_miab.sh
-#
-# Authors:
-#    Darven Dissek 2018
-#    William Gertz 2019
-#
-#     Thanks to Neil Pang and other developers here for code reused from acme.sh from DNS-01
-#     used to communicate with the MailinaBox Custom DNS API
-# Report Bugs here:
-#    https://github.com/billgertz/MIAB_dns_api (for dns_miab.sh)
-#    https://github.com/acmesh-official/acme.sh       (for acme.sh)
-#
 ########  Public functions #####################
 
 #Usage: dns_miab_add  _acme-challenge.www.domain.com  "XKrxpRBosdIKFzxW_CT3KLZNf6q0HG9i01zxXp5CPBs"
 dns_miab_add() {
   fulldomain=$1
-  txtvalue=$2
-  _info "Using miab challange add"
+  # Added "value=" and "&ttl=300" to accomodate the new TXT record format used by the MIAB/PMIAB API
+  txtvalue="value=$2&ttl=300"
+  _info "Using miab challenge add"
   _debug fulldomain "$fulldomain"
   _debug txtvalue "$txtvalue"
 
@@ -27,7 +27,7 @@ dns_miab_add() {
     return 1
   fi
 
-  #check domain and seperate into doamin and host
+  #check domain and seperate into domain and host
   if ! _get_root "$fulldomain"; then
     _err "Cannot find any part of ${fulldomain} is hosted on ${MIAB_Server}"
     return 1
@@ -56,7 +56,7 @@ dns_miab_rm() {
   fulldomain=$1
   txtvalue=$2
 
-  _info "Using miab challage delete"
+  _info "Using miab challenge delete"
   _debug fulldomain "$fulldomain"
   _debug txtvalue "$txtvalue"
 
