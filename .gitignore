@@ -9,3 +9,6 @@
 
 # acme.sh temp folder
 /scripts/linux/acme.sh/temp
+
+# temporary debug files
+__debug*
