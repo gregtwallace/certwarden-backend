@@ -18,7 +18,7 @@ func (service *Service) DownloadCertViaHeader(w http.ResponseWriter, r *http.Req
 	apiKey := getApiKeyFromHeader(w, r)
 
 	// fetch the cert's newest order using the apiKey
-	order, err := service.getCertNewestValidOrder(certName, apiKey, false)
+	order, err := service.getCertNewestValidOrder(certName, apiKey, false, false)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (service *Service) DownloadCertViaUrl(w http.ResponseWriter, r *http.Reques
 	apiKey := getApiKeyFromParams(params)
 
 	// fetch the cert's newest order using the apiKey
-	order, err := service.getCertNewestValidOrder(certName, apiKey, true)
+	order, err := service.getCertNewestValidOrder(certName, apiKey, true, false)
 	if err != nil {
 		return err
 	}

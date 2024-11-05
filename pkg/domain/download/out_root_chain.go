@@ -20,15 +20,15 @@ func (rc rootChain) FilenameNoExt() string {
 	return fmt.Sprintf("%s.chain", rc.Certificate.Name)
 }
 
+func (rc rootChain) Modtime() time.Time {
+	// use Order default
+	return orders.Order(rc).Modtime()
+}
+
 // PemContent returns the PemContentChainOnly instead of what order would
 // normally return
 func (rc rootChain) PemContent() string {
 	return orders.Order(rc).PemContentChainOnly()
-}
-
-func (rc rootChain) Modtime() time.Time {
-	// use Order default
-	return orders.Order(rc).Modtime()
 }
 
 // end rootChain Output Methods
@@ -45,12 +45,13 @@ func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r 
 	apiKey := getApiKeyFromHeader(w, r)
 
 	// fetch the cert's newest order using the apiKey, as rootChain type
-	rootChain, err := service.getCertNewestValidRootChain(certName, apiKey, false)
+	order, err := service.getCertNewestValidOrder(certName, apiKey, false, false)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
+	rootChain := rootChain(order)
 	service.output.WritePem(w, r, rootChain)
 
 	return nil
@@ -68,24 +69,14 @@ func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *ht
 	apiKey := getApiKeyFromParams(params)
 
 	// fetch the cert's newest order using the apiKey, as rootChain type
-	rootChain, err := service.getCertNewestValidRootChain(certName, apiKey, true)
+	order, err := service.getCertNewestValidOrder(certName, apiKey, true, false)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
+	rootChain := rootChain(order)
 	service.output.WritePem(w, r, rootChain)
 
 	return nil
-}
-
-// getCertNewestValidRootChain gets the appropriate order for the requested Cert and sets its type to
-// rootChain so the proper data is outputted
-func (service *Service) getCertNewestValidRootChain(certName string, apiKey string, apiKeyViaUrl bool) (rootChain, *output.Error) {
-	order, err := service.getCertNewestValidOrder(certName, apiKey, apiKeyViaUrl)
-	if err != nil {
-		return rootChain{}, err
-	}
-
-	return rootChain(order), nil
 }

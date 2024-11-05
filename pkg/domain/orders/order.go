@@ -159,10 +159,21 @@ func (order Order) Modtime() time.Time {
 	orderModtime := time.Unix(int64(order.UpdatedAt), 0)
 	certModtime := time.Unix(int64(order.Certificate.UpdatedAt), 0)
 
-	// return later of the two
+	// only available if finalized, ensure nil check
+	keyModtime := time.Time{}
+	if order.FinalizedKey != nil {
+		keyModtime = time.Unix(int64(order.FinalizedKey.UpdatedAt), 0)
+	}
+
+	// return latest of the three
+	if keyModtime.After(orderModtime) && keyModtime.After(certModtime) {
+		return keyModtime
+	}
+
 	if certModtime.After(orderModtime) {
 		return certModtime
 	}
+
 	return orderModtime
 }
 

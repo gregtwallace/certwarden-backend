@@ -132,10 +132,10 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// make zip filename with timestamp
-	zipFilename := logFileName + "." + time.Now().Local().Format(time.RFC3339) + ".zip"
+	zipFilenameNoExt := logFileName + "." + time.Now().Local().Format(time.RFC3339)
 
 	// output
-	app.output.WriteZipNoStoreCache(w, r, zipFilename, zipBuffer.Bytes())
+	app.output.WriteZip(w, r, zipFilenameNoExt, zipBuffer.Bytes())
 
 	return nil
 }

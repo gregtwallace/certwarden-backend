@@ -3,10 +3,12 @@ package download
 import (
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/output"
+	"crypto/ecdsa"
+	"crypto/rsa"
 	"crypto/x509"
-	"encoding/base64"
+	"encoding/pem"
+	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -15,112 +17,126 @@ import (
 
 // modified Order to allow implementation of custom out functions
 // to properly output the desired content
-type pfxPrivateCertificateChain privateCertificateChain
+type pfxPrivateCertificateChain orders.Order
 
 // pfxPrivateCertificateChain Output Methods
 
-func (pcc pfxPrivateCertificateChain) FilenameNoExt() string {
-	return pcc.Certificate.Name
+func (pfxpcc pfxPrivateCertificateChain) FilenameNoExt() string {
+	return pfxpcc.Certificate.Name
 }
 
-func TrimIdentifiers(pem string) []byte {
-	trimParts := []string{
-		"-----BEGIN CERTIFICATE-----\n",
-		"-----BEGIN PRIVATE KEY-----\n",
-		"-----BEGIN RSA PRIVATE KEY-----\n",
-		"-----END CERTIFICATE-----\n",
-		"-----END PRIVATE KEY-----\n",
-		"-----END RSA PRIVATE KEY-----\n",
-		"-----BEGIN EC PRIVATE KEY-----\n",
-		"-----END EC PRIVATE KEY-----\n",
-	}
-
-	for _, part := range trimParts {
-		pem = strings.ReplaceAll(pem, part, "")
-	}
-
-	decoded, err := base64.StdEncoding.DecodeString(pem)
-	if err != nil {
-		return nil
-	}
-
-	return decoded
+func (pfxpcc pfxPrivateCertificateChain) Modtime() time.Time {
+	return orders.Order(pfxpcc).Modtime()
 }
 
-func ParsePrivateKey(byteval []byte) (interface{}, error) {
-	var res interface{}
-	var err error
+// keyPemToKey returns the private key from pemBytes
+func keyPemToKey(keyPem []byte) (key any, err error) {
+	// decode private key
+	keyPemBlock, _ := pem.Decode(keyPem)
+	if keyPemBlock == nil {
+		return nil, errors.New("key pem block did not decode")
+	}
 
-	res, err = x509.ParsePKCS1PrivateKey(byteval)
-	if err != nil {
-		res, err = x509.ParsePKCS8PrivateKey(byteval)
+	// parsing depends on block type
+	switch keyPemBlock.Type {
+	case "RSA PRIVATE KEY": // PKCS1
+		var rsaKey *rsa.PrivateKey
+		rsaKey, err = x509.ParsePKCS1PrivateKey(keyPemBlock.Bytes)
 		if err != nil {
-			res, err = x509.ParseECPrivateKey(byteval)
+			return nil, err
 		}
+		return rsaKey, nil
+
+	case "EC PRIVATE KEY": // SEC1, ASN.1
+		var ecdKey *ecdsa.PrivateKey
+		ecdKey, err = x509.ParseECPrivateKey(keyPemBlock.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		return ecdKey, nil
+
+	case "PRIVATE KEY": // PKCS8
+		pkcs8Key, err := x509.ParsePKCS8PrivateKey(keyPemBlock.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		return pkcs8Key, nil
+
+	default:
+		// fallthrough
 	}
 
-	return res, err
+	return nil, errors.New("key pem block type unsupported")
+}
+
+// certPemToCerts returns the certificate from cert pem bytes. if the pem
+// bytes contain more than one certificate, the first is returned as the
+// certificate and the rest are returned as an array for what is presumably
+// the rest of a chain
+func certPemToCerts(certPem []byte) (cert *x509.Certificate, certChain []*x509.Certificate, err error) {
+	// decode 1st cert
+	certPemBlock, rest := pem.Decode(certPem)
+	if certPemBlock == nil {
+		return nil, nil, errors.New("cert pem block did not decode")
+	}
+
+	// parse 1st cert
+	cert, err = x509.ParseCertificate(certPemBlock.Bytes)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// decode cert chain
+	certChainPemBlocks := []*pem.Block{}
+	for {
+		// try to decode next block
+		var nextCertBlock *pem.Block
+		nextCertBlock, rest = pem.Decode(rest)
+
+		// no next block, done
+		if nextCertBlock == nil {
+			break
+		}
+
+		// success, append
+		certChainPemBlocks = append(certChainPemBlocks, nextCertBlock)
+	}
+
+	// parse each cert in chain
+	certChain = []*x509.Certificate{}
+	for i := range certChainPemBlocks {
+		certChainMember, err := x509.ParseCertificate(certChainPemBlocks[i].Bytes)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		certChain = append(certChain, certChainMember)
+	}
+
+	return cert, certChain, nil
 }
 
 // PfxContent returns the combined key + cert + chain pfx content
-func (pcc pfxPrivateCertificateChain) PfxContent() []byte {
-	certPem := orders.Order(pcc).PemContentNoChain()
-	certChainPem := orders.Order(pcc).PemContentChainOnly()
-	keyPem := pcc.FinalizedKey.PemContent()
-
-	certPemTrimmed := TrimIdentifiers(certPem)
-	keyPemTrimmed := TrimIdentifiers(keyPem)
-
-	fullChainPem := []*x509.Certificate{}
-
-	splitCertChainPem := strings.Split(certChainPem, "-----END CERTIFICATE-----\n")
-	for _, chainCert := range splitCertChainPem {
-		if len(chainCert) == 0 {
-			continue
-		}
-		trimmed := TrimIdentifiers(chainCert)
-		cert, err := x509.ParseCertificate(trimmed)
-		if err != nil {
-			return nil
-		}
-		fullChainPem = append(fullChainPem, cert)
-	}
-
-	x509cert, err := x509.ParseCertificate(certPemTrimmed)
+func (pfxpcc pfxPrivateCertificateChain) PfxContent() (pfxData []byte, err error) {
+	// get private key
+	key, err := keyPemToKey([]byte(pfxpcc.FinalizedKey.PemContent()))
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	x509key, err := ParsePrivateKey(keyPemTrimmed)
+	// get cert and chain (if there is a chain)
+	cert, certChain, err := certPemToCerts([]byte(orders.Order(pfxpcc).PemContent()))
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	pfx, err := pkcs12.Modern.Encode(x509key, x509cert, fullChainPem, pcc.FinalizedKey.ApiKey)
+	// encode using modern pkcs12 standard
+	pfxData, err = pkcs12.Modern.Encode(key, cert, certChain, pfxpcc.FinalizedKey.ApiKey)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return pfx
-}
-
-func (pcc pfxPrivateCertificateChain) Modtime() time.Time {
-	// if key is nil, return 0 time since Pem output of thie type will fail anyway without a key
-	if pcc.FinalizedKey == nil {
-		return time.Time{}
-	}
-
-	// key time
-	keyModtime := pcc.FinalizedKey.Modtime()
-
-	// order (cert) time
-	certModtime := orders.Order(pcc).Modtime()
-
-	// return more recent of the two
-	if keyModtime.After(certModtime) {
-		return keyModtime
-	}
-	return certModtime
+	return pfxData, nil
 }
 
 // end privateCertificateChain Output Methods
@@ -135,13 +151,14 @@ func (service *Service) DownloadPfxViaHeader(w http.ResponseWriter, r *http.Requ
 	apiKeysCombined := getApiKeyFromHeader(w, r)
 
 	// fetch the private cert
-	privCert, err := service.getCertNewestPfx(certName, apiKeysCombined, false)
+	order, err := service.getCertNewestValidOrder(certName, apiKeysCombined, false, true)
 	if err != nil {
 		return err
 	}
 
 	// return pem file to client
-	service.output.WritePfx(w, r, privCert)
+	pfxPrivCert := pfxPrivateCertificateChain(order)
+	service.output.WritePfx(w, r, pfxPrivCert)
 
 	return nil
 }
@@ -155,52 +172,17 @@ func (service *Service) DownloadPfxViaUrl(w http.ResponseWriter, r *http.Request
 	apiKeysCombined := getApiKeyFromParams(params)
 
 	// fetch the private cert
-	privCert, err := service.getCertNewestPfx(certName, apiKeysCombined, true)
-	if err != nil {
-		return err
+	order, outErr := service.getCertNewestValidOrder(certName, apiKeysCombined, true, true)
+	if outErr != nil {
+		return outErr
 	}
 
-	// return pem file to client
-	service.output.WritePfx(w, r, privCert)
+	// return pfx file to client
+	pfxPrivCert := pfxPrivateCertificateChain(order)
+	err := service.output.WritePfx(w, r, pfxPrivCert)
+	if err != nil {
+		return output.ErrWritePFXGenerateFailed
+	}
 
 	return nil
-}
-
-// getCertNewestPfx gets the appropriate order for the requested Cert and sets its type to
-// privateCertificateChain so the proper data is outputted.
-// To avoid unauthorized output of a key, both the certificate and key apiKeys must be provided. The format
-// for this is the certificate apikey appended to the private key's apikey using a '.' as a separator.
-// It also checks the apiKeyViaUrl property if the client is making a request with the apiKey in the Url.
-func (service *Service) getCertNewestPfx(certName string, apiKeysCombined string, apiKeyViaUrl bool) (pfxPrivateCertificateChain, *output.Error) {
-	// separate the apiKeys
-	apiKeys := strings.Split(apiKeysCombined, ".")
-
-	// error if not exactly 2 apiKeys
-	if len(apiKeys) != 2 {
-		return pfxPrivateCertificateChain{}, output.ErrUnauthorized
-	}
-
-	certApiKey := apiKeys[0]
-	keyApiKey := apiKeys[1]
-
-	// fetch the cert's newest valid order
-	order, err := service.getCertNewestValidOrder(certName, certApiKey, apiKeyViaUrl)
-	if err != nil {
-		return pfxPrivateCertificateChain{}, err
-	}
-
-	// confirm the private key is valid
-	if order.FinalizedKey == nil {
-		service.logger.Debug(errFinalizedKeyMissing)
-		return pfxPrivateCertificateChain{}, output.ErrNotFound
-	}
-
-	// validate the apiKey for the private key is correct
-	if order.FinalizedKey.ApiKey != keyApiKey {
-		service.logger.Debug(errWrongApiKey)
-		return pfxPrivateCertificateChain{}, output.ErrUnauthorized
-	}
-
-	// return pfx content
-	return pfxPrivateCertificateChain(order), nil
 }
