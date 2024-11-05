@@ -50,10 +50,13 @@ func (sc *SafeCert) Read() *tls.Certificate {
 	sc.RLock()
 	defer sc.RUnlock()
 
-	// while this is a "write", since ocspResp isn't written without Write
-	// lock, this will never cause an issue; that is, ocspResp is fixed so this
-	// should usually be a no-op except for the first Read()
-	sc.cert.OCSPStaple = sc.ocspResp.Raw
+	// while this is a "write", ocspResp isn't written without Write lock,
+	// thus this will never cause an issue; that is, ocspResp is static here
+	// so this should usually be a no-op except for the first Read()
+	// nil check ensures missing ocspResp doesn't cause nil deref
+	if sc.cert != nil && sc.ocspResp != nil {
+		sc.cert.OCSPStaple = sc.ocspResp.Raw
+	}
 
 	return sc.cert
 }
