@@ -16,10 +16,10 @@ func (service *Service) challengeHandler(w http.ResponseWriter, r *http.Request)
 	token := httprouter.ParamsFromContext(r.Context()).ByName("token")
 
 	// try to read resource
-	keyAuth, err := service.provisionedResources.Read(token)
+	keyAuth, exists := service.provisionedResources.Read(token)
 
 	// resource not available, 404
-	if err != nil {
+	if !exists {
 		service.logger.Debugf("http-01 challenge resource %s not found", token)
 
 		// write status 404

@@ -76,9 +76,9 @@ func (service *Service) validateSessionCookie(r *http.Request, w http.ResponseWr
 		}
 
 		// verify session is still valid
-		_, err = service.sessionManager.sessions.Read(claims.SessionID.String())
-		if err != nil {
-			service.logger.Infof("client %s: %s failed (session no longer valid: %s)", r.RemoteAddr, logTaskName, err)
+		_, exists := service.sessionManager.sessions.Read(claims.SessionID.String())
+		if !exists {
+			service.logger.Infof("client %s: %s failed (session no longer valid)", r.RemoteAddr, logTaskName)
 			return nil, output.ErrUnauthorized
 		}
 

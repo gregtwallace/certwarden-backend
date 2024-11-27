@@ -1,12 +1,8 @@
 package safemap
 
 import (
-	"errors"
 	"sync"
 )
-
-// errors
-var errMapKeyDoesntExist = errors.New("specified map key does not exist")
 
 // SafeMap is a map with a mutex
 type SafeMap[V any] struct {
@@ -23,17 +19,14 @@ func NewSafeMap[V any]() *SafeMap[V] {
 
 // Read returns the value from the specified key. If the key
 // does not exist, an error is returned.
-func (sm *SafeMap[V]) Read(key string) (V, error) {
+func (sm *SafeMap[V]) Read(key string) (V, bool) {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
 	// read data
 	value, exists := sm.m[key]
-	if !exists {
-		return value, errMapKeyDoesntExist
-	}
 
-	return value, nil
+	return value, exists
 }
 
 // Add creates the named key and inserts the specified value.

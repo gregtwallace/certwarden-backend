@@ -19,8 +19,16 @@ var (
 // Solve accepts an ACME identifier and a slice of challenges and then solves the challenge using a provider
 // for the specific domain. If no provider exists or solving otherwise fails, an error is returned.
 func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, key acme.AccountKey, acmeService *acme.Service) (err error) {
-	// get provider for identifier
-	provider, err := service.Providers.ProviderFor(identifier)
+	// confirm Type is correct (only dns is supported)
+	if identifier.Type != acme.IdentifierTypeDns {
+		return fmt.Errorf("challenges: acme identifier is type (%s); only 'dns' is supported", string(identifier.Type))
+	}
+
+	// identifier value -> fqdn
+	domain := service.dnsIDValuetoDomain(identifier.Value)
+
+	// get provider for fqdn
+	provider, err := service.DNSIdentifierProviders.ProviderFor(domain)
 	if err != nil {
 		return err
 	}
@@ -42,7 +50,6 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// vars for provision/deprovision
-	domain := identifier.Value
 	token := challenge.Token
 	keyAuth, err := key.KeyAuthorization(token)
 	if err != nil {
@@ -97,7 +104,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	// valid or invalid state.
 
 	// inform ACME that the challenge is ready
-	challenge, err = acmeService.ValidateChallenge(challenge.Url, key)
+	challenge, err = acmeService.InstructServerToValidateChallenge(challenge.Url, key)
 	if err != nil {
 		return err
 	}

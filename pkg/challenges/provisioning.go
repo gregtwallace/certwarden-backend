@@ -12,8 +12,8 @@ var (
 	errNameUnavailable = errors.New("challenges: failed to add challenge record due to resource name never becoming free (timeout)")
 )
 
-// Provision adds the specified ACME Challenge resource name to the in use tracker and then calls the provider
-// to provision the actual resource. If the resource name is already in use, it waits until the name is free
+// Provision adds the specified domain name to the in use tracker and then calls the provider
+// to provision the actual resource. If the domain name is already in use, it waits until the name is free
 // and then proceeds.
 func (service *Service) provision(domain string, token string, keyAuth acme.KeyAuth, provider providers.Service) (err error) {
 	// loop to add domain to those currently provisioned and wait if not available

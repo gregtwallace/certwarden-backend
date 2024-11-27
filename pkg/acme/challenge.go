@@ -34,9 +34,9 @@ func unmarshalChallenge(jsonResp json.RawMessage) (chall Challenge, err error) {
 	return chall, nil
 }
 
-// NewOrder posts a an empty object to the challenge URL which informs ACME that the
-// challenge is ready to be validated
-func (service *Service) ValidateChallenge(challengeUrl string, accountKey AccountKey) (chall Challenge, err error) {
+// InstructServerToValidateChallenge posts a an empty object to the challenge URL which informs
+// ACME that the challenge is ready to be validated
+func (service *Service) InstructServerToValidateChallenge(challengeUrl string, accountKey AccountKey) (chall Challenge, err error) {
 	// post challenge with {} as payload signals the challenge is ready for validation
 	jsonResp, _, err := service.postToUrlSigned(struct{}{}, challengeUrl, accountKey)
 	if err != nil {

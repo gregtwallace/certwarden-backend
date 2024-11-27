@@ -1,25 +1,18 @@
 package providers
 
 import (
-	"certwarden-backend/pkg/acme"
-	"errors"
 	"fmt"
 	"strings"
 )
 
 // ProviderFor returns the provider Service for the given acme Identifier. If
 // there is no provider for the Identifier, an error is returned instead.
-func (mgr *Manager) ProviderFor(identifier acme.Identifier) (*provider, error) {
+func (mgr *Manager) ProviderFor(fqdn string) (*provider, error) {
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
 
-	// confirm Type is correct (only dns is supported)
-	if identifier.Type != acme.IdentifierTypeDns {
-		return nil, errors.New("acme identifier is not dns type (challenges pkg can only solve dns type)")
-	}
-
 	// if exact domain is in the list, return its provider
-	p, exists := mgr.dP[identifier.Value]
+	p, exists := mgr.dP[fqdn]
 	if exists {
 		return p, nil
 	}
@@ -28,7 +21,7 @@ func (mgr *Manager) ProviderFor(identifier acme.Identifier) (*provider, error) {
 	providerDomain := ""
 	for domain := range mgr.dP {
 		// include period to avoid matching something like hellodomain.com to domain.com 's provider
-		if strings.HasSuffix(identifier.Value, "."+domain) {
+		if strings.HasSuffix(fqdn, "."+domain) {
 			// for a provider with the proper suffix, check length of existing match and update
 			// match if the new match is longer
 			if len(domain) > len(providerDomain) {
@@ -47,6 +40,5 @@ func (mgr *Manager) ProviderFor(identifier acme.Identifier) (*provider, error) {
 		return p, nil
 	}
 
-	return nil, fmt.Errorf("could not find a challenge provider for the specified identifier (%s; %s)", identifier.Type, identifier.Value)
-
+	return nil, fmt.Errorf("could not find a challenge provider for the specified fqdn (%s)", fqdn)
 }

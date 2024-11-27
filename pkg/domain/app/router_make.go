@@ -67,12 +67,12 @@ func (app *Application) makeRouterAndRoutes() {
 
 	// challenges (config)
 	// router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/domains", app.challenges.Providers.GetAllDomains)
-	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services", app.challenges.Providers.GetAllProviders)
-	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.Providers.GetOneProvider)
+	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services", app.challenges.DNSIdentifierProviders.GetAllProviders)
+	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.DNSIdentifierProviders.GetOneProvider)
 
-	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/app/challenges/providers/services", app.challenges.Providers.CreateProvider)
-	router.handleAPIRouteSecure(http.MethodPut, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.Providers.ModifyProvider)
-	router.handleAPIRouteSecure(http.MethodDelete, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.Providers.DeleteProvider)
+	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/app/challenges/providers/services", app.challenges.DNSIdentifierProviders.CreateProvider)
+	router.handleAPIRouteSecure(http.MethodPut, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.DNSIdentifierProviders.ModifyProvider)
+	router.handleAPIRouteSecure(http.MethodDelete, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.DNSIdentifierProviders.DeleteProvider)
 
 	// acme_servers
 	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/acmeservers", app.acmeServers.GetAllServers)

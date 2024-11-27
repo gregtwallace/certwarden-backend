@@ -37,15 +37,16 @@ type Config struct {
 
 // service struct
 type Service struct {
-	app               application
-	dnsCheckerCfg     dns_checker.Config
-	logger            *zap.SugaredLogger
-	shutdownContext   context.Context
-	shutdownWaitgroup *sync.WaitGroup
-	output            *output.Service
-	dnsChecker        *dns_checker.Service
-	Providers         *providers.Manager
-	resourcesInUse    *safemap.SafeMap[chan struct{}] // tracks all resource names currently in use (regardless of provider)
+	app                    application
+	dnsCheckerCfg          dns_checker.Config
+	logger                 *zap.SugaredLogger
+	shutdownContext        context.Context
+	shutdownWaitgroup      *sync.WaitGroup
+	output                 *output.Service
+	dnsChecker             *dns_checker.Service
+	DNSIdentifierProviders *providers.Manager
+	resourcesInUse         *safemap.SafeMap[chan struct{}] // tracks all resource names currently in use (regardless of provider)
+	dnsIDtoDomain          *safemap.SafeMap[string]        // DNSIdentifierValue[Domain]
 }
 
 // NewService creates a new service
@@ -72,7 +73,7 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 	service.shutdownWaitgroup = app.GetShutdownWaitGroup()
 
 	// configure challenge providers
-	service.Providers, err = providers.MakeManager(app, cfg.ProviderConfigs)
+	service.DNSIdentifierProviders, err = providers.MakeManager(app, cfg.ProviderConfigs)
 	if err != nil {
 		service.logger.Errorf("challenges: failed to configure challenge provider(s) (%s)", err)
 		return nil, err
@@ -87,6 +88,9 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 
 	// make tracking map
 	service.resourcesInUse = safemap.NewSafeMap[chan struct{}]()
+
+	// make DNS Identifier -> domain map
+	service.dnsIDtoDomain = safemap.NewSafeMap[string]()
 
 	return service, nil
 }
