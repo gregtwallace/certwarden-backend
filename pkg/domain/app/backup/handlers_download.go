@@ -33,9 +33,13 @@ func (service *Service) DownloadBackupNowHandler(w http.ResponseWriter, r *http.
 		return output.ErrInternal
 	}
 
-	// output
+	// filename & remove extension
 	zipFileName, _ := makeBackupZipFileName()
-	service.output.WriteZipNoStoreCache(w, r, zipFileName, zipBytes)
+	extension := filepath.Ext(zipFileName)
+	zipFilenameNoExt := zipFileName[0 : len(zipFileName)-len(extension)]
+
+	// output
+	service.output.WriteZip(w, r, zipFilenameNoExt, zipBytes)
 
 	return nil
 }
@@ -72,8 +76,12 @@ func (service *Service) DownloadDiskBackupHandler(w http.ResponseWriter, r *http
 		return output.ErrInternal
 	}
 
+	// remove extension
+	extension := filepath.Ext(filenameParam)
+	zipFilenameNoExt := filenameParam[0 : len(filenameParam)-len(extension)]
+
 	// send file to client
-	service.output.WriteZipNoStoreCache(w, r, filenameParam, zipBuffer.Bytes())
+	service.output.WriteZip(w, r, zipFilenameNoExt, zipBuffer.Bytes())
 
 	return nil
 }
