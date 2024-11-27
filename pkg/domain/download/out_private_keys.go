@@ -9,7 +9,7 @@ import (
 
 // DownloadKeyViaHeader is the handler to write a private key to the client
 // if the proper apiKey is provided via header (standard method)
-func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get key name
 	params := httprouter.ParamsFromContext(r.Context())
 	keyName := params.ByName("name")
@@ -32,7 +32,7 @@ func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Requ
 // DownloadKeyViaUrl is the handler to write a private key to the client
 // if the proper apiKey is provided via URL (NOT recommended - only implemented
 // to support clients that can't specify the apiKey header)
-func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get key name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
 	keyName := params.ByName("name")

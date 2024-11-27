@@ -18,7 +18,7 @@ const pprofBasePath = ""
 const pprofUrlPath = pprofBasePath + "/debug/pprof"
 
 // pprofHandler handles all requests related to pprof
-func pprofHandler(w http.ResponseWriter, r *http.Request) *output.Error {
+func pprofHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// remove the URL base path
 	r.URL.Path = strings.TrimPrefix(r.URL.Path, pprofBasePath)
 	r.URL.RawPath = strings.TrimPrefix(r.URL.RawPath, pprofBasePath)

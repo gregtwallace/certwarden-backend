@@ -27,12 +27,12 @@ type currentLogResponse struct {
 }
 
 // viewLogHandler is a handler that returns the content of the current log file to the client
-func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Request) *output.Error {
+func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// open log, read only
 	logFile, err := os.OpenFile(dataStorageLogPath+"/"+logFileName, os.O_RDONLY, 0600)
 	if err != nil {
 		app.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 	defer logFile.Close()
 
@@ -51,7 +51,7 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 	err = json.Unmarshal(logBuffer.Bytes(), &response.LogEntries)
 	if err != nil {
 		app.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// write response
@@ -63,7 +63,7 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 	err = app.output.WriteJSON(w, response)
 	if err != nil {
 		app.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -71,7 +71,7 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 
 // downloadLogsHandler is a handler that sends a zip of all of the log files to
 // the client
-func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Request) *output.Error {
+func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// make buffer and writer for zip
 	zipBuffer := bytes.NewBuffer(nil)
 	zipWriter := zip.NewWriter(zipBuffer)
@@ -80,7 +80,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	files, err := os.ReadDir(dataStorageLogPath)
 	if err != nil {
 		app.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// range all files in log directory
@@ -105,7 +105,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 		logFile, err := os.Open(dataStorageLogPath + "/" + name)
 		if err != nil {
 			app.logger.Error(err)
-			return output.ErrInternal
+			return output.JsonErrInternal(err)
 		}
 		defer logFile.Close()
 
@@ -113,14 +113,14 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 		zipFile, err := zipWriter.Create(name)
 		if err != nil {
 			app.logger.Error(err)
-			return output.ErrInternal
+			return output.JsonErrInternal(err)
 		}
 
 		// copy log file to zip file
 		_, err = io.Copy(zipFile, logFile)
 		if err != nil {
 			app.logger.Error(err)
-			return output.ErrInternal
+			return output.JsonErrInternal(err)
 		}
 	}
 
@@ -128,7 +128,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	err = zipWriter.Close()
 	if err != nil {
 		app.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// make zip filename with timestamp

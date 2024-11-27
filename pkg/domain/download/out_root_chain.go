@@ -36,7 +36,7 @@ func (rc rootChain) PemContent() string {
 // DownloadCertRootChainViaHeader is the handler to write just a
 // cert's chain to the client, if the proper apiKey is provided via
 // header (standard method)
-func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get cert name
 	params := httprouter.ParamsFromContext(r.Context())
 	certName := params.ByName("name")
@@ -61,7 +61,7 @@ func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r 
 // cert's chain to the client, if the proper apiKey is provided via
 // URL (NOT recommended - only implemented to support clients that
 // can't specify the apiKey header)
-func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get cert name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
 	certName := params.ByName("name")

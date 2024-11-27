@@ -22,7 +22,7 @@ type allCertsResponse struct {
 }
 
 // GetAllCertificates fetches all certs from storage and outputs them as JSON
-func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// parse pagination and sorting
 	query := pagination_sort.ParseRequestToQuery(r)
 
@@ -30,7 +30,7 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) *out
 	certs, totalRows, err := service.storage.GetAllCerts(query)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	// populate cert summaries for output
@@ -49,7 +49,7 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) *out
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -62,13 +62,13 @@ type certificateResponse struct {
 
 // GetOneCert is an http handler that returns one Certificate based on its unique id in the
 // form of JSON written to w
-func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// if id is new, provide some info
@@ -91,7 +91,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) *outp
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -108,12 +108,12 @@ type newCertOptions struct {
 
 // GetNewCertOptions is an http handler that returns information the client GUI needs to properly
 // present options when the user is creating a certificate
-func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// available private keys
 	keys, err := service.keys.AvailableKeys()
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	outputKeys := []private_keys.KeySummaryResponse{}
@@ -125,7 +125,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	accounts, err := service.accounts.GetUsableAccounts()
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	outputAccounts := []acme_accounts.AccountSummaryResponse{}
@@ -144,7 +144,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

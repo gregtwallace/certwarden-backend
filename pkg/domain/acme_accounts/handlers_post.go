@@ -4,6 +4,8 @@ import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/validation"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -24,21 +26,21 @@ type NewPayload struct {
 
 // PostNewAccount is the handler to save a new account to storage. No ACME
 // actions (e.g. registration) are taken.
-func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	var payload NewPayload
 
 	// decode body into payload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// validation
 	// name
 	if payload.Name == nil || !service.nameValid(*payload.Name, nil) {
 		service.logger.Debug(ErrNameBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrNameBad)
 	}
 
 	// description (blank if not specified)
@@ -53,25 +55,27 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 		*payload.Email = ""
 	} else if !validation.EmailValidOrBlank(*payload.Email) {
 		service.logger.Debug(ErrEmailBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrEmailBad)
 	}
 
 	// TOS must be accepted
 	if payload.AcceptedTos == nil || !*payload.AcceptedTos {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// ACME Server
 	if payload.AcmeServerID == nil || !service.acmeServerService.AcmeServerValid(*payload.AcmeServerID) {
-		service.logger.Debug("acme_server_id not specified or invalid")
-		return output.ErrValidationFailed
+		err = errors.New("acme_server_id not specified or invalid")
+		service.logger.Debug(err)
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// private key (make last since most intense op)
 	if payload.PrivateKeyID == nil || !service.keys.KeyAvailable(*payload.PrivateKeyID) {
+		err = errors.New("private_key_id not available")
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 	// end validation
 
@@ -86,13 +90,14 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 	newAcct, err := service.storage.PostNewAccount(payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	detailedResp, err := newAcct.detailedResponse(service)
 	if err != nil {
-		service.logger.Errorf("failed to generate account summary response (%s)", err)
-		return output.ErrInternal
+		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
 	}
 
 	// write response
@@ -104,7 +109,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

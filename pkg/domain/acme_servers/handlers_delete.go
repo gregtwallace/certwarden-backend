@@ -11,13 +11,13 @@ import (
 
 // DeleteServer deletes an acme server from storage and terminates the
 // related service.
-func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -30,7 +30,7 @@ func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) *ou
 	// do not allow delete if there are any accounts using the server
 	if service.storage.ServerHasAccounts(id) {
 		service.logger.Debug("cannot delete server (in use)")
-		return output.ErrDeleteInUse
+		return output.JsonErrDeleteInUse("server")
 	}
 	// end validation
 
@@ -38,7 +38,7 @@ func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) *ou
 	err = service.storage.DeleteServer(id)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	// delete acme Service
@@ -55,7 +55,7 @@ func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) *ou
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

@@ -4,6 +4,7 @@ import (
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/output"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,13 +25,13 @@ type UpdatePayload struct {
 
 // PutServerUpdate updates a Server that already exists in storage.
 // Only fields received in the payload (non-nil) are updated.
-func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// parse payload
 	var payload UpdatePayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// get id param
@@ -38,7 +39,7 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -50,11 +51,11 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	// name (optional - check if not nil)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
 		service.logger.Debug(ErrNameBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrNameBad)
 	}
 	// directory_url (optional - check if not nil)
 	if payload.DirectoryURL != nil && !service.directoryUrlValid(*payload.DirectoryURL) {
-		return output.ErrBadDirectoryURL
+		return output.JsonErrValidationFailed(errBadDirectoryURL)
 	}
 	// Description, and IsStaging do not need validation
 	// end validation
@@ -66,7 +67,7 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	updatedServer, err := service.storage.PutServerUpdate(payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	// if directory url changed, create new acme.Service
@@ -77,15 +78,16 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 		service.acmeServers[payload.ID], err = acme.NewService(service, *payload.DirectoryURL)
 		if err != nil {
 			service.logger.Error(err)
-			return output.ErrInternal
+			return output.JsonErrInternal(err)
 		}
 	}
 
 	// make detailed response
 	detailedResp, err := updatedServer.detailedResponse(service)
 	if err != nil {
-		service.logger.Errorf("failed to generate server summary response (%s)", err)
-		return output.ErrInternal
+		err = fmt.Errorf("failed to generate server summary response (%s)", err)
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
 	}
 
 	// write response
@@ -98,7 +100,7 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

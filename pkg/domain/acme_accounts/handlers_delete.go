@@ -10,13 +10,13 @@ import (
 )
 
 // DeleteAccount deletes an acme account from storage
-func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -29,7 +29,7 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) *o
 	// do not allow delete if there are any certs using the account
 	if service.storage.AccountHasCerts(id) {
 		service.logger.Warn("cannot delete account (in use)")
-		return output.ErrDeleteInUse
+		return output.JsonErrDeleteInUse("account")
 	}
 	// end validation
 
@@ -37,7 +37,7 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) *o
 	err = service.storage.DeleteAccount(id)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	// write response
@@ -49,7 +49,7 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) *o
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

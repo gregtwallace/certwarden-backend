@@ -19,7 +19,7 @@ type deletePayload struct {
 // DeleteProvider deletes the provider specified by the ID from manager also freeing
 // up the domains previously mapped to it. If the tag is not specified or is incorrect
 // deleting fails.
-func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *output.Error {
+func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 
@@ -28,7 +28,7 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *outp
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		mgr.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// params
@@ -36,13 +36,13 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *outp
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		mgr.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// if manager only has 1 provider, delete will never be allowed
 	if len(mgr.providers) <= 1 {
 		mgr.logger.Debug("cannot delete provider if there is only 1 provider available")
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// find provider
@@ -56,15 +56,16 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *outp
 				break
 			} else {
 				mgr.logger.Debug(errWrongTag)
-				return output.ErrValidationFailed
+				return output.JsonErrValidationFailed(err)
 			}
 		}
 	}
 
 	// didn't find id
 	if p == nil {
-		mgr.logger.Debug(errBadID(payload.ID))
-		return output.ErrValidationFailed
+		err = errBadID(payload.ID)
+		mgr.logger.Debug(err)
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// call provider stop func before deleting
@@ -82,7 +83,7 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *outp
 	err = mgr.unsafeWriteProvidersConfig()
 	if err != nil {
 		mgr.logger.Errorf("failed to save config file after providers update (%s)", err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// write response
@@ -94,7 +95,7 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *outp
 	err = mgr.output.WriteJSON(w, response)
 	if err != nil {
 		mgr.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

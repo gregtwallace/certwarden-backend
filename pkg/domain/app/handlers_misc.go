@@ -19,7 +19,7 @@ type serverStatusResponse struct {
 }
 
 // statusHandler writes some basic info about the status of the Application
-func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) *output.Error {
+func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// write response
 	response := &serverStatusResponse{}
 	response.StatusCode = http.StatusOK
@@ -33,14 +33,14 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) *o
 	err := app.output.WriteJSON(w, response)
 	if err != nil {
 		app.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
 }
 
 // healthHandler writes some basic info about the status of the Application
-func healthHandler(w http.ResponseWriter, r *http.Request) *output.Error {
+func healthHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// write 204 (No Content)
 	w.WriteHeader(http.StatusNoContent)
 

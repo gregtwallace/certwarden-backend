@@ -9,6 +9,7 @@ import (
 	"certwarden-backend/pkg/challenges/providers/http01internal"
 	"certwarden-backend/pkg/output"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -27,7 +28,7 @@ type newPayload struct {
 }
 
 // CreateProvider creates a new provider using the specified configuration.
-func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *output.Error {
+func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 
@@ -36,7 +37,7 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		mgr.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// verify correct number of configs received
@@ -60,8 +61,9 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 		configCount++
 	}
 	if configCount != 1 {
-		mgr.logger.Debugf("new provider expects 1 config, received %d", configCount)
-		return output.ErrValidationFailed
+		err = fmt.Errorf("new provider expects 1 config, received %d", configCount)
+		mgr.logger.Debug(err)
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// try to add the specified provider (actual action)
@@ -90,15 +92,17 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 
 	// common err check
 	if err != nil {
-		mgr.logger.Debugf("failed to add new provider (%s)", err)
-		return output.ErrValidationFailed
+		err = fmt.Errorf("failed to add new provider (%s)", err)
+		mgr.logger.Debug(err)
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// update config file
 	err = mgr.unsafeWriteProvidersConfig()
 	if err != nil {
-		mgr.logger.Errorf("failed to save config file after providers update (%s)", err)
-		return output.ErrInternal
+		err = fmt.Errorf("failed to save config file after providers update (%s)", err)
+		mgr.logger.Error(err)
+		return output.JsonErrInternal(err)
 	}
 
 	// write response
@@ -110,7 +114,7 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 	err = mgr.output.WriteJSON(w, response)
 	if err != nil {
 		mgr.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

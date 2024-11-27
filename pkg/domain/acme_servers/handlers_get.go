@@ -3,6 +3,7 @@ package acme_servers
 import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -18,7 +19,7 @@ type acmeServersResponse struct {
 }
 
 // GetAllServers returns all of the ACME servers
-func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// parse pagination and sorting
 	query := pagination_sort.ParseRequestToQuery(r)
 
@@ -26,7 +27,7 @@ func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) *o
 	servers, totalRows, err := service.storage.GetAllAcmeServers(query)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	// populate summaries for output
@@ -34,8 +35,9 @@ func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) *o
 	for i := range servers {
 		summary, err := servers[i].summaryResponse(service)
 		if err != nil {
-			service.logger.Errorf("failed to generate server summary response (%s)", err)
-			return output.ErrInternal
+			err = fmt.Errorf("failed to generate server summary response (%s)", err)
+			service.logger.Error(err)
+			return output.JsonErrInternal(err)
 		}
 
 		scmeServers = append(scmeServers, summary)
@@ -51,7 +53,7 @@ func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) *o
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -63,13 +65,13 @@ type acmeServerResponse struct {
 }
 
 // GetOneServer returns a single acme server
-func (service *Service) GetOneServer(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetOneServer(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// params
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// get the server from storage (and validate id)
@@ -81,8 +83,9 @@ func (service *Service) GetOneServer(w http.ResponseWriter, r *http.Request) *ou
 	// make detailed response
 	detailedResp, err := server.detailedResponse(service)
 	if err != nil {
-		service.logger.Errorf("failed to generate server summary response (%s)", err)
-		return output.ErrInternal
+		err = fmt.Errorf("failed to generate server summary response (%s)", err)
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
 	}
 
 	// write response
@@ -95,7 +98,7 @@ func (service *Service) GetOneServer(w http.ResponseWriter, r *http.Request) *ou
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

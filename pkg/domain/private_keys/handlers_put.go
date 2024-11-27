@@ -25,13 +25,13 @@ type UpdatePayload struct {
 
 // PutKeyUpdate updates a Key that already exists in storage.
 // Only fields received in the payload (non-nil) are updated.
-func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// parse payload
 	var payload UpdatePayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// get id param
@@ -39,7 +39,7 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) *ou
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -51,17 +51,17 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) *ou
 	// name (optional - check if not nil)
 	if payload.Name != nil && !service.NameValid(*payload.Name, &payload.ID) {
 		service.logger.Debug(ErrNameBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrNameBad)
 	}
 	// api key must be at least 10 characters long
 	if payload.ApiKey != nil && len(*payload.ApiKey) < 10 {
 		service.logger.Debug(ErrApiKeyBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrApiKeyBad)
 	}
 	// api key new must be at least 10 characters long
 	if payload.ApiKeyNew != nil && *payload.ApiKeyNew != "" && len(*payload.ApiKeyNew) < 10 {
 		service.logger.Debug(ErrApiKeyNewBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrApiKeyNewBad)
 	}
 	// Description, ApiKeyDisabled, and ApiKeyViaUrl do not need validation
 	// end validation
@@ -73,7 +73,7 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) *ou
 	updatedKey, err := service.storage.PutKeyUpdate(payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	// write response
@@ -86,7 +86,7 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) *ou
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

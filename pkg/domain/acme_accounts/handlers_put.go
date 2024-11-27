@@ -3,6 +3,7 @@ package acme_accounts
 import (
 	"certwarden-backend/pkg/output"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -20,13 +21,13 @@ type NameDescPayload struct {
 
 // PutNameDescAccount is a handler that sets the name and description of an account
 // within storage
-func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// payload decoding
 	var payload NameDescPayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// get id from param
@@ -34,7 +35,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -47,7 +48,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	// name (optional)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
 		service.logger.Debug(ErrNameBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrNameBad)
 	}
 	// end validation
 
@@ -59,13 +60,14 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	updatedAcct, err := service.storage.PutNameDescAccount(payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	detailedResp, err := updatedAcct.detailedResponse(service)
 	if err != nil {
-		service.logger.Errorf("failed to generate account summary response (%s)", err)
-		return output.ErrInternal
+		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
 	}
 
 	// write response
@@ -77,7 +79,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

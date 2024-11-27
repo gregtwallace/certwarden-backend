@@ -20,13 +20,13 @@ type orderResponse struct {
 // which creates a new order for the certificate. If an order already exists
 // ACME may send back the existing order instead of creating a new one
 // endpoint: /api/v1/certificates/:id/orders
-func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// certId param
 	certIdParam := httprouter.ParamsFromContext(r.Context()).ByName("certid")
 	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// get certificate (validate exists)
@@ -50,7 +50,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) *output
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -58,7 +58,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) *output
 
 // FulfillExistingOrder is a handler that attempts to fulfill an existing order (i.e.
 // move it to the 'valid' state)
-func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get params
 	params := httprouter.ParamsFromContext(r.Context())
 
@@ -66,14 +66,14 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	orderIdParam := params.ByName("orderid")
 	orderId, err := strconv.Atoi(orderIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// validate order is acceptable
@@ -87,7 +87,7 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 	err = service.fulfillOrder(orderId, true)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// get order from db to return
@@ -105,7 +105,7 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -119,7 +119,7 @@ type revokePayload struct {
 
 // RevokeOrder is a handler that will revoke an order if it is valid and not
 // past its valid_to timestamp.
-func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get params
 	params := httprouter.ParamsFromContext(r.Context())
 
@@ -127,14 +127,14 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	orderIdParam := params.ByName("orderid")
 	orderId, err := strconv.Atoi(orderIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// parse payload
@@ -149,7 +149,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	err = service.validRevocationReason(payload.ReasonCode)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// order
@@ -163,14 +163,14 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	key, err := order.Certificate.CertificateAccount.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// revoke the certificate with ACME
 	acmeService, err := service.acmeServerService.AcmeService(order.Certificate.CertificateAccount.AcmeServer.ID)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	err = acmeService.RevokeCertificate(*order.Pem, payload.ReasonCode, key)
@@ -179,7 +179,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 		acmeErr := new(acme.Error)
 		if !errors.As(err, &acmeErr) || acmeErr.Type != "urn:ietf:params:acme:error:alreadyRevoked" {
 			service.logger.Error(err)
-			return output.ErrInternal
+			return output.JsonErrInternal(err)
 		}
 	}
 
@@ -187,7 +187,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	err = service.storage.RevokeOrder(orderId)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	// update certificate timestamp
@@ -212,7 +212,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

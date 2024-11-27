@@ -35,13 +35,13 @@ type DetailsUpdatePayload struct {
 
 // PutDetailsCert is a handler that sets various details about a cert and saves
 // them to storage. These are all details that should be editable any time.
-func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// payload decoding
 	var payload DetailsUpdatePayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// get id from param
@@ -49,7 +49,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -57,25 +57,24 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	cert, outErr := service.GetCertificate(payload.ID)
 	if outErr != nil {
 		service.logger.Debug(ErrIdBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrIdBad)
 	}
 	// name (optional)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
 		service.logger.Debug(ErrNameBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrNameBad)
 	}
 	// description - no validation
 	// private key (optional)
 	if payload.PrivateKeyId != nil && !service.privateKeyIdValid(*payload.PrivateKeyId, &payload.ID) {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrKeyIdBad)
 	}
 	// subject alts (optional)
 	// if new alts are being specified
 	if payload.SubjectAltNames != nil {
 		if !subjectAltsValid(payload.SubjectAltNames) {
 			service.logger.Debug(ErrDomainBad)
-			return output.ErrValidationFailed
+			return output.JsonErrValidationFailed(ErrDomainBad)
 		}
 
 	} else if len(cert.SubjectAltNames) > 0 {
@@ -83,18 +82,18 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 		// verify against the challenge method
 		if !subjectAltsValid(cert.SubjectAltNames) {
 			service.logger.Debug(ErrDomainBad)
-			return output.ErrValidationFailed
+			return output.JsonErrValidationFailed(ErrDomainBad)
 		}
 	}
 	// api key must be at least 10 characters long
 	if payload.ApiKey != nil && len(*payload.ApiKey) < 10 {
 		service.logger.Debug(ErrApiKeyBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrApiKeyBad)
 	}
 	// api key new must be at least 10 characters long
 	if payload.ApiKeyNew != nil && *payload.ApiKeyNew != "" && len(*payload.ApiKeyNew) < 10 {
 		service.logger.Debug(ErrApiKeyNewBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrApiKeyNewBad)
 	}
 	// TODO: Do any validation of CSR components?
 
@@ -103,7 +102,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 		_, err = payload.CSRExtraExtensions[i].ToCertExtension()
 		if err != nil {
 			service.logger.Debug(err)
-			return output.ErrValidationFailed
+			return output.JsonErrValidationFailed(err)
 		}
 	}
 
@@ -119,7 +118,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	updatedCert, err := service.storage.PutDetailsCert(payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	// write response
@@ -131,7 +130,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

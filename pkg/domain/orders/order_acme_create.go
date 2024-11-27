@@ -7,7 +7,7 @@ import (
 
 // placeNewOrderAndFulfill creates a new ACME order for the specified Certificate ID,
 // and prioritizes the order as specified. It returns the new orderId.
-func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (Order, *output.Error) {
+func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (Order, *output.JsonError) {
 	// get cert
 	cert, outErr := service.certificates.GetCertificate(certId)
 	if outErr != nil {
@@ -18,20 +18,20 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 	key, err := cert.CertificateAccount.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
-		return Order{}, output.ErrInternal
+		return Order{}, output.JsonErrInternal(err)
 	}
 
 	// send the new-order to ACME
 	acmeService, err := service.acmeServerService.AcmeService(cert.CertificateAccount.AcmeServer.ID)
 	if err != nil {
 		service.logger.Error(err)
-		return Order{}, output.ErrInternal
+		return Order{}, output.JsonErrInternal(err)
 	}
 
 	acmeResponse, err := acmeService.NewOrder(cert.NewOrderPayload(), key)
 	if err != nil {
 		service.logger.Error(err)
-		return Order{}, output.ErrInternal
+		return Order{}, output.JsonErrInternal(err)
 	}
 	service.logger.Debugf("orders: new order location: %s", acmeResponse.Location)
 
@@ -45,11 +45,11 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		err = service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(orderId, acmeResponse))
 		if err != nil {
 			service.logger.Error(err)
-			return Order{}, output.ErrStorageGeneric
+			return Order{}, output.JsonErrStorageGeneric(err)
 		}
 	} else if err != nil {
 		service.logger.Error(err)
-		return Order{}, output.ErrStorageGeneric
+		return Order{}, output.JsonErrStorageGeneric(err)
 	}
 
 	// update certificate timestamp

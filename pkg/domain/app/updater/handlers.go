@@ -20,7 +20,7 @@ type getNewVersionInfoResponse struct {
 
 // GetNewVersionInfo returns if there is a newer known version and if there is
 // it returns detailed information about that new version.
-func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	service.newVersion.mu.RLock()
 	defer service.newVersion.mu.RUnlock()
 
@@ -51,7 +51,7 @@ func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request
 	err := service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -59,12 +59,12 @@ func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request
 
 // CheckForNewVersion causes the backend to query the remote update information
 // and then return info about any new version.
-func (service *Service) CheckForNewVersion(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) CheckForNewVersion(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// update version info from remote
 	err := service.fetchNewVersion()
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// return new version info (same as GET new version)

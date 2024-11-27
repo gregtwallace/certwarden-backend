@@ -5,6 +5,7 @@ import (
 	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/validation"
 	"errors"
+	"fmt"
 )
 
 var (
@@ -20,11 +21,11 @@ var (
 
 // getKey returns the Key for the specified id or an
 // error.
-func (service *Service) getKey(id int) (Key, *output.Error) {
+func (service *Service) getKey(id int) (Key, *output.JsonError) {
 	// basic check
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)
-		return Key{}, output.ErrValidationFailed
+		return Key{}, output.JsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get the key from storage
@@ -33,10 +34,10 @@ func (service *Service) getKey(id int) (Key, *output.Error) {
 		// special error case for no record found
 		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
-			return Key{}, output.ErrNotFound
+			return Key{}, output.JsonErrNotFound(fmt.Errorf("key id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Key{}, output.ErrStorageGeneric
+			return Key{}, output.JsonErrStorageGeneric(err)
 		}
 	}
 

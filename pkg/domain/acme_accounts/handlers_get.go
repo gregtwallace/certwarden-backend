@@ -6,6 +6,7 @@ import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
 	"certwarden-backend/pkg/validation"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -21,7 +22,7 @@ type accountsResponse struct {
 }
 
 // GetAllAccounts is an http handler that returns all acme accounts in the form of JSON written to w
-func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// parse pagination and sorting
 	query := pagination_sort.ParseRequestToQuery(r)
 
@@ -29,7 +30,7 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) *
 	accounts, totalRows, err := service.storage.GetAllAccounts(query)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	// populate account summaries for output
@@ -48,7 +49,7 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) *
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -61,13 +62,13 @@ type accountResponse struct {
 
 // GetOneAccount is an http handler that returns one acme account based on its unique id in the
 // form of JSON written to w
-func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// if id is new, provide some info
@@ -83,8 +84,9 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) *o
 
 	detailedResp, err := account.detailedResponse(service)
 	if err != nil {
-		service.logger.Errorf("failed to generate account summary response (%s)", err)
-		return output.ErrInternal
+		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
 	}
 
 	// write response
@@ -97,7 +99,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) *o
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -115,19 +117,19 @@ type newAccountOptions struct {
 
 // GetNewAccountOptions is an http handler that returns information the client GUI needs to properly
 // present options when the user is creating an account
-func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// acme servers
 	acmeServers, err := service.acmeServerService.ListAllServersSummaries()
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// available private keys
 	rawKeys, err := service.keys.AvailableKeys()
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	keys := []private_keys.KeySummaryResponse{}
@@ -145,7 +147,7 @@ func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Requ
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

@@ -26,9 +26,9 @@ type loginPayload struct {
 // LoginUsingUserPwPayload takes the loginPayload, looks up the username in storage
 // and validates the password. If so, an Access Token is returned in JSON and a refresh
 // token is sent in a cookie.
-func (service *Service) LoginUsingUserPwPayload(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) LoginUsingUserPwPayload(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// wrap handler to easily check err and delete cookies
-	outErr := func() *output.Error {
+	outErr := func() *output.JsonError {
 		var payload loginPayload
 
 		// log attempt
@@ -38,35 +38,35 @@ func (service *Service) LoginUsingUserPwPayload(w http.ResponseWriter, r *http.R
 		err := json.NewDecoder(r.Body).Decode(&payload)
 		if err != nil {
 			service.logger.Infof("client %s: login failed (payload error: %s)", r.RemoteAddr, err)
-			return output.ErrUnauthorized
+			return output.JsonErrUnauthorized
 		}
 
 		// fetch the password hash from storage
 		user, err := service.storage.GetOneUserByName(payload.Username)
 		if err != nil {
 			service.logger.Infof("client %s: login failed (bad username: %s)", r.RemoteAddr, err)
-			return output.ErrUnauthorized
+			return output.JsonErrUnauthorized
 		}
 
 		// compare
 		err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(payload.Password))
 		if err != nil {
 			service.logger.Infof("client %s: login failed (bad password: %s)", r.RemoteAddr, err)
-			return output.ErrUnauthorized
+			return output.JsonErrUnauthorized
 		}
 
 		// user and password now verified, make auth
 		auth, err := service.newAuthorization(user.Username)
 		if err != nil {
 			service.logger.Errorf("client %s: login failed (internal error: %s)", r.RemoteAddr, err)
-			return output.ErrInternal
+			return output.JsonErrInternal(nil)
 		}
 
 		// save auth's session in manager
 		err = service.sessionManager.new(auth.SessionTokenClaims)
 		if err != nil {
 			service.logger.Errorf("client %s: login failed (internal error: %s)", r.RemoteAddr, err)
-			return output.ErrUnauthorized
+			return output.JsonErrUnauthorized
 		}
 
 		// return response to client
@@ -80,7 +80,8 @@ func (service *Service) LoginUsingUserPwPayload(w http.ResponseWriter, r *http.R
 		err = service.output.WriteJSON(w, response)
 		if err != nil {
 			service.logger.Errorf("failed to write json (%s)", err)
-			return output.ErrWriteJsonError
+			// detailed error is OK here because the user passed auth checks
+			return output.JsonErrWriteJsonError(err)
 		}
 
 		// log success
@@ -101,9 +102,9 @@ func (service *Service) LoginUsingUserPwPayload(w http.ResponseWriter, r *http.R
 // RefreshUsingCookie validates the SessionToken cookie and confirms its UUID is for a valid
 // session. If so, it generates a new AccessToken and new SessionToken cookie and then sends both
 // to the client.
-func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// wrap to easily check err and delete cookies
-	outErr := func() *output.Error {
+	outErr := func() *output.JsonError {
 		// log attempt
 		service.logger.Infof("client %s: attempting access token refresh", r.RemoteAddr)
 
@@ -118,14 +119,14 @@ func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Reques
 		auth, err := service.newAuthorization(oldClaims.Subject)
 		if err != nil {
 			service.logger.Errorf("client %s: access token refresh failed (internal error: %s)", r.RemoteAddr, err)
-			return output.ErrInternal
+			return output.JsonErrInternal(nil)
 		}
 
 		// refresh session in manager (remove old, add new)
 		err = service.sessionManager.refresh(*oldClaims, auth.SessionTokenClaims)
 		if err != nil {
 			service.logger.Errorf("client %s: access token refresh failed (internal error: %s)", r.RemoteAddr, err)
-			return output.ErrUnauthorized
+			return output.JsonErrUnauthorized
 		}
 
 		// return response (new auth) to client
@@ -139,7 +140,8 @@ func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Reques
 		err = service.output.WriteJSON(w, response)
 		if err != nil {
 			service.logger.Errorf("failed to write json (%s)", err)
-			return output.ErrWriteJsonError
+			// detailed error is OK here because the user passed auth checks
+			return output.JsonErrWriteJsonError(err)
 		}
 
 		// log success
@@ -158,7 +160,7 @@ func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Reques
 }
 
 // Logout logs the client out and removes the session from session manager
-func (service *Service) Logout(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) Logout(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// log attempt
 	service.logger.Infof("client %s: attempting logout", r.RemoteAddr)
 
@@ -166,14 +168,14 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) *output.E
 	oldClaims, err := service.ValidateAuthHeader(r, w, "logout")
 	if err != nil {
 		service.logger.Errorf("client %s: logout failed (%s)", r.RemoteAddr, oldClaims.Subject, err)
-		return output.ErrUnauthorized
+		return output.JsonErrUnauthorized
 	}
 
 	// remove session in manager
 	err = service.sessionManager.close(*oldClaims)
 	if err != nil {
 		service.logger.Errorf("client %s: logout for user '%s' failed (%s)", r.RemoteAddr, oldClaims.Subject, err)
-		return output.ErrUnauthorized
+		return output.JsonErrUnauthorized
 	}
 
 	// log success
@@ -189,7 +191,8 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) *output.E
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		// detailed error is OK here because the user passed auth checks
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -204,7 +207,7 @@ type passwordChangePayload struct {
 }
 
 // ChangePassword allows a user to change their password
-func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// log attempt
 	service.logger.Infof("client %s: attempting password change", r.RemoteAddr)
 
@@ -212,7 +215,7 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) *
 	claims, err := service.ValidateAuthHeader(r, w, "password change")
 	if err != nil {
 		service.logger.Infof("client %s: password change failed (bad auth header: %s)", r.RemoteAddr, err)
-		return output.ErrUnauthorized
+		return output.JsonErrUnauthorized
 	}
 	username := claims.Subject
 
@@ -221,7 +224,7 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) *
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Infof("client %s: password change for user '%s' failed (payload error: %s)", r.RemoteAddr, username, err)
-		return output.ErrUnauthorized
+		return output.JsonErrUnauthorized
 	}
 
 	// fetch the password hash from storage
@@ -229,40 +232,46 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) *
 	if err != nil {
 		// shouldn't be possible since header was valid
 		service.logger.Errorf("client %s: password change for user '%s' failed (bad username: %s)", r.RemoteAddr, username, err)
-		return output.ErrUnauthorized
+		return output.JsonErrUnauthorized
 	}
 
 	// confirm current password is correct
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(payload.CurrentPassword))
 	if err != nil {
 		service.logger.Infof("client %s: password change for user '%s' failed (bad password: %s)", r.RemoteAddr, username, err)
-		return output.ErrUnauthorized
+		return output.JsonErrUnauthorized
 	}
+
+	// Auth confirmed OK
 
 	// verify new password matches
 	if payload.NewPassword != payload.ConfirmNewPassword {
-		service.logger.Infof("client %s: password change for user '%s' failed (new password did not match confirmation)", r.RemoteAddr, username)
-		return output.ErrValidationFailed
+		err = fmt.Errorf("client %s: password change for user '%s' failed (new password did not match confirmation)", r.RemoteAddr, username)
+		service.logger.Info(err)
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// don't enforce any password requirements other than it needs to exist
 	if len(payload.NewPassword) < 1 {
-		service.logger.Infof("client %s: password change for user '%s' failed (new password not specified)", r.RemoteAddr, username)
-		return output.ErrValidationFailed
+		err = fmt.Errorf("client %s: password change for user '%s' failed (new password not specified)", r.RemoteAddr, username)
+		service.logger.Info(err)
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// generate new password hash
 	newPasswordHash, err := bcrypt.GenerateFromPassword([]byte(payload.NewPassword), BcryptCost)
 	if err != nil {
-		service.logger.Errorf("client %s: password change for user '%s' failed (internal error: %s)", r.RemoteAddr, username, err)
-		return output.ErrInternal
+		err = fmt.Errorf("client %s: password change for user '%s' failed (internal error: %s)", r.RemoteAddr, username, err)
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
 	}
 
 	// update password in storage
 	userId, err := service.storage.UpdateUserPassword(username, string(newPasswordHash))
 	if err != nil {
-		service.logger.Errorf("client %s: password change for user '%s' failed (internal error: %s)", r.RemoteAddr, username, err)
-		return output.ErrStorageGeneric
+		err = fmt.Errorf("client %s: password change for user '%s' failed (storage error: %s)", r.RemoteAddr, username, err)
+		service.logger.Error(err)
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	// log success (before response since new pw already saved)
@@ -276,7 +285,8 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) *
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		// detailed error is OK here because the user passed auth checks
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

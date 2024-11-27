@@ -2,6 +2,7 @@ package orders
 
 import (
 	"certwarden-backend/pkg/output"
+	"fmt"
 	"net/http"
 )
 
@@ -21,7 +22,7 @@ type orderWorkStatusResponse struct {
 }
 
 // GetFulfillWorkStatus returns all fulfilling jobs with workers and waiting in queue
-func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get jobs from manager
 	mgrJobs := service.orderFulfilling.AllCurrentJobs()
 
@@ -40,8 +41,9 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 	// lookup all orders in db
 	orders, err := service.storage.GetOrders(orderIDs)
 	if err != nil {
-		service.logger.Errorf("orders: failed to convert fulfilling jobs to order objects (%s)", err)
-		return output.ErrInternal
+		err = fmt.Errorf("orders: failed to convert fulfilling jobs to order objects (%s)", err)
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
 	}
 
 	// build working part of response
@@ -93,7 +95,7 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 	err = service.output.WriteJSON(w, jobsResp)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 	return nil
 }

@@ -6,27 +6,30 @@ import (
 	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/validation"
 	"errors"
+	"fmt"
 	"strings"
 )
 
 var (
-	ErrIdBad   = errors.New("server id is invalid")
-	ErrNameBad = errors.New("server name is not valid")
+	ErrIdBad           = errors.New("server id is invalid")
+	ErrNameBad         = errors.New("server name is not valid")
+	errBadDirectoryURL = errors.New("specified acme directory url is not https or did not return a valid directory json response")
 )
 
 // getAcmeServer returns the Server for the specified id or an error.
-func (service *Service) getServer(acmeServerId int) (Server, *output.Error) {
+func (service *Service) getServer(acmeServerId int) (Server, *output.JsonError) {
 	// basic check
 	if !validation.IsIdExistingValidRange(acmeServerId) {
 		service.logger.Debug(ErrIdBad)
-		return Server{}, output.ErrValidationFailed
+		return Server{}, output.JsonErrValidationFailed(ErrIdBad)
 	}
 
 	// verify specified id has an acme service
 	// this should never trigger, but just in case
 	if service.acmeServers[acmeServerId] == nil {
-		service.logger.Error("acme server id exists but doesn't have a service (how did this happen?!)")
-		return Server{}, output.ErrInternal
+		err := errors.New("acme server id exists but doesn't have a service (how did this happen?!)")
+		service.logger.Error(err)
+		return Server{}, output.JsonErrInternal(err)
 	}
 
 	// get the Server from storage
@@ -35,10 +38,10 @@ func (service *Service) getServer(acmeServerId int) (Server, *output.Error) {
 		// special error case for no record found
 		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
-			return Server{}, output.ErrNotFound
+			return Server{}, output.JsonErrNotFound(fmt.Errorf("acme server id %d not found", acmeServerId))
 		} else {
 			service.logger.Error(err)
-			return Server{}, output.ErrStorageGeneric
+			return Server{}, output.JsonErrStorageGeneric(err)
 		}
 	}
 

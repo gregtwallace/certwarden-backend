@@ -58,7 +58,7 @@ func setContentSecurityPolicy(w http.ResponseWriter, nonce []byte) {
 }
 
 // frontendFileHandler provides a handler for the frontend files
-func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Request) *output.Error {
+func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// remove the frontend URL root path (it is not used for the file path where frontend
 	// is stored)
 	fPath := strings.TrimPrefix(r.URL.Path, frontendUrlPath)
@@ -76,16 +76,18 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 	// open requested file
 	f, err := os.Open(frontendBuildDir + "/" + fPath)
 	if err != nil {
-		app.logger.Debugf("cannot find frontend file %s", fPath)
-		return output.ErrNotFound
+		err = fmt.Errorf("failed to open frontend file %s (%s)", fPath, err)
+		app.logger.Debug(err)
+		return output.JsonErrNotFound(err)
 	}
 	defer f.Close()
 
 	// get file info
 	fInfo, err := f.Stat()
 	if err != nil {
-		app.logger.Errorf("could not get file info for frontend file %s", fPath)
-		return output.ErrInternal
+		err = fmt.Errorf("failed to stat frontend file %s (%s)", fPath, err)
+		app.logger.Error(err)
+		return output.JsonErrInternal(err)
 	}
 
 	// TODO: Remove when Vite/Emotion can properly handle this.
@@ -96,8 +98,9 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		fBytes := make([]byte, fInfo.Size())
 		_, err = f.Read(fBytes)
 		if err != nil {
-			app.logger.Errorf("could not read frontend file %s into buffer for nonce injection", fPath)
-			return output.ErrInternal
+			err = fmt.Errorf("could not read frontend file %s into buffer for nonce injection (%s)", fPath, err)
+			app.logger.Error(err)
+			return output.JsonErrInternal(err)
 		}
 
 		// replace offending line of code to make it get the nonce from meta nonce
@@ -122,8 +125,9 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		// generate nonce
 		nonce, err := randomness.GenerateFrontendNonce()
 		if err != nil {
-			app.logger.Errorf("failed to generate nonce for frontend (%s)", err)
-			return output.ErrInternal
+			err = fmt.Errorf("failed to generate nonce for frontend (%s)", err)
+			app.logger.Error(err)
+			return output.JsonErrInternal(err)
 		}
 
 		// set CSP
@@ -133,8 +137,9 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		fBytes := make([]byte, fInfo.Size())
 		_, err = f.Read(fBytes)
 		if err != nil {
-			app.logger.Errorf("could not read frontend file %s into buffer for nonce injection", fPath)
-			return output.ErrInternal
+			err = fmt.Errorf("failed to read frontend file %s into buffer for nonce injection (%s)", fPath, err)
+			app.logger.Error(err)
+			return output.JsonErrInternal(err)
 		}
 
 		// set nonce placeholders to the actual nonce value
@@ -151,7 +156,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 }
 
 // redirectToFrontendHandler is a handler that redirects to the frontend app
-func redirectToFrontendHandler(w http.ResponseWriter, r *http.Request) *output.Error {
+func redirectToFrontendHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	http.Redirect(w, r, frontendUrlPath, http.StatusPermanentRedirect)
 	return nil
 }

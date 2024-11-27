@@ -4,9 +4,7 @@ import (
 	"certwarden-backend/pkg/domain/private_keys/key_crypto"
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
-	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/validation"
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -22,7 +20,7 @@ type allKeysResponse struct {
 }
 
 // GetAllKeys returns all of the private keys in storage as JSON
-func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// parse pagination and sorting
 	query := pagination_sort.ParseRequestToQuery(r)
 
@@ -30,7 +28,7 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) *outp
 	keys, totalRows, err := service.storage.GetAllKeys(query)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	// populate keysSummaries for output
@@ -49,7 +47,7 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) *outp
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -61,13 +59,13 @@ type privateKeyResponse struct {
 }
 
 // GetOneKey returns a single private key as JSON
-func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// params
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// if id is new, provide some info
@@ -91,39 +89,26 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) *outpu
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
 }
 
 // DownloadOneKey returns the pem for a single key to the client
-func (service *Service) DownloadOneKey(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) DownloadOneKey(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// params
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
-	}
-
-	// basic check
-	if !validation.IsIdExistingValidRange(id) {
-		service.logger.Debug(ErrIdBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// get the key from storage (and validate id)
-	key, err := service.storage.GetOneKeyById(id)
-	if err != nil {
-		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
-			service.logger.Debug(err)
-			return output.ErrNotFound
-		} else {
-			service.logger.Error(err)
-			return output.ErrStorageGeneric
-		}
+	key, outErr := service.getKey(id)
+	if outErr != nil {
+		return outErr
 	}
 
 	// return pem file to client
@@ -142,7 +127,7 @@ type newKeyOptions struct {
 }
 
 // GetNewKeyOptions returns configuration options for a new private key as JSON
-func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// write response
 	response := &newKeyOptions{}
 	response.StatusCode = http.StatusOK
@@ -153,7 +138,7 @@ func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request)
 	err := service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

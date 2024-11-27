@@ -38,7 +38,7 @@ func (pcc privateCertificateChain) PemContent() string {
 // end privateCertificateChain Output Methods
 
 // DownloadPrivateCertChainViaHeader
-func (service *Service) DownloadPrivateCertChainViaHeader(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) DownloadPrivateCertChainViaHeader(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get cert name
 	params := httprouter.ParamsFromContext(r.Context())
 	certName := params.ByName("name")
@@ -60,7 +60,7 @@ func (service *Service) DownloadPrivateCertChainViaHeader(w http.ResponseWriter,
 }
 
 // DownloadPrivateCertChainViaUrl
-func (service *Service) DownloadPrivateCertChainViaUrl(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) DownloadPrivateCertChainViaUrl(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get cert name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
 	certName := params.ByName("name")

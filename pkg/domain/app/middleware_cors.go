@@ -61,7 +61,7 @@ func middlewareApplyCORS(next handlerFunc, permittedCrossOrigins []string) handl
 	})
 
 	// return custom handlerFunc
-	return func(w http.ResponseWriter, r *http.Request) *output.Error {
+	return func(w http.ResponseWriter, r *http.Request) *output.JsonError {
 		// apply cors
 		c.HandlerFunc(w, r)
 

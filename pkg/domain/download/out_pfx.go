@@ -142,7 +142,7 @@ func (pfxpcc pfxPrivateCertificateChain) PfxContent() (pfxData []byte, err error
 // end privateCertificateChain Output Methods
 
 // DownloadPfxViaHeader
-func (service *Service) DownloadPfxViaHeader(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) DownloadPfxViaHeader(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get cert name
 	params := httprouter.ParamsFromContext(r.Context())
 	certName := params.ByName("name")
@@ -164,7 +164,7 @@ func (service *Service) DownloadPfxViaHeader(w http.ResponseWriter, r *http.Requ
 }
 
 // DownloadPfxViaUrl
-func (service *Service) DownloadPfxViaUrl(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) DownloadPfxViaUrl(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get cert name & apiKey
 	params := httprouter.ParamsFromContext(r.Context())
 	certName := params.ByName("name")
@@ -181,7 +181,7 @@ func (service *Service) DownloadPfxViaUrl(w http.ResponseWriter, r *http.Request
 	pfxPrivCert := pfxPrivateCertificateChain(order)
 	err := service.output.WritePfx(w, r, pfxPrivCert)
 	if err != nil {
-		return output.ErrWritePFXGenerateFailed
+		return output.JsonErrInternal(err)
 	}
 
 	return nil

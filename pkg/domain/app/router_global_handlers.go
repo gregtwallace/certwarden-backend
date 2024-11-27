@@ -2,15 +2,16 @@ package app
 
 import (
 	"certwarden-backend/pkg/output"
+	"errors"
 	"net/http"
 )
 
 // handlerNotFound is called when there is not a matching route on the router
 func (app *Application) handlerNotFound() http.Handler {
 	// the base handler function (before middleware)
-	handlerFunc := func(w http.ResponseWriter, r *http.Request) *output.Error {
+	handlerFunc := func(w http.ResponseWriter, r *http.Request) *output.JsonError {
 		// return 404 not found
-		err := app.output.WriteJSON(w, output.ErrNotFound)
+		err := app.output.WriteJSON(w, output.JsonErrNotFound(errors.New(r.URL.Path)))
 		if err != nil {
 			app.logger.Errorf("failed to write json (%s)", err)
 			// never return Error since this is already an error
@@ -33,7 +34,7 @@ func (app *Application) handlerNotFound() http.Handler {
 // particularly important for CORS.
 func (app *Application) handlerGlobalOptions() http.Handler {
 	// the base handler function (before middleware)
-	handlerFunc := func(w http.ResponseWriter, r *http.Request) *output.Error {
+	handlerFunc := func(w http.ResponseWriter, r *http.Request) *output.JsonError {
 		// OPTIONS should always return a response to prevent preflight errors
 		// see: https://stackoverflow.com/questions/52047548/response-for-preflight-does-not-have-http-ok-status-in-angular
 

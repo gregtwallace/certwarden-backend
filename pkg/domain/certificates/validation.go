@@ -5,6 +5,7 @@ import (
 	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/validation"
 	"errors"
+	"fmt"
 )
 
 var (
@@ -29,11 +30,11 @@ var (
 )
 
 // GetCertificate returns the Certificate for the specified id.
-func (service *Service) GetCertificate(id int) (Certificate, *output.Error) {
+func (service *Service) GetCertificate(id int) (Certificate, *output.JsonError) {
 	// if id is not in valid range, it is definitely not valid
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)
-		return Certificate{}, output.ErrValidationFailed
+		return Certificate{}, output.JsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get from storage
@@ -42,10 +43,10 @@ func (service *Service) GetCertificate(id int) (Certificate, *output.Error) {
 		// special error case for no record found
 		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
-			return Certificate{}, output.ErrNotFound
+			return Certificate{}, output.JsonErrNotFound(fmt.Errorf("certificate id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Certificate{}, output.ErrStorageGeneric
+			return Certificate{}, output.JsonErrStorageGeneric(err)
 		}
 	}
 

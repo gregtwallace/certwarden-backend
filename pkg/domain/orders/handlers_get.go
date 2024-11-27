@@ -20,7 +20,7 @@ type allOrdersResponse struct {
 }
 
 // GetCertOrders is an http handler that returns all of the orders for a specified cert id
-func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// parse pagination and sorting
 	query := pagination_sort.ParseRequestToQuery(r)
 
@@ -29,7 +29,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// validate certificate ID
@@ -44,10 +44,10 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 		// special error case for no record found
 		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
-			return output.ErrNotFound
+			return output.JsonErrNotFound(err)
 		} else {
 			service.logger.Error(err)
-			return output.ErrStorageGeneric
+			return output.JsonErrStorageGeneric(err)
 		}
 	}
 
@@ -67,7 +67,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -75,7 +75,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 
 // GetAllValidCurrentOrders fetches each cert's most recent valid order (essentially this
 // is a list of the certificates that are currently being hosted via API key)
-func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// parse pagination and sorting
 	query := pagination_sort.ParseRequestToQuery(r)
 
@@ -85,10 +85,10 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 		// special error case for no record found
 		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
-			return output.ErrNotFound
+			return output.JsonErrNotFound(err)
 		} else {
 			service.logger.Error(err)
-			return output.ErrStorageGeneric
+			return output.JsonErrStorageGeneric(err)
 		}
 	}
 
@@ -108,7 +108,7 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

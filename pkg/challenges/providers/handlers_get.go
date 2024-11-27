@@ -14,7 +14,7 @@ type providersResponse struct {
 }
 
 // GetAllProviders returns all of the providers in manager
-func (mgr *Manager) GetAllProviders(w http.ResponseWriter, r *http.Request) *output.Error {
+func (mgr *Manager) GetAllProviders(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
 
@@ -33,7 +33,7 @@ func (mgr *Manager) GetAllProviders(w http.ResponseWriter, r *http.Request) *out
 	err := mgr.output.WriteJSON(w, response)
 	if err != nil {
 		mgr.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -65,7 +65,7 @@ func (mgr *Manager) GetAllProviders(w http.ResponseWriter, r *http.Request) *out
 // 	err := mgr.output.WriteJSON(w, response)
 // 	if err != nil {
 // 		mgr.logger.Errorf("failed to write json (%s)", err)
-// 		return output.ErrWriteJsonError
+// 		return output.JsonErrWriteJsonError(err)
 // 	}
 
 // 	return nil
@@ -77,7 +77,7 @@ type providerResponse struct {
 }
 
 // GetOneProvider a provider from manager based on its ID param
-func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) *output.Error {
+func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	mgr.mu.RLock()
 	defer mgr.mu.RUnlock()
 
@@ -86,7 +86,7 @@ func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) *outp
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		mgr.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// get the provider
@@ -98,8 +98,9 @@ func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) *outp
 		}
 	}
 	if p == nil {
-		mgr.logger.Debug(errBadID(id))
-		return output.ErrValidationFailed
+		err = errBadID(id)
+		mgr.logger.Debug(err)
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// write response
@@ -112,7 +113,7 @@ func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) *outp
 	err = mgr.output.WriteJSON(w, response)
 	if err != nil {
 		mgr.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

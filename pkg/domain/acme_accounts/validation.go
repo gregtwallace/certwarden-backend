@@ -6,6 +6,7 @@ import (
 	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/validation"
 	"errors"
+	"fmt"
 )
 
 var (
@@ -20,11 +21,11 @@ var (
 )
 
 // getAccount returns the Account for the specified account id.
-func (service *Service) getAccount(id int) (Account, *output.Error) {
+func (service *Service) getAccount(id int) (Account, *output.JsonError) {
 	// if id is not in valid range, it is definitely not valid
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)
-		return Account{}, output.ErrValidationFailed
+		return Account{}, output.JsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get from storage
@@ -33,10 +34,10 @@ func (service *Service) getAccount(id int) (Account, *output.Error) {
 		// special error case for no record found
 		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
-			return Account{}, output.ErrNotFound
+			return Account{}, output.JsonErrNotFound(fmt.Errorf("account id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Account{}, output.ErrStorageGeneric
+			return Account{}, output.JsonErrStorageGeneric(err)
 		}
 	}
 

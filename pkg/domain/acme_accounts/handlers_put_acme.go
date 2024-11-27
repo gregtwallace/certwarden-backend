@@ -5,6 +5,8 @@ import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/validation"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -21,13 +23,13 @@ type changeEmailPayload struct {
 
 // ChangeEmail() is a handler that updates an ACME account with the specified
 // email address and saves the updated address to storage
-func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get id from param
 	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// decode payload
@@ -35,7 +37,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -48,7 +50,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 	// email (update cannot be to blank)
 	if payload.Email == nil || !validation.EmailValid(*payload.Email) {
 		service.logger.Debug(ErrEmailBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(ErrEmailBad)
 	}
 	// end validation
 
@@ -56,7 +58,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 	acmeAccountKey, err := account.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// make ACME update email payload
@@ -68,14 +70,14 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	var acmeAccount AcmeAccount
 	acmeAccount.Account, err = acmeService.UpdateAccount(acmePayload, acmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// add additional details to the payload before saving
@@ -86,13 +88,14 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccount)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	detailedResp, err := updatedAcct.detailedResponse(service)
 	if err != nil {
-		service.logger.Errorf("failed to generate account summary response (%s)", err)
-		return output.ErrInternal
+		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
 	}
 
 	// write response
@@ -104,7 +107,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -118,13 +121,13 @@ type RolloverKeyPayload struct {
 }
 
 // RolloverKey changes the private key used for an account
-func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// decode payload
 	var payload RolloverKeyPayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// get id from param
@@ -132,7 +135,7 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) *out
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -144,8 +147,9 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) *out
 
 	// new private key
 	if payload.PrivateKeyID == nil || !service.keys.KeyAvailable(*payload.PrivateKeyID) {
-		service.logger.Debug("invalid private key specified for account key rollover")
-		return output.ErrValidationFailed
+		err = errors.New("invalid private key specified for account key rollover")
+		service.logger.Debug(err)
+		return output.JsonErrValidationFailed(err)
 	}
 	// end validation
 
@@ -153,34 +157,34 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) *out
 	oldAcmeAccountKey, err := account.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// fetch new private key
 	newKey, err := service.storage.GetOneKeyById(*payload.PrivateKeyID)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	// get crypto key from the new key
 	newCryptoKey, err := newKey.CryptoPrivateKey()
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// send the rollover to ACME
 	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	err = acmeService.RolloverAccountKey(newCryptoKey, oldAcmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// add additional details to the payload before saving
@@ -190,13 +194,14 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) *out
 	updatedAcct, err := service.storage.PutNewAccountKey(payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.ErrStorageGeneric
+		return output.JsonErrStorageGeneric(err)
 	}
 
 	detailedResp, err := updatedAcct.detailedResponse(service)
 	if err != nil {
-		service.logger.Errorf("failed to generate account summary response (%s)", err)
-		return output.ErrInternal
+		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
 	}
 
 	// write response
@@ -208,7 +213,7 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) *out
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

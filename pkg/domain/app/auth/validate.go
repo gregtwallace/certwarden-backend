@@ -2,6 +2,7 @@ package auth
 
 import (
 	"certwarden-backend/pkg/output"
+	"fmt"
 	"net/http"
 )
 
@@ -26,15 +27,17 @@ func (service *Service) ValidateAuthHeader(r *http.Request, w http.ResponseWrite
 
 		// anonymous user
 		if accessToken == "" {
-			service.logger.Debugf("client %s: %s failed (access token is missing)", r.RemoteAddr, logTaskName)
-			return nil, output.ErrUnauthorized
+			err := fmt.Errorf("client %s: %s failed (access token is missing)", r.RemoteAddr, logTaskName)
+			service.logger.Debug(err)
+			return nil, err
 		}
 
 		// validate token
 		claims, err := validateTokenString(string(accessToken), service.accessJwtSecret)
 		if err != nil {
-			service.logger.Debugf("client %s: %s failed (%s)", r.RemoteAddr, logTaskName, err)
-			return nil, output.ErrUnauthorized
+			err = fmt.Errorf("client %s: %s failed (%s)", r.RemoteAddr, logTaskName, err)
+			service.logger.Debug(err)
+			return nil, err
 		}
 
 		return claims, nil
@@ -52,9 +55,9 @@ func (service *Service) ValidateAuthHeader(r *http.Request, w http.ResponseWrite
 // validateSessionCookie validates that r contains a valid cookie and that the session ID
 // contained in the cookie's claims is for a valid session. If so, it returns the validated
 // claims.
-func (service *Service) validateSessionCookie(r *http.Request, w http.ResponseWriter, logTaskName string) (*tokenClaims, *output.Error) {
+func (service *Service) validateSessionCookie(r *http.Request, w http.ResponseWriter, logTaskName string) (*tokenClaims, *output.JsonError) {
 	// wrap to easily check err and delete cookies
-	claims, outErr := func() (*tokenClaims, *output.Error) {
+	claims, outErr := func() (*tokenClaims, *output.JsonError) {
 		// if logTaskName unspecified, use a default
 		if logTaskName == "" {
 			logTaskName = "validation of session cookie"
@@ -64,7 +67,7 @@ func (service *Service) validateSessionCookie(r *http.Request, w http.ResponseWr
 		cookie, err := r.Cookie(sessionCookieName)
 		if err != nil {
 			service.logger.Infof("client %s: %s failed (bad cookie: %s)", r.RemoteAddr, logTaskName, err)
-			return nil, output.ErrUnauthorized
+			return nil, output.JsonErrUnauthorized
 		}
 
 		// validate cookie and get claims
@@ -72,14 +75,14 @@ func (service *Service) validateSessionCookie(r *http.Request, w http.ResponseWr
 		claims, err := sessionCookie.valid(service.sessionJwtSecret)
 		if err != nil {
 			service.logger.Infof("client %s: %s failed (bad cookie: %s)", r.RemoteAddr, logTaskName, err)
-			return nil, output.ErrUnauthorized
+			return nil, output.JsonErrUnauthorized
 		}
 
 		// verify session is still valid
 		_, exists := service.sessionManager.sessions.Read(claims.SessionID.String())
 		if !exists {
 			service.logger.Infof("client %s: %s failed (session no longer valid)", r.RemoteAddr, logTaskName)
-			return nil, output.ErrUnauthorized
+			return nil, output.JsonErrUnauthorized
 		}
 
 		return claims, nil

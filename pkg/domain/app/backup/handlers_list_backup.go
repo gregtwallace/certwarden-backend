@@ -13,11 +13,11 @@ type backupFileListResponse struct {
 
 // ListDiskBackupsHandler returns a list of the backups currently on the disk
 // as well as some information about them
-func (service *Service) ListDiskBackupsHandler(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) ListDiskBackupsHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get file list
 	filesInfo, err := service.listBackupFiles()
 	if err != nil {
-		return output.ErrInternal
+		return output.JsonErrInternal(err)
 	}
 
 	// write response
@@ -30,7 +30,7 @@ func (service *Service) ListDiskBackupsHandler(w http.ResponseWriter, r *http.Re
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil

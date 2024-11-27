@@ -15,7 +15,7 @@ import (
 
 // PostProcessOrder executes the certificate's post processing on the specified
 // order. Post processing is not run if the order isn't valid.
-func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request) *output.Error {
+func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get params
 	params := httprouter.ParamsFromContext(r.Context())
 
@@ -23,24 +23,24 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	orderIdParam := params.ByName("orderid")
 	orderId, err := strconv.Atoi(orderIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// basic check
 	if !validation.IsIdExistingValidRange(certId) {
 		service.logger.Debug(errCertIdBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(errCertIdBad)
 	}
 	if !validation.IsIdExistingValidRange(orderId) {
 		service.logger.Debug(errOrderIdBad)
-		return output.ErrValidationFailed
+		return output.JsonErrValidationFailed(errOrderIdBad)
 	}
 
 	// get from storage
@@ -49,17 +49,17 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 		// special error case for no record found
 		if errors.Is(err, storage.ErrNoRecord) {
 			service.logger.Debug(err)
-			return output.ErrNotFound
+			return output.JsonErrNotFound(err)
 		} else {
 			service.logger.Error(err)
-			return output.ErrStorageGeneric
+			return output.JsonErrStorageGeneric(err)
 		}
 	}
 
 	// verify cert id matches the order
 	if order.Certificate.ID != certId {
 		service.logger.Debug(errIdMismatch)
-		return output.ErrNotFound
+		return output.JsonErrNotFound(errIdMismatch)
 	}
 
 	// verify valid, not known revoked, not past validTo, and finalized key isn't deleted; else don't post process it
@@ -70,15 +70,16 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 			finalKeyName = order.FinalizedKey.Name
 		}
 
-		service.logger.Debug(fmt.Errorf("orders: cant post process order %d (status: %s, knownrevoked: %t, final key name: %s, validTo: %s)", orderId, order.Status, order.KnownRevoked, finalKeyName, order.ValidTo))
-		return output.ErrValidationFailed
+		err = fmt.Errorf("orders: cant post process order %d (status: %s, knownrevoked: %t, final key name: %s, validTo: %s)", orderId, order.Status, order.KnownRevoked, finalKeyName, order.ValidTo)
+		service.logger.Debug(err)
+		return output.JsonErrValidationFailed(err)
 	}
 
 	// add to post processing
 	err = service.postProcess(order.ID, true)
 	if err != nil {
-		service.logger.Debug(err)
-		return output.ErrValidationFailed
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
 	}
 
 	// write response
@@ -89,7 +90,7 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.ErrWriteJsonError
+		return output.JsonErrWriteJsonError(err)
 	}
 
 	return nil
