@@ -10,11 +10,21 @@ type SafeMap[V any] struct {
 	mu sync.RWMutex
 }
 
+// NewSafeMap creates a new SafeMap using an existing "regular" map
+func NewSafeMapFrom[V any](regMap map[string]V) *SafeMap[V] {
+	m := make(map[string]V)
+	if regMap != nil {
+		m = regMap
+	}
+
+	return &SafeMap[V]{
+		m: m,
+	}
+}
+
 // NewSafeMap creates a new SafeMap
 func NewSafeMap[V any]() *SafeMap[V] {
-	return &SafeMap[V]{
-		m: make(map[string]V),
-	}
+	return NewSafeMapFrom[V](nil)
 }
 
 // Read returns the value from the specified key. If the key
@@ -27,6 +37,17 @@ func (sm *SafeMap[V]) Read(key string) (V, bool) {
 	value, exists := sm.m[key]
 
 	return value, exists
+}
+
+// CopyToMap copies all key/value pairs from safe map to an
+// ordinary map.
+func (sm *SafeMap[V]) CopyToMap(dst map[string]V) {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+
+	for k, v := range sm.m {
+		dst[k] = v
+	}
 }
 
 // Add creates the named key and inserts the specified value.

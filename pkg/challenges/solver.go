@@ -26,6 +26,9 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 
 	// identifier value -> fqdn
 	domain := service.dnsIDValuetoDomain(identifier.Value)
+	if domain != identifier.Value {
+		service.logger.Debugf("challenges: alias exists for acme identifier `%s` and will provision to `%s`", identifier.Value, domain)
+	}
 
 	// get provider for fqdn
 	provider, err := service.DNSIdentifierProviders.ProviderFor(domain)

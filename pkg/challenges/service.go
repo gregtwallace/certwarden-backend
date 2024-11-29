@@ -33,6 +33,7 @@ type application interface {
 type Config struct {
 	DnsCheckerConfig dns_checker.Config `yaml:"dns_checker"`
 	ProviderConfigs  providers.Config   `yaml:"providers"`
+	DNSIDtoDomain    map[string]string  `yaml:"domain_aliases"`
 }
 
 // service struct
@@ -43,6 +44,7 @@ type Service struct {
 	shutdownContext        context.Context
 	shutdownWaitgroup      *sync.WaitGroup
 	output                 *output.Service
+	configFile             string
 	dnsChecker             *dns_checker.Service
 	DNSIdentifierProviders *providers.Manager
 	resourcesInUse         *safemap.SafeMap[chan struct{}] // tracks all resource names currently in use (regardless of provider)
@@ -68,6 +70,9 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 	// output
 	service.output = app.GetOutputter()
 
+	// config file path (for writing)
+	service.configFile = app.GetConfigFilenameWithPath()
+
 	// shutdown context & wg
 	service.shutdownContext = app.GetShutdownContext()
 	service.shutdownWaitgroup = app.GetShutdownWaitGroup()
@@ -89,8 +94,8 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 	// make tracking map
 	service.resourcesInUse = safemap.NewSafeMap[chan struct{}]()
 
-	// make DNS Identifier -> domain map
-	service.dnsIDtoDomain = safemap.NewSafeMap[string]()
+	// make DNS Identifier -> domain map (from config value)
+	service.dnsIDtoDomain = safemap.NewSafeMapFrom(cfg.DNSIDtoDomain)
 
 	return service, nil
 }

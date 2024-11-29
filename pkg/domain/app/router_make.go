@@ -65,7 +65,11 @@ func (app *Application) makeRouterAndRoutes() {
 	router.handleAPIRouteSecureDownload(http.MethodGet, apiUrlPath+"/v1/app/backup", app.backup.DownloadBackupNowHandler)
 	router.handleAPIRouteSecureDownload(http.MethodGet, apiUrlPath+"/v1/app/backup/disk/:filename", app.backup.DownloadDiskBackupHandler)
 
-	// challenges (config)
+	// challenges: dns aliases
+	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/domainaliases", app.challenges.GetDomainAliases)
+	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/app/challenges/domainaliases", app.challenges.PostDomainAliases)
+
+	// challenges: providers
 	// router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/domains", app.challenges.Providers.GetAllDomains)
 	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services", app.challenges.DNSIdentifierProviders.GetAllProviders)
 	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.DNSIdentifierProviders.GetOneProvider)
