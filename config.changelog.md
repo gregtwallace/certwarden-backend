@@ -76,3 +76,8 @@ take advantage of.
   https://github.com/gregtwallace/certwarden-backend/commit/e6acbec9b58ba6196740fe3a2394e18df39d34f2
   + auto ordering value `valid_remaining_days_threshold` removed and instead will be calculated 
     based on percentage of a certificate's validity remaining
+
+### [v0.23.0] - 2024.11.xx
+- 2024.11.29
+  https://github.com/gregtwallace/certwarden-backend/commit/9989ae9cfa08d30d0acf31cc18135d55e9a31316
+  + add `domain_aliases` under `challenges`. This is not a breaking change.

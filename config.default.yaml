@@ -41,6 +41,8 @@
   'refresh_time_minute': 12
 
 'challenges':
+  'domain_aliases':
+    'securedomain.com': 'lesssecuredomain.com'
   'dns_checker':
     'skip_check_wait_seconds': null
     'dns_services':

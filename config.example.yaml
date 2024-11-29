@@ -98,6 +98,13 @@
 
 # Challenge Providers
 'challenges':
+  # Domain Aliases allow the mapping of an ACME DNS Identifier (i.e., the domain a certificate
+  # secures) to another domain that challenge responses are actually provisioned on. This requires
+  # DNS records to exist that point from the Identifier domain to the Alias domain.
+  # This is a map in the format:
+  #   acmeSecuredDomain.com: domainToProvisionRecordsOn.com
+  'domain_aliases':
+    'securedomain.com': 'lesssecuredomain.com'
   # DNS Checker allows Cert Warden to verify DNS records have propagated before informing
   # the ACME server the challenge is ready. If no providers are configured that
   # use DNS, this functionality is automatically disabled.
