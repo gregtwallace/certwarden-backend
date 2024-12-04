@@ -10,7 +10,7 @@ import (
 )
 
 type domainAliasesPayload struct {
-	DomainAliases map[string]string `json:"domain_aliases"` // DNS Identifier Domain: Domain To Provision On
+	DomainAliases []domainAliasJson `json:"domain_aliases"`
 }
 
 // PostDomainAliases updates the domain aliases map with the map provided by the client
@@ -25,36 +25,43 @@ func (service *Service) PostDomainAliases(w http.ResponseWriter, r *http.Request
 	}
 
 	// validate all values passed (only non-wildcard domains are acceptable)
-	for k, v := range payload.DomainAliases {
+	m := make(map[string]string)
+	for _, alias := range payload.DomainAliases {
 		// check dns identifier domain
-		if !validation.DomainValid(k, false) {
-			err = fmt.Errorf("identifier `%s` is not a valid domain name", k)
+		if !validation.DomainValid(alias.ChallengeDomain, false) {
+			err = fmt.Errorf("identifier `%s` is not a valid domain name", alias.ChallengeDomain)
 			service.logger.Debug(err)
 			return output.JsonErrValidationFailed(err)
 		}
 
 		// check dns alias (provisioning domain)
-		if !validation.DomainValid(v, false) {
-			err = fmt.Errorf("alias `%s` is not a valid domain name", v)
+		if !validation.DomainValid(alias.ProvisionDomain, false) {
+			err = fmt.Errorf("alias `%s` is not a valid domain name", alias.ProvisionDomain)
 			service.logger.Debug(err)
 			return output.JsonErrValidationFailed(err)
 		}
+
+		// error if duplicate identifier / challenge domain
+		_, exists := m[alias.ChallengeDomain]
+		if exists {
+			err = fmt.Errorf("identifier `%s` specified more than once", alias.ChallengeDomain)
+			service.logger.Debug(err)
+			return output.JsonErrValidationFailed(err)
+		}
+
+		// add alias to map
+		m[alias.ChallengeDomain] = alias.ProvisionDomain
 	}
 
 	// update service map & write config
-	service.dnsIDtoDomain = safemap.NewSafeMapFrom(payload.DomainAliases)
+	service.dnsIDtoDomain = safemap.NewSafeMapFrom(m)
 	service.writeAliasConfig()
 
 	// write response
-	// ensure map response isn't returned as null
-	if payload.DomainAliases == nil {
-		payload.DomainAliases = make(map[string]string)
-	}
-
 	response := &domainAliasesResponse{}
 	response.StatusCode = http.StatusOK
 	response.Message = "updated domain aliases"
-	response.DomainAliases = payload.DomainAliases
+	response.DomainAliases = service.domainAliases()
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
