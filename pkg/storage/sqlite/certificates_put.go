@@ -185,3 +185,30 @@ func (store *Storage) PutCertClientKey(certId int, newClientKeyB64 string, updat
 
 	return nil
 }
+
+// PutCertLastAccess sets a cert's last access time
+func (store *Storage) PutCertLastAccess(certId int, unixLastAccessTime int64) (err error) {
+	// database action
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		certificates
+	SET
+		last_access = $1
+	WHERE
+		id = $2
+	`
+
+	_, err = store.db.ExecContext(ctx, query,
+		unixLastAccessTime,
+		certId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

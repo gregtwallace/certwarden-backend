@@ -29,6 +29,8 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 		sortField = "pk.name"
 	case "accountname":
 		sortField = "aa.name"
+	case "last_access":
+		sortField = "c.last_access"
 	// default if not in allowed list
 	default:
 		sortField = "c.name"
@@ -46,12 +48,12 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 	SELECT 
 		c.id, c.name, c.description, c.subject, c.subject_alts, 
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
-		c.created_at, c.updated_at,
+		c.last_access, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
 		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_new,
-		pk.api_key_disabled, pk.api_key_via_url, pk.created_at, pk.updated_at,
+		pk.api_key_disabled, pk.api_key_via_url, pk.last_access, pk.created_at, pk.updated_at,
 
 		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos,
 		aa.created_at, aa.updated_at, aa.kid,
@@ -60,7 +62,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 		aserv.updated_at,
 
 		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_new,
-		ak.api_key_disabled, ak.api_key_via_url, ak.created_at, ak.updated_at,
+		ak.api_key_disabled, ak.api_key_via_url, ak.last_access, ak.created_at, ak.updated_at,
 
 		count(*) OVER() AS full_count
 	FROM
@@ -105,6 +107,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 			&oneCert.city,
 			&oneCert.csrExtraExtensions,
 			&oneCert.preferredRootCN,
+			&oneCert.lastAccess,
 			&oneCert.createdAt,
 			&oneCert.updatedAt,
 			&oneCert.apiKey,
@@ -123,6 +126,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 			&oneCert.certificateKeyDb.apiKeyNew,
 			&oneCert.certificateKeyDb.apiKeyDisabled,
 			&oneCert.certificateKeyDb.apiKeyViaUrl,
+			&oneCert.certificateKeyDb.lastAccess,
 			&oneCert.certificateKeyDb.createdAt,
 			&oneCert.certificateKeyDb.updatedAt,
 
@@ -153,6 +157,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 			&oneCert.certificateAccountDb.accountKeyDb.apiKeyNew,
 			&oneCert.certificateAccountDb.accountKeyDb.apiKeyDisabled,
 			&oneCert.certificateAccountDb.accountKeyDb.apiKeyViaUrl,
+			&oneCert.certificateAccountDb.accountKeyDb.lastAccess,
 			&oneCert.certificateAccountDb.accountKeyDb.createdAt,
 			&oneCert.certificateAccountDb.accountKeyDb.updatedAt,
 
@@ -193,12 +198,12 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 	SELECT
 		c.id, c.name, c.description, c.subject, c.subject_alts,
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
-		c.created_at, c.updated_at,
+		c.last_access, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_key,
 		
 		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_new,
-		pk.api_key_disabled, pk.api_key_via_url, pk.created_at, pk.updated_at,
+		pk.api_key_disabled, pk.api_key_via_url, pk.last_access, pk.created_at, pk.updated_at,
 
 		aa.id, aa.name, aa.description, aa.status, aa.email, aa.accepted_tos,
 		aa.created_at, aa.updated_at, aa.kid,
@@ -207,7 +212,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		aserv.updated_at,
 
 		ak.id, ak.name, ak.description, ak.algorithm, ak.pem, ak.api_key, ak.api_key_new, 
-		ak.api_key_disabled, ak.api_key_via_url, ak.created_at, ak.updated_at
+		ak.api_key_disabled, ak.api_key_via_url, ak.last_access, ak.created_at, ak.updated_at
 	FROM
 		certificates c
 		LEFT JOIN private_keys pk on (c.private_key_id = pk.id)
@@ -236,6 +241,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		&oneCert.city,
 		&oneCert.csrExtraExtensions,
 		&oneCert.preferredRootCN,
+		&oneCert.lastAccess,
 		&oneCert.createdAt,
 		&oneCert.updatedAt,
 		&oneCert.apiKey,
@@ -254,6 +260,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		&oneCert.certificateKeyDb.apiKeyNew,
 		&oneCert.certificateKeyDb.apiKeyDisabled,
 		&oneCert.certificateKeyDb.apiKeyViaUrl,
+		&oneCert.certificateKeyDb.lastAccess,
 		&oneCert.certificateKeyDb.createdAt,
 		&oneCert.certificateKeyDb.updatedAt,
 
@@ -284,6 +291,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		&oneCert.certificateAccountDb.accountKeyDb.apiKeyNew,
 		&oneCert.certificateAccountDb.accountKeyDb.apiKeyDisabled,
 		&oneCert.certificateAccountDb.accountKeyDb.apiKeyViaUrl,
+		&oneCert.certificateAccountDb.accountKeyDb.lastAccess,
 		&oneCert.certificateAccountDb.accountKeyDb.createdAt,
 		&oneCert.certificateAccountDb.accountKeyDb.updatedAt,
 	)

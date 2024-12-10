@@ -4,6 +4,7 @@ import (
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/domain/acme_accounts"
 	"certwarden-backend/pkg/domain/private_keys"
+	"time"
 )
 
 // Certificate is a single certificate with all of its fields
@@ -22,8 +23,9 @@ type Certificate struct {
 	City                       string
 	CSRExtraExtensions         []CertExtension
 	PreferredRootCN            string
-	CreatedAt                  int
-	UpdatedAt                  int
+	LastAccess                 time.Time
+	CreatedAt                  time.Time
+	UpdatedAt                  time.Time
 	ApiKey                     string
 	ApiKeyNew                  string
 	ApiKeyViaUrl               bool
@@ -43,6 +45,7 @@ type certificateSummaryResponse struct {
 	Subject            string                            `json:"subject"`
 	SubjectAltNames    []string                          `json:"subject_alts"`
 	ApiKeyViaUrl       bool                              `json:"api_key_via_url"`
+	LastAccess         int64                             `json:"last_access"`
 }
 
 type certificateKeySummaryResponse struct {
@@ -83,6 +86,7 @@ func (cert Certificate) summaryResponse() certificateSummaryResponse {
 		Subject:         cert.Subject,
 		SubjectAltNames: cert.SubjectAltNames,
 		ApiKeyViaUrl:    cert.ApiKeyViaUrl,
+		LastAccess:      cert.LastAccess.Unix(),
 	}
 }
 
@@ -97,8 +101,8 @@ type certificateDetailedResponse struct {
 	City                       string              `json:"city"`
 	CSRExtraExtensions         []CertExtensionJSON `json:"csr_extra_extensions"`
 	PreferredRootCN            string              `json:"preferred_root_cn"`
-	CreatedAt                  int                 `json:"created_at"`
-	UpdatedAt                  int                 `json:"updated_at"`
+	CreatedAt                  int64               `json:"created_at"`
+	UpdatedAt                  int64               `json:"updated_at"`
 	ApiKey                     string              `json:"api_key"`
 	ApiKeyNew                  string              `json:"api_key_new,omitempty"`
 	PostProcessingCommand      string              `json:"post_processing_command"`
@@ -123,8 +127,8 @@ func (cert Certificate) detailedResponse() certificateDetailedResponse {
 		City:                       cert.City,
 		CSRExtraExtensions:         extraExtensions,
 		PreferredRootCN:            cert.PreferredRootCN,
-		CreatedAt:                  cert.CreatedAt,
-		UpdatedAt:                  cert.UpdatedAt,
+		CreatedAt:                  cert.CreatedAt.Unix(),
+		UpdatedAt:                  cert.UpdatedAt.Unix(),
 		ApiKey:                     cert.ApiKey,
 		ApiKeyNew:                  cert.ApiKeyNew,
 		PostProcessingCommand:      cert.PostProcessingCommand,

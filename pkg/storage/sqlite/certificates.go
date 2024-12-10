@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"certwarden-backend/pkg/domain/certificates"
+	"time"
 )
 
 // certificateDb is a single certificate, as database table fields
@@ -21,8 +22,9 @@ type certificateDb struct {
 	city                       string
 	csrExtraExtensions         jsonCertExtensionSlice
 	preferredRootCN            string
-	createdAt                  int
-	updatedAt                  int
+	lastAccess                 int64
+	createdAt                  int64
+	updatedAt                  int64
 	apiKey                     string
 	apiKeyNew                  string
 	apiKeyViaUrl               bool
@@ -52,8 +54,9 @@ func (cert certificateDb) toCertificate() (certificates.Certificate, error) {
 		City:                       cert.city,
 		CSRExtraExtensions:         certExt,
 		PreferredRootCN:            cert.preferredRootCN,
-		CreatedAt:                  cert.createdAt,
-		UpdatedAt:                  cert.updatedAt,
+		LastAccess:                 time.Unix(cert.lastAccess, 0),
+		CreatedAt:                  time.Unix(cert.createdAt, 0),
+		UpdatedAt:                  time.Unix(cert.updatedAt, 0),
 		ApiKey:                     cert.apiKey,
 		ApiKeyNew:                  cert.apiKeyNew,
 		ApiKeyViaUrl:               cert.apiKeyViaUrl,

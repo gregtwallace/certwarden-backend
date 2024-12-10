@@ -18,8 +18,9 @@ type Key struct {
 	ApiKeyNew      string
 	ApiKeyDisabled bool
 	ApiKeyViaUrl   bool
-	CreatedAt      int
-	UpdatedAt      int
+	LastAccess     time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // keySummaryResponse is a JSON response containing only
@@ -31,6 +32,7 @@ type KeySummaryResponse struct {
 	Algorithm      key_crypto.Algorithm `json:"algorithm"`
 	ApiKeyDisabled bool                 `json:"api_key_disabled"`
 	ApiKeyViaUrl   bool                 `json:"api_key_via_url"`
+	LastAccess     int64                `json:"last_access"`
 }
 
 func (key Key) SummaryResponse() KeySummaryResponse {
@@ -41,6 +43,7 @@ func (key Key) SummaryResponse() KeySummaryResponse {
 		Algorithm:      key.Algorithm,
 		ApiKeyDisabled: key.ApiKeyDisabled,
 		ApiKeyViaUrl:   key.ApiKeyViaUrl,
+		LastAccess:     key.LastAccess.Unix(),
 	}
 }
 
@@ -50,8 +53,8 @@ type keyDetailedResponse struct {
 	KeySummaryResponse
 	ApiKey    string `json:"api_key"`
 	ApiKeyNew string `json:"api_key_new,omitempty"`
-	CreatedAt int    `json:"created_at"`
-	UpdatedAt int    `json:"updated_at"`
+	CreatedAt int64  `json:"created_at"`
+	UpdatedAt int64  `json:"updated_at"`
 	// exclude PEM
 }
 
@@ -61,8 +64,8 @@ func (key Key) detailedResponse() keyDetailedResponse {
 
 		ApiKey:    key.ApiKey,
 		ApiKeyNew: key.ApiKeyNew,
-		CreatedAt: key.CreatedAt,
-		UpdatedAt: key.UpdatedAt,
+		CreatedAt: key.CreatedAt.Unix(),
+		UpdatedAt: key.UpdatedAt.Unix(),
 	}
 }
 
@@ -77,7 +80,7 @@ func (key Key) PemContent() string {
 }
 
 func (key Key) Modtime() time.Time {
-	return time.Unix(int64(key.UpdatedAt), 0)
+	return key.UpdatedAt
 }
 
 // end Output Methods

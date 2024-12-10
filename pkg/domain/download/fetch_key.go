@@ -5,6 +5,7 @@ import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/storage"
 	"errors"
+	"time"
 )
 
 // getKey returns the private key if the apiKey matches
@@ -48,6 +49,12 @@ func (service *Service) getKey(keyName string, apiKey string, apiKeyViaUrl bool)
 	if (apiKey != key.ApiKey) && (apiKey != key.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
 		return private_keys.Key{}, output.JsonErrUnauthorized
+	}
+
+	// before return, update key last access, dont fail our though if this step fails, just log error
+	err = service.storage.PutKeyLastAccess(key.ID, time.Now().Unix())
+	if err != nil {
+		service.logger.Errorf("download: failed to update key (id: %d) last access time (%s)", key.ID, err)
 	}
 
 	// return key

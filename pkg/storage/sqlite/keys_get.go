@@ -15,11 +15,12 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 	// validate and set sort
 	sortField := q.SortField()
 	switch sortField {
-	// allow these as-is
+	// allow these
 	case "id":
 	case "name":
 	case "description":
 	case "algorithm":
+	case "last_access":
 	// default if not in allowed list
 	default:
 		sortField = "name"
@@ -36,7 +37,7 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 	query := fmt.Sprintf(`
 	SELECT
 		id, name, description, algorithm, pem, api_key, api_key_new, api_key_disabled,
-		api_key_via_url, created_at, updated_at,
+		api_key_via_url, last_access, created_at, updated_at,
 
 		count(*) OVER() AS full_count
 	FROM
@@ -74,6 +75,7 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 			&oneKeyDb.apiKeyNew,
 			&oneKeyDb.apiKeyDisabled,
 			&oneKeyDb.apiKeyViaUrl,
+			&oneKeyDb.lastAccess,
 			&oneKeyDb.createdAt,
 			&oneKeyDb.updatedAt,
 
@@ -109,7 +111,7 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 	query := `
 	SELECT
 		id, name, description, algorithm, pem, api_key, api_key_new, api_key_disabled,
-		api_key_via_url, created_at, updated_at
+		api_key_via_url, last_access, created_at, updated_at
 	FROM
 		private_keys
 	WHERE
@@ -131,6 +133,7 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 		&oneKeyDb.apiKeyNew,
 		&oneKeyDb.apiKeyDisabled,
 		&oneKeyDb.apiKeyViaUrl,
+		&oneKeyDb.lastAccess,
 		&oneKeyDb.createdAt,
 		&oneKeyDb.updatedAt,
 	)
@@ -158,7 +161,7 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 	query := `
 		SELECT
 			pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_new,
-			pk.api_key_disabled, pk.api_key_via_url, pk.created_at, pk.updated_at
+			pk.api_key_disabled, pk.api_key_via_url, pk.last_access, pk.created_at, pk.updated_at
 		FROM
 		  private_keys pk
 		WHERE
@@ -202,6 +205,7 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 			&oneKeyDb.apiKeyNew,
 			&oneKeyDb.apiKeyDisabled,
 			&oneKeyDb.apiKeyViaUrl,
+			&oneKeyDb.lastAccess,
 			&oneKeyDb.createdAt,
 			&oneKeyDb.updatedAt,
 		)

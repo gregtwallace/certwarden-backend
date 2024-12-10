@@ -26,6 +26,9 @@ type Storage interface {
 	GetOneCertByName(name string) (cert certificates.Certificate, err error)
 
 	GetCertNewestValidOrderByName(certName string) (order orders.Order, err error)
+
+	PutKeyLastAccess(keyId int, unixLastAccessTime int64) (err error)
+	PutCertLastAccess(certId int, unixLastAccessTime int64) (err error)
 }
 
 // Keys service struct

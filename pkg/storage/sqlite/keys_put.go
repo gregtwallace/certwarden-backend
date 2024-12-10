@@ -108,3 +108,30 @@ func (store *Storage) PutKeyApiKey(keyId int, apiKey string, updateTimeUnix int)
 
 	return nil
 }
+
+// PutKeyLastAccess sets a key's last access time
+func (store *Storage) PutKeyLastAccess(keyId int, unixLastAccessTime int64) (err error) {
+	// database action
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		private_keys
+	SET
+		last_access = $1
+	WHERE
+		id = $2
+	`
+
+	_, err = store.db.ExecContext(ctx, query,
+		unixLastAccessTime,
+		keyId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

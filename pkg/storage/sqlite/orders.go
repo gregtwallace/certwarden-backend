@@ -5,6 +5,7 @@ import (
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
 	"database/sql"
+	"time"
 )
 
 // orderDb is a single acme order, as database table fields
@@ -26,8 +27,8 @@ type orderDb struct {
 	chainRootCN    sql.NullString
 	validFrom      sql.NullInt32
 	validTo        sql.NullInt32
-	createdAt      int
-	updatedAt      int
+	createdAt      int64
+	updatedAt      int64
 }
 
 func (order orderDb) toOrder() (orders.Order, error) {
@@ -67,7 +68,7 @@ func (order orderDb) toOrder() (orders.Order, error) {
 		ValidFrom:      nullInt32UnixToTime(order.validFrom),
 		ValidTo:        nullInt32UnixToTime(order.validTo),
 		ChainRootCN:    nullStringToString(order.chainRootCN),
-		CreatedAt:      order.createdAt,
-		UpdatedAt:      order.updatedAt,
+		CreatedAt:      time.Unix(order.createdAt, 0),
+		UpdatedAt:      time.Unix(order.updatedAt, 0),
 	}, nil
 }

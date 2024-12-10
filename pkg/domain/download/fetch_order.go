@@ -6,6 +6,7 @@ import (
 	"certwarden-backend/pkg/storage"
 	"errors"
 	"strings"
+	"time"
 )
 
 // getCertNewestValidOrder returns the most recent valid order for the specified certificate if the
@@ -69,6 +70,12 @@ func (service *Service) getCertNewestValidOrder(certName string, apiKeyOrKeys st
 		// if only checking cert key, nuke key private data as a safety precaution
 		order.FinalizedKey.Pem = ""
 
+		// before return, update cert last access, dont fail our though if this step fails, just log error
+		err = service.storage.PutCertLastAccess(order.Certificate.ID, time.Now().Unix())
+		if err != nil {
+			service.logger.Errorf("download: failed to update cert (id: %d) last access time (%s)", order.Certificate.ID, err)
+		}
+
 		// return order without private key pem
 		return order, nil
 	}
@@ -107,6 +114,17 @@ func (service *Service) getCertNewestValidOrder(certName string, apiKeyOrKeys st
 	if (keyApiKey != order.FinalizedKey.ApiKey) && (keyApiKey != order.FinalizedKey.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
 		return orders.Order{}, output.JsonErrUnauthorized
+	}
+
+	// before return, update cert AND KEY last access, dont fail our though if this step fails, just log error
+	nowT := time.Now()
+	err = service.storage.PutCertLastAccess(order.Certificate.ID, nowT.Unix())
+	if err != nil {
+		service.logger.Errorf("download: failed to update cert (id: %d) last access time (%s)", order.Certificate.ID, err)
+	}
+	err = service.storage.PutKeyLastAccess(order.FinalizedKey.ID, nowT.Unix())
+	if err != nil {
+		service.logger.Errorf("download: failed to update key (id: %d) last access time (%s)", order.FinalizedKey.ID, err)
 	}
 
 	// return order

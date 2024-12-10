@@ -29,8 +29,8 @@ type Order struct {
 	ValidFrom      *time.Time
 	ValidTo        *time.Time
 	ChainRootCN    *string
-	CreatedAt      int
-	UpdatedAt      int
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // orderSummaryResponse is a JSON response containing only
@@ -47,8 +47,8 @@ type orderSummaryResponse struct {
 	ValidFrom         *int                            `json:"valid_from"`
 	ValidTo           *int                            `json:"valid_to"`
 	ChainRootCN       *string                         `json:"chain_root_cn"`
-	CreatedAt         int                             `json:"created_at"`
-	UpdatedAt         int                             `json:"updated_at"`
+	CreatedAt         int64                           `json:"created_at"`
+	UpdatedAt         int64                           `json:"updated_at"`
 }
 
 type orderCertificateSummaryResponse struct {
@@ -60,6 +60,7 @@ type orderCertificateSummaryResponse struct {
 	ApiKeyViaUrl               bool                                   `json:"api_key_via_url"`
 	PostProcessingCommand      string                                 `json:"post_processing_command"`
 	PostProcessingClientKeyB64 string                                 `json:"post_processing_client_key"`
+	LastAccess                 int64                                  `json:"last_access"`
 }
 
 type orderCertificateAccountSummaryResponse struct {
@@ -126,6 +127,7 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 			ApiKeyViaUrl:               order.Certificate.ApiKeyViaUrl,
 			PostProcessingCommand:      order.Certificate.PostProcessingCommand,
 			PostProcessingClientKeyB64: order.Certificate.PostProcessingClientKeyB64,
+			LastAccess:                 order.Certificate.LastAccess.Unix(),
 		},
 		Status:         order.Status,
 		KnownRevoked:   order.KnownRevoked,
@@ -135,8 +137,8 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 		ValidFrom:      validFromUnix,
 		ValidTo:        validToUnix,
 		ChainRootCN:    order.ChainRootCN,
-		CreatedAt:      order.CreatedAt,
-		UpdatedAt:      order.UpdatedAt,
+		CreatedAt:      order.CreatedAt.Unix(),
+		UpdatedAt:      order.UpdatedAt.Unix(),
 	}
 }
 
@@ -156,25 +158,22 @@ func (order Order) PemContent() string {
 }
 
 func (order Order) Modtime() time.Time {
-	orderModtime := time.Unix(int64(order.UpdatedAt), 0)
-	certModtime := time.Unix(int64(order.Certificate.UpdatedAt), 0)
-
 	// only available if finalized, ensure nil check
 	keyModtime := time.Time{}
 	if order.FinalizedKey != nil {
-		keyModtime = time.Unix(int64(order.FinalizedKey.UpdatedAt), 0)
+		keyModtime = order.FinalizedKey.UpdatedAt
 	}
 
 	// return latest of the three
-	if keyModtime.After(orderModtime) && keyModtime.After(certModtime) {
+	if keyModtime.After(order.UpdatedAt) && keyModtime.After(order.Certificate.UpdatedAt) {
 		return keyModtime
 	}
 
-	if certModtime.After(orderModtime) {
-		return certModtime
+	if order.Certificate.UpdatedAt.After(order.UpdatedAt) {
+		return order.Certificate.UpdatedAt
 	}
 
-	return orderModtime
+	return order.UpdatedAt
 }
 
 // next two not required for output.Pem interface, but are used by `download` pkg

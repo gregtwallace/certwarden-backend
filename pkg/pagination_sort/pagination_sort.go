@@ -55,6 +55,7 @@ var validFieldNames = []string{
 	"status",
 	"subject",
 	"valid_to",
+	"last_access",
 }
 
 // ParseRequestToQuery returns pagination and sorting params
