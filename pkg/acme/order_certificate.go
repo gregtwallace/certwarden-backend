@@ -124,7 +124,7 @@ func (service *Service) DownloadCertificate(certificateUrl string, accountKey Ac
 	var defaultChainCert *Certificate
 
 	// POST-as-GET
-	bodyBytes, defaultHeaders, err := service.postAsGet(certificateUrl, accountKey)
+	bodyBytes, defaultHeaders, err := service.PostAsGet(certificateUrl, accountKey)
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func (service *Service) DownloadCertificate(certificateUrl string, accountKey Ac
 	for _, altChainURL := range altChainUrls {
 
 		// POST-as-GET the alt chain
-		bodyBytes, headers, err := service.postAsGet(altChainURL.String(), accountKey)
+		bodyBytes, headers, err := service.PostAsGet(altChainURL.String(), accountKey)
 		if err != nil {
 			service.logger.Warnf("acme: failed to fetch alt chain %s (%s); will try other available chains", altChainURL.String(), err)
 			// don't return, continue to next alt to keep trying

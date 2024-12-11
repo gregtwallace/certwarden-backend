@@ -61,7 +61,7 @@ func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey)
 // GetOrder does a POST-as-GET to fetch the current state of the given order URL
 func (service *Service) GetOrder(orderUrl string, accountKey AccountKey) (order Order, err error) {
 	// POST-as-GET
-	jsonResp, headers, err := service.postAsGet(orderUrl, accountKey)
+	jsonResp, headers, err := service.PostAsGet(orderUrl, accountKey)
 	if err != nil {
 		return Order{}, err
 	}

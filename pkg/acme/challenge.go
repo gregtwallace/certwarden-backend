@@ -55,7 +55,7 @@ func (service *Service) InstructServerToValidateChallenge(challengeUrl string, a
 // GetChallenge does a POST-as-GET to fetch the current state of the given challenge URL
 func (service *Service) GetChallenge(challengeUrl string, key AccountKey) (chall Challenge, err error) {
 	// POST-as-GET
-	jsonResp, _, err := service.postAsGet(challengeUrl, key)
+	jsonResp, _, err := service.PostAsGet(challengeUrl, key)
 	if err != nil {
 		return Challenge{}, err
 	}

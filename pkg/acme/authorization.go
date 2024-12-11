@@ -27,7 +27,7 @@ func unmarshalAuthorization(jsonResp json.RawMessage) (auth Authorization, err e
 func (service *Service) GetAuth(authUrl string, accountKey AccountKey) (auth Authorization, err error) {
 
 	// POST-as-GET
-	jsonResp, _, err := service.postAsGet(authUrl, accountKey)
+	jsonResp, _, err := service.PostAsGet(authUrl, accountKey)
 	if err != nil {
 		return Authorization{}, err
 	}

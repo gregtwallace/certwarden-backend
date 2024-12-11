@@ -112,6 +112,7 @@ func (app *Application) makeRouterAndRoutes() {
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/acmeaccounts/:id/register", app.accounts.NewAcmeAccount)
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/acmeaccounts/:id/refresh", app.accounts.RefreshAcmeAccount)
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/acmeaccounts/:id/deactivate", app.accounts.Deactivate)
+	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/acmeaccounts/:id/post-as-get", app.accounts.PostAsGet)
 
 	router.handleAPIRouteSecure(http.MethodDelete, apiUrlPath+"/v1/acmeaccounts/:id", app.accounts.DeleteAccount)
 

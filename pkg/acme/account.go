@@ -110,7 +110,7 @@ func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.
 // GetAccount does a POST-as-GET to fetch the current state of the given accountKey's Account
 func (service *Service) GetAccount(accountKey AccountKey) (acct Account, err error) {
 	// POST-as-GET
-	jsonResp, headers, err := service.postAsGet(accountKey.Kid, accountKey)
+	jsonResp, headers, err := service.PostAsGet(accountKey.Kid, accountKey)
 	if err != nil {
 		return Account{}, err
 	}

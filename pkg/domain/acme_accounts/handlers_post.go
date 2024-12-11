@@ -7,7 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 // NewPayload is the payload struct for creating a new account
@@ -105,6 +109,90 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 	response.StatusCode = http.StatusCreated
 	response.Message = "created account"
 	response.Account = detailedResp
+
+	err = service.output.WriteJSON(w, response)
+	if err != nil {
+		service.logger.Errorf("failed to write json (%s)", err)
+		return output.JsonErrWriteJsonError(err)
+	}
+
+	return nil
+}
+
+// PostAsGetPayload is used to send a PaG to the specified endpoint
+type postAsGetPayload struct {
+	URL string `json:"url"`
+}
+
+type postAsGetResponse struct {
+	output.JsonResponse
+	URL    string      `json:"url"`
+	Body   string      `json:"body"`
+	Header http.Header `json:"headers"`
+}
+
+// PostAsGet is a handler to allow a client to send a PaG request to a specified endpoint,
+// signing the request using the specified account. This is not used in normal operation
+// but is available for testing purposes.
+func (service *Service) PostAsGet(w http.ResponseWriter, r *http.Request) *output.JsonError {
+	// get id from param
+	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	id, err := strconv.Atoi(idParam)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.JsonErrValidationFailed(err)
+	}
+
+	// decode body into payload
+	var payload postAsGetPayload
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.JsonErrValidationFailed(err)
+	}
+
+	// validation
+	// id
+	account, outErr := service.getAccount(id)
+	if outErr != nil {
+		return outErr
+	}
+
+	// URL
+	u, err := url.Parse(payload.URL)
+	if err != nil || u.Scheme != "https" || u.Host == "" {
+		return output.JsonErrValidationFailed(fmt.Errorf("url (%s) is insecure or not valid", payload.URL))
+	}
+
+	// end validation
+
+	// get AccountKey
+	acmeAccountKey, err := account.AcmeAccountKey()
+	if err != nil {
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
+	}
+
+	// send the PaG to ACME
+	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
+	if err != nil {
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
+	}
+
+	resp, header, err := acmeService.PostAsGet(payload.URL, acmeAccountKey)
+	if err != nil {
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
+	}
+
+	// write response
+	response := &postAsGetResponse{}
+	response.StatusCode = http.StatusOK
+	response.Message = "ok"
+	response.URL = payload.URL
+	response.Body = string(resp)
+	response.Header = header
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
