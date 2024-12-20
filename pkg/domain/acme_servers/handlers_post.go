@@ -43,13 +43,16 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) *o
 	}
 	// directory url (required - confirm it actually fetches and decodes properly)
 	if payload.DirectoryURL == nil {
-		err = errors.New("cant post: directory url is missing")
+		err = errors.New("directory url is not specified")
 		service.logger.Debug(err)
 		return output.JsonErrValidationFailed(err)
-	} else if !service.directoryUrlValid(*payload.DirectoryURL) {
-		// if not nil, and validation fails, return error
-		return output.JsonErrValidationFailed(errBadDirectoryURL)
 	}
+	_, err = acme.FetchAcmeDirectory(service.httpClient, *payload.DirectoryURL)
+	if err != nil {
+		service.logger.Debug(err)
+		return output.JsonErrValidationFailed(err)
+	}
+
 	// is staging (required)
 	if payload.IsStaging == nil {
 		err = errors.New("is_staging is not specified")

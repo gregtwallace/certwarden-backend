@@ -54,9 +54,14 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 		return output.JsonErrValidationFailed(ErrNameBad)
 	}
 	// directory_url (optional - check if not nil)
-	if payload.DirectoryURL != nil && !service.directoryUrlValid(*payload.DirectoryURL) {
-		return output.JsonErrValidationFailed(errBadDirectoryURL)
+	if payload.DirectoryURL != nil {
+		_, err = acme.FetchAcmeDirectory(service.httpClient, *payload.DirectoryURL)
+		if err != nil {
+			service.logger.Debug(err)
+			return output.JsonErrValidationFailed(err)
+		}
 	}
+
 	// Description, and IsStaging do not need validation
 	// end validation
 

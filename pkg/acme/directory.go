@@ -5,17 +5,14 @@ import (
 	"certwarden-backend/pkg/randomness"
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"reflect"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-)
-
-var (
-	errDirMissingUrl = errors.New("missing required url(s)")
 )
 
 // acmeDirectory struct holds ACME directory object
@@ -37,8 +34,13 @@ type directory struct {
 // FetchAcmeDirectory uses the specified httpclient to fetch the specified
 // dirUri and return a directory object. If the directory fails to fetch or what
 // is fetched is invalid, an error is returned.
-func FetchAcmeDirectory(httpClient *httpclient.Client, dirUri string) (directory, error) {
-	response, err := httpClient.Get(dirUri)
+func FetchAcmeDirectory(httpClient *httpclient.Client, dirUrl string) (directory, error) {
+	// require directory be specified as https://
+	if !strings.HasPrefix(dirUrl, "https://") {
+		return directory{}, fmt.Errorf("acme: directory url (%s) must start with 'https://'", dirUrl)
+	}
+
+	response, err := httpClient.Get(dirUrl)
 	if err != nil {
 		return directory{}, err
 	}
@@ -65,7 +67,7 @@ func FetchAcmeDirectory(httpClient *httpclient.Client, dirUri string) (directory
 		// omit NewAuthz as it MUST be omitted if server does not implement pre-authorization
 		fetchedDir.RevokeCert == "" ||
 		fetchedDir.KeyChange == "" {
-		return directory{}, errDirMissingUrl
+		return directory{}, fmt.Errorf("acme: directory (%s) missing one or more required urls", dirUrl)
 	}
 
 	return fetchedDir, nil
