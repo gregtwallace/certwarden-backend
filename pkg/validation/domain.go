@@ -5,9 +5,8 @@ import (
 	"strings"
 )
 
-// DomainValidRegex is the regex to confirm a domain is in the proper
-// form.
 const DomainValidRegex = `^(([A-Za-z0-9][A-Za-z0-9-]{0,61}\.)*([A-Za-z0-9][A-Za-z0-9-]{0,61}\.)[A-Za-z][A-Za-z0-9-]{0,61}[A-Za-z0-9])$`
+const URLValidRegex = `^[A-Za-z0-9-_.~!#$&'()*+,/:;=?@%[\]]*$`
 
 // DomainValid returns true if the string is a validly formatted
 // domain name
@@ -23,4 +22,13 @@ func DomainValid(domain string, wildOk bool) bool {
 	}
 
 	return regexp.MustCompile(DomainValidRegex).MatchString(domain)
+}
+
+// HttpsUrlValid returns true if the string contains only valid URL characters
+func HttpsUrlValid(url string) bool {
+	if !strings.HasPrefix(url, "https://") {
+		return false
+	}
+
+	return regexp.MustCompile(URLValidRegex).MatchString(url)
 }

@@ -3,12 +3,12 @@ package acme
 import (
 	"certwarden-backend/pkg/httpclient"
 	"certwarden-backend/pkg/randomness"
+	"certwarden-backend/pkg/validation"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
-	"strings"
 	"sync"
 	"time"
 
@@ -35,9 +35,10 @@ type directory struct {
 // dirUri and return a directory object. If the directory fails to fetch or what
 // is fetched is invalid, an error is returned.
 func FetchAcmeDirectory(httpClient *httpclient.Client, dirUrl string) (directory, error) {
-	// require directory be specified as https://
-	if !strings.HasPrefix(dirUrl, "https://") {
-		return directory{}, fmt.Errorf("acme: directory url (%s) must start with 'https://'", dirUrl)
+
+	// require directory be validly formatted and start with https://
+	if !validation.HttpsUrlValid(dirUrl) {
+		return directory{}, fmt.Errorf("acme: directory url (%s) must be a properly formatted url and start with 'https://'", dirUrl)
 	}
 
 	response, err := httpClient.Get(dirUrl)

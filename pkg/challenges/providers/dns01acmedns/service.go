@@ -35,30 +35,25 @@ func (service *Service) AcmeChallengeType() acme.ChallengeType {
 // are needed, it is just a no-op.
 func (service *Service) Stop() error { return nil }
 
-// Configuration options
-type Config struct {
-	HostAddress string            `yaml:"acme_dns_address" json:"acme_dns_address"`
-	Resources   []acmeDnsResource `yaml:"resources" json:"resources"`
-}
-
 // NewService creates a new service
 func NewService(app App, cfg *Config) (*Service, error) {
-	// if no config, error
-	if cfg == nil {
-		return nil, errServiceComponent
+	// check config
+	err := validateConfig(cfg)
+	if err != nil {
+		return nil, err
 	}
 
 	service := new(Service)
 
-	// logger
-	service.logger = app.GetLogger()
-	if service.logger == nil {
-		return nil, errServiceComponent
-	}
-
 	// http client
 	service.httpClient = app.GetHttpClient()
 	if service.httpClient == nil {
+		return nil, errServiceComponent
+	}
+
+	// logger
+	service.logger = app.GetLogger()
+	if service.logger == nil {
 		return nil, errServiceComponent
 	}
 
