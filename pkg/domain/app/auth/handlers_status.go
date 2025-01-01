@@ -27,8 +27,8 @@ func (service *Service) Status(w http.ResponseWriter, r *http.Request) *output.J
 	response.StatusCode = http.StatusOK
 	response.Message = "ok"
 	// TODO: Actually check what's available
-	response.AuthorizationStatus.Local.Enabled = true
-	response.AuthorizationStatus.OIDC.Enabled = false
+	response.AuthorizationStatus.Local.Enabled = service.methodLocalEnabled()
+	response.AuthorizationStatus.OIDC.Enabled = service.methodOIDCEnabled()
 
 	// write response
 	err := service.output.WriteJSON(w, response)

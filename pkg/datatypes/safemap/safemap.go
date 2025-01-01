@@ -39,6 +39,24 @@ func (sm *SafeMap[V]) Read(key string) (V, bool) {
 	return value, exists
 }
 
+// Pop returns the current value from key and deletes the key from the map. If the key
+// does not exist, an error is returned.
+func (sm *SafeMap[V]) Pop(key string) (V, bool) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	// read data
+	value, exists := sm.m[key]
+	if !exists {
+		return value, false
+	}
+
+	// exists, delete and then return value
+	delete(sm.m, key)
+
+	return value, true
+}
+
 // CopyToMap copies all key/value pairs from safe map to an
 // ordinary map.
 func (sm *SafeMap[V]) CopyToMap(dst map[string]V) {

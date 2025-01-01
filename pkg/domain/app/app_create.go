@@ -187,7 +187,7 @@ func create() (*Application, error) {
 	}
 
 	// users service
-	app.auth, err = auth.NewService(app)
+	app.auth, err = auth.NewService(app, &app.config.Auth)
 	if err != nil {
 		app.logger.Errorf("failed to configure app authentication (%s)", err)
 		return app, err

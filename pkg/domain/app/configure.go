@@ -5,6 +5,7 @@ import (
 	"certwarden-backend/pkg/challenges/dns_checker"
 	"certwarden-backend/pkg/challenges/providers"
 	"certwarden-backend/pkg/challenges/providers/http01internal"
+	"certwarden-backend/pkg/domain/app/auth"
 	"certwarden-backend/pkg/domain/app/backup"
 	"certwarden-backend/pkg/domain/app/updater"
 	"certwarden-backend/pkg/domain/orders"
@@ -48,6 +49,7 @@ type config struct {
 	EnablePprof               *bool             `yaml:"enable_pprof"`
 	PprofHttpsPort            *int              `yaml:"pprof_https_port"`
 	PprofHttpPort             *int              `yaml:"pprof_http_port"`
+	Auth                      auth.Config       `yaml:"auth"`
 	Backup                    backup.Config     `yaml:"backup"`
 	Updater                   updater.Config    `yaml:"updater"`
 	Orders                    orders.Config     `yaml:"orders"`
@@ -257,6 +259,12 @@ func (app *Application) setDefaultConfigValues() {
 	if app.config.PprofHttpsPort == nil {
 		app.config.PprofHttpsPort = new(int)
 		*app.config.PprofHttpsPort = 4070
+	}
+
+	// auth
+	if app.config.Auth.Local.Enabled == nil {
+		app.config.Auth.Local.Enabled = new(bool)
+		*app.config.Auth.Local.Enabled = true
 	}
 
 	// backup

@@ -126,6 +126,16 @@ func (app *Application) CORSPermittedCrossOrigins() []string {
 	return app.config.CORSPermittedCrossOrigins
 }
 
+// FrontendURLPath is the expected absolute path for the frontend (self hosted or otherwise)
+func (app *Application) FrontendURLPath() string {
+	return frontendUrlPath
+}
+
+// APIURLPath is the expected absolute path for the API (this backend)
+func (app *Application) APIURLPath() string {
+	return apiUrlPath
+}
+
 func (app *Application) GetHttpClient() *httpclient.Client {
 	return app.httpClient
 }
