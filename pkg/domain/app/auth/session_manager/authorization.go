@@ -14,12 +14,11 @@ const accessTokenExp = 2 * time.Minute
 const sessionExp = 15 * time.Minute
 
 // expiration times for testing
-// const accessTokenExpiration = 10 * time.Second
+// const accessTokenExp = 10 * time.Second
+// const sessionExp = 1 * time.Minute
 
-// const sessionTokenExpiration = 2 * time.Minute
-
-// const accessTokenExpiration = 5 * time.Second
-// const sessionTokenExpiration = 15 * time.Second
+// const accessTokenExp = 5 * time.Second
+// const sessionExp = 15 * time.Second
 
 // cookie param
 const sessionCookieName = "session_token"

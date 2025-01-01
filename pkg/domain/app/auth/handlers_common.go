@@ -13,9 +13,10 @@ import (
 func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	service.logger.Infof("client %s: attempting session refresh", r.RemoteAddr)
 
-	username, auth, outErr := service.sessionManager.RefreshSession(r, w)
-	if outErr != nil {
-		return outErr
+	username, auth, err := service.sessionManager.RefreshSession(r, w)
+	if err != nil {
+		service.logger.Infof("client %s: session refresh failed (%s)", r.RemoteAddr, err)
+		return output.JsonErrUnauthorized
 	}
 
 	// return response to client
@@ -26,7 +27,7 @@ func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Reques
 
 	// write response
 	auth.WriteSessionCookie(w)
-	err := service.output.WriteJSON(w, response)
+	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
 		// detailed error is OK here because the user passed auth checks

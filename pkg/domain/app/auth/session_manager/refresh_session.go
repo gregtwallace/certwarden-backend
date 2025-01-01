@@ -1,7 +1,7 @@
 package session_manager
 
 import (
-	"certwarden-backend/pkg/output"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,17 +10,16 @@ import (
 // RefreshSession validates that r contains a valid cookie. If it does, the session in session manager
 // is updated with a new authorization and the username and new authorization are returned. If it does
 // not, any existing cookie is deleted using w and an error is returned.
-func (sm *SessionManager) RefreshSession(r *http.Request, w http.ResponseWriter) (_username string, _ *authorization, _ *output.JsonError) {
+func (sm *SessionManager) RefreshSession(r *http.Request, w http.ResponseWriter) (_username string, _ *authorization, _ error) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
 	// wrap to easily check err and delete cookies
-	session, outErr := func() (*session, *output.JsonError) {
+	session, err := func() (*session, error) {
 		// get the session token cookie from request
 		clientSessionCookie, err := r.Cookie(sessionCookieName)
 		if err != nil {
-			sm.logger.Infof("client %s: session refresh failed (bad cookie: %s)", r.RemoteAddr, err)
-			return nil, output.JsonErrUnauthorized
+			return nil, fmt.Errorf("bad cookie: %s", err)
 		}
 
 		// check for matching session token
@@ -32,14 +31,12 @@ func (sm *SessionManager) RefreshSession(r *http.Request, w http.ResponseWriter)
 			}
 		}
 		if session == nil {
-			sm.logger.Infof("client %s: session refresh failed (invalid cookie value)", r.RemoteAddr)
-			return nil, output.JsonErrUnauthorized
+			return nil, errors.New("invalid cookie value")
 		}
 
 		// found, check if expired
 		if time.Now().After(time.Time(session.authorization.SessionExpiration)) {
-			sm.logger.Infof("client %s: session refresh failed (session expired)", r.RemoteAddr)
-			return nil, output.JsonErrUnauthorized
+			return nil, errors.New("session expired")
 		}
 
 		// not expired, return session
@@ -47,18 +44,15 @@ func (sm *SessionManager) RefreshSession(r *http.Request, w http.ResponseWriter)
 	}()
 
 	// if err, delete session cookie and return err
-	if outErr != nil {
+	if err != nil {
 		sm.DeleteSessionCookie(w)
-		return "", nil, outErr
+		return "", nil, err
 	}
 
 	// session was found, update it and return username and new auth
-	var err error
 	session.authorization, err = sm.newAuthorization()
 	if err != nil {
-		err = fmt.Errorf("client %s: session refresh failed (couldn't make new auth: %s)", r.RemoteAddr, err)
-		sm.logger.Error(err)
-		return "", nil, output.JsonErrInternal(err)
+		return "", nil, fmt.Errorf("couldn't make new auth: %s", err)
 	}
 
 	return session.username, session.authorization, nil
