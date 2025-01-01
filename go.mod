@@ -7,6 +7,7 @@ require github.com/julienschmidt/httprouter v1.3.0
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloudflare/cloudflare-go v0.95.0
+	github.com/cloudfoundry/jibber_jabber v0.0.0-20151120183258-bcc4c8345a21
 	github.com/coreos/go-oidc/v3 v3.11.0
 	github.com/go-acme/lego/v4 v4.16.1
 	github.com/google/uuid v1.6.0
