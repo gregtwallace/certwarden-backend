@@ -1,9 +1,11 @@
 package session_manager
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -143,51 +145,48 @@ func (sm *SessionManager) DeleteSession(r *http.Request) (_username string, _ er
 // 	_ = sm.sessions.DeleteFunc(deleteFunc)
 // }
 
-// // startCleanerService starts a goroutine that is an indefinite for loop
-// // that checks for expired sessions and removes them. This is to
-// // prevent the accumulation of expired sessions that were never
-// // formally logged out of.
-// func (service *Service) startCleanerService(ctx context.Context, wg *sync.WaitGroup) {
-// 	// log start and update wg
-// 	service.logger.Info("starting auth session cleaner service")
+// StartCleanerService starts a goroutine that is an indefinite for loop
+// that checks for expired sessions and removes them. This is to
+// prevent the accumulation of expired sessions that were never
+// formally logged out of.
+func (sm *SessionManager) StartCleanerService(ctx context.Context, wg *sync.WaitGroup) {
+	// log start and update wg
+	sm.logger.Info("auth: starting auth session cleaner service")
 
-// 	// delete func that checks values for expired session
-// 	deleteFunc := func(k string, v tokenClaims) bool {
-// 		if v.ExpiresAt.Unix() <= time.Now().Unix() {
-// 			// if expiration has passed, delete
-// 			service.logger.Infof("user '%s' logged out (expired)", v.Subject)
-// 			return true
-// 		}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
 
-// 		// else don't delete (valid)
-// 		return false
-// 	}
+		for {
+			// wait time is based on expiration of session token
+			delayTimer := time.NewTimer(2 * sessionExp)
 
-// 	wg.Add(1)
-// 	go func() {
-// 		defer wg.Done()
+			select {
+			case <-ctx.Done():
+				// ensure timer releases resources
+				if !delayTimer.Stop() {
+					<-delayTimer.C
+				}
 
-// 		for {
-// 			// wait time is based on expiration of session token
-// 			delayTimer := time.NewTimer(2 * sessionTokenExpiration)
+				// exit
+				sm.logger.Info("auth session cleaner service shutdown complete")
+				return
 
-// 			select {
-// 			case <-ctx.Done():
-// 				// ensure timer releases resources
-// 				if !delayTimer.Stop() {
-// 					<-delayTimer.C
-// 				}
+			case <-delayTimer.C:
+				// continue and run
+			}
 
-// 				// exit
-// 				service.logger.Info("auth session cleaner service shutdown complete")
-// 				return
+			// delete expired sessions
+			sm.mu.Lock()
+			now := time.Now()
 
-// 			case <-delayTimer.C:
-// 				// continue and run
-// 			}
+			for k, v := range sm.sessions {
+				if now.After(time.Time(v.authorization.SessionExpiration)) {
+					delete(sm.sessions, k)
+				}
+			}
 
-// 			// run delete func against sessions map
-// 			_ = service.sessionManager.sessions.DeleteFunc(deleteFunc)
-// 		}
-// 	}()
-// }
+			sm.mu.Unlock()
+		}
+	}()
+}

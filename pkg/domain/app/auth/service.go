@@ -73,7 +73,7 @@ func NewService(app App) (*Service, error) {
 	// create session manager
 	service.sessionManager = session_manager.NewSessionManager(app.IsHttps(), len(app.CORSPermittedCrossOrigins()) > 0, service.logger)
 	// start cleaner
-	// service.startCleanerService(app.GetShutdownContext(), app.GetShutdownWaitGroup())
+	service.sessionManager.StartCleanerService(app.GetShutdownContext(), app.GetShutdownWaitGroup())
 
 	return service, nil
 }
