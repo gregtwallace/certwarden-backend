@@ -32,6 +32,8 @@ func (app *Application) makeRouterAndRoutes() {
 	router.handleAPIRouteInsecure(http.MethodGet, apiUrlPath+"/health", healthHandler)
 
 	// app auth - insecure as these give clients the access_token to access secure routes
+	// app auth status
+	router.handleAPIRouteInsecure(http.MethodGet, apiUrlPath+"/v1/app/auth/status", app.auth.Status)
 	// validates with user/password
 	router.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/login", app.auth.LocalPostLogin)
 	// validates with cookie
