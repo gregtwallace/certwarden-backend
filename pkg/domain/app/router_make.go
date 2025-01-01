@@ -34,13 +34,16 @@ func (app *Application) makeRouterAndRoutes() {
 	// app auth - insecure as these give clients the access_token to access secure routes
 	// app auth status
 	router.handleAPIRouteInsecure(http.MethodGet, apiUrlPath+"/v1/app/auth/status", app.auth.Status)
-	// validates with user/password
-	router.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/login", app.auth.LocalPostLogin)
 	// validates with cookie
 	router.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/refresh", app.auth.RefreshUsingCookie)
+	// local - validates with user/password
+	router.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/login", app.auth.LocalPostLogin)
+	// oidc - validates with Idp
+	router.handleAPIRouteInsecure(http.MethodGet, apiUrlPath+"/v1/app/auth/oidc/login", app.auth.OIDCGetLogin)
+	router.handleAPIRouteInsecure(http.MethodGet, apiUrlPath+"/v1/app/auth/oidc/callback", app.auth.OIDCGetCallback)
 
 	// app auth - secure
-	router.handleAPIRouteSecure(http.MethodPut, apiUrlPath+"/v1/app/auth/changepassword", app.auth.ChangePassword)
+	router.handleAPIRouteSecure(http.MethodPut, apiUrlPath+"/v1/app/auth/changepassword", app.auth.LocalChangePassword)
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/app/auth/logout", app.auth.Logout)
 
 	// status

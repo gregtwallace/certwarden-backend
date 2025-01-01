@@ -4,6 +4,7 @@ import (
 	"certwarden-backend/pkg/domain/app/auth/session_manager"
 	"certwarden-backend/pkg/output"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -23,6 +24,10 @@ type loginPayload struct {
 // and validates the password. If so, an Access Token is returned in JSON and a refresh
 // token is sent in a cookie.
 func (service *Service) LocalPostLogin(w http.ResponseWriter, r *http.Request) *output.JsonError {
+	if !service.methodLocalEnabled() {
+		return output.JsonErrNotFound(errors.New("auth: local login is not configured"))
+	}
+
 	// wrap handler to easily check err and delete cookies
 	outErr := func() *output.JsonError {
 		var payload loginPayload
@@ -38,7 +43,7 @@ func (service *Service) LocalPostLogin(w http.ResponseWriter, r *http.Request) *
 		}
 
 		// fetch the password hash from storage
-		user, err := service.storage.GetOneUserByName(payload.Username)
+		user, err := service.local.storage.GetOneUserByName(payload.Username)
 		if err != nil {
 			service.logger.Infof("client %s: login failed (bad username: %s)", r.RemoteAddr, err)
 			return output.JsonErrUnauthorized
@@ -75,7 +80,7 @@ func (service *Service) LocalPostLogin(w http.ResponseWriter, r *http.Request) *
 		}
 
 		// log success
-		service.logger.Infof("client %s: user '%s' logged in", r.RemoteAddr, user.Username)
+		service.logger.Infof("client %s: user '%s' logged in", username)
 
 		return nil
 	}()
@@ -98,7 +103,11 @@ type passwordChangePayload struct {
 }
 
 // ChangePassword allows a user to change their password
-func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) *output.JsonError {
+func (service *Service) LocalChangePassword(w http.ResponseWriter, r *http.Request) *output.JsonError {
+	if !service.methodLocalEnabled() {
+		return output.JsonErrNotFound(errors.New("auth: change password if for local logins, which are not configured"))
+	}
+
 	// log attempt
 	service.logger.Infof("client %s: attempting password change", r.RemoteAddr)
 
@@ -126,7 +135,7 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) *
 	}
 
 	// fetch the password hash from storage
-	user, err := service.storage.GetOneUserByName(username)
+	user, err := service.local.storage.GetOneUserByName(username)
 	if err != nil {
 		// shouldn't be possible since header was valid
 		err = fmt.Errorf("client %s: password change for user '%s' failed (bad username: %s)", r.RemoteAddr, username, err)
@@ -167,7 +176,7 @@ func (service *Service) ChangePassword(w http.ResponseWriter, r *http.Request) *
 	}
 
 	// update password in storage
-	userId, err := service.storage.UpdateUserPassword(username, string(newPasswordHash))
+	userId, err := service.local.storage.UpdateUserPassword(username, string(newPasswordHash))
 	if err != nil {
 		err = fmt.Errorf("client %s: password change for user '%s' failed (storage error: %s)", r.RemoteAddr, username, err)
 		service.logger.Error(err)
