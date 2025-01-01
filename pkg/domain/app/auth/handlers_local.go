@@ -12,10 +12,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const localUsernamePrefix = "local|"
-
 // loginPayload is the payload client's send to login
-type loginPayload struct {
+type localLoginPayload struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
@@ -30,7 +28,7 @@ func (service *Service) LocalPostLogin(w http.ResponseWriter, r *http.Request) *
 
 	// wrap handler to easily check err and delete cookies
 	outErr := func() *output.JsonError {
-		var payload loginPayload
+		var payload localLoginPayload
 
 		// log attempt
 		service.logger.Infof("client %s: attempting login", r.RemoteAddr)
@@ -56,9 +54,17 @@ func (service *Service) LocalPostLogin(w http.ResponseWriter, r *http.Request) *
 			return output.JsonErrUnauthorized
 		}
 
-		// user and password now verified, make new session
+		// user and password now verified
 		username := localUsernamePrefix + user.Username
-		auth, err := service.sessionManager.NewSession(username)
+
+		// make extra func obj
+		extraFuncs := &localExtraFuncs{
+			dbUsername:     payload.Username,
+			storageService: service.local.storage,
+		}
+
+		//make new session
+		auth, err := service.sessionManager.NewSession(username, extraFuncs)
 		if err != nil {
 			service.logger.Errorf("client %s: login failed (internal error: %s)", r.RemoteAddr, err)
 			return output.JsonErrInternal(nil)
@@ -80,7 +86,7 @@ func (service *Service) LocalPostLogin(w http.ResponseWriter, r *http.Request) *
 		}
 
 		// log success
-		service.logger.Infof("client %s: user '%s' logged in", username)
+		service.logger.Infof("client %s: user '%s' logged in", r.RemoteAddr, username)
 
 		return nil
 	}()

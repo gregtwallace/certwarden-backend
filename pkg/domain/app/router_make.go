@@ -39,7 +39,7 @@ func (app *Application) makeRouterAndRoutes() {
 	// local - validates with user/password
 	router.handleAPIRouteInsecure(http.MethodPost, apiUrlPath+"/v1/app/auth/login", app.auth.LocalPostLogin)
 	// oidc - validates with Idp
-	router.handleAPIRouteInsecure(http.MethodGet, apiUrlPath+"/v1/app/auth/oidc/login", app.auth.OIDCGetLogin)
+	router.handleAPIRouteInsecure(http.MethodGet, apiUrlPath+"/v1/app/auth/login", app.auth.OIDCGetLogin)
 	router.handleAPIRouteInsecure(http.MethodGet, apiUrlPath+"/v1/app/auth/oidc/callback", app.auth.OIDCGetCallback)
 
 	// app auth - secure

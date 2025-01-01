@@ -13,52 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
 )
-
-const oidcUsernamePrefix = "oidc|"
-const oidcCertWardenScope = "certwarden:superadmin"
-
-var oidcRequiredScopes = []string{oidc.ScopeOpenID, "profile", oidcCertWardenScope}
-
-// oidcPendingSession tracks various bits of information across the different steps of the OIDC
-// autentication and authorization flow
-type oidcPendingSession struct {
-	callerRedirectUrl *url.URL
-	codeVerifierHex   string
-	createdAt         time.Time
-	oauth2Token       *oauth2.Token
-	oidcIDToken       *oidc.IDToken
-	idpCode           string
-}
-
-// oidcErrorURL copies a URL and removes the OIDC param values from the
-// returned copy and then sets the OIDC error param on the returned copy
-// instead
-func oidcErrorURL(u *url.URL, err error) *url.URL {
-	newU, _ := url.Parse(u.String())
-
-	queryValues := newU.Query()
-
-	queryValues.Del("redirect_uri")
-	queryValues.Del("state")
-	queryValues.Del("code")
-
-	queryValues.Set("oidc_error", url.QueryEscape(err.Error()))
-
-	newU.RawQuery = queryValues.Encode()
-
-	return newU
-}
-
-// oidcUnauthorizedErrorURL copies a URL and removes the OIDC param values from the
-// returned copy and then sets the OIDC error param on the returned copy
-// instead
-func oidcUnauthorizedErrorURL(u *url.URL) *url.URL {
-	err := errors.New("oidc failed (unauthorized)")
-	return oidcErrorURL(u, err)
-}
 
 // OIDCLogin checks for a state parameter. If state is found, the client is redirected to the OIDCLoginFinalize
 // handler. If there is no state parameter, the rest of this handler runs directing the client to the OIDC
@@ -293,9 +249,20 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 		return output.JsonErrUnauthorized
 	}
 
-	// validation done, make new session
+	// validation done
+	// make extra func obj
+	extraFuncs := &oidcExtraFuncs{
+		cfg:             service.oidc.oauth2Config,
+		idTokenVerifier: service.oidc.idTokenVerifier,
+		token: &expectedToken{
+			// only RefreshToken is needed for extra funcs
+			RefreshToken: oidcStateObj.oauth2Token.RefreshToken,
+		},
+	}
+
+	// make new session
 	username := oidcUsernamePrefix + oidcStateObj.oidcIDToken.Subject
-	auth, err := service.sessionManager.NewSession(username)
+	auth, err := service.sessionManager.NewSession(username, extraFuncs)
 	if err != nil {
 		service.logger.Errorf("client %s: login failed (internal error: %s)", r.RemoteAddr, err)
 		return output.JsonErrInternal(nil)
