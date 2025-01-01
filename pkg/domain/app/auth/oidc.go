@@ -1,0 +1,158 @@
+package auth
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/coreos/go-oidc/v3/oidc"
+	"golang.org/x/oauth2"
+)
+
+const oidcUsernamePrefix = "oidc|"
+const oidcCertWardenScope = "certwarden:superadmin"
+
+var oidcRequiredScopes = []string{oidc.ScopeOpenID, oidc.ScopeOfflineAccess, "profile", oidcCertWardenScope}
+
+// oidcPendingSession tracks various bits of information across the different steps of the OIDC
+// autentication and authorization flow
+type oidcPendingSession struct {
+	callerRedirectUrl *url.URL
+	codeVerifierHex   string
+	createdAt         time.Time
+	oauth2Token       *oauth2.Token
+	oidcIDToken       *oidc.IDToken
+	idpCode           string
+}
+
+// oidcErrorURL copies a URL and removes the OIDC param values from the
+// returned copy and then sets the OIDC error param on the returned copy
+// instead
+func oidcErrorURL(u *url.URL, err error) *url.URL {
+	newU, _ := url.Parse(u.String())
+
+	queryValues := newU.Query()
+
+	queryValues.Del("redirect_uri")
+	queryValues.Del("state")
+	queryValues.Del("code")
+
+	queryValues.Set("oidc_error", url.QueryEscape(err.Error()))
+
+	newU.RawQuery = queryValues.Encode()
+
+	return newU
+}
+
+// oidcUnauthorizedErrorURL copies a URL and removes the OIDC param values from the
+// returned copy and then sets the OIDC error param on the returned copy
+// instead
+func oidcUnauthorizedErrorURL(u *url.URL) *url.URL {
+	err := errors.New("oidc failed (unauthorized)")
+	return oidcErrorURL(u, err)
+}
+
+// expectedToken contains oauth2 Token the values used by this application
+type expectedToken struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	IDToken      string `json:"id_token"`
+	Scope        string `json:"scope"`
+}
+
+// oidcExtraFuncs implements session manager's extraFuncs interface
+type oidcExtraFuncs struct {
+	cfg             *oauth2.Config
+	idTokenVerifier *oidc.IDTokenVerifier
+	token           *expectedToken
+
+	mu sync.Mutex
+}
+
+// RefreshCheck for local users just queries the DB to confirm no-error; this is do manually instead
+// of with the OIDC package because that pkg doesn't appear to have a force refresh option
+func (oef *oidcExtraFuncs) RefreshCheck() error {
+	oef.mu.Lock()
+	defer oef.mu.Unlock()
+
+	// make OAuth2 refresh payload
+	data := url.Values{}
+	data.Set("grant_type", "refresh_token")
+	data.Set("client_id", oef.cfg.ClientID)
+	data.Set("client_secret", oef.cfg.ClientSecret)
+	data.Set("refresh_token", oef.token.RefreshToken)
+
+	// make http request
+	req, err := http.NewRequest("POST", oef.cfg.Endpoint.TokenURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	// see: https://datatracker.ietf.org/doc/html/rfc6749#section-5.1
+	// success must return 200
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("oidc refresh failed, status %d", res.StatusCode)
+	}
+
+	// unmarshal the token
+	bodyBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		return fmt.Errorf("oidc refresh failed, failed to read body (%s)", err)
+	}
+
+	var t expectedToken
+	err = json.Unmarshal(bodyBytes, &t)
+	if err != nil {
+		return fmt.Errorf("oidc refresh failed, failed to unmarshal new token (%s)", err)
+	}
+
+	// validate token values
+	if t.AccessToken == "" {
+		return errors.New("oidc refresh failed, new access token empty")
+	}
+
+	if t.RefreshToken == "" {
+		return errors.New("oidc refresh failed, new refresh token empty")
+	}
+
+	_, err = oef.idTokenVerifier.Verify(context.Background(), t.IDToken)
+	if err != nil {
+		return fmt.Errorf("oidc refresh failed, id token failed verification (%s)", err)
+	}
+
+	// Validate the required scopes were granted
+	if t.Scope != "" {
+		responseScopes := strings.Split(t.Scope, " ")
+		for _, requiredScope := range oidcRequiredScopes {
+			found := false
+			for _, responseScope := range responseScopes {
+				if requiredScope == responseScope {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				return fmt.Errorf("oidc refresh failed, required scope '%s' was not granted", requiredScope)
+			}
+		}
+	}
+
+	// set new token & return ok
+	oef.token = &t
+	return nil
+}

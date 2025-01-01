@@ -49,6 +49,15 @@ func (sm *SessionManager) RefreshSession(r *http.Request, w http.ResponseWriter)
 		return "", nil, err
 	}
 
+	// run any extra check
+	if session.extraFuncs != nil {
+		err = session.extraFuncs.RefreshCheck()
+		if err != nil {
+			sm.DeleteSessionCookie(w)
+			return "", nil, err
+		}
+	}
+
 	// session was found, update it and return username and new auth
 	session.authorization, err = sm.newAuthorization()
 	if err != nil {

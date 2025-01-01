@@ -14,10 +14,16 @@ import (
 var errInvalidSessionID = errors.New("invalid session id")
 var errAddExisting = errors.New("cannot add session (duplicate id)")
 
+type extraFuncs interface {
+	// RefreshCheck performs additional validation prior to returning a succesful refresh
+	RefreshCheck() error
+}
+
 // session contains information about a given session
 type session struct {
 	username      string
 	authorization *authorization
+	extraFuncs    extraFuncs
 }
 
 // SessionManager stores and manages session data
@@ -45,7 +51,7 @@ func NewSessionManager(https bool, corsPermitted bool, logger *zap.SugaredLogger
 
 // NewSession creates a new session for the specified username and returns
 // the newly created authorization.
-func (sm *SessionManager) NewSession(username string) (*authorization, error) {
+func (sm *SessionManager) NewSession(username string, extraFuncs extraFuncs) (*authorization, error) {
 	auth, err := sm.newAuthorization()
 	if err != nil {
 		return nil, err
@@ -54,6 +60,9 @@ func (sm *SessionManager) NewSession(username string) (*authorization, error) {
 	session := &session{
 		username:      username,
 		authorization: auth,
+	}
+	if extraFuncs != nil {
+		session.extraFuncs = extraFuncs
 	}
 
 	// make a session id
