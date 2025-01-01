@@ -150,6 +150,9 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 		// oidc id token verifier
 		service.oidc.idTokenVerifier = service.oidc.provider.Verifier(&oidc.Config{ClientID: cfg.OIDC.ClientID})
+
+		// clean stale pending sessions
+		service.startOidcCleanerService(app.GetShutdownContext(), app.GetShutdownWaitGroup())
 	}
 
 	return service, nil
