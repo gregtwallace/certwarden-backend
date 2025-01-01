@@ -2,14 +2,14 @@ package nonces
 
 import (
 	"certwarden-backend/pkg/datatypes/ringbuffer"
-	"certwarden-backend/pkg/httpclient"
 	"errors"
 	"io"
+	"net/http"
 )
 
 // Manager is the NonceManager
 type Manager struct {
-	httpClient  *httpclient.Client
+	httpClient  *http.Client
 	newNonceUrl *string
 	nonces      *ringbuffer.RingBuffer[string]
 }
@@ -18,7 +18,7 @@ type Manager struct {
 const bufferSize = 32
 
 // NewManager creates a new nonce manager
-func NewManager(client *httpclient.Client, nonceUrl *string) *Manager {
+func NewManager(client *http.Client, nonceUrl *string) *Manager {
 	manager := new(Manager)
 
 	manager.httpClient = client

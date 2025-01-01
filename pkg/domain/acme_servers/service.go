@@ -2,11 +2,11 @@ package acme_servers
 
 import (
 	"certwarden-backend/pkg/acme"
-	"certwarden-backend/pkg/httpclient"
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
 	"context"
 	"errors"
+	"net/http"
 	"sync"
 
 	"go.uber.org/zap"
@@ -19,7 +19,7 @@ type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 	GetAcmeServerStorage() Storage
-	GetHttpClient() *httpclient.Client
+	GetHttpClient() *http.Client
 	GetShutdownContext() context.Context
 	GetShutdownWaitGroup() *sync.WaitGroup
 }
@@ -42,7 +42,7 @@ type Service struct {
 	logger            *zap.SugaredLogger
 	output            *output.Service
 	storage           Storage
-	httpClient        *httpclient.Client
+	httpClient        *http.Client
 	shutdownContext   context.Context
 	shutdownWaitgroup *sync.WaitGroup
 	acmeServers       map[int]*acme.Service // [id]acmeServer

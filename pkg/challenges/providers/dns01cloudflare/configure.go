@@ -66,14 +66,19 @@ func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 		return errAccountAndTokenSpecified
 	}
 
+	// make option to use the custom http.Client
+	opts := []cloudflare.Option{
+		cloudflare.HTTPClient(service.httpClient),
+	}
+
 	// if using apiToken
 	if cfg.ApiToken != nil {
 		// make api for the token
-		service.cloudflareApi, err = cloudflare.NewWithAPIToken(*cfg.ApiToken, service.httpClient.AsCloudflareOptions()...)
+		service.cloudflareApi, err = cloudflare.NewWithAPIToken(*cfg.ApiToken, opts...)
 		// defer to common err check
 	} else if cfg.Account != nil && cfg.Account.Email != nil && cfg.Account.GlobalApiKey != nil {
 		// else if using Account
-		service.cloudflareApi, err = cloudflare.New(*cfg.Account.GlobalApiKey, *cfg.Account.Email, service.httpClient.AsCloudflareOptions()...)
+		service.cloudflareApi, err = cloudflare.New(*cfg.Account.GlobalApiKey, *cfg.Account.Email, opts...)
 		// defer to common err check
 	} else {
 		// else incomplete config

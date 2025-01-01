@@ -1,12 +1,12 @@
 package safecert
 
 import (
-	"certwarden-backend/pkg/httpclient"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"io"
 	"math/rand/v2"
+	"net/http"
 	"sync"
 
 	"golang.org/x/crypto/ocsp"
@@ -22,13 +22,13 @@ type SafeCert struct {
 
 	shutdownWg  *sync.WaitGroup
 	shutdownCtx context.Context
-	httpClient  *httpclient.Client
+	httpClient  *http.Client
 	sync.RWMutex
 }
 
 // NewSafeCert returns a new SafeCert and also starts a routine to manage the
 // cert's stapled OCSP response (if the cert supports it).
-func NewSafeCert(httpClient *httpclient.Client, wg *sync.WaitGroup, shutdownCtx context.Context) *SafeCert {
+func NewSafeCert(httpClient *http.Client, wg *sync.WaitGroup, shutdownCtx context.Context) *SafeCert {
 	sc := &SafeCert{
 		shutdownWg:  wg,
 		shutdownCtx: shutdownCtx,

@@ -27,6 +27,7 @@ type App interface {
 	CORSPermittedCrossOrigins() []string
 	FrontendURLPath() string
 	APIURLPath() string
+	GetHttpClient() *http.Client
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 	GetAuthStorage() Storage
@@ -71,10 +72,11 @@ type Service struct {
 		storage Storage
 	}
 	oidc struct {
-		pendingSessions *safemap.SafeMap[*oidcPendingSession]
-		provider        *oidc.Provider
-		oauth2Config    *oauth2.Config
-		idTokenVerifier *oidc.IDTokenVerifier
+		ctxWithHttpClient context.Context
+		pendingSessions   *safemap.SafeMap[*oidcPendingSession]
+		provider          *oidc.Provider
+		oauth2Config      *oauth2.Config
+		idTokenVerifier   *oidc.IDTokenVerifier
 	}
 }
 
@@ -114,13 +116,15 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 	// OIDC (optional)
 	if cfg.OIDC.IssuerURL != "" {
-		// TODO: custom http client
+		// use CW's http Client
+		service.oidc.ctxWithHttpClient = oidc.ClientContext(app.GetShutdownContext(), app.GetHttpClient())
 
+		// manage pending OIDC states
 		service.oidc.pendingSessions = safemap.NewSafeMap[*oidcPendingSession]()
 
 		// oidc provider
 		var err error
-		service.oidc.provider, err = oidc.NewProvider(app.GetShutdownContext(), cfg.OIDC.IssuerURL)
+		service.oidc.provider, err = oidc.NewProvider(service.oidc.ctxWithHttpClient, cfg.OIDC.IssuerURL)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +156,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		service.oidc.idTokenVerifier = service.oidc.provider.Verifier(&oidc.Config{ClientID: cfg.OIDC.ClientID})
 
 		// clean stale pending sessions
-		service.startOidcCleanerService(app.GetShutdownContext(), app.GetShutdownWaitGroup())
+		service.startOidcCleanerService(service.oidc.ctxWithHttpClient, app.GetShutdownWaitGroup())
 	}
 
 	return service, nil

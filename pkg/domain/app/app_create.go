@@ -13,15 +13,12 @@ import (
 	"certwarden-backend/pkg/domain/download"
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
-	"certwarden-backend/pkg/httpclient"
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/storage/sqlite"
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"os/signal"
-	"runtime"
 	"sync"
 	"syscall"
 )
@@ -127,8 +124,7 @@ func create() (*Application, error) {
 	app.shutdownWaitgroup = new(sync.WaitGroup)
 
 	// create http client
-	userAgent := fmt.Sprintf("CertWarden/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH)
-	app.httpClient = httpclient.New(userAgent)
+	app.httpClient = makeHttpClient()
 
 	// start automatic backup service
 	app.backup.StartAutoBackupService(app, &app.config.Backup)
