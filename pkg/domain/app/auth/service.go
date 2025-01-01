@@ -1,10 +1,11 @@
 package auth
 
 import (
+	"certwarden-backend/pkg/domain/app/auth/session_manager"
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/randomness"
 	"context"
 	"errors"
+	"net/http"
 	"sync"
 
 	"go.uber.org/zap"
@@ -18,7 +19,7 @@ const BcryptCost = 12
 // App interface is for connecting to the main app
 type App interface {
 	IsHttps() bool
-	AllowsSomeCrossOrigin() bool
+	CORSPermittedCrossOrigins() []string
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 	GetAuthStorage() Storage
@@ -41,32 +42,21 @@ type Storage interface {
 
 // Keys service struct
 type Service struct {
-	logger           *zap.SugaredLogger
-	https            bool
-	allowCrossOrigin bool
-	output           *output.Service
-	storage          Storage
-	accessJwtSecret  []byte
-	sessionJwtSecret []byte
-	sessionManager   *sessionManager
+	logger         *zap.SugaredLogger
+	output         *output.Service
+	storage        Storage
+	sessionManager *session_manager.SessionManager
 }
 
 // NewService creates a new users service
 func NewService(app App) (*Service, error) {
 	service := new(Service)
-	var err error
 
 	// logger
 	service.logger = app.GetLogger()
 	if service.logger == nil {
 		return nil, errServiceComponent
 	}
-
-	// running as https?
-	service.https = app.IsHttps()
-
-	// cross origin allowed?
-	service.allowCrossOrigin = app.AllowsSomeCrossOrigin()
 
 	// output service
 	service.output = app.GetOutputter()
@@ -80,22 +70,15 @@ func NewService(app App) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// generate new secrets on every start. this will auto-invalidate old keys to avoid any conflicts
-	// caused by losing the session states on restart
-	service.accessJwtSecret, err = randomness.GenerateHexSecret()
-	if err != nil {
-		return nil, errServiceComponent
-	}
-
-	service.sessionJwtSecret, err = randomness.GenerateHexSecret()
-	if err != nil {
-		return nil, errServiceComponent
-	}
-
 	// create session manager
-	service.sessionManager = newSessionManager()
+	service.sessionManager = session_manager.NewSessionManager(app.IsHttps(), len(app.CORSPermittedCrossOrigins()) > 0, service.logger)
 	// start cleaner
-	service.startCleanerService(app.GetShutdownContext(), app.GetShutdownWaitGroup())
+	// service.startCleanerService(app.GetShutdownContext(), app.GetShutdownWaitGroup())
 
 	return service, nil
+}
+
+// make ValidateAuthHeader available to App
+func (service *Service) ValidateAuthHeader(r *http.Request, w http.ResponseWriter, logTaskName string) (username string, _ error) {
+	return service.sessionManager.ValidateAuthHeader(r, w, logTaskName)
 }

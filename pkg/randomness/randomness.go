@@ -12,19 +12,17 @@ const (
 	lengthAES256Key     = 32
 	lengthApiKey        = 32
 	lengthFrontendNonce = 26
-	lengthHexSecret     = 64
 )
 
 // character sets
 const (
 	charSetBase64            = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/"
 	charSetNumbersAndLetters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	charSetHex               = "0123456789abcdef"
 )
 
-// generateRandomByteSlice populates a byte slice of length with data from
-// crypto/range
-func generateRandomByteSlice(length int) ([]byte, error) {
+// GenerateRandomByteSlice populates a byte slice of length with data from
+// crypto/rand
+func GenerateRandomByteSlice(length int) ([]byte, error) {
 	slice := make([]byte, length)
 
 	_, err := crypto_rand.Read(slice)
@@ -39,7 +37,7 @@ func generateRandomByteSlice(length int) ([]byte, error) {
 // (a 32-byte key) and then encodes the key in Base64 Raw URL format
 func GenerateAES256KeyAsBase64RawUrl() (string, error) {
 	// make key
-	key, err := generateRandomByteSlice(lengthAES256Key)
+	key, err := GenerateRandomByteSlice(lengthAES256Key)
 	if err != nil {
 		return "", err
 	}
@@ -92,11 +90,9 @@ func GenerateFrontendNonce() ([]byte, error) {
 	return []byte(s), nil
 }
 
-// GenerateHexSecret generates a cryptographically secure random hex
-// byte slice (particualrly useful for jwt secret)
-func GenerateHexSecret() ([]byte, error) {
-	hexString, err := generateSecureRandomString(charSetHex, lengthHexSecret)
-	return []byte(hexString), err
+// Generate32ByteSecret generates a cryptographically secure 32 byte slice
+func Generate32ByteSecret() ([]byte, error) {
+	return GenerateRandomByteSlice(32)
 }
 
 // Insecure Randoms

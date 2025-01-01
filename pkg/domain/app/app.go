@@ -122,9 +122,8 @@ func (app *Application) IsHttps() bool {
 	return app.httpsCert != nil
 }
 
-// are any cross origins allowed?
-func (app *Application) AllowsSomeCrossOrigin() bool {
-	return len(app.config.CORSPermittedCrossOrigins) > 0
+func (app *Application) CORSPermittedCrossOrigins() []string {
+	return app.config.CORSPermittedCrossOrigins
 }
 
 func (app *Application) GetHttpClient() *httpclient.Client {

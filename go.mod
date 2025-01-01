@@ -8,7 +8,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloudflare/cloudflare-go v0.95.0
 	github.com/go-acme/lego/v4 v4.16.1
-	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/google/uuid v1.6.0
 	github.com/google/webpackager v0.0.0-20221027220206-53a1486f4205
 	github.com/mattn/go-sqlite3 v1.14.22
@@ -101,6 +100,7 @@ require (
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
@@ -281,6 +281,8 @@ replace certwarden-backend/pkg/domain/acme_servers => /pkg/domain/acme_servers
 replace certwarden-backend/pkg/domain/app => /pkg/domain/app
 
 replace certwarden-backend/pkg/domain/app/auth => /pkg/domain/app/auth
+
+replace certwarden-backend/pkg/domain/app/auth/session_manager => /pkg/domain/app/auth/session_manager
 
 replace certwarden-backend/pkg/domain/app/backup => /pkg/domain/app/backup
 
