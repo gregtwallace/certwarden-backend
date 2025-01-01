@@ -18,6 +18,7 @@ import (
 
 const oidcUsernamePrefix = "oidc|"
 const oidcCertWardenScope = "certwarden:superadmin"
+const oidcPendingSessionMinExp = 5 * time.Minute
 
 var oidcRequiredScopes = []string{oidc.ScopeOpenID, oidc.ScopeOfflineAccess, "profile", oidcCertWardenScope}
 
@@ -155,4 +156,46 @@ func (oef *oidcExtraFuncs) RefreshCheck() error {
 	// set new token & return ok
 	oef.token = &t
 	return nil
+}
+
+// startOidcCleanerService starts a goroutine to remove pending sessions that were abandoned;
+// the expiration limit is not a hard fail, it just provides an eventual backstop to purge
+// pending sessions (as opposed to a hard fail if the time limit is broached by even 1 second)
+func (service *Service) startOidcCleanerService(ctx context.Context, wg *sync.WaitGroup) {
+	// log start and update wg
+	service.logger.Info("starting oidc panding session cleaner service")
+
+	// delete func that checks values for expired session
+	deleteFunc := func(_ string, v *oidcPendingSession) bool {
+		// is now past min expiration?
+		return time.Now().After(v.createdAt.Add(oidcPendingSessionMinExp))
+	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		for {
+			// wait time is based on min expiration
+			delayTimer := time.NewTimer(2 * oidcPendingSessionMinExp)
+
+			select {
+			case <-ctx.Done():
+				// ensure timer releases resources
+				if !delayTimer.Stop() {
+					<-delayTimer.C
+				}
+
+				// exit
+				service.logger.Info("oidc panding session cleaner service shutdown complete")
+				return
+
+			case <-delayTimer.C:
+				// continue and run
+			}
+
+			// run delete func against sessions map
+			_ = service.oidc.pendingSessions.DeleteFunc(deleteFunc)
+		}
+	}()
 }
