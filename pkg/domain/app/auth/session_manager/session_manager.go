@@ -118,42 +118,6 @@ func (sm *SessionManager) DeleteSession(r *http.Request) (_username string, _ er
 	return username, nil
 }
 
-// // refresh confirms the oldSession is present, removes it, and then adds the new
-// // session in its place. If the session doesn't exist or the new session
-// // already exists an error is returned and all sessions for the specific subject
-// // (user) are removed.
-// func (sm *sessionManager) refresh(oldSession, newSession tokenClaims) error {
-// 	// remove old session (error if doesn't exist, so this is validation)
-// 	err := sm.close(oldSession)
-
-// 	if err != nil {
-// 		// closeSubject already called by sm.close()
-// 		return err
-// 	}
-
-// 	// add new session (error if already exists)
-// 	err = sm.new(newSession)
-// 	if err != nil {
-// 		// closeSubject already called by sm.close()
-// 		return err
-// 	}
-
-// 	return nil
-// }
-
-// // closeSubject deletes all sessions where the session's Subject is equal to
-// // the specified sessionClaims' Subject
-// func (sm *sessionManager) closeSubject(sc tokenClaims) {
-// 	// delete func for close subject
-// 	deleteFunc := func(k string, v tokenClaims) bool {
-// 		// if map value Subject == this func param's (sc's) Subject, return true
-// 		return v.Subject == sc.Subject
-// 	}
-
-// 	// run func against sessions map
-// 	_ = sm.sessions.DeleteFunc(deleteFunc)
-// }
-
 // StartCleanerService starts a goroutine that is an indefinite for loop
 // that checks for expired sessions and removes them. This is to
 // prevent the accumulation of expired sessions that were never
