@@ -5,11 +5,11 @@ import (
 	"certwarden-backend/pkg/domain/acme_servers"
 	"certwarden-backend/pkg/domain/authorizations"
 	"certwarden-backend/pkg/domain/certificates"
-	"certwarden-backend/pkg/httpclient"
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
 	"context"
 	"errors"
+	"net/http"
 	"os/exec"
 	"sync"
 
@@ -33,7 +33,7 @@ type App interface {
 	GetShutdownWaitGroup() *sync.WaitGroup
 
 	IsHttps() bool
-	GetHttpClient() *httpclient.Client
+	GetHttpClient() *http.Client
 	HttpsCertificateName() *string
 	LoadHttpsCertificate() error
 }
@@ -81,7 +81,7 @@ type Service struct {
 
 	serverCertificateName    *string
 	loadHttpsCertificateFunc func() error
-	httpClient               *httpclient.Client
+	httpClient               *http.Client
 	shellPath                string
 
 	postProcessing  *job_manager.Manager[*postProcessJob]

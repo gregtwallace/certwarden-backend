@@ -1,7 +1,6 @@
 package safecert
 
 import (
-	"certwarden-backend/pkg/httpclient"
 	"context"
 	"crypto/x509"
 	"encoding/base64"
@@ -23,7 +22,7 @@ var (
 
 // getOCSPResponse fetches the OCSP response from the OCSP server for the specified
 // leaf certificate
-func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *httpclient.Client) (*ocsp.Response, error) {
+func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *http.Client) (*ocsp.Response, error) {
 	// if no leaf or issuer, ocsp isn't supported
 	if leafCert == nil || issuerCert == nil {
 		return nil, errOCSPStaplingNotAvailable
@@ -34,18 +33,13 @@ func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *httpcli
 		return nil, errOCSPStaplingNotAvailable
 	}
 
-	// make request
-	ocspReq, err := ocsp.CreateRequest(leafCert, issuerCert, nil)
+	// make der encoded request value
+	ocspReqDer, err := ocsp.CreateRequest(leafCert, issuerCert, nil)
 	if err != nil {
 		// fail, no stapling
 		return nil, err
 	}
-	ocspReqBase64 := base64.StdEncoding.EncodeToString(ocspReq)
-
-	// headers for GET
-	headers := http.Header{}
-	headers.Set("Content-Language", "application/ocsp-request")
-	headers.Set("Accept", "application/ocsp-response")
+	ocspReq := base64.StdEncoding.EncodeToString(ocspReqDer)
 
 	// randomly select starting ocsp server from list
 	serverIndex := rand.IntN(len(leafCert.OCSPServer))
@@ -53,10 +47,22 @@ func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *httpcli
 	// fetch response (try each server until valid response, or run out of servers)
 	var ocspResp *ocsp.Response
 	for i := 0; i < len(leafCert.IssuingCertificateURL); i++ {
-		reqURL := leafCert.OCSPServer[(serverIndex+i)%len(leafCert.OCSPServer)] + "/" + ocspReqBase64
+		// make request
+		var req *http.Request
+		reqURL := leafCert.OCSPServer[(serverIndex+i)%len(leafCert.OCSPServer)] + "/" + ocspReq
+		req, err = http.NewRequest(http.MethodGet, reqURL, nil)
+		if err != nil {
+			// this loop iteration failed
+			continue
+		}
 
+		// headers for OSCP GET
+		req.Header.Set("Content-Language", "application/ocsp-request")
+		req.Header.Set("Accept", "application/ocsp-response")
+
+		// do request
 		var resp *http.Response
-		resp, err = httpClient.GetWithHeader(reqURL, headers)
+		resp, err = httpClient.Do(req)
 		if err != nil {
 			// this loop iteration failed
 			continue

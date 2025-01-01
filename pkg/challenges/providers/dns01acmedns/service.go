@@ -2,8 +2,8 @@ package dns01acmedns
 
 import (
 	"certwarden-backend/pkg/acme"
-	"certwarden-backend/pkg/httpclient"
 	"errors"
+	"net/http"
 
 	"go.uber.org/zap"
 )
@@ -15,13 +15,13 @@ var (
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
-	GetHttpClient() *httpclient.Client
+	GetHttpClient() *http.Client
 }
 
 // provider Service struct
 type Service struct {
 	logger           *zap.SugaredLogger
-	httpClient       *httpclient.Client
+	httpClient       *http.Client
 	acmeDnsAddress   string
 	acmeDnsResources []acmeDnsResource
 }

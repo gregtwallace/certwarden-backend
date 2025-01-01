@@ -2,9 +2,9 @@ package acme
 
 import (
 	"certwarden-backend/pkg/acme/nonces"
-	"certwarden-backend/pkg/httpclient"
 	"context"
 	"errors"
+	"net/http"
 	"sync"
 
 	"go.uber.org/zap"
@@ -13,7 +13,7 @@ import (
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
-	GetHttpClient() *httpclient.Client
+	GetHttpClient() *http.Client
 	GetShutdownContext() context.Context
 	GetShutdownWaitGroup() *sync.WaitGroup
 }
@@ -21,7 +21,7 @@ type App interface {
 // Acme service struct
 type Service struct {
 	logger       *zap.SugaredLogger
-	httpClient   *httpclient.Client
+	httpClient   *http.Client
 	dirUri       string
 	dir          *directory
 	nonceManager *nonces.Manager

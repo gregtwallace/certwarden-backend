@@ -13,7 +13,6 @@ import (
 	"certwarden-backend/pkg/domain/download"
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
-	"certwarden-backend/pkg/httpclient"
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/storage/sqlite"
 	"context"
@@ -63,7 +62,7 @@ type Application struct {
 	shutdown          func(restart bool)
 	shutdownWaitgroup *sync.WaitGroup
 	httpsCert         *safecert.SafeCert
-	httpClient        *httpclient.Client
+	httpClient        *http.Client
 	router            http.Handler
 	storage           *sqlite.Storage
 	acmeServers       *acme_servers.Service
@@ -136,7 +135,7 @@ func (app *Application) APIURLPath() string {
 	return apiUrlPath
 }
 
-func (app *Application) GetHttpClient() *httpclient.Client {
+func (app *Application) GetHttpClient() *http.Client {
 	return app.httpClient
 }
 

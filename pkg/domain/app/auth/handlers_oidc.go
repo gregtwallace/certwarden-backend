@@ -148,7 +148,7 @@ func (service *Service) OIDCGetCallback(w http.ResponseWriter, r *http.Request) 
 	var err error
 	qCode := query.Get("code")
 	oidcStateObj.oauth2Token, err = service.oidc.oauth2Config.Exchange(
-		r.Context(),
+		service.oidc.ctxWithHttpClient,
 		qCode,
 		oauth2.VerifierOption(oidcStateObj.codeVerifierHex),
 	)
@@ -170,7 +170,7 @@ func (service *Service) OIDCGetCallback(w http.ResponseWriter, r *http.Request) 
 
 	// Parse and verify ID Token payload.
 	// i.e., the AUTHENTICATION step
-	oidcStateObj.oidcIDToken, err = service.oidc.idTokenVerifier.Verify(r.Context(), rawIDToken)
+	oidcStateObj.oidcIDToken, err = service.oidc.idTokenVerifier.Verify(service.oidc.ctxWithHttpClient, rawIDToken)
 	if err != nil {
 		service.logger.Infof("client %s: oidc id_token failed verification (%s)", r.RemoteAddr, err)
 		// redirect to frontend to try again
@@ -252,8 +252,9 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 	// validation done
 	// make extra func obj
 	extraFuncs := &oidcExtraFuncs{
-		cfg:             service.oidc.oauth2Config,
-		idTokenVerifier: service.oidc.idTokenVerifier,
+		ctxWithHttpClient: service.oidc.ctxWithHttpClient,
+		cfg:               service.oidc.oauth2Config,
+		idTokenVerifier:   service.oidc.idTokenVerifier,
 		token: &expectedToken{
 			// only RefreshToken is needed for extra funcs
 			RefreshToken: oidcStateObj.oauth2Token.RefreshToken,

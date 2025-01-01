@@ -1,10 +1,10 @@
 package providers
 
 import (
-	"certwarden-backend/pkg/httpclient"
 	"certwarden-backend/pkg/output"
 	"context"
 	"errors"
+	"net/http"
 	"sync"
 
 	"go.uber.org/zap"
@@ -16,7 +16,7 @@ type application interface {
 	GetOutputter() *output.Service
 	GetConfigFilenameWithPath() string
 	GetShutdownContext() context.Context
-	GetHttpClient() *httpclient.Client
+	GetHttpClient() *http.Client
 	GetShutdownWaitGroup() *sync.WaitGroup
 }
 

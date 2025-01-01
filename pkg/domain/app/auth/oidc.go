@@ -70,9 +70,10 @@ type expectedToken struct {
 
 // oidcExtraFuncs implements session manager's extraFuncs interface
 type oidcExtraFuncs struct {
-	cfg             *oauth2.Config
-	idTokenVerifier *oidc.IDTokenVerifier
-	token           *expectedToken
+	ctxWithHttpClient context.Context
+	cfg               *oauth2.Config
+	idTokenVerifier   *oidc.IDTokenVerifier
+	token             *expectedToken
 
 	mu sync.Mutex
 }
@@ -97,7 +98,12 @@ func (oef *oidcExtraFuncs) RefreshCheck() error {
 	}
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
-	res, err := http.DefaultClient.Do(req)
+	// do request with ctx http client
+	httpClient, found := oef.ctxWithHttpClient.Value(oauth2.HTTPClient).(*http.Client)
+	if !found {
+		return fmt.Errorf("oidc refresh failed, http client is missing")
+	}
+	res, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -130,7 +136,7 @@ func (oef *oidcExtraFuncs) RefreshCheck() error {
 		return errors.New("oidc refresh failed, new refresh token empty")
 	}
 
-	_, err = oef.idTokenVerifier.Verify(context.Background(), t.IDToken)
+	_, err = oef.idTokenVerifier.Verify(oef.ctxWithHttpClient, t.IDToken)
 	if err != nil {
 		return fmt.Errorf("oidc refresh failed, id token failed verification (%s)", err)
 	}

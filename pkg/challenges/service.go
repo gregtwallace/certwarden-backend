@@ -4,10 +4,10 @@ import (
 	"certwarden-backend/pkg/challenges/dns_checker"
 	"certwarden-backend/pkg/challenges/providers"
 	"certwarden-backend/pkg/datatypes/safemap"
-	"certwarden-backend/pkg/httpclient"
 	"certwarden-backend/pkg/output"
 	"context"
 	"errors"
+	"net/http"
 	"sync"
 
 	"go.uber.org/zap"
@@ -26,7 +26,7 @@ type application interface {
 	GetOutputter() *output.Service
 
 	// for providers
-	GetHttpClient() *httpclient.Client
+	GetHttpClient() *http.Client
 }
 
 // Config holds all of the challenge config

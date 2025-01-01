@@ -44,13 +44,17 @@ func (service *Service) postUpdate(adr *acmeDnsResource, dnsRecordValue string) 
 		return err
 	}
 
-	// set auth headers
-	header := make(http.Header)
-	header.Set("X-Api-User", adr.Username)
-	header.Set("X-Api-Key", adr.Password)
+	// make request
+	req, err := http.NewRequest(http.MethodPost, service.acmeDnsAddress+acmeDnsUpdateEndpoint, bytes.NewBuffer(payloadJson))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Api-User", adr.Username)
+	req.Header.Set("X-Api-Key", adr.Password)
 
 	// post to acme dns
-	resp, err := service.httpClient.PostWithHeader(service.acmeDnsAddress+acmeDnsUpdateEndpoint, "application/json", bytes.NewBuffer(payloadJson), header)
+	resp, err := service.httpClient.Do(req)
 	if err != nil {
 		return err
 	}

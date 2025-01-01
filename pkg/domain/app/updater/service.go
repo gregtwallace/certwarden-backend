@@ -1,10 +1,10 @@
 package updater
 
 import (
-	"certwarden-backend/pkg/httpclient"
 	"certwarden-backend/pkg/output"
 	"context"
 	"errors"
+	"net/http"
 	"sync"
 	"time"
 
@@ -18,7 +18,7 @@ type App interface {
 	GetAppVersion() string
 	GetConfigVersion() int
 	GetLogger() *zap.SugaredLogger
-	GetHttpClient() *httpclient.Client
+	GetHttpClient() *http.Client
 	GetOutputter() *output.Service
 	GetShutdownContext() context.Context
 	GetShutdownWaitGroup() *sync.WaitGroup
@@ -36,7 +36,7 @@ type newVersion struct {
 // Keys service struct
 type Service struct {
 	logger               *zap.SugaredLogger
-	httpClient           *httpclient.Client
+	httpClient           *http.Client
 	output               *output.Service
 	currentVersion       string
 	currentConfigVersion int

@@ -1,13 +1,13 @@
 package acme
 
 import (
-	"certwarden-backend/pkg/httpclient"
 	"certwarden-backend/pkg/randomness"
 	"certwarden-backend/pkg/validation"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"reflect"
 	"sync"
 	"time"
@@ -34,7 +34,7 @@ type directory struct {
 // FetchAcmeDirectory uses the specified httpclient to fetch the specified
 // dirUri and return a directory object. If the directory fails to fetch or what
 // is fetched is invalid, an error is returned.
-func FetchAcmeDirectory(httpClient *httpclient.Client, dirUrl string) (directory, error) {
+func FetchAcmeDirectory(httpClient *http.Client, dirUrl string) (directory, error) {
 
 	// require directory be validly formatted and start with https://
 	if !validation.HttpsUrlValid(dirUrl) {

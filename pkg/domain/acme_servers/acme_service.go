@@ -1,8 +1,8 @@
 package acme_servers
 
 import (
-	"certwarden-backend/pkg/httpclient"
 	"context"
+	"net/http"
 	"sync"
 
 	"go.uber.org/zap"
@@ -15,7 +15,7 @@ func (serv *Service) GetLogger() *zap.SugaredLogger {
 	return serv.logger
 }
 
-func (serv *Service) GetHttpClient() *httpclient.Client {
+func (serv *Service) GetHttpClient() *http.Client {
 	return serv.httpClient
 }
 

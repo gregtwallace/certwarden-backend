@@ -299,8 +299,6 @@ replace certwarden-backend/pkg/domain/private_keys => /pkg/domain/private_keys
 
 replace certwarden-backend/pkg/domain/private_keys/key_crypto => /pkg/domain/private_keys/key_crypto
 
-replace certwarden-backend/pkg/httpclient => /pkg/httpclient
-
 replace certwarden-backend/pkg/output => /pkg/output
 
 replace certwarden-backend/pkg/pagination_sort => /pkg/pagination_sort
