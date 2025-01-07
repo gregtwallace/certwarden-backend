@@ -21,9 +21,6 @@ func backupZipTime(name string) (time.Time, error) {
 	name = strings.ReplaceAll(name, "--", ":")
 	timeString := strings.TrimSuffix(strings.TrimPrefix(name, backupFilePrefix), backupFileSuffix)
 
-	// TODO: remove after dropping old file support
-	timeString = strings.TrimPrefix(timeString, "lego_certhub_backup.")
-
 	fileTime, err := time.Parse(time.RFC3339, timeString)
 	if err != nil {
 		return time.Time{}, err
@@ -36,6 +33,5 @@ func backupZipTime(name string) (time.Time, error) {
 // backup file prefix and ends in the proper file extension; it also only permits
 // certain characters in the filename to avoid things like path traversal
 func isBackupFileName(fileName string) bool {
-	return (strings.HasPrefix(fileName, backupFilePrefix) || strings.HasPrefix(fileName, "lego_certhub_backup.")) &&
-		strings.HasSuffix(fileName, backupFileSuffix)
+	return strings.HasPrefix(fileName, backupFilePrefix) && strings.HasSuffix(fileName, backupFileSuffix)
 }

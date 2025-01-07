@@ -61,29 +61,16 @@ func OpenStorage(app App) (*Storage, error) {
 	connString := dbWithPath + "?" + dbOptions.Encode()
 
 	// check if db file exists
-	dbExists := true
+	newDbFile := false
 	if _, err := os.Stat(dbWithPath); errors.Is(err, os.ErrNotExist) {
-		// if doesn't exist, check for old db file name (from pre-rename)
-		oldDbWithPath := app.GetDataStorageAppDataPath() + "/lego-certhub.db"
-		_, err := os.Stat(oldDbWithPath)
+		// db doesn't exist
+		newDbFile = true
+		store.logger.Warn("database file does not exist, creating a new one")
+		// create db file
+		err := os.WriteFile(dbWithPath, []byte{}, dbFileMode)
 		if err != nil {
-			// neither new or old file name exist
-			dbExists = false
-			store.logger.Warn("database file does not exist, creating a new one")
-			// create db file
-			err := os.WriteFile(dbWithPath, []byte{}, dbFileMode)
-			if err != nil {
-				store.logger.Errorf("failed to create new database file", err)
-				return nil, err
-			}
-		} else {
-			// rename old db to new filename
-			err = os.Rename(oldDbWithPath, dbWithPath)
-			if err != nil {
-				store.logger.Errorf("failed to rename old database file to new filename", err)
-				return nil, err
-			}
-			store.logger.Info("old database file renamed to new database filename")
+			store.logger.Errorf("failed to create new database file", err)
+			return nil, err
 		}
 	}
 
@@ -91,7 +78,7 @@ func OpenStorage(app App) (*Storage, error) {
 	store.db, err = sql.Open("sqlite3", connString)
 	if err != nil {
 		// if db file is new, delete it on error
-		if !dbExists {
+		if newDbFile {
 			_ = store.db.Close()
 			_ = os.Remove(dbWithPath)
 		}
@@ -105,7 +92,7 @@ func OpenStorage(app App) (*Storage, error) {
 	err = store.db.PingContext(ctx)
 	if err != nil {
 		// if db file is new, delete it on error
-		if !dbExists {
+		if newDbFile {
 			_ = store.db.Close()
 			_ = os.Remove(dbWithPath)
 		}
@@ -114,7 +101,7 @@ func OpenStorage(app App) (*Storage, error) {
 	}
 
 	// create tables in the database if the file is new
-	if !dbExists {
+	if newDbFile {
 		store.logger.Info("populating new database file")
 		err = store.populateNewDb()
 		if err != nil {

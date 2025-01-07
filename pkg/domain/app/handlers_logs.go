@@ -95,9 +95,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 		// confirm prefix and suffix then add (aka ensure non-log files that are accidentally in
 		// this folder are not zipped up and returned to client)
 		// also check for old log file names (pre- app rename)
-		if !((strings.HasPrefix(name, logFileBaseName) || strings.HasPrefix(name, "lego-certhub")) &&
-			strings.HasSuffix(name, logFileSuffix)) {
-
+		if !(strings.HasPrefix(name, logFileBaseName) && strings.HasSuffix(name, logFileSuffix)) {
 			continue
 		}
 
