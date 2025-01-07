@@ -6,7 +6,7 @@
 # password: password
 # When you change the password, the new password must be at least 8 characters
 # long. However, this is not enforced in devMode. You should NOT use a password
-# this week.  10+ chars, upper/lower case, & special chars is strongly recommended.
+# this weak.  10+ chars, upper/lower case, & special chars is strongly recommended.
 
 # config_version is used to track changes in the config file schema. it must match
 # Cert Warden's expected schema version. If it does not, Cert Warden will try to migrate from the
