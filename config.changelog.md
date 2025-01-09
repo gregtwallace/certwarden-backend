@@ -81,3 +81,7 @@ take advantage of.
 - 2024.11.29
   https://github.com/gregtwallace/certwarden-backend/commit/9989ae9cfa08d30d0acf31cc18135d55e9a31316
   + add `domain_aliases` under `challenges`. This is not a breaking change.
+
+### [v0.24.0]
+- https://github.com/gregtwallace/certwarden-backend/commit/a5354ae23f4e46d33521066331c78e1a5a3c66e0
+  + add `auth` config section to enable/disable local auth and OIDC

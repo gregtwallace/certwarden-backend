@@ -67,6 +67,22 @@
 'pprof_http_port': 8065
 'pprof_https_port': 8070
 
+# Authentication config dictates how users are permitted to login
+'auth':
+  # local login is enabled by default, but can be disabled
+  'local':
+    'enabled': true
+  # oidc is disabled unless these fields are configured
+  'oidc':
+    # the idp provides their issuer url
+    'issuer_url': 'https://example.us.auth0.com/'
+    # the idp provides your client id and secret
+    'client_id': 'abcdABCD'
+    'client_secret': '123456'
+    # the redirect url should be the BACKEND host, with the path:
+    # `/certwarden/api/v1/app/auth/oidc/callback`
+    'api_redirect_uri': 'https://cw.example.com:4055/certwarden/api/v1/app/auth/oidc/callback'
+
 # Cert Warden update checking functionality to alert you when new versions are available
 'updater':
   'auto_check': true

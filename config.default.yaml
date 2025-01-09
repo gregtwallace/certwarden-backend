@@ -24,6 +24,10 @@
 'pprof_http_port': 4065
 'pprof_https_port': 4070
 
+'auth':
+  'local':
+    'enabled': true
+
 'updater':
   'auto_check': true
   'channel': 'beta'
