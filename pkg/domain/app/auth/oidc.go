@@ -78,7 +78,7 @@ type oidcExtraFuncs struct {
 	mu sync.Mutex
 }
 
-// RefreshCheck for local users just queries the DB to confirm no-error; this is do manually instead
+// RefreshCheck for oidc performs a token refresh with the Idp; this is done manually instead
 // of with the OIDC package because that pkg doesn't appear to have a force refresh option
 func (oef *oidcExtraFuncs) RefreshCheck() error {
 	oef.mu.Lock()
