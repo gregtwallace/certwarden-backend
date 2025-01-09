@@ -250,14 +250,18 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 	}
 
 	// validation done
+	idTokenStr, _ := oidcStateObj.oauth2Token.Extra("id_token").(string)
+	scopeStr, _ := oidcStateObj.oauth2Token.Extra("scope").(string)
 	// make extra func obj
 	extraFuncs := &oidcExtraFuncs{
 		ctxWithHttpClient: service.oidc.ctxWithHttpClient,
 		cfg:               service.oidc.oauth2Config,
 		idTokenVerifier:   service.oidc.idTokenVerifier,
 		token: &expectedToken{
-			// only RefreshToken is needed for extra funcs
+			AccessToken:  oidcStateObj.oauth2Token.AccessToken,
 			RefreshToken: oidcStateObj.oauth2Token.RefreshToken,
+			IDToken:      idTokenStr,
+			Scope:        scopeStr,
 		},
 	}
 
