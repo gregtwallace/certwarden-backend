@@ -74,7 +74,6 @@ type Service struct {
 	oidc struct {
 		ctxWithHttpClient context.Context
 		pendingSessions   *safemap.SafeMap[*oidcPendingSession]
-		provider          *oidc.Provider
 		oauth2Config      *oauth2.Config
 		idTokenVerifier   *oidc.IDTokenVerifier
 	}
@@ -116,47 +115,52 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 	// OIDC (optional)
 	if cfg.OIDC.IssuerURL != "" {
-		// use CW's http Client
-		service.oidc.ctxWithHttpClient = oidc.ClientContext(app.GetShutdownContext(), app.GetHttpClient())
-
-		// manage pending OIDC states
-		service.oidc.pendingSessions = safemap.NewSafeMap[*oidcPendingSession]()
+		// context to use CW's http Client
+		oidcCtxWithHttpClient := oidc.ClientContext(app.GetShutdownContext(), app.GetHttpClient())
 
 		// oidc provider
 		var err error
-		service.oidc.provider, err = oidc.NewProvider(service.oidc.ctxWithHttpClient, cfg.OIDC.IssuerURL)
+		provider, err := oidc.NewProvider(oidcCtxWithHttpClient, cfg.OIDC.IssuerURL)
 		if err != nil {
-			return nil, err
+			// failed to make provider, log error but continue without oidc
+			service.logger.Errorf("auth: failed to create oidc provider (%s), oidc will not be enabled", err)
+		} else {
+			// provider created okay, finish OIDC configuration
+			// store ctx for use in other OIDC/Oauth2 calls
+			service.oidc.ctxWithHttpClient = oidcCtxWithHttpClient
+
+			// manage pending OIDC states
+			service.oidc.pendingSessions = safemap.NewSafeMap[*oidcPendingSession]()
+
+			// verify the rest of the config is populated
+			if cfg.OIDC.ClientID == "" || cfg.OIDC.ClientSecret == "" || cfg.OIDC.APIRedirectURI == "" {
+				return nil, errors.New("auth: when using OIDC, config must speficy client id, client secret, and api redirect uri")
+			}
+
+			// oidc oauth2 config
+			service.oidc.oauth2Config = &oauth2.Config{
+				ClientID:     cfg.OIDC.ClientID,
+				ClientSecret: cfg.OIDC.ClientSecret,
+				RedirectURL:  cfg.OIDC.APIRedirectURI,
+
+				Endpoint: provider.Endpoint(),
+				Scopes:   oidcRequiredScopes,
+			}
+
+			// ensure redirect parses
+			_, err = url.Parse(service.oidc.oauth2Config.RedirectURL)
+			if err != nil {
+				err = fmt.Errorf("auth: oidc cfg url failed to parse (%s), fix the config", err)
+				service.logger.Error(err)
+				return nil, err
+			}
+
+			// oidc id token verifier
+			service.oidc.idTokenVerifier = provider.Verifier(&oidc.Config{ClientID: cfg.OIDC.ClientID})
+
+			// clean stale pending sessions
+			service.startOidcCleanerService(service.oidc.ctxWithHttpClient, app.GetShutdownWaitGroup())
 		}
-
-		// verify the rest of the config is populated
-		if cfg.OIDC.ClientID == "" || cfg.OIDC.ClientSecret == "" || cfg.OIDC.APIRedirectURI == "" {
-			return nil, errors.New("auth: when using OIDC, config must speficy client id, client secret, and api redirect uri")
-		}
-
-		// oidc oauth2 config
-		service.oidc.oauth2Config = &oauth2.Config{
-			ClientID:     cfg.OIDC.ClientID,
-			ClientSecret: cfg.OIDC.ClientSecret,
-			RedirectURL:  cfg.OIDC.APIRedirectURI,
-
-			Endpoint: service.oidc.provider.Endpoint(),
-			Scopes:   oidcRequiredScopes,
-		}
-
-		// ensure redirect parses
-		_, err = url.Parse(service.oidc.oauth2Config.RedirectURL)
-		if err != nil {
-			err = fmt.Errorf("auth: oidc cfg url failed to parse (%s), fix the config", err)
-			service.logger.Error(err)
-			return nil, err
-		}
-
-		// oidc id token verifier
-		service.oidc.idTokenVerifier = service.oidc.provider.Verifier(&oidc.Config{ClientID: cfg.OIDC.ClientID})
-
-		// clean stale pending sessions
-		service.startOidcCleanerService(service.oidc.ctxWithHttpClient, app.GetShutdownWaitGroup())
 	}
 
 	return service, nil
@@ -174,5 +178,5 @@ func (service *Service) methodLocalEnabled() bool {
 }
 
 func (service *Service) methodOIDCEnabled() bool {
-	return service.oidc.provider != nil
+	return service.oidc.pendingSessions != nil
 }
