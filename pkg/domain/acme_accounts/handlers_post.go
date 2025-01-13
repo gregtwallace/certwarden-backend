@@ -1,6 +1,7 @@
 package acme_accounts
 
 import (
+	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/validation"
 	"encoding/json"
@@ -182,8 +183,13 @@ func (service *Service) PostAsGet(w http.ResponseWriter, r *http.Request) *outpu
 
 	resp, header, err := acmeService.PostAsGet(payload.URL, acmeAccountKey)
 	if err != nil {
-		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		// if ACME error, don't actually error this API call, just return the error
+		// information to the client
+		_, isAcmeErr := err.(*acme.Error)
+		if !isAcmeErr {
+			service.logger.Error(err)
+			return output.JsonErrInternal(err)
+		}
 	}
 
 	// write response

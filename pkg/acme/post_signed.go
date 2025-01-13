@@ -200,12 +200,12 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 
 	// if err from loop, return
 	if err != nil {
-		return nil, nil, err
+		return bodyBytes, response.Header, err
 	}
 
 	// verify status code is success (catch all in case acmeError wasn't present)
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return nil, nil, fmt.Errorf("acme error: status code %d", response.StatusCode)
+		return bodyBytes, response.Header, fmt.Errorf("acme error: status code %d", response.StatusCode)
 	}
 
 	return bodyBytes, response.Header, nil
