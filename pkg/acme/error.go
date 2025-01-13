@@ -3,6 +3,7 @@ package acme
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // ACME error
@@ -19,16 +20,22 @@ func (e *Error) Error() string {
 
 // unmarshalErrorResponse attempts to unmarshal into the error response object. If
 // it returns nil, the bodyBytes are not an ACME error.
-func unmarshalErrorResponse(bodyBytes []byte) (errResponse *Error) {
-	errResponse = new(Error)
-	err := json.Unmarshal(bodyBytes, errResponse)
+func unmarshalErrorResponse(bodyBytes []byte) *Error {
+	acmeErr := new(Error)
+	err := json.Unmarshal(bodyBytes, acmeErr)
 	// if error decoding was not succesful, not an error
 	if err != nil {
 		return nil
 	}
 
+	// validate the unmarshalled thing is an error, and not just something else that
+	// unmarshalled without golang error
+	if !strings.HasPrefix(acmeErr.Type, "urn:ietf:params:acme:error") {
+		return nil
+	}
+
 	// if we did get an error response from ACME
-	return errResponse
+	return acmeErr
 }
 
 // MarshalledString returns a JSON object as a string. This is useful to
