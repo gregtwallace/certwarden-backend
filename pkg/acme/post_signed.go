@@ -71,7 +71,8 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	header.Url = url
 
 	// Debugging
-	//service.logger.Debugf("unencoded acme header: %s", header)
+	//unencodedHeaderJson, _ := json.MarshalIndent(header, "", "\t")
+	//service.logger.Debugf("unencoded acme header: %s", unencodedHeaderJson)
 
 	// header (end)
 
