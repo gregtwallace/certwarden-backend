@@ -1,6 +1,7 @@
 package acme_accounts
 
 import (
+	"bytes"
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/validation"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -189,6 +191,17 @@ func (service *Service) PostAsGet(w http.ResponseWriter, r *http.Request) *outpu
 		if !isAcmeErr {
 			service.logger.Error(err)
 			return output.JsonErrInternal(err)
+		}
+	}
+
+	// if response body is json, ensure it is pretty using Indent
+	if strings.EqualFold(header.Get("Content-Type"), "application/json") {
+		var prettyJson bytes.Buffer
+		err = json.Indent(&prettyJson, resp, "", "\t")
+		if err != nil {
+			service.logger.Errorf("accounts: debug pag returned json content type but failed to indent for output (%s)", err)
+		} else {
+			resp = prettyJson.Bytes()
 		}
 	}
 
