@@ -80,9 +80,9 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	if service.logger.Level() == zapcore.DebugLevel {
 		prettyPayload, prettyErr := json.MarshalIndent(payload, "", "\t")
 		if prettyErr != nil {
-			service.logger.Debugf("sending acme signed post to: %s ; unencoded payload: %s", url, payload)
+			service.logger.Debugf("sending acme signed post (using kid: %s) to: %s ; unencoded payload: %s", accountKey.Kid, url, payload)
 		} else {
-			service.logger.Debugf("sending acme signed post to: %s ; unencoded payload: %s", url, string(prettyPayload))
+			service.logger.Debugf("sending acme signed post (using kid: %s) to: %s ; unencoded payload: %s", accountKey.Kid, url, string(prettyPayload))
 		}
 	}
 
