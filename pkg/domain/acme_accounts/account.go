@@ -34,6 +34,7 @@ type AccountSummaryResponse struct {
 	Email       string                       `json:"email"`
 	AcceptedTos bool                         `json:"accepted_tos"`
 	IsStaging   bool                         `json:"is_staging"`
+	Kid         string                       `json:"kid"`
 }
 
 type accountServerSummaryResponse struct {
@@ -66,6 +67,7 @@ func (acct Account) SummaryResponse() AccountSummaryResponse {
 		Status:      acct.Status,
 		Email:       acct.Email,
 		AcceptedTos: acct.AcceptedTos,
+		Kid:         acct.Kid,
 	}
 }
 
@@ -77,7 +79,6 @@ type accountDetailedResponse struct {
 	AccountKey accountKeyDetailedResponse    `json:"private_key"`
 	CreatedAt  int                           `json:"created_at"`
 	UpdatedAt  int                           `json:"updated_at"`
-	Kid        string                        `json:"kid"`
 }
 
 type accountServerDetailedResponse struct {
@@ -119,7 +120,6 @@ func (acct Account) detailedResponse(service *Service) (accountDetailedResponse,
 		},
 		CreatedAt: acct.CreatedAt,
 		UpdatedAt: acct.UpdatedAt,
-		Kid:       acct.Kid,
 	}, nil
 }
 
