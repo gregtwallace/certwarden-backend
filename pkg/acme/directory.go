@@ -29,6 +29,9 @@ type directory struct {
 		CaaIdentities           []string `json:"caaIdentities"`
 		ExternalAccountRequired bool     `json:"externalAccountRequired"`
 	} `json:"meta"`
+
+	// raw stores the directory URLs raw response
+	raw json.RawMessage `json:"-"`
 }
 
 // FetchAcmeDirectory uses the specified httpclient to fetch the specified
@@ -60,6 +63,9 @@ func FetchAcmeDirectory(httpClient *http.Client, dirUrl string) (directory, erro
 	if err != nil {
 		return directory{}, err
 	}
+
+	// add raw response to dir for storage
+	fetchedDir.raw = bodyBytes
 
 	// check for missing URLs in response
 	if fetchedDir.NewNonce == "" ||
@@ -186,4 +192,9 @@ func (service *Service) TosUrl() string {
 // RequiresEAB returns if the acme server requires External Account Binding
 func (service *Service) RequiresEAB() bool {
 	return service.dir.Meta.ExternalAccountRequired
+}
+
+// DirectoryRawResponse returns the ACME Service's raw directory response
+func (service *Service) DirectoryRawResponse() json.RawMessage {
+	return service.dir.raw
 }

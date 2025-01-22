@@ -3,6 +3,7 @@ package acme_servers
 import (
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/pagination_sort"
+	"encoding/json"
 	"fmt"
 )
 
@@ -66,8 +67,9 @@ func (serv Server) summaryResponse(service *Service) (ServerSummaryResponse, err
 // serverDetailedResponse contains full details about an ACME server
 type serverDetailedResponse struct {
 	ServerSummaryResponse
-	CreatedAt int `json:"created_at"`
-	UpdatedAt int `json:"updated_at"`
+	RawDirResp json.RawMessage `json:"raw_directory_response"`
+	CreatedAt  int             `json:"created_at"`
+	UpdatedAt  int             `json:"updated_at"`
 }
 
 func (serv Server) detailedResponse(service *Service) (serverDetailedResponse, error) {
@@ -77,8 +79,14 @@ func (serv Server) detailedResponse(service *Service) (serverDetailedResponse, e
 		return serverDetailedResponse{}, err
 	}
 
+	acmeService, err := service.AcmeService(serv.ID)
+	if err != nil {
+		return serverDetailedResponse{}, err
+	}
+
 	return serverDetailedResponse{
 		ServerSummaryResponse: summaryResp,
+		RawDirResp:            acmeService.DirectoryRawResponse(),
 		CreatedAt:             serv.CreatedAt,
 		UpdatedAt:             serv.UpdatedAt,
 	}, nil
