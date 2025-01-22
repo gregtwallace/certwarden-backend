@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -163,22 +162,15 @@ func redirectToFrontendHandler(w http.ResponseWriter, r *http.Request) *output.J
 
 // setFrontendEnv creates the env.js file in the frontend build. This is used
 // to set variables at server run time
-func setFrontendEnv(frontendShowDebugInfo *bool) error {
+func setFrontendEnv() error {
 	// remove any old environment
 	_ = os.Remove(frontendEnvFile)
-
-	// show debug info if set
-	showDebugInfo := false
-	if frontendShowDebugInfo != nil && *frontendShowDebugInfo {
-		showDebugInfo = true
-	}
 
 	// content of new environment file
 	// api and & app on same server, so use path for api url
 	envFileContent := `
 	window.env = {
-		API_URL: '` + apiUrlPath + `',
-		SHOW_DEBUG_INFO: ` + strconv.FormatBool(showDebugInfo) + `
+		API_URL: '` + apiUrlPath + `'
 	};
 	`
 
