@@ -20,9 +20,9 @@ func (service *Service) provision(domain string, token string, keyAuth acme.KeyA
 	// if multiple callers are in the waiting state, it is random which will execute next
 	for {
 		// add domain to in use
-		alreadyExisted, signal := service.resourcesInUse.Add(domain, make(chan struct{}))
+		alreadyExists, signal := service.resourcesInUse.Add(domain, make(chan struct{}))
 		// if didn't already exist, break loop and provision
-		if !alreadyExisted {
+		if !alreadyExists {
 			service.logger.Debugf("challenges: added resource for %s to work tracker", domain)
 			break
 		}
@@ -70,10 +70,28 @@ func (service *Service) provision(domain string, token string, keyAuth acme.KeyA
 // the in use (work) tracker to indicate the name is once again available for use.
 func (service *Service) deprovision(domain string, token string, keyAuth acme.KeyAuth, provider providers.Service) (err error) {
 	// delete resource name from tracker (after the rest of the deprovisioning steps are done or failed)
+	// sleep prior to actually closing the signal channel. in the event another solve is waiting for the
+	// same resource name, we wait to insert a delay prior to the next solve starting. without this delay
+	// the ACME server may mistakenly still see the previous solve value and error. this didn't seem to
+	// be an issue with Let's Encrypt and Wild Cards, but once CNAME aliases were added the problem was
+	// consistently repeatable thus making this delay necessary
 	defer func() {
-		// delete func closes the signal channel before returning true
+		sleepSecs := 60
 		delFunc := func(key string, signal chan struct{}) bool {
 			if key == domain {
+				service.logger.Debugf("challenges: sleeping %d seconds before releasing resource %s from work tracker", sleepSecs, domain)
+				timeoutTimer := time.NewTimer(time.Duration(sleepSecs) * time.Second)
+				select {
+				// shutdown - skip waiting
+				case <-service.shutdownContext.Done():
+					if !timeoutTimer.Stop() {
+						<-timeoutTimer.C
+					}
+				// wait after deprovision before closing signal channel
+				case <-timeoutTimer.C:
+				}
+
+				// close and return true to indicate do deletion
 				close(signal)
 				return true
 			}
