@@ -13,7 +13,7 @@ import (
 func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	service.logger.Infof("client %s: attempting session refresh", r.RemoteAddr)
 
-	username, auth, err := service.sessionManager.RefreshSession(r, w)
+	auth, err := service.sessionManager.RefreshSession(r, w)
 	if err != nil {
 		service.logger.Infof("client %s: session refresh failed (%s)", r.RemoteAddr, err)
 		return output.JsonErrUnauthorized
@@ -22,7 +22,7 @@ func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Reques
 	// return response to client
 	response := &session_manager.AuthResponse{}
 	response.StatusCode = http.StatusOK
-	response.Message = fmt.Sprintf("user '%s' session refreshed", username)
+	response.Message = fmt.Sprintf("user '%s' session refreshed", auth.UserTypeAndName())
 	response.Authorization = auth
 
 	// write response
@@ -35,7 +35,7 @@ func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Reques
 	}
 
 	// log success
-	service.logger.Infof("client %s: session refresh for user '%s' succeeded", r.RemoteAddr, username)
+	service.logger.Infof("client %s: session refresh for user '%s' succeeded", r.RemoteAddr, auth.UserTypeAndName())
 
 	return nil
 }
@@ -49,19 +49,19 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) *output.J
 	service.sessionManager.DeleteSessionCookie(w)
 
 	// delete session matching the access token
-	username, err := service.sessionManager.DeleteSession(r)
+	deletedAuth, err := service.sessionManager.DeleteSession(r)
 	if err != nil {
 		service.logger.Errorf("client %s: logout failed (%s)", r.RemoteAddr, err)
 		return output.JsonErrUnauthorized
 	}
 
 	// log success
-	service.logger.Infof("client %s: logout for user '%s' succeeded", r.RemoteAddr, username)
+	service.logger.Infof("client %s: logout for user '%s' succeeded", r.RemoteAddr, deletedAuth.UserTypeAndName())
 
 	// return response (logged out)
 	response := &output.JsonResponse{}
 	response.StatusCode = http.StatusOK
-	response.Message = fmt.Sprintf("user '%s' logged out", username)
+	response.Message = fmt.Sprintf("user '%s' logged out", deletedAuth.UserTypeAndName())
 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {

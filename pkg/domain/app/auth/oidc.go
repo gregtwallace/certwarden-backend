@@ -16,7 +16,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const oidcUsernamePrefix = "oidc|"
 const oidcCertWardenScope = "certwarden:superadmin"
 const oidcPendingSessionMinExp = 5 * time.Minute
 

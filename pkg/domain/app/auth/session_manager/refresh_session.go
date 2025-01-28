@@ -10,7 +10,7 @@ import (
 // RefreshSession validates that r contains a valid cookie. If it does, the session in session manager
 // is updated with a new authorization and the username and new authorization are returned. If it does
 // not, any existing cookie is deleted using w and an error is returned.
-func (sm *SessionManager) RefreshSession(r *http.Request, w http.ResponseWriter) (_username string, _ *authorization, _ error) {
+func (sm *SessionManager) RefreshSession(r *http.Request, w http.ResponseWriter) (*authorization, error) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 
@@ -46,7 +46,7 @@ func (sm *SessionManager) RefreshSession(r *http.Request, w http.ResponseWriter)
 	// if err, delete session cookie and return err
 	if err != nil {
 		sm.DeleteSessionCookie(w)
-		return "", nil, err
+		return nil, err
 	}
 
 	// run any extra check
@@ -54,15 +54,15 @@ func (sm *SessionManager) RefreshSession(r *http.Request, w http.ResponseWriter)
 		err = session.extraFuncs.RefreshCheck()
 		if err != nil {
 			sm.DeleteSessionCookie(w)
-			return "", nil, err
+			return nil, err
 		}
 	}
 
 	// session was found, update it and return username and new auth
-	session.authorization, err = sm.newAuthorization()
+	session.authorization, err = sm.newAuthorization(session.authorization.Username, userType(session.authorization.UserType))
 	if err != nil {
-		return "", nil, fmt.Errorf("couldn't make new auth: %s", err)
+		return nil, fmt.Errorf("couldn't make new auth: %s", err)
 	}
 
-	return session.username, session.authorization, nil
+	return session.authorization, nil
 }

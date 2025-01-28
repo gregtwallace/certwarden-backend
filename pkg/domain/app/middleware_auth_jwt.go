@@ -15,7 +15,7 @@ func middlewareApplyAuthJWT(next handlerFunc, auth *auth.Service) handlerFunc {
 		// shorten URI for logging
 		trimmedURI := loggableRequestURI(r)
 
-		_, err := auth.ValidateAuthHeader(r, w, fmt.Sprintf("%s %s", r.Method, trimmedURI))
+		err := auth.ValidateAuthHeader(r, w, fmt.Sprintf("%s %s", r.Method, trimmedURI))
 		if err != nil {
 			// Note: Do NOT send detailed error since unauthorized
 			return output.JsonErrUnauthorized

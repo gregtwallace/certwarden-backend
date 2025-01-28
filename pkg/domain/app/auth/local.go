@@ -1,7 +1,5 @@
 package auth
 
-const localUsernamePrefix = "local|"
-
 // localExtraFuncs implements session manager's extraFuncs interface
 type localExtraFuncs struct {
 	dbUsername     string

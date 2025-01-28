@@ -11,7 +11,7 @@ const authHeader = "Authorization"
 // ValidateAuthHeader validates that the header contains a valid access token. If invalid,
 // an error is returned. It also writes to w to indicate the response was impacted by the
 // relevant header.
-func (sm *SessionManager) ValidateAuthHeader(r *http.Request, w http.ResponseWriter, logTaskName string) (username string, _ error) {
+func (sm *SessionManager) ValidateAuthHeader(r *http.Request, w http.ResponseWriter, logTaskName string) (*authorization, error) {
 	// indicate Authorization header influenced the response
 	w.Header().Add("Vary", authHeader)
 
@@ -27,7 +27,7 @@ func (sm *SessionManager) ValidateAuthHeader(r *http.Request, w http.ResponseWri
 	if clientAccessToken == "" {
 		err := fmt.Errorf("client %s: %s failed (access token is missing)", r.RemoteAddr, logTaskName)
 		sm.logger.Debug(err)
-		return "", err
+		return nil, err
 	}
 
 	// validate token
@@ -44,15 +44,15 @@ func (sm *SessionManager) ValidateAuthHeader(r *http.Request, w http.ResponseWri
 	if session == nil {
 		err := fmt.Errorf("client %s: %s failed (invalid access token)", r.RemoteAddr, logTaskName)
 		sm.logger.Debug(err)
-		return "", err
+		return nil, err
 	}
 
 	// found, check if expired
 	if time.Now().After(time.Time(session.authorization.AccessTokenExpiration)) {
 		err := fmt.Errorf("client %s: %s failed (access token expired)", r.RemoteAddr, logTaskName)
 		sm.logger.Debug(err)
-		return "", err
+		return nil, err
 	}
 
-	return session.username, nil
+	return session.authorization, nil
 }

@@ -30,6 +30,14 @@ func (t jsonTime) MarshalJSON() ([]byte, error) {
 	return []byte(strconv.Itoa(int(time.Time(t).Unix()))), nil
 }
 
+// usertype is a string for types of users
+type userType string
+
+const (
+	UserTypeLocal = "local"
+	UserTypeOIDC  = "oidc"
+)
+
 // AuthResponse contains the JSON response for successful login or refresh
 type AuthResponse struct {
 	output.JsonResponse
@@ -39,14 +47,22 @@ type AuthResponse struct {
 // authorization contains data to send to a client after the client has been
 // authenticated & authorized
 type authorization struct {
+	Username              string       `json:"username"`
+	UserType              userType     `json:"user_type"`
 	AccessToken           string       `json:"access_token"`
 	AccessTokenExpiration jsonTime     `json:"access_token_exp"`
 	SessionExpiration     jsonTime     `json:"session_exp"`
 	sessionCookie         *http.Cookie `json:"-"`
 }
 
+// UserTypeAndName returns the auth's user type and name combines into
+// a string, separated by a | .
+func (auth *authorization) UserTypeAndName() string {
+	return string(auth.UserType) + "|" + auth.Username
+}
+
 // newAuthorization creates a new authorization
-func (sm *SessionManager) newAuthorization() (*authorization, error) {
+func (sm *SessionManager) newAuthorization(username string, usertype userType) (*authorization, error) {
 	// access token
 	accessTokenBytes, err := randomness.Generate32ByteSecret()
 	if err != nil {
@@ -64,6 +80,8 @@ func (sm *SessionManager) newAuthorization() (*authorization, error) {
 	// assemble auth
 	now := time.Now()
 	return &authorization{
+		Username:              username,
+		UserType:              usertype,
 		AccessToken:           accessToken,
 		AccessTokenExpiration: jsonTime(now.Add(accessTokenExp)),
 		SessionExpiration:     jsonTime(now.Add(sessionExp)),

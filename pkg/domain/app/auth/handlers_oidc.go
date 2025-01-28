@@ -266,8 +266,7 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 	}
 
 	// make new session
-	username := oidcUsernamePrefix + oidcStateObj.oidcIDToken.Subject
-	auth, err := service.sessionManager.NewSession(username, extraFuncs)
+	auth, err := service.sessionManager.NewSession(oidcStateObj.oidcIDToken.Subject, session_manager.UserTypeOIDC, extraFuncs)
 	if err != nil {
 		service.logger.Errorf("client %s: login failed (internal error: %s)", r.RemoteAddr, err)
 		return output.JsonErrInternal(nil)
@@ -276,7 +275,7 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 	// return response to client
 	response := &session_manager.AuthResponse{}
 	response.StatusCode = http.StatusOK
-	response.Message = fmt.Sprintf("user '%s' logged in", username)
+	response.Message = fmt.Sprintf("user '%s' logged in", auth.UserTypeAndName())
 	response.Authorization = auth
 
 	// write response
@@ -289,7 +288,7 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 	}
 
 	// log success
-	service.logger.Infof("client %s: user '%s' logged in", r.RemoteAddr, username)
+	service.logger.Infof("client %s: user '%s' logged in", r.RemoteAddr, auth.UserTypeAndName())
 
 	return nil
 }

@@ -167,8 +167,9 @@ func NewService(app App, cfg *Config) (*Service, error) {
 }
 
 // make ValidateAuthHeader available to App
-func (service *Service) ValidateAuthHeader(r *http.Request, w http.ResponseWriter, logTaskName string) (username string, _ error) {
-	return service.sessionManager.ValidateAuthHeader(r, w, logTaskName)
+func (service *Service) ValidateAuthHeader(r *http.Request, w http.ResponseWriter, logTaskName string) error {
+	_, err := service.sessionManager.ValidateAuthHeader(r, w, logTaskName)
+	return err
 }
 
 // auth method enabled checks
