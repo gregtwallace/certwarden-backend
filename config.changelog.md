@@ -85,3 +85,8 @@ take advantage of.
 ### [v0.24.0]
 - https://github.com/gregtwallace/certwarden-backend/commit/a5354ae23f4e46d33521066331c78e1a5a3c66e0
   + add `auth` config section to enable/disable local auth and OIDC
+
+### [v0.24.3]
+- https://github.com/gregtwallace/certwarden-backend/commit/fb9392ca1b61e3ded34836fc37a5263ac7f67e35
+  + Remove `frontend_show_debug_info` in favor of a browser storage based
+    value that can be toggled in the frontend.
