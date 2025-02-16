@@ -12,6 +12,10 @@ import (
 	"time"
 )
 
+// logEntriesForView is the number of log entries that should be returned in the
+// log view API response
+const logEntriesForView = 1000
+
 // logEntry represents the structure of the zap log
 type logEntry struct {
 	Level      string `json:"level"`
@@ -26,13 +30,12 @@ type currentLogResponse struct {
 	LogEntries []logEntry `json:"log_entries"`
 }
 
-// viewLogHandler is a handler that returns the content of the current log file to the client
-func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
+// readAndParseLogFile reads the specified log file and converts it into an array of log entries
+func readAndParseLogFile(filePathAndName string) ([]logEntry, error) {
 	// open log, read only
-	logFile, err := os.OpenFile(dataStorageLogPath+"/"+logFileName, os.O_RDONLY, 0600)
+	logFile, err := os.OpenFile(filePathAndName, os.O_RDONLY, 0600)
 	if err != nil {
-		app.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return nil, err
 	}
 	defer logFile.Close()
 
@@ -47,17 +50,78 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 	_, _ = logBuffer.WriteString("]")
 
 	// Unmarshal the log entries in response
-	response := &currentLogResponse{}
-	err = json.Unmarshal(logBuffer.Bytes(), &response.LogEntries)
+
+	entries := []logEntry{}
+	err = json.Unmarshal(logBuffer.Bytes(), &entries)
+	if err != nil {
+		return nil, err
+	}
+
+	return entries, nil
+}
+
+// viewLogHandler is a handler that returns the content of the current log file to the client
+func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
+	// open log, read only
+	logEntries, err := readAndParseLogFile(dataStorageLogPath + "/" + logFileName)
 	if err != nil {
 		app.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
 
+	// if size is too small, read more from next file
+	if len(logEntries) < logEntriesForView {
+		logFileNames, err := listLogFiles()
+		if err != nil {
+			// log error but don't fail the call since the first log file parsed fine
+			app.logger.Errorf("app: log view: failed to list log files (%s)", err)
+		} else {
+			oldestTimestampLogFilename := ""
+			newestTime := time.Time{}
+
+			for _, logFilename := range logFileNames {
+				// skip the in-use log file
+				if logFilename == logFileName {
+					continue
+				}
+
+				// parse the time from each filename and keep the newest one (which would be the 2nd newest file since
+				// active file doesn't have a date string)
+				timeString := strings.TrimSuffix(strings.TrimPrefix(logFilename, logFileBaseName+"-"), logFileSuffix)
+
+				t, err := time.Parse("2006-01-02T15-04-05.000", timeString)
+				if err != nil {
+					app.logger.Errorf("app: log view: failed to parse time of log file %s (%s)", logFilename, err)
+				} else {
+					if t.After(newestTime) {
+						newestTime = t
+						oldestTimestampLogFilename = logFilename
+					}
+				}
+			}
+
+			if oldestTimestampLogFilename != "" {
+				olderLogEntries, err := readAndParseLogFile(dataStorageLogPath + "/" + oldestTimestampLogFilename)
+				if err != nil {
+					// log error but don't fail the call since the first log file parsed fine
+					app.logger.Errorf("app: log view: failed to read next oldest log file %s (%s)", oldestTimestampLogFilename, err)
+				} else {
+					logEntries = append(olderLogEntries, logEntries...)
+				}
+			}
+		}
+	}
+
+	// if size is too big, truncate
+	if len(logEntries) > logEntriesForView {
+		logEntries = logEntries[len(logEntries)-logEntriesForView:]
+	}
+
 	// write response
+	response := &currentLogResponse{}
 	response.StatusCode = http.StatusOK
 	response.Message = "ok"
-	// response.LogEntries = [populated above]
+	response.LogEntries = logEntries
 
 	// return response to client
 	err = app.output.WriteJSON(w, response)
@@ -76,31 +140,17 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	zipBuffer := bytes.NewBuffer(nil)
 	zipWriter := zip.NewWriter(zipBuffer)
 
-	// get all files in the log directory
-	files, err := os.ReadDir(dataStorageLogPath)
+	// get all log files
+	logFiles, err := listLogFiles()
 	if err != nil {
 		app.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
 
-	// range all files in log directory
-	for i := range files {
-		// ignore directories
-		if files[i].IsDir() {
-			continue
-		}
-
-		name := files[i].Name()
-
-		// confirm prefix and suffix then add (aka ensure non-log files that are accidentally in
-		// this folder are not zipped up and returned to client)
-		// also check for old log file names (pre- app rename)
-		if !(strings.HasPrefix(name, logFileBaseName) && strings.HasSuffix(name, logFileSuffix)) {
-			continue
-		}
-
+	// range through all log files
+	for _, logFilename := range logFiles {
 		// open log file
-		logFile, err := os.Open(dataStorageLogPath + "/" + name)
+		logFile, err := os.Open(dataStorageLogPath + "/" + logFilename)
 		if err != nil {
 			app.logger.Error(err)
 			return output.JsonErrInternal(err)
@@ -108,7 +158,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 		defer logFile.Close()
 
 		// create file in zip
-		zipFile, err := zipWriter.Create(name)
+		zipFile, err := zipWriter.Create(logFilename)
 		if err != nil {
 			app.logger.Error(err)
 			return output.JsonErrInternal(err)

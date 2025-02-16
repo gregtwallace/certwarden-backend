@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
@@ -156,4 +157,36 @@ func openLogFile() (*os.File, error) {
 	}
 
 	return f, nil
+}
+
+// listLogFiles returns a slice of filenames corresponding to each existing log file
+func listLogFiles() ([]string, error) {
+	// get all files in the log directory
+	files, err := os.ReadDir(dataStorageLogPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// only return log files
+	logFileNames := []string{}
+
+	// range all files in log directory
+	for i := range files {
+		// ignore directories
+		if files[i].IsDir() {
+			continue
+		}
+
+		filename := files[i].Name()
+
+		// confirm prefix and suffix then add to the list (also include active log file)
+		if !(strings.HasPrefix(filename, logFileBaseName+"-") && strings.HasSuffix(filename, logFileSuffix)) ||
+			filename == logFileName {
+			continue
+		}
+
+		logFileNames = append(logFileNames, filename)
+	}
+
+	return logFileNames, nil
 }
