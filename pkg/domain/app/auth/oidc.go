@@ -27,9 +27,9 @@ func setOIDCScopes(issuerURL string, appURI string) {
 	oidcCertWardenScope = "certwarden:superadmin"
 
 	// For Microsoft Entra ID, the scope format requires the full application URI prefix
-    if strings.Contains(issuerURL, "login.microsoftonline.com") && appURI != "" {
-        oidcCertWardenScope = fmt.Sprintf("%s/certwarden:superadmin", appURI)
-    }
+	if strings.Contains(issuerURL, "login.microsoftonline.com") && appURI != "" {
+		oidcCertWardenScope = fmt.Sprintf("%s/certwarden:superadmin", appURI)
+	}
 
 	// Set the required scopes array
 	oidcRequiredScopes = []string{oidc.ScopeOpenID, oidc.ScopeOfflineAccess, "profile", oidcCertWardenScope}
