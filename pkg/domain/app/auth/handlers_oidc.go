@@ -25,6 +25,12 @@ func (service *Service) OIDCGetLogin(w http.ResponseWriter, r *http.Request) *ou
 		return output.JsonErrNotFound(errors.New("auth: OIDC is not configured"))
 	}
 
+	// Check if OIDC provider is Microsoft Entra ID and app_uri is not set
+	if strings.Contains(service.oidc.oauth2Config.Endpoint.AuthURL, "login.microsoftonline.com") && 
+		oidcCertWardenScope == "certwarden:superadmin" {
+		service.logger.Warn("'app_uri' is not set in configuration. This is required for Microsoft Entra ID OIDC authentication to work properly.")
+	}
+
 	// Option 1: Finish login with state/code
 	stateVal := r.URL.Query().Get("state")
 	if stateVal != "" {
