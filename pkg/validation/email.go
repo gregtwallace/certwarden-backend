@@ -7,11 +7,11 @@ import (
 
 // EmailUsernameRegex is the regex to confirm an email username is in the proper
 // form.
-const emailUsernameRegex = `^[A-Za-z0-9][A-Za-z0-9-_.]{0,62}[A-Za-z0-9]$`
+const emailUsernameRegex = `^[A-Za-z0-9][A-Za-z0-9-_.+]{0,62}[A-Za-z0-9]$`
 
 // invalidConsecutiveSpecialRegex matches if the username contains two special
 // chars in a row, which means it is not valid
-const invalidConsecutiveSpecialRegex = `[-_.]{2,}`
+const invalidConsecutiveSpecialRegex = `[-_.+]{2,}`
 
 // EmailValid returns true if the string contains a validly formatted email address
 func EmailValid(email string) bool {

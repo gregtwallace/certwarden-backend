@@ -7,6 +7,7 @@ var validUsernames = []string{
 	"BoB",
 	"B-o.B",
 	"B_o_B_SmitH",
+	"address+topic",
 }
 
 var invalidUsernames = []string{
@@ -18,7 +19,11 @@ var invalidUsernames = []string{
 	"bob__smith",
 	"bob_$Smith",
 	"bob smith",
+	"bob__Smith",
+	"bob_-Smith",
 	"asyouallcanseethisemailaddressexceedsthemaximumnumberofcharacterX",
+	"address++topic",
+	"addresstopic+",
 }
 
 // makeValidEmails makes the array of emails to test that should yield
