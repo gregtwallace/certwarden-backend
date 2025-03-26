@@ -59,6 +59,16 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		return fmt.Errorf("challenges: failed to make key auth (%s)", err)
 	}
 
+	// if using an alias, ensure the proper CNAME record exists
+	if domain != identifier.Value {
+		exists := service.dnsChecker.CheckCNAME(identifier.Value, domain)
+		if !exists {
+			return fmt.Errorf("challenges: cname record %s doesn't exist or doesn't point to %s", identifier.Value, domain)
+		}
+
+		service.logger.Debugf(("challenges: cname record %s found and points to %s"), identifier.Value, domain)
+	}
+
 	// provision the needed resource for validation and defer deprovisioning
 	// add to wg to ensure deprovision completes during shutdown
 	service.shutdownWaitgroup.Add(1)
@@ -87,22 +97,14 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 
 	// if using dns-01 provider, utilize dnsChecker
 	if challengeType == acme.ChallengeTypeDns01 {
-		if service.dnsChecker != nil {
-			// get dns record to check
-			dnsRecordName, dnsRecordValue := acme.ValidationResourceDns01(domain, keyAuth)
+		// get dns record to check
+		dnsRecordName, dnsRecordValue := acme.ValidationResourceDns01(domain, keyAuth)
 
-			// check for propagation
-			propagated := service.dnsChecker.CheckTXTWithRetry(dnsRecordName, dnsRecordValue)
-			// if failed to propagate
-			if !propagated {
-				return errDnsDidntPropagate
-			}
-		} else {
-			// dnschecker is needed but not configured, shouldn't happen but deal with it just in case
-			sleepWait := 240
-			service.logger.Error("challenges: dns checker is needed by solver but for some reason its not running, manually "+
-				"sleeping %s seconds, report this issue to developer", sleepWait)
-			time.Sleep(time.Duration(sleepWait) * time.Second)
+		// check for propagation
+		propagated := service.dnsChecker.CheckTXTWithRetry(dnsRecordName, dnsRecordValue)
+		// if failed to propagate
+		if !propagated {
+			return errDnsDidntPropagate
 		}
 	}
 

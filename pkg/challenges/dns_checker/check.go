@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 	"time"
 )
@@ -39,6 +40,16 @@ func checkDnsRecord(fqdn string, recordValue string, recordType dnsRecordType, r
 	// TXT records
 	case txtRecord:
 		values, err = r.LookupTXT(ctx, fqdn)
+
+	// CNAME records
+	case cnameRecord:
+		val, e := r.LookupCNAME(ctx, fqdn)
+		values, err = []string{val}, e
+
+		// for comparison to domain, value should not end in `.`
+		for i := range values {
+			values[i] = strings.TrimSuffix(values[i], ".")
+		}
 
 	// any other (unsupported)
 	default:

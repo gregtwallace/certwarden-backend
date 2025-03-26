@@ -15,6 +15,7 @@ const (
 	UnknownRecordType dnsRecordType = iota
 
 	txtRecord
+	cnameRecord
 )
 
 // CheckTXTWithRetry checks for the specified record. If the check fails, use exponential
@@ -45,4 +46,32 @@ func (service *Service) CheckTXTWithRetry(fqdn string, recordValue string) (prop
 	err := backoff.RetryNotify(checkAllServicesFunc, boWithContext, notifyFunc)
 
 	return err == nil
+}
+
+// CheckCNAME checks if the specified fqdn has a cname record pointing at the specified
+// value; it works through the consifigured dns servers sequentially; it either returns
+// the value immediately or if a dns server isn't working, it continued trying servers
+// until one works or they all fail; if a server is working but returns the incorrect
+// value, false is returned without trying more dns servers
+func (service *Service) CheckCNAME(fqdn string, value string) (propagated bool) {
+	// if no resolvers (i.e. configured to skip)
+	if service.dnsResolvers == nil {
+		service.logger.Debugf("dns_checker: dns servers not configured, skipping check of CNAME %s", fqdn)
+		return true
+	}
+
+	// go through dns services sequentially until one works
+	for i := range service.dnsResolvers {
+		exists, e := service.dnsResolvers[i].checkDnsRecord(fqdn, value, cnameRecord)
+		if e != nil {
+			// should not be getting errors, so write each to log if we get any and go to next server
+			service.logger.Errorf("dns_checker: check CNAME %s failed (%s)", fqdn, e)
+			continue
+		}
+
+		// no error, done (accept either result without trying more)
+		return exists
+	}
+
+	return false
 }
