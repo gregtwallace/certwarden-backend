@@ -14,7 +14,7 @@ import (
 
 // logEntriesForView is the number of log entries that should be returned in the
 // log view API response
-const logEntriesForView = 1000
+const logEntriesForView = 500
 
 // logEntry represents the structure of the zap log
 type logEntry struct {
