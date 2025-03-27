@@ -61,12 +61,25 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 
 	// if using an alias, ensure the proper CNAME record exists
 	if domain != identifier.Value {
-		exists := service.dnsChecker.CheckCNAME(identifier.Value, domain)
-		if !exists {
-			return fmt.Errorf("challenges: cname record %s doesn't exist or doesn't point to %s", identifier.Value, domain)
+		// exact cname domain depends on challenge type
+		cnamePointsFrom := ""
+		cnamePointsTo := ""
+		if challengeType == acme.ChallengeTypeDns01 {
+			cnamePointsFrom = "_acme-challenge." + identifier.Value
+			cnamePointsTo = "_acme-challenge." + domain
+		} else if challengeType == acme.ChallengeTypeHttp01 {
+			cnamePointsFrom = identifier.Value
+			cnamePointsTo = domain
+		} else {
+			return fmt.Errorf("challenges: challenge type %s doesnt support using a domain alias (domain: %s)", challengeType, domain)
 		}
 
-		service.logger.Debugf(("challenges: cname record %s found and points to %s"), identifier.Value, domain)
+		exists := service.dnsChecker.CheckCNAME(cnamePointsFrom, cnamePointsTo)
+		if !exists {
+			return fmt.Errorf("challenges: cname record %s doesn't exist or doesn't point to %s", cnamePointsFrom, cnamePointsTo)
+		}
+
+		service.logger.Debugf(("challenges: cname record %s found and points to %s"), cnamePointsFrom, cnamePointsTo)
 	}
 
 	// provision the needed resource for validation and defer deprovisioning
