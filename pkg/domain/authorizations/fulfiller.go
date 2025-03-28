@@ -25,6 +25,12 @@ func (service *Service) FulfillAuths(authUrls []string, key acme.AccountKey, acm
 		go func(authUrl string) {
 			defer wg.Done()
 			err := service.fulfillAuth(authUrl, key, acmeService)
+
+			// log individual errors before sending err to channel
+			if err != nil {
+				service.logger.Errorf("auths: failed to fulfill auth %s (%s)", authUrl, err)
+			}
+
 			wgErrors <- err
 		}(authUrls[i])
 	}
