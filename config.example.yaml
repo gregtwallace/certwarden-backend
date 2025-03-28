@@ -126,7 +126,7 @@
     # specifying skip check wait disables dns record validation and instead
     # sleeps for the specified number of seconds and then assumes the record
     # is fully propagated
-    'skip_check_wait_seconds': 90
+    'skip_check_wait_seconds': 180
     # services to use if checker is not disabled
     # Note: these are defined here, but because the check wait seconds are defined
     # if this were an actual deployment, this part of dns_checker config would be
