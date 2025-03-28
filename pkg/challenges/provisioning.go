@@ -68,29 +68,37 @@ func (service *Service) provision(domain string, token string, keyAuth acme.KeyA
 
 // Deprovision calls the provider to deprovision the actual resource. It then removes the resource name from
 // the in use (work) tracker to indicate the name is once again available for use.
-func (service *Service) deprovision(domain string, token string, keyAuth acme.KeyAuth, provider providers.Service) (err error) {
+func (service *Service) deprovision(domain string, token string, keyAuth acme.KeyAuth, provider providers.Service, additionalResourceHold *time.Duration) (err error) {
 	// delete resource name from tracker (after the rest of the deprovisioning steps are done or failed)
 	// sleep prior to actually closing the signal channel. in the event another solve is waiting for the
 	// same resource name, we wait to insert a delay prior to the next solve starting. without this delay
 	// the ACME server may mistakenly still see the previous solve value and error. this didn't seem to
 	// be an issue with Let's Encrypt and Wild Cards, but once CNAME aliases were added the problem was
 	// consistently repeatable thus making this delay necessary
+
+	// use a base of 60 seconds for release delay
+	delayDuration := 60 * time.Second
+	if additionalResourceHold != nil {
+		delayDuration += *additionalResourceHold
+	}
+
 	defer func() {
-		sleepSecs := 60
+		// wait the min time + any that was requested
+		service.logger.Debugf("challenges: sleeping %d seconds before releasing resource %s from work tracker", int(delayDuration.Seconds()), domain)
+		timeoutTimer := time.NewTimer(delayDuration)
+		select {
+		// shutdown - skip waiting
+		case <-service.shutdownContext.Done():
+			if !timeoutTimer.Stop() {
+				<-timeoutTimer.C
+			}
+		// wait
+		case <-timeoutTimer.C:
+		}
+
+		// map delete func (wait should NOT be in here as it will lock the map's mutex unnecessarily)
 		delFunc := func(key string, signal chan struct{}) bool {
 			if key == domain {
-				service.logger.Debugf("challenges: sleeping %d seconds before releasing resource %s from work tracker", sleepSecs, domain)
-				timeoutTimer := time.NewTimer(time.Duration(sleepSecs) * time.Second)
-				select {
-				// shutdown - skip waiting
-				case <-service.shutdownContext.Done():
-					if !timeoutTimer.Stop() {
-						<-timeoutTimer.C
-					}
-				// wait after deprovision before closing signal channel
-				case <-timeoutTimer.C:
-				}
-
 				// close and return true to indicate do deletion
 				close(signal)
 				return true
