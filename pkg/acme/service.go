@@ -48,7 +48,7 @@ func NewService(app App, dirUri string) (*Service, error) {
 	service.backgroundDirManager(app.GetShutdownContext(), app.GetShutdownWaitGroup())
 
 	// nonce manager
-	service.nonceManager = nonces.NewManager(service.httpClient, &service.dir.NewNonce)
+	service.nonceManager = nonces.NewManager(service.httpClient, app.GetShutdownContext(), &service.dir.NewNonce)
 
 	return service, nil
 }
