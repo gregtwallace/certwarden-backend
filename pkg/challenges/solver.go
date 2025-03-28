@@ -85,11 +85,8 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	// provision the needed resource for validation and defer deprovisioning
 	// add to wg to ensure deprovision completes during shutdown
 	service.shutdownWaitgroup.Add(1)
-
-	// track the time to do this and add it to the resource release delay (more time is added later)
-	provisionStartTime := time.Now()
+	// Provision with the appropriate provider
 	err = service.provision(domain, token, keyAuth, provider)
-	provisionDuration := time.Since(provisionStartTime)
 
 	// do error check after Deprovision to ensure any records that were created
 	// get cleaned up, even if Provision errored.
@@ -100,7 +97,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 			// wg done do shutdown can proceed after deprovision
 			defer service.shutdownWaitgroup.Done()
 
-			err := service.deprovision(domain, token, keyAuth, provider, &provisionDuration)
+			err = service.deprovision(domain, token, keyAuth, provider)
 			if err != nil {
 				service.logger.Errorf("challenges: deprovision failed (%s)", err)
 			}
@@ -123,9 +120,6 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		if !propagated {
 			return errDnsDidntPropagate
 		}
-
-		// did propagate (add time to deprovision delay)
-		provisionDuration = time.Since(provisionStartTime)
 	}
 
 	// Below this point is to inform ACME the challenge is ready to be validated

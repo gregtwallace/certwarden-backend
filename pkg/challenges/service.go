@@ -47,8 +47,8 @@ type Service struct {
 	configFile             string
 	dnsChecker             *dns_checker.Service
 	DNSIdentifierProviders *providers.Manager
-	resourcesInUse         *safemap.SafeMap[chan struct{}] // tracks all resource names currently in use (regardless of provider)
-	dnsIDtoDomain          *safemap.SafeMap[string]        // DNSIdentifierValue[Domain]
+	dnsIDtoDomain          *safemap.SafeMap[string] // DNSIdentifierValue[Domain]
+	apiMu                  chan struct{}            // used to rate limit provision/deprovision calls
 }
 
 // NewService creates a new service
@@ -91,8 +91,12 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 		return nil, err
 	}
 
-	// make tracking map
-	service.resourcesInUse = safemap.NewSafeMap[chan struct{}]()
+	// api management channel
+	service.apiMu = make(chan struct{}, 2) // size allows # simultaneous calls
+	go func() {
+		<-service.shutdownContext.Done()
+		close(service.apiMu)
+	}()
 
 	// make DNS Identifier -> domain map (from config value)
 	service.dnsIDtoDomain = safemap.NewSafeMapFrom(cfg.DNSIDtoDomain)
