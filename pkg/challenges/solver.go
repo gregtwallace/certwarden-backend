@@ -10,6 +10,9 @@ import (
 	"github.com/cenkalti/backoff/v4"
 )
 
+// minimum time to wait for challenge solution to propagate after provisioning is completed
+const mandatoryWaitAfterProvision = 3 * time.Minute
+
 var (
 	errDnsDidntPropagate         = errors.New("challenges: solving failed: dns record didn't propagate")
 	errChallengeRetriesExhausted = errors.New("challenges: solving failed: challenge failed to move to final state (timeout)")
@@ -108,6 +111,8 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	if err != nil {
 		return err
 	}
+	// measure time after provisioning is completed
+	provisionDoneTime := time.Now()
 
 	// if using dns-01 provider, utilize dnsChecker
 	if challengeType == acme.ChallengeTypeDns01 {
@@ -119,6 +124,18 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		// if failed to propagate
 		if !propagated {
 			return errDnsDidntPropagate
+		}
+	}
+
+	// ensure mandatory minimum wait after provision completed
+	waitUntilTime := provisionDoneTime.Add(mandatoryWaitAfterProvision)
+	if time.Now().Before(waitUntilTime) {
+		service.logger.Debugf("challenges: minimum provisioning delay not met, waiting to check %s until %s", identifier.Value, waitUntilTime.Format(time.RFC1123))
+		select {
+		case <-time.After(time.Until(waitUntilTime)):
+			// continue
+		case <-service.shutdownContext.Done():
+			return errShutdown(domain)
 		}
 	}
 

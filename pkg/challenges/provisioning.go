@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+func errShutdown(domain string) error {
+	return fmt.Errorf("challenges: %s aborting due to shutdown", domain)
+}
+
 // provision filles the apiMu channel and provisions the resource using the provider. The channel is emptied a few
 // seconds after provisioning completes as a way to rate limit these calls.
 func (service *Service) provision(domain string, token string, keyAuth acme.KeyAuth, provider providers.Service) (err error) {
@@ -16,7 +20,7 @@ func (service *Service) provision(domain string, token string, keyAuth acme.KeyA
 	case service.apiMu <- struct{}{}:
 		// proceed
 	case <-service.shutdownContext.Done():
-		return fmt.Errorf("challenges: provision of %s aborted due to shutdown", domain)
+		return errShutdown(domain)
 	}
 
 	// defer read from channel (freeing API back up)
