@@ -33,7 +33,7 @@ func (service *Service) CheckTXTWithRetry(fqdn string, recordValue string) (prop
 	bo.RandomizationFactor = 0.2
 	bo.Multiplier = 1.2
 	bo.MaxInterval = 2 * time.Minute
-	bo.MaxElapsedTime = 30 * time.Minute
+	bo.MaxElapsedTime = 60 * time.Minute
 
 	boWithContext := backoff.WithContext(bo, service.shutdownContext)
 
