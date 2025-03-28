@@ -12,6 +12,16 @@ import (
 // token exists in this service's resources, the keyAuth bytes are sent back to
 // the client. If the token is not in the service's resources, a 404 reply is sent.
 func (service *Service) challengeHandler(w http.ResponseWriter, r *http.Request) {
+	// direct no caching, but include some backup options to try and cover all bases to ensure
+	// the freshest response is always used
+	w.Header().Set("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate, proxy-revalidate")
+	w.Header().Set("Pragma", "no-cache")
+	// set valid but past date (again, to prevent caching)
+	w.Header().Set("Expires", time.Time{}.Format(http.TimeFormat))
+
+	// do not allow sniffing
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+
 	// token from the client request
 	token := httprouter.ParamsFromContext(r.Context()).ByName("token")
 
