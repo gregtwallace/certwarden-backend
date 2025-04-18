@@ -3,6 +3,7 @@ package acme
 import (
 	"crypto"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 )
@@ -175,6 +176,11 @@ func (service *Service) DeactivateAccount(accountKey AccountKey) (acct Account, 
 // RolloverAccountKey rolls over the specified account's key to the newKey. This essentially
 // retires the old key from the account and substitutes the new key in its place.
 func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountKey AccountKey) (err error) {
+	// if directory doesn't contain a keyChange URL, return error
+	if service.dir.KeyChange == "" {
+		return errors.New("acme: account key rollover failed (acme directory does not contain a keyChange url)")
+	}
+
 	// build payload
 	payload := acmeSignedMessage{}
 

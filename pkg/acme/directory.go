@@ -72,8 +72,8 @@ func FetchAcmeDirectory(httpClient *http.Client, dirUrl string) (directory, erro
 		fetchedDir.NewAccount == "" ||
 		fetchedDir.NewOrder == "" ||
 		// omit NewAuthz as it MUST be omitted if server does not implement pre-authorization
-		fetchedDir.RevokeCert == "" ||
-		fetchedDir.KeyChange == "" {
+		// omit KeyChange (it isn't strictly required for ACME to work and some providers may not offer it (e.g., DigiCert))
+		fetchedDir.RevokeCert == "" {
 		return directory{}, fmt.Errorf("acme: directory (%s) missing one or more required urls", dirUrl)
 	}
 
