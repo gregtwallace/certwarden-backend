@@ -62,21 +62,13 @@ func (service *Service) startAutoOrderService(cfg *Config, ctx context.Context, 
 			// new stamp to not be after now and therefore would run a second time
 			nextRunTime = nextRunTime.Add(time.Duration(randomness.GenerateInsecureInt(60)) * time.Second)
 
-			// sleep or wait for shutdown context to be done
-			delayTimer := time.NewTimer(time.Until(nextRunTime))
-
 			select {
 			case <-ctx.Done():
-				// ensure timer releases resources
-				if !delayTimer.Stop() {
-					<-delayTimer.C
-				}
-
 				// close routine
 				service.logger.Info("orders: automatic certificate ordering service shutdown complete")
 				return
 
-			case <-delayTimer.C:
+			case <-time.After(time.Until(nextRunTime)):
 				// proceed to next run
 			}
 
@@ -186,20 +178,13 @@ func (service *Service) orderExpiringCerts() {
 
 		// sleep a little so slew of new orders don't hit ACME all at once
 		// cancel on shutdown context
-		delayTimer := time.NewTimer(15 * time.Second)
-
 		select {
 		case <-service.shutdownContext.Done():
-			// ensure timer releases resources
-			if !delayTimer.Stop() {
-				<-delayTimer.C
-			}
-
 			// abort refreshing due to shutdown
 			service.logger.Info("orders: expiring certificates refresh canceled due to shutdown")
 			return
 
-		case <-delayTimer.C:
+		case <-time.After(15 * time.Second):
 			// proceed to next
 		}
 	}

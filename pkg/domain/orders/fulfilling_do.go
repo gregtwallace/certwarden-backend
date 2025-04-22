@@ -146,20 +146,13 @@ fulfillLoop:
 
 		case "processing":
 			// sleep and loop again, ACME server is working on it
-			delayTimer := time.NewTimer(bo.NextBackOff())
-
 			select {
 			// cancel on shutdown context
 			case <-j.service.shutdownContext.Done():
-				// ensure timer releases resources
-				if !delayTimer.Stop() {
-					<-delayTimer.C
-				}
-
 				j.service.logger.Errorf("orders: fulfilling worker %d: order job canceled due to shutdown", workerID)
 				return
 
-			case <-delayTimer.C:
+			case <-time.After(bo.NextBackOff()):
 				// retry after exponential backoff
 			}
 

@@ -129,21 +129,14 @@ func (sm *SessionManager) StartCleanerService(ctx context.Context, wg *sync.Wait
 		defer wg.Done()
 
 		for {
-			// wait time is based on expiration of session token
-			delayTimer := time.NewTimer(2 * sessionExp)
-
 			select {
 			case <-ctx.Done():
-				// ensure timer releases resources
-				if !delayTimer.Stop() {
-					<-delayTimer.C
-				}
-
 				// exit
 				sm.logger.Info("auth session cleaner service shutdown complete")
 				return
 
-			case <-delayTimer.C:
+			case <-time.After(2 * sessionExp):
+				// wait time is based on expiration of session token
 				// continue and run
 			}
 

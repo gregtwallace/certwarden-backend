@@ -181,21 +181,13 @@ func (service *Service) startOidcCleanerService(ctx context.Context, wg *sync.Wa
 		defer wg.Done()
 
 		for {
-			// wait time is based on min expiration
-			delayTimer := time.NewTimer(2 * oidcPendingSessionMinExp)
-
 			select {
 			case <-ctx.Done():
-				// ensure timer releases resources
-				if !delayTimer.Stop() {
-					<-delayTimer.C
-				}
-
 				// exit
 				service.logger.Info("oidc panding session cleaner service shutdown complete")
 				return
 
-			case <-delayTimer.C:
+			case <-time.After(2 * oidcPendingSessionMinExp):
 				// continue and run
 			}
 

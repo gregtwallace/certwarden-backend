@@ -91,18 +91,12 @@ func (service *Service) checkDnsRecordPropagationAllServices(fqdn string, record
 		// sleep the skip wait and then return true (assume propagated)
 		service.logger.Debugf("dns_checker: skipping check of %s and sleeping %d seconds", fqdn, int(service.skipWait.Seconds()))
 
-		delayTimer := time.NewTimer(service.skipWait)
 		select {
 		case <-service.shutdownContext.Done():
-			// ensure timer releases resources
-			if !delayTimer.Stop() {
-				<-delayTimer.C
-			}
-
 			// cancel if shutting down
 			return errors.New("dns_checker: shutting down")
 
-		case <-delayTimer.C:
+		case <-time.After(service.skipWait):
 			// no-op, continue
 		}
 

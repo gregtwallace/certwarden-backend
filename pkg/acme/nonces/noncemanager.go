@@ -86,21 +86,13 @@ func (manager *Manager) fetchNonce() (string, error) {
 			}
 			// dont log or fail if header was missing or didn't parse, just use the default wait
 
-			// do the waiting
-			delayTimer := time.NewTimer(wait)
-
 			select {
 			case <-manager.shutdownContext.Done():
-				// ensure timer releases resources
-				if !delayTimer.Stop() {
-					<-delayTimer.C
-				}
-
 				// abort nonce fetching due to shutdown
 				return "", errors.New("nonce manager: failed to fetch nonce due to shutdown")
 
-			case <-delayTimer.C:
-				// proceed to next
+			case <-time.After(wait):
+				// do the waiting then proceed to next
 			}
 		}
 
