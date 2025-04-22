@@ -76,6 +76,7 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 	}
 
 	// open and read (up to) the first 512 bytes of post processing script/binary to decide if it is binary or not
+	// and also check if the file has a shebang
 	f, err := os.Open(order.Certificate.PostProcessingCommand)
 	if err != nil {
 		j.service.logger.Errorf("orders: post processing worker %d: order %d: script/binary failed to open: %s", workerID, order.ID, err)
@@ -101,17 +102,17 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 		return
 	}
 
-	// check if the file is binary and run it directly if so
+	// run binary or shebang file directly
 	cmd := &exec.Cmd{}
-	if http.DetectContentType(firstBytes) == "application/octet-stream" {
+	if http.DetectContentType(firstBytes) == "application/octet-stream" || strings.HasPrefix(string(firstBytes), "#!") {
 		// binary found
 		cmd = exec.Command(order.Certificate.PostProcessingCommand)
 
 	} else {
-		// try to run as script if it wasn't an octet-stream
-		// if app failed to get suitable shell at startup, post processing is disabled
-		if j.service.shellPath == "" {
-			j.service.logger.Errorf("orders: post processing worker %d: order %d: commaind failed to run post processing script (no suitable shell was found during startup)", workerID, order.ID)
+		// try to run as script if it wasn't an octet-stream and didn't have shebang
+		// if app failed to get suitable default shell at startup, post processing will fail
+		if j.service.defaultShellPath == "" {
+			j.service.logger.Errorf("orders: post processing worker %d: order %d: commaind failed to run post processing script (no suitable default shell was found during startup)", workerID, order.ID)
 			return
 		}
 
@@ -120,7 +121,7 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 		args := []string{order.Certificate.PostProcessingCommand}
 
 		// make command
-		cmd = exec.Command(j.service.shellPath, args...)
+		cmd = exec.Command(j.service.defaultShellPath, args...)
 	}
 
 	// set command environment (default OS + environ from above)
