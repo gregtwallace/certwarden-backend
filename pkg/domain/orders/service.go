@@ -82,7 +82,7 @@ type Service struct {
 	serverCertificateName    *string
 	loadHttpsCertificateFunc func() error
 	httpClient               *http.Client
-	shellPath                string
+	defaultShellPath         string
 
 	postProcessing  *job_manager.Manager[*postProcessJob]
 	orderFulfilling *job_manager.Manager[*orderFulfillJob]
@@ -135,26 +135,26 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	service.serverCertificateName = app.HttpsCertificateName()
 	service.loadHttpsCertificateFunc = app.LoadHttpsCertificate
 
-	// 	shell path for post processing
+	// default shell path for post processing
 	var err error
-	service.shellPath, err = exec.LookPath("powershell.exe")
+	service.defaultShellPath, err = exec.LookPath("powershell.exe")
 	if err != nil {
 		service.logger.Debugf("orders: unable to find powershell (%s)", err)
 		// then try bash
-		service.shellPath, err = exec.LookPath("bash")
+		service.defaultShellPath, err = exec.LookPath("bash")
 		if err != nil {
 			service.logger.Debugf("orders: unable to find bash (%s)", err)
 			// then try zshell
-			service.shellPath, err = exec.LookPath("zsh")
+			service.defaultShellPath, err = exec.LookPath("zsh")
 			if err != nil {
 				logger.Debugf("orders: unable to find zshell (%s)", err)
 				// then try sh
-				service.shellPath, err = exec.LookPath("sh")
+				service.defaultShellPath, err = exec.LookPath("sh")
 				if err != nil {
 					logger.Debugf("orders: unable to find sh (%s)", err)
-					// failed - disable post processing
-					logger.Errorf("orders: unable to find a suitable shell for certificate post processing scripts (scripts disabled)")
-					service.shellPath = ""
+					// failed - disable fallback default shell for post processing
+					logger.Errorf("orders: unable to find a suitable default shell for certificate post processing scripts")
+					service.defaultShellPath = ""
 				}
 			}
 		}
