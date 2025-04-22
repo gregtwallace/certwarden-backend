@@ -57,8 +57,8 @@ func (accountKey *AccountKey) jwk() (jwk *jsonWebKey, err error) {
 // jwkThumbprint returns the SHA-256 thumbprint for the JWK. This is calculated
 // as specified in RFC7638, section 3. RFC8555 8.1 requires this for responding
 // to challenges.
-func (jwk *jsonWebKey) encodedSHA256Thumbprint() (thumbprint string, err error) {
-	// rfc 7638 s3.1 - consdtruct json object containing only the required	members
+func (jwk *jsonWebKey) encodedSHA256PublicThumbprint() (thumbprint string, err error) {
+	// rfc 7638 s3.1 - construct json object containing only the required PUBLIC members
 	// of a JWK representing the key and with no whitespace or line breaks before
 	// or after any syntactic elements and with the	required members ordered
 	// lexicographically by the Unicode	[UNICODE] code points of the member names.

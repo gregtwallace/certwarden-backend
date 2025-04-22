@@ -23,7 +23,7 @@ func (accountKey *AccountKey) KeyAuthorization(token string) (keyAuth KeyAuth, e
 	}
 
 	// calc encoded thumbprint of jwk
-	encodedThumbprint, err := jwk.encodedSHA256Thumbprint()
+	encodedThumbprint, err := jwk.encodedSHA256PublicThumbprint()
 	if err != nil {
 		return "", err
 	}
