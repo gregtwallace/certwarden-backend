@@ -101,7 +101,6 @@ func (service *Service) fetchNewVersion() error {
 
 // backgroundChecker starts a goroutine that is an indefinite for loop
 // that checks for an updated version of the application.
-// The interval is shorter if the previous update encountered an error.
 func (service *Service) backgroundChecker(ctx context.Context, wg *sync.WaitGroup) {
 	// log start and update wg
 	service.logger.Info("starting updater service")
@@ -111,14 +110,7 @@ func (service *Service) backgroundChecker(ctx context.Context, wg *sync.WaitGrou
 	go func(service *Service, ctx context.Context, wg *sync.WaitGroup) {
 		defer wg.Done()
 
-		// can adjust wait times if desired
-		defaultWaitTime := 24 * time.Hour
-
-		// loop logic for periodic updates
-		var waitTime time.Duration
-
 		for {
-			waitTime = defaultWaitTime
 			err := service.fetchNewVersion()
 			if err != nil {
 				service.logger.Errorf("update check failed (%v)", err)
@@ -131,8 +123,8 @@ func (service *Service) backgroundChecker(ctx context.Context, wg *sync.WaitGrou
 				service.logger.Info("updater service shutdown complete")
 				return
 
-			case <-time.After(waitTime):
-				// sleep and retry
+			case <-time.After(24 * time.Hour):
+				// check again after 24 hours
 			}
 		}
 	}(service, ctx, wg)
