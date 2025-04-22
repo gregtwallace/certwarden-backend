@@ -84,23 +84,22 @@ func (manager *Manager) fetchNonce() (string, error) {
 					}
 				}
 			}
-			// dont log or fail if header was missing or didn't parse, just use the default wait
-
-			select {
-			case <-manager.shutdownContext.Done():
-				// abort nonce fetching due to shutdown
-				return "", errors.New("nonce manager: failed to fetch nonce due to shutdown")
-
-			case <-time.After(wait):
-				// do the waiting then proceed to next
-			}
 		}
+		// dont log or fail if header was missing or didn't parse, just use the default wait
 
-		return nonce, nil
+		// do the waiting
+		select {
+		case <-manager.shutdownContext.Done():
+			// abort nonce fetching due to shutdown
+			return "", errors.New("nonce manager: failed to fetch nonce due to shutdown")
+
+		case <-time.After(wait):
+			// do the waiting then proceed to next
+		}
 	}
 
 	if nonce == "" {
-		return "", errors.New("nonce manager: failed to fetch nonce from acme server")
+		return "", errors.New("nonce manager: failed to fetch nonce from acme server (exhausted retries)")
 	}
 
 	return nonce, nil
