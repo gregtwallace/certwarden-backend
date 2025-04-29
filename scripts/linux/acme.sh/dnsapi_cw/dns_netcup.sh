@@ -21,7 +21,7 @@ client=""
 
 dns_netcup_add() {
   _debug NC_Apikey "$NC_Apikey"
-  login
+  _login
   if [ "$NC_Apikey" = "" ] || [ "$NC_Apipw" = "" ] || [ "$NC_CID" = "" ]; then
     _err "No Credentials given"
     return 1
@@ -63,7 +63,7 @@ dns_netcup_add() {
 }
 
 dns_netcup_rm() {
-  login
+  _login
   fulldomain=$1
   txtvalue=$2
 
@@ -127,7 +127,7 @@ dns_netcup_rm() {
   logout
 }
 
-login() {
+_login() {
   tmp=$(_post "{\"action\": \"login\", \"param\": {\"apikey\": \"$NC_Apikey\", \"apipassword\": \"$NC_Apipw\", \"customernumber\": \"$NC_CID\"}}" "$end" "" "POST")
   sid=$(echo "$tmp" | tr '{}' '\n' | grep apisessionid | cut -d '"' -f 4)
   _debug "$tmp"
