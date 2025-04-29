@@ -10,12 +10,12 @@ import (
 // PFX data. It contains all methods needed to do this.
 type PfxObject interface {
 	outFile
-	PfxContent() ([]byte, error)
+	PfxContent(legacy3DES bool) ([]byte, error)
 }
 
 // WritePfx sends an object supporting PFX output to the client as the appropriate application type
-func (service *Service) WritePfx(w http.ResponseWriter, r *http.Request, obj PfxObject) error {
-	pfxContent, err := obj.PfxContent()
+func (service *Service) WritePfx(w http.ResponseWriter, r *http.Request, obj PfxObject, legacy3DES bool) error {
+	pfxContent, err := obj.PfxContent(legacy3DES)
 	if err != nil {
 		service.logger.Errorf("error generating pfx (%s)", err)
 		return err
