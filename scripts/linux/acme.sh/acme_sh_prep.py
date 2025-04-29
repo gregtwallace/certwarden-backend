@@ -16,6 +16,14 @@ dnsApiCwPath = "/dnsapi_cw"
 ###
 ###
 
+# script to add to dnsapi scripts
+source_script = """
+ABS_CURR_PATH=$(dirname $(realpath "${BASH_SOURCE[0]}"))
+SRC_FILE="${ABS_CURR_PATH}/../acme_src.sh"
+. "${SRC_FILE}"
+
+"""
+
 # make dnsapi path relative
 dnsApiCwPath = "." + dnsApiCwPath
 
@@ -66,7 +74,7 @@ for filename in os.listdir("dnsapi"):
     script = f.read()
 
     # combine
-    dnsData = shebang + ". ../acme_src.sh\n\n" + script
+    dnsData = shebang + source_script + script
 
   # write to CW custom folder
   cwF = open(dnsApiCwPath + "/" + filename, "w")

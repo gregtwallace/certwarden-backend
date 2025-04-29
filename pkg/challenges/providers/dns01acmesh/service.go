@@ -75,8 +75,9 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, errBashMissing
 	}
 
-	// hook name (needed for funcs)
+	// hook name (needed for funcs) & path
 	service.dnsHook = cfg.DnsHook
+	service.acmeShPath = cfg.AcmeShPath
 
 	// check for the needed dns script in custom folder
 	_, err = os.Stat(service.acmeShPath + dnsApiCwPath + "/" + service.dnsHook + ".sh")

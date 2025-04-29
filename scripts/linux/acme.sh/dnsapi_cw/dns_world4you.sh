@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
-. ../acme_src.sh
+
+ABS_CURR_PATH=$(dirname $(realpath "${BASH_SOURCE[0]}"))
+SRC_FILE="${ABS_CURR_PATH}/../acme_src.sh"
+. "${SRC_FILE}"
 
 # shellcheck disable=SC2034
 dns_world4you_info='World4You.com
