@@ -21,13 +21,13 @@ func (service *Service) Provision(domain string, _ string, keyAuth acme.KeyAuth)
 		// try to get stderr and log it too
 		exitErr := new(exec.ExitError)
 		if errors.As(err, &exitErr) {
-			service.logger.Errorf("acme.sh dns create script std err: %s", exitErr.Stderr)
+			service.logger.Errorf("acme.sh dns provision script std err: %s", exitErr.Stderr)
 		}
 
-		service.logger.Errorf("acme.sh dns create script error: %s", err)
+		service.logger.Errorf("acme.sh dns provision script error: %s", err)
 		return err
 	}
-	service.logger.Debugf("acme.sh dns create script output: %s", string(result))
+	service.logger.Debugf("acme.sh dns provision script output: %s", string(result))
 
 	return nil
 }
@@ -46,13 +46,13 @@ func (service *Service) Deprovision(domain string, _ string, keyAuth acme.KeyAut
 		// try to get stderr and log it too
 		exitErr := new(exec.ExitError)
 		if errors.As(err, &exitErr) {
-			service.logger.Errorf("acme.sh dns create script std err: %s", exitErr.Stderr)
+			service.logger.Errorf("acme.sh dns deprovision script std err: %s", exitErr.Stderr)
 		}
 
-		service.logger.Errorf("acme.sh dns delete script error: %s", err)
+		service.logger.Errorf("acme.sh dns deprovision script error: %s", err)
 		return err
 	}
-	service.logger.Debugf("acme.sh dns delete script output: %s", string(result))
+	service.logger.Debugf("acme.sh dns deprovision script output: %s", string(result))
 
 	return nil
 }

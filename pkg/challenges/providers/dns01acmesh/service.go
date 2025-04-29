@@ -1,21 +1,15 @@
 package dns01acmesh
 
 import (
-	"bytes"
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/datatypes/environment"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
 
 	"go.uber.org/zap"
-)
-
-const (
-	acmeShFileName = "acme.sh"
-	dnsApiPath     = "/dnsapi"
-	tempScriptPath = "/temp"
 )
 
 var (
@@ -33,7 +27,7 @@ type App interface {
 type Service struct {
 	logger            *zap.SugaredLogger
 	shellPath         string
-	shellScriptPath   string
+	acmeShPath        string
 	dnsHook           string
 	environmentParams *environment.Params
 }
@@ -74,53 +68,21 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
-	// bash is required
+	// bash is required (due to using `source`)
 	var err error
 	service.shellPath, err = exec.LookPath("bash")
 	if err != nil {
 		return nil, errBashMissing
 	}
 
-	// read in base script
-	acmeSh, err := os.ReadFile(cfg.AcmeShPath + "/" + acmeShFileName)
-	if err != nil {
-		return nil, err
-	}
-	// remove execution of main func (`main "$@"`)
-	acmeSh, _, _ = bytes.Cut(acmeSh, []byte{109, 97, 105, 110, 32, 34, 36, 64, 34})
-
-	// read in dns_hook script
-	acmeShDnsHook, err := os.ReadFile(cfg.AcmeShPath + dnsApiPath + "/" + cfg.DnsHook + ".sh")
-	if err != nil {
-		return nil, err
-	}
-
-	// combine scripts
-	shellScript := append(acmeSh, acmeShDnsHook...)
-
-	// store in file to use as source
-	path := cfg.AcmeShPath + tempScriptPath
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		err := os.Mkdir(path, os.ModePerm)
-		if err != nil {
-			return nil, err
-		}
-	}
-	service.shellScriptPath = path + "/" + acmeShFileName + "_" + cfg.DnsHook + ".sh"
-
-	shellFile, err := os.Create(service.shellScriptPath)
-	if err != nil {
-		return nil, err
-	}
-	defer shellFile.Close()
-
-	_, err = shellFile.Write(shellScript)
-	if err != nil {
-		return nil, err
-	}
-
 	// hook name (needed for funcs)
 	service.dnsHook = cfg.DnsHook
+
+	// check for the needed dns script in custom folder
+	_, err = os.Stat(service.acmeShPath + dnsApiCwPath + "/" + service.dnsHook + ".sh")
+	if err != nil {
+		return nil, fmt.Errorf("acme.sh: erorr opening dns script (%s)", err)
+	}
 
 	// environment vars
 	var invalidParams []string

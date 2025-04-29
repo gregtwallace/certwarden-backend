@@ -5,6 +5,11 @@ import (
 	"os/exec"
 )
 
+const (
+	acmeShFileName = "acme.sh"
+	dnsApiCwPath   = "/dnsapi_cw"
+)
+
 // makeCreateCommand creates the command to make a dns record
 func (service *Service) makeCreateCommand(dnsRecordName, dnsRecordValue string) *exec.Cmd {
 	return service.makeCommand(dnsRecordName, dnsRecordValue, false)
@@ -28,7 +33,7 @@ func (service *Service) makeCommand(dnsRecordName, dnsRecordValue string, delete
 	args := []string{"-c"}
 
 	// actual command  `source [path] ; [func] [args]`
-	args = append(args, "source "+service.shellScriptPath+" ; "+funcName+" "+dnsRecordName+" "+dnsRecordValue)
+	args = append(args, "source "+service.acmeShPath+dnsApiCwPath+"/"+service.dnsHook+".sh"+" ; "+funcName+" "+dnsRecordName+" "+dnsRecordValue)
 
 	// make command
 	cmd := exec.Command(service.shellPath, args...)
