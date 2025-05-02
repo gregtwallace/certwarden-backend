@@ -26,7 +26,8 @@ var (
 	ErrApiKeyNewBad = errors.New("api key (new) is not valid (must be at least 10 chars in length)")
 
 	// domain
-	ErrDomainBad = errors.New("domain or subject name not valid")
+	ErrDomainBad        = errors.New("domain or subject name not valid")
+	ErrClientAddressBad = errors.New("client address is not valid")
 )
 
 // GetCertificate returns the Certificate for the specified id.
@@ -106,8 +107,7 @@ func (service *Service) privateKeyIdValid(keyId int, certId *int) bool {
 	return false
 }
 
-// subjectValid validates domain name and if it is a wildcard
-// domain name it also verifies the method is dns-01
+// subjectValid validates domain name
 func subjectValid(domain string) bool {
 	// check domain is valid
 	return validation.DomainValid(domain, true)

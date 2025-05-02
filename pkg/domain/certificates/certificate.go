@@ -9,29 +9,30 @@ import (
 
 // Certificate is a single certificate with all of its fields
 type Certificate struct {
-	ID                         int
-	Name                       string
-	Description                string
-	CertificateKey             private_keys.Key
-	CertificateAccount         acme_accounts.Account
-	Subject                    string
-	SubjectAltNames            []string
-	Organization               string
-	OrganizationalUnit         string
-	Country                    string
-	State                      string
-	City                       string
-	CSRExtraExtensions         []CertExtension
-	PreferredRootCN            string
-	LastAccess                 time.Time
-	CreatedAt                  time.Time
-	UpdatedAt                  time.Time
-	ApiKey                     string
-	ApiKeyNew                  string
-	ApiKeyViaUrl               bool
-	PostProcessingCommand      string
-	PostProcessingEnvironment  []string
-	PostProcessingClientKeyB64 string
+	ID                          int
+	Name                        string
+	Description                 string
+	CertificateKey              private_keys.Key
+	CertificateAccount          acme_accounts.Account
+	Subject                     string
+	SubjectAltNames             []string
+	Organization                string
+	OrganizationalUnit          string
+	Country                     string
+	State                       string
+	City                        string
+	CSRExtraExtensions          []CertExtension
+	PreferredRootCN             string
+	LastAccess                  time.Time
+	CreatedAt                   time.Time
+	UpdatedAt                   time.Time
+	ApiKey                      string
+	ApiKeyNew                   string
+	ApiKeyViaUrl                bool
+	PostProcessingCommand       string
+	PostProcessingEnvironment   []string
+	PostProcessingClientAddress string
+	PostProcessingClientKeyB64  string
 }
 
 // certificateSummaryResponse is a JSON response containing only
@@ -94,20 +95,21 @@ func (cert Certificate) summaryResponse() certificateSummaryResponse {
 // fields that can be returned as JSON
 type certificateDetailedResponse struct {
 	certificateSummaryResponse
-	Organization               string              `json:"organization"`
-	OrganizationalUnit         string              `json:"organizational_unit"`
-	Country                    string              `json:"country"`
-	State                      string              `json:"state"`
-	City                       string              `json:"city"`
-	CSRExtraExtensions         []CertExtensionJSON `json:"csr_extra_extensions"`
-	PreferredRootCN            string              `json:"preferred_root_cn"`
-	CreatedAt                  int64               `json:"created_at"`
-	UpdatedAt                  int64               `json:"updated_at"`
-	ApiKey                     string              `json:"api_key"`
-	ApiKeyNew                  string              `json:"api_key_new,omitempty"`
-	PostProcessingCommand      string              `json:"post_processing_command"`
-	PostProcessingEnvironment  []string            `json:"post_processing_environment"`
-	PostProcessingClientKeyB64 string              `json:"post_processing_client_key"`
+	Organization                string              `json:"organization"`
+	OrganizationalUnit          string              `json:"organizational_unit"`
+	Country                     string              `json:"country"`
+	State                       string              `json:"state"`
+	City                        string              `json:"city"`
+	CSRExtraExtensions          []CertExtensionJSON `json:"csr_extra_extensions"`
+	PreferredRootCN             string              `json:"preferred_root_cn"`
+	CreatedAt                   int64               `json:"created_at"`
+	UpdatedAt                   int64               `json:"updated_at"`
+	ApiKey                      string              `json:"api_key"`
+	ApiKeyNew                   string              `json:"api_key_new,omitempty"`
+	PostProcessingCommand       string              `json:"post_processing_command"`
+	PostProcessingEnvironment   []string            `json:"post_processing_environment"`
+	PostProcessingClientAddress string              `json:"post_processing_client_address"`
+	PostProcessingClientKeyB64  string              `json:"post_processing_client_key"`
 }
 
 func (cert Certificate) detailedResponse() certificateDetailedResponse {
@@ -119,21 +121,22 @@ func (cert Certificate) detailedResponse() certificateDetailedResponse {
 	}
 
 	return certificateDetailedResponse{
-		certificateSummaryResponse: cert.summaryResponse(),
-		Organization:               cert.Organization,
-		OrganizationalUnit:         cert.OrganizationalUnit,
-		Country:                    cert.Country,
-		State:                      cert.State,
-		City:                       cert.City,
-		CSRExtraExtensions:         extraExtensions,
-		PreferredRootCN:            cert.PreferredRootCN,
-		CreatedAt:                  cert.CreatedAt.Unix(),
-		UpdatedAt:                  cert.UpdatedAt.Unix(),
-		ApiKey:                     cert.ApiKey,
-		ApiKeyNew:                  cert.ApiKeyNew,
-		PostProcessingCommand:      cert.PostProcessingCommand,
-		PostProcessingEnvironment:  cert.PostProcessingEnvironment,
-		PostProcessingClientKeyB64: cert.PostProcessingClientKeyB64,
+		certificateSummaryResponse:  cert.summaryResponse(),
+		Organization:                cert.Organization,
+		OrganizationalUnit:          cert.OrganizationalUnit,
+		Country:                     cert.Country,
+		State:                       cert.State,
+		City:                        cert.City,
+		CSRExtraExtensions:          extraExtensions,
+		PreferredRootCN:             cert.PreferredRootCN,
+		CreatedAt:                   cert.CreatedAt.Unix(),
+		UpdatedAt:                   cert.UpdatedAt.Unix(),
+		ApiKey:                      cert.ApiKey,
+		ApiKeyNew:                   cert.ApiKeyNew,
+		PostProcessingCommand:       cert.PostProcessingCommand,
+		PostProcessingEnvironment:   cert.PostProcessingEnvironment,
+		PostProcessingClientAddress: cert.PostProcessingClientAddress,
+		PostProcessingClientKeyB64:  cert.PostProcessingClientKeyB64,
 	}
 }
 

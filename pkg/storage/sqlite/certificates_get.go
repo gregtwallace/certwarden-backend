@@ -50,7 +50,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
 		c.last_access, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
-		c.post_processing_client_key,
+		c.post_processing_client_address, c.post_processing_client_key,
 		
 		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_new,
 		pk.api_key_disabled, pk.api_key_via_url, pk.last_access, pk.created_at, pk.updated_at,
@@ -115,6 +115,7 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 			&oneCert.apiKeyViaUrl,
 			&oneCert.postProcessingCommand,
 			&oneCert.postProcessingEnvironment,
+			&oneCert.postProcessingClientAddress,
 			&oneCert.postProcessingClientKeyB64,
 
 			&oneCert.certificateKeyDb.id,
@@ -200,7 +201,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
 		c.last_access, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
-		c.post_processing_client_key,
+		c.post_processing_client_address, c.post_processing_client_key,
 		
 		pk.id, pk.name, pk.description, pk.algorithm, pk.pem, pk.api_key, pk.api_key_new,
 		pk.api_key_disabled, pk.api_key_via_url, pk.last_access, pk.created_at, pk.updated_at,
@@ -249,6 +250,7 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 		&oneCert.apiKeyViaUrl,
 		&oneCert.postProcessingCommand,
 		&oneCert.postProcessingEnvironment,
+		&oneCert.postProcessingClientAddress,
 		&oneCert.postProcessingClientKeyB64,
 
 		&oneCert.certificateKeyDb.id,

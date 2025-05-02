@@ -52,15 +52,13 @@ type orderSummaryResponse struct {
 }
 
 type orderCertificateSummaryResponse struct {
-	ID                         int                                    `json:"id"`
-	Name                       string                                 `json:"name"`
-	CertificateAccount         orderCertificateAccountSummaryResponse `json:"acme_account"`
-	Subject                    string                                 `json:"subject"`
-	SubjectAltNames            []string                               `json:"subject_alts"`
-	ApiKeyViaUrl               bool                                   `json:"api_key_via_url"`
-	PostProcessingCommand      string                                 `json:"post_processing_command"`
-	PostProcessingClientKeyB64 string                                 `json:"post_processing_client_key"`
-	LastAccess                 int64                                  `json:"last_access"`
+	ID                 int                                    `json:"id"`
+	Name               string                                 `json:"name"`
+	CertificateAccount orderCertificateAccountSummaryResponse `json:"acme_account"`
+	Subject            string                                 `json:"subject"`
+	SubjectAltNames    []string                               `json:"subject_alts"`
+	ApiKeyViaUrl       bool                                   `json:"api_key_via_url"`
+	LastAccess         int64                                  `json:"last_access"`
 }
 
 type orderCertificateAccountSummaryResponse struct {
@@ -122,12 +120,10 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 					IsStaging: order.Certificate.CertificateAccount.AcmeServer.IsStaging,
 				},
 			},
-			Subject:                    order.Certificate.Subject,
-			SubjectAltNames:            order.Certificate.SubjectAltNames,
-			ApiKeyViaUrl:               order.Certificate.ApiKeyViaUrl,
-			PostProcessingCommand:      order.Certificate.PostProcessingCommand,
-			PostProcessingClientKeyB64: order.Certificate.PostProcessingClientKeyB64,
-			LastAccess:                 order.Certificate.LastAccess.Unix(),
+			Subject:         order.Certificate.Subject,
+			SubjectAltNames: order.Certificate.SubjectAltNames,
+			ApiKeyViaUrl:    order.Certificate.ApiKeyViaUrl,
+			LastAccess:      order.Certificate.LastAccess.Unix(),
 		},
 		Status:         order.Status,
 		KnownRevoked:   order.KnownRevoked,
