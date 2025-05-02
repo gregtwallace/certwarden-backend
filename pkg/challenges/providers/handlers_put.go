@@ -24,7 +24,9 @@ type modifyPayload struct {
 	Tag string `json:"tag"`
 
 	// optional
-	Domains []string `json:"domains,omitempty"`
+	Domains              []string `json:"domains,omitempty"`
+	PreCheckWaitSeconds  *int     `json:"precheck_wait"`
+	PostCheckWaitSeconds *int     `json:"postcheck_wait"`
 
 	// plus only one of these
 	Http01InternalConfig  *http01internal.Config  `json:"http_01_internal,omitempty"`
@@ -82,7 +84,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	}
 
 	// if domains included, validate domains
-	if payload.Domains != nil {
+	if len(payload.Domains) > 0 {
 		err = mgr.unsafeValidateDomains(payload.Domains, p)
 		if err != nil {
 			err = fmt.Errorf("failed to validate domains (%s)", err)
@@ -193,8 +195,16 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 		p.Config = pCfg
 	}
 
-	// actually do domains update
+	// update any internal config changes
 	mgr.unsafeUpdateProviderDomains(p, payload.Domains)
+
+	if payload.PreCheckWaitSeconds != nil {
+		p.PreCheckWaitSeconds = *payload.PreCheckWaitSeconds
+	}
+
+	if payload.PostCheckWaitSeconds != nil {
+		p.PostCheckWaitSeconds = *payload.PostCheckWaitSeconds
+	}
 
 	// update config file
 	err = mgr.unsafeWriteProvidersConfig()

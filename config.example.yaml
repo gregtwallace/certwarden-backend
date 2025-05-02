@@ -158,16 +158,22 @@
           - 'somedomain.com'
         # port to run the http challenge server on
         'port': 4060
+        'precheck_wait': 0
+        'postcheck_wait': 0
       # another instance of http-01 internal (if for some odd reason you wanted 2)
       - 'domains':
           - 'somedomain2.com'
         'port': 4099
+        'precheck_wait': 0
+        'postcheck_wait': 0
 
     # dns-01 manual uses custom scripts you must write (or otherwise source). It calls
     # the scripts at the specified path and uses the specified environment variables.
     'dns_01_manual':
       - 'domains':
           - 'example.com'
+        'precheck_wait': 180
+        'postcheck_wait': 0
         'environment':
           - 'MY_EXPORT_VAR=some_value'
           - 'ANOTHER_EXPORT_ENV=another_value'
@@ -183,6 +189,8 @@
     'dns_01_acme_dns':
       - 'domains':
           - 'domain.com'
+        'precheck_wait': 180
+        'postcheck_wait': 0
         'acme_dns_address': 'http://localhost:8880'
         'resources':
           # repeat this block as many times as needed
@@ -210,6 +218,8 @@
     'dns_01_acme_sh':
       - 'domains':
           - 'another.net'
+        'precheck_wait': 180
+        'postcheck_wait': 0
         # path to the acme.sh script. /dnsapi subfolder must also exist and contain
         # the script for the relevant dns provider (hook script)
         # acme.sh is installed with Cert Warden by default at the default path so
@@ -229,6 +239,8 @@
       # another acme.sh instance
       - 'domains':
           - 'another2.net'
+        'precheck_wait': 180
+        'postcheck_wait': 0
         'acme_sh_path': './scripts/acme.sh'
         'environment':
           - 'MY_EXPORT_VAR=some_other_value'
@@ -247,11 +259,15 @@
       - 'domains':
           - 'mydomain.org'
           - 'myotherdomain.org'
+        'precheck_wait': 180
+        'postcheck_wait': 0
         'api_token': '123abc'
 
       # another instance but with an account and setting it as the wild card provider
       - 'domains':
           - '*'
+        'precheck_wait': 180
+        'postcheck_wait': 0
         'account':
           'email': 'user@example.com'
           'global_api_key': '12345abcde'

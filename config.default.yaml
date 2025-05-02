@@ -61,3 +61,5 @@
       - 'domains':
           - '*'
         'port': 4060
+        'precheck_wait': 0
+        'postcheck_wait': 0

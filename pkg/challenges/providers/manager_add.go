@@ -16,10 +16,10 @@ import (
 // unsafeAddProvider creates the provider specified in cfg and adds it to
 // manager. It MUST be called from a Locked state OR during initial Manager
 // creation which is single threaded (and thus safe)
-func (mgr *Manager) unsafeAddProvider(domains []string, cfg providerConfig) (*provider, error) {
+func (mgr *Manager) unsafeAddProvider(internalCfg InternalConfig, cfg providerConfig) (*provider, error) {
 	// verify every domain ir properly formatted, or verify this is wildcard cfg (* only)
 	// and also verify all domains are available in manager
-	err := mgr.unsafeValidateDomains(domains, nil)
+	err := mgr.unsafeValidateDomains(internalCfg.Domains, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -63,12 +63,14 @@ func (mgr *Manager) unsafeAddProvider(domains []string, cfg providerConfig) (*pr
 	typeOf, _ = strings.CutSuffix(typeOf, ".Config")
 
 	p := &provider{
-		ID:      mgr.nextId,
-		Tag:     randomness.GenerateInsecureString(10),
-		Domains: domains,
-		Type:    typeOf,
-		Config:  cfg,
-		Service: serv,
+		ID:                   mgr.nextId,
+		Tag:                  randomness.GenerateInsecureString(10),
+		Domains:              internalCfg.Domains,
+		PreCheckWaitSeconds:  internalCfg.PreCheckWaitSeconds,
+		PostCheckWaitSeconds: internalCfg.PostCheckWaitSeconds,
+		Type:                 typeOf,
+		Config:               cfg,
+		Service:              serv,
 	}
 
 	// increment next id
@@ -78,7 +80,7 @@ func (mgr *Manager) unsafeAddProvider(domains []string, cfg providerConfig) (*pr
 	mgr.providers = append(mgr.providers, p)
 
 	// add each domain to domain map
-	for _, domain := range domains {
+	for _, domain := range internalCfg.Domains {
 		// add domain to domains map
 		mgr.dP[domain] = p
 	}

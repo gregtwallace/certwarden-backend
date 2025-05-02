@@ -49,7 +49,7 @@ func MakeManager(app application, cfg Config) (mgr *Manager, err error) {
 
 	// add each provider to manager
 	for i := range allCfgs {
-		_, err = mgr.unsafeAddProvider(allCfgs[i].domains, allCfgs[i].providerCfg)
+		_, err = mgr.unsafeAddProvider(allCfgs[i].internalCfg, allCfgs[i].providerCfg)
 		if err != nil {
 			return nil, err
 		}

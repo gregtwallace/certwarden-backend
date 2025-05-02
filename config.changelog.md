@@ -63,7 +63,6 @@ take advantage of.
   + `pprof_port` RENAMED to `pprof_http_port`
   + added `pprof_https_port` for pprof https port
 
-
 ### [v0.17.0] - 2023.12.20
 - 2023.12.20
   https://github.com/gregtwallace/certwarden-backend/commit/b80d47f7eff2df37cb9dd3b71299335e811c3515
@@ -90,3 +89,7 @@ take advantage of.
 - https://github.com/gregtwallace/certwarden-backend/commit/fb9392ca1b61e3ded34836fc37a5263ac7f67e35
   + Remove `frontend_show_debug_info` in favor of a browser storage based
     value that can be toggled in the frontend.
+
+### [v0.5.0]
+- config_version 3 -> 4
+- Add `precheck_wait` and `postcheck_wait` to provider configs.

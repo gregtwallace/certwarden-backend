@@ -27,48 +27,72 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 		case *http01internal.Config:
 			mgrCfg.Http01InternalConfigs = append(mgrCfg.Http01InternalConfigs,
 				ConfigManagerHttp01Internal{
-					Domains: p.Domains,
-					Config:  realCfg,
+					InternalConfig: InternalConfig{
+						Domains:              p.Domains,
+						PreCheckWaitSeconds:  p.PreCheckWaitSeconds,
+						PostCheckWaitSeconds: p.PostCheckWaitSeconds,
+					},
+					Config: realCfg,
 				},
 			)
 
 		case *dns01manual.Config:
 			mgrCfg.Dns01ManualConfigs = append(mgrCfg.Dns01ManualConfigs,
 				ConfigManagerDns01Manual{
-					Domains: p.Domains,
-					Config:  realCfg,
+					InternalConfig: InternalConfig{
+						Domains:              p.Domains,
+						PreCheckWaitSeconds:  p.PreCheckWaitSeconds,
+						PostCheckWaitSeconds: p.PostCheckWaitSeconds,
+					},
+					Config: realCfg,
 				},
 			)
 
 		case *dns01acmedns.Config:
 			mgrCfg.Dns01AcmeDnsConfigs = append(mgrCfg.Dns01AcmeDnsConfigs,
 				ConfigManagerDns01AcmeDns{
-					Domains: p.Domains,
-					Config:  realCfg,
+					InternalConfig: InternalConfig{
+						Domains:              p.Domains,
+						PreCheckWaitSeconds:  p.PreCheckWaitSeconds,
+						PostCheckWaitSeconds: p.PostCheckWaitSeconds,
+					},
+					Config: realCfg,
 				},
 			)
 
 		case *dns01acmesh.Config:
 			mgrCfg.Dns01AcmeShConfigs = append(mgrCfg.Dns01AcmeShConfigs,
 				ConfigManagerDns01AcmeSh{
-					Domains: p.Domains,
-					Config:  realCfg,
+					InternalConfig: InternalConfig{
+						Domains:              p.Domains,
+						PreCheckWaitSeconds:  p.PreCheckWaitSeconds,
+						PostCheckWaitSeconds: p.PostCheckWaitSeconds,
+					},
+					Config: realCfg,
 				},
 			)
 
 		case *dns01cloudflare.Config:
 			mgrCfg.Dns01CloudflareConfigs = append(mgrCfg.Dns01CloudflareConfigs,
 				ConfigManagerDns01Cloudflare{
-					Domains: p.Domains,
-					Config:  realCfg,
+					InternalConfig: InternalConfig{
+						Domains:              p.Domains,
+						PreCheckWaitSeconds:  p.PreCheckWaitSeconds,
+						PostCheckWaitSeconds: p.PostCheckWaitSeconds,
+					},
+					Config: realCfg,
 				},
 			)
 
 		case *dns01goacme.Config:
 			mgrCfg.Dns01GoAcmeConfigs = append(mgrCfg.Dns01GoAcmeConfigs,
 				ConfigManagerDns01GoAcme{
-					Domains: p.Domains,
-					Config:  realCfg,
+					InternalConfig: InternalConfig{
+						Domains:              p.Domains,
+						PreCheckWaitSeconds:  p.PreCheckWaitSeconds,
+						PostCheckWaitSeconds: p.PostCheckWaitSeconds,
+					},
+					Config: realCfg,
 				},
 			)
 

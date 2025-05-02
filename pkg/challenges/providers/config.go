@@ -9,34 +9,41 @@ import (
 	"certwarden-backend/pkg/challenges/providers/http01internal"
 )
 
+// internal base config
+type InternalConfig struct {
+	Domains              []string `yaml:"domains"`
+	PreCheckWaitSeconds  int      `yaml:"precheck_wait"`
+	PostCheckWaitSeconds int      `yaml:"postcheck_wait"`
+}
+
 // provider manager configs
 type ConfigManagerHttp01Internal struct {
-	Domains                []string `yaml:"domains"`
+	InternalConfig         `yaml:",inline"`
 	*http01internal.Config `yaml:",inline"`
 }
 
 type ConfigManagerDns01Manual struct {
-	Domains             []string `yaml:"domains"`
+	InternalConfig      `yaml:",inline"`
 	*dns01manual.Config `yaml:",inline"`
 }
 
 type ConfigManagerDns01AcmeDns struct {
-	Domains              []string `yaml:"domains"`
+	InternalConfig       `yaml:",inline"`
 	*dns01acmedns.Config `yaml:",inline"`
 }
 
 type ConfigManagerDns01AcmeSh struct {
-	Domains             []string `yaml:"domains"`
+	InternalConfig      `yaml:",inline"`
 	*dns01acmesh.Config `yaml:",inline"`
 }
 
 type ConfigManagerDns01Cloudflare struct {
-	Domains                 []string `yaml:"domains"`
+	InternalConfig          `yaml:",inline"`
 	*dns01cloudflare.Config `yaml:",inline"`
 }
 
 type ConfigManagerDns01GoAcme struct {
-	Domains             []string `yaml:"domains"`
+	InternalConfig      `yaml:",inline"`
 	*dns01goacme.Config `yaml:",inline"`
 }
 
@@ -63,7 +70,7 @@ func (cfg Config) Len() int {
 // managerProviderConfig is a provider config and additional config for
 // the manager
 type managerProviderConfig struct {
-	domains     []string
+	internalCfg InternalConfig
 	providerCfg providerConfig
 }
 
@@ -72,37 +79,37 @@ func (cfg Config) All() []managerProviderConfig {
 	all := []managerProviderConfig{}
 	for _, mgrCfg := range cfg.Dns01AcmeDnsConfigs {
 		all = append(all, managerProviderConfig{
-			domains:     mgrCfg.Domains,
+			internalCfg: mgrCfg.InternalConfig,
 			providerCfg: mgrCfg.Config,
 		})
 	}
 	for _, mgrCfg := range cfg.Dns01AcmeShConfigs {
 		all = append(all, managerProviderConfig{
-			domains:     mgrCfg.Domains,
+			internalCfg: mgrCfg.InternalConfig,
 			providerCfg: mgrCfg.Config,
 		})
 	}
 	for _, mgrCfg := range cfg.Dns01CloudflareConfigs {
 		all = append(all, managerProviderConfig{
-			domains:     mgrCfg.Domains,
+			internalCfg: mgrCfg.InternalConfig,
 			providerCfg: mgrCfg.Config,
 		})
 	}
 	for _, mgrCfg := range cfg.Dns01ManualConfigs {
 		all = append(all, managerProviderConfig{
-			domains:     mgrCfg.Domains,
+			internalCfg: mgrCfg.InternalConfig,
 			providerCfg: mgrCfg.Config,
 		})
 	}
 	for _, mgrCfg := range cfg.Http01InternalConfigs {
 		all = append(all, managerProviderConfig{
-			domains:     mgrCfg.Domains,
+			internalCfg: mgrCfg.InternalConfig,
 			providerCfg: mgrCfg.Config,
 		})
 	}
 	for _, mgrCfg := range cfg.Dns01GoAcmeConfigs {
 		all = append(all, managerProviderConfig{
-			domains:     mgrCfg.Domains,
+			internalCfg: mgrCfg.InternalConfig,
 			providerCfg: mgrCfg.Config,
 		})
 	}

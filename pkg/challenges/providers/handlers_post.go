@@ -18,7 +18,11 @@ type newPayload struct {
 	// mandatory
 	Domains []string `json:"domains"`
 
-	// + only one of these
+	// optional
+	PreCheckWaitSeconds  *int `json:"precheck_wait"`
+	PostCheckWaitSeconds *int `json:"postcheck_wait"`
+
+	// + mandatory, only one of these
 	Http01InternalConfig  *http01internal.Config  `json:"http_01_internal,omitempty"`
 	Dns01ManualConfig     *dns01manual.Config     `json:"dns_01_manual,omitempty"`
 	Dns01AcmeDnsConfig    *dns01acmedns.Config    `json:"dns_01_acme_dns,omitempty"`
@@ -66,25 +70,40 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 		return output.JsonErrValidationFailed(err)
 	}
 
+	// make internal config
+	internalCfg := InternalConfig{
+		Domains: payload.Domains,
+	}
+	if payload.PreCheckWaitSeconds != nil {
+		internalCfg.PreCheckWaitSeconds = *payload.PreCheckWaitSeconds
+	} else {
+		internalCfg.PreCheckWaitSeconds = 3 * 60
+	}
+	if payload.PostCheckWaitSeconds != nil {
+		internalCfg.PostCheckWaitSeconds = *payload.PostCheckWaitSeconds
+	} else {
+		//internalCfg.PostCheckWaitSeconds = 0
+	}
+
 	// try to add the specified provider (actual action)
 	var p *provider
 	if payload.Http01InternalConfig != nil {
-		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Http01InternalConfig)
+		p, err = mgr.unsafeAddProvider(internalCfg, payload.Http01InternalConfig)
 
 	} else if payload.Dns01ManualConfig != nil {
-		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Dns01ManualConfig)
+		p, err = mgr.unsafeAddProvider(internalCfg, payload.Dns01ManualConfig)
 
 	} else if payload.Dns01AcmeDnsConfig != nil {
-		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Dns01AcmeDnsConfig)
+		p, err = mgr.unsafeAddProvider(internalCfg, payload.Dns01AcmeDnsConfig)
 
 	} else if payload.Dns01AcmeShConfig != nil {
-		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Dns01AcmeShConfig)
+		p, err = mgr.unsafeAddProvider(internalCfg, payload.Dns01AcmeShConfig)
 
 	} else if payload.Dns01CloudflareConfig != nil {
-		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Dns01CloudflareConfig)
+		p, err = mgr.unsafeAddProvider(internalCfg, payload.Dns01CloudflareConfig)
 
 	} else if payload.Dns01GoAcmeConfig != nil {
-		p, err = mgr.unsafeAddProvider(payload.Domains, payload.Dns01GoAcmeConfig)
+		p, err = mgr.unsafeAddProvider(internalCfg, payload.Dns01GoAcmeConfig)
 
 	} else {
 		mgr.logger.Error("new provider cfg missing, this error should never trigger though, report bug to developer")

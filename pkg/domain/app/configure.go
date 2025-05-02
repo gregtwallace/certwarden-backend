@@ -156,6 +156,14 @@ func (app *Application) loadConfigFile() (err error) {
 		}
 	}
 
+	// upgrade if schema 3
+	if cfgVer == 3 {
+		cfgVer, err = configMigrateV3toV4(cfgFileYamlObj)
+		if err != nil {
+			return err
+		}
+	}
+
 	// fail if still not correct
 	if cfgVer != appConfigVersion {
 		return fmt.Errorf("config schema version is %d (expected %d) and cannot be fixed automatically; fix the config file", cfgVer, appConfigVersion)
@@ -305,7 +313,7 @@ func (app *Application) setDefaultConfigValues() {
 	}
 
 	// challenge dns checker services
-	if app.config.Challenges.DnsCheckerConfig.DnsServices == nil || len(app.config.Challenges.DnsCheckerConfig.DnsServices) <= 0 {
+	if len(app.config.Challenges.DnsCheckerConfig.DnsServices) <= 0 {
 		app.config.Challenges.DnsCheckerConfig.DnsServices = []dns_checker.DnsServiceIPPair{
 			// Cloudflare
 			{
@@ -331,7 +339,11 @@ func (app *Application) setDefaultConfigValues() {
 		*http01Port = 4060
 
 		app.config.Challenges.ProviderConfigs.Http01InternalConfigs = []providers.ConfigManagerHttp01Internal{{
-			Domains: []string{"*"},
+			InternalConfig: providers.InternalConfig{
+				Domains:              []string{"*"},
+				PreCheckWaitSeconds:  0,
+				PostCheckWaitSeconds: 0,
+			},
 			Config: &http01internal.Config{
 				Port: http01Port,
 			},

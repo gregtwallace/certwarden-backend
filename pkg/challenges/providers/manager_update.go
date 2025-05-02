@@ -4,7 +4,7 @@ package providers
 // are specified, no modification is performed
 func (mgr *Manager) unsafeUpdateProviderDomains(p *provider, newDomains []string) {
 	// no domains == no-op
-	if newDomains == nil || len(newDomains) < 1 {
+	if len(newDomains) <= 0 {
 		return
 	}
 

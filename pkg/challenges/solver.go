@@ -10,9 +10,6 @@ import (
 	"github.com/cenkalti/backoff/v4"
 )
 
-// minimum time to wait for challenge solution to propagate after provisioning is completed
-const mandatoryWaitAfterProvision = 3 * time.Minute
-
 var (
 	errDnsDidntPropagate         = errors.New("challenges: solving failed: dns record didn't propagate")
 	errChallengeRetriesExhausted = errors.New("challenges: solving failed: challenge failed to move to final state (timeout)")
@@ -111,8 +108,18 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	if err != nil {
 		return err
 	}
-	// measure time after provisioning is completed
-	provisionDoneTime := time.Now()
+
+	// specified wait time prior to resource check
+	preCheckWait := provider.WaitDurationPreResourceCheck()
+	if preCheckWait != time.Duration(0) {
+		service.logger.Infof("challenges: waiting until %s before checking resource propagation of %s", time.Now().Add(preCheckWait).Format(time.RFC1123), identifier.Value)
+		select {
+		case <-time.After(preCheckWait):
+			// continue
+		case <-service.shutdownContext.Done():
+			return errShutdown(domain)
+		}
+	}
 
 	// if using dns-01 provider, utilize dnsChecker
 	if challengeType == acme.ChallengeTypeDns01 {
@@ -127,12 +134,12 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		}
 	}
 
-	// ensure mandatory minimum wait after provision completed
-	waitUntilTime := provisionDoneTime.Add(mandatoryWaitAfterProvision)
-	if time.Now().Before(waitUntilTime) {
-		service.logger.Debugf("challenges: minimum provisioning delay not met, waiting to check %s until %s", identifier.Value, waitUntilTime.Format(time.RFC1123))
+	// specified wait time after confirming resource exists
+	postCheckWait := provider.WaitDurationPostResourceCheck()
+	if postCheckWait != time.Duration(0) {
+		service.logger.Infof("challenges: resource check of %s complete; waiting until %s to proceed to validation", identifier.Value, time.Now().Add(postCheckWait).Format(time.RFC1123))
 		select {
-		case <-time.After(time.Until(waitUntilTime)):
+		case <-time.After(postCheckWait):
 			// continue
 		case <-service.shutdownContext.Done():
 			return errShutdown(domain)
