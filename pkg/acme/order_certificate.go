@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"mime"
 	"net/http"
 	"net/url"
 	"strings"
@@ -33,8 +34,12 @@ func (c *Certificate) ChainRootCN() string  { return c.chainRootCN }
 // Certificate struct. If not valid, an error is returned.
 func responseToCertificate(bodyBytes []byte, headers http.Header) (*Certificate, error) {
 	// this server only supports pem (application/pem-certificate-chain)
-	contentType := headers.Get("Content-type")
-	if contentType != "application/pem-certificate-chain" {
+	contentType, _, err := mime.ParseMediaType(headers.Get("Content-type"))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing Content-Type (%v)", err)
+	}
+
+	if !strings.EqualFold(contentType, "application/pem-certificate-chain") {
 		return nil, errors.New("certificate content type is not application/pem-certificate-chain")
 	}
 

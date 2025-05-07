@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -194,8 +195,12 @@ func (service *Service) PostAsGet(w http.ResponseWriter, r *http.Request) *outpu
 		}
 	}
 
-	// if response body is json, ensure it is pretty using Indent
-	if strings.EqualFold(header.Get("Content-Type"), "application/json") {
+	// if content-type parses and is json, ensure it is pretty using Indent
+	contentType, _, err := mime.ParseMediaType(header.Get("Content-type"))
+	if err != nil {
+		service.logger.Errorf("accounts: debug pag response content-type failed to parse (%v)", err)
+		// DONT return error -- just continue without modifying the response
+	} else if strings.EqualFold(contentType, "application/json") {
 		var prettyJson bytes.Buffer
 		err = json.Indent(&prettyJson, resp, "", "\t")
 		if err != nil {
