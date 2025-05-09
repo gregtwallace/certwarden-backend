@@ -211,9 +211,3 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 
 	return bodyBytes, response.Header, nil
 }
-
-// postAsGet implements POST-as-GET as specified in rfc8555 6.3.
-// Specific functions that use this will also need to be defined
-func (service *Service) PostAsGet(url string, accountKey AccountKey) (body []byte, headers http.Header, err error) {
-	return service.postToUrlSigned("", url, accountKey)
-}
