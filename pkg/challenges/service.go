@@ -9,8 +9,16 @@ import (
 	"errors"
 	"net/http"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
+)
+
+// use a conservative rate limit to avoid any issues
+const (
+	limitEventsPerSecond = 2
+	limitBurstAtMost     = 2
 )
 
 var (
@@ -48,7 +56,7 @@ type Service struct {
 	dnsChecker             *dns_checker.Service
 	DNSIdentifierProviders *providers.Manager
 	dnsIDtoDomain          *safemap.SafeMap[string] // DNSIdentifierValue[Domain]
-	apiMu                  chan struct{}            // used to rate limit provision/deprovision calls
+	apiRateLimiter         *rate.Limiter
 }
 
 // NewService creates a new service
@@ -91,12 +99,8 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 		return nil, err
 	}
 
-	// api management channel
-	service.apiMu = make(chan struct{}, 2) // size allows # simultaneous calls
-	go func() {
-		<-service.shutdownContext.Done()
-		close(service.apiMu)
-	}()
+	// api management rate limiter
+	service.apiRateLimiter = rate.NewLimiter(rate.Every(time.Second/limitEventsPerSecond), limitBurstAtMost)
 
 	// make DNS Identifier -> domain map (from config value)
 	service.dnsIDtoDomain = safemap.NewSafeMapFrom(cfg.DNSIDtoDomain)
