@@ -167,7 +167,7 @@ func create() (*Application, error) {
 
 	// load app's tls cert
 	// if error, server will instead operate over http
-	app.httpsCert = safecert.NewSafeCert(app.httpClient, app.shutdownWaitgroup, shutdownContext)
+	app.httpsCert = new(safecert.SafeCert)
 	err = app.LoadHttpsCertificate()
 	if err != nil {
 		// failed = not https
