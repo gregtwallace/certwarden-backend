@@ -8,6 +8,14 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/jibber_jabber"
+	"golang.org/x/time/rate"
+)
+
+// rate limit params -- 5 / 10 are the most conservative values published by
+// Let's Encrypt at: https://letsencrypt.org/docs/rate-limits/#overall-requests-limit
+const (
+	limitEventsPerSecond = 5
+	limitBurstAtMost     = 10
 )
 
 // default Accept-Language header values
@@ -20,6 +28,7 @@ const (
 type httpCWRoundTripper struct {
 	userAgent      string
 	acceptLanguage string
+	rateLimiter    *rate.Limiter
 }
 
 func (rt *httpCWRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -28,6 +37,12 @@ func (rt *httpCWRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 
 	// set preferred language (SHOULD do this per RFC 8555, 6.1)
 	req.Header.Set("Accept-Language", rt.acceptLanguage)
+
+	// impose rate limit
+	err := rt.rateLimiter.Wait(req.Context())
+	if err != nil {
+		return nil, err
+	}
 
 	return http.DefaultTransport.RoundTrip(req)
 }
@@ -70,10 +85,14 @@ func makeHttpClient() (client *http.Client) {
 	}
 	_, _ = sb.WriteString("*;q=0.5")
 
+	// create rate limiter
+	rl := rate.NewLimiter(rate.Every(time.Second/limitEventsPerSecond), limitBurstAtMost)
+
 	// make round tripper
 	t := &httpCWRoundTripper{
 		userAgent:      fmt.Sprintf("CertWarden/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH),
 		acceptLanguage: sb.String(),
+		rateLimiter:    rl,
 	}
 
 	return &http.Client{
