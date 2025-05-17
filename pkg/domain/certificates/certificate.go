@@ -33,6 +33,7 @@ type Certificate struct {
 	PostProcessingEnvironment   []string
 	PostProcessingClientAddress string
 	PostProcessingClientKeyB64  string
+	Profile                     string
 }
 
 // certificateSummaryResponse is a JSON response containing only
@@ -102,6 +103,7 @@ type certificateDetailedResponse struct {
 	City                        string              `json:"city"`
 	CSRExtraExtensions          []CertExtensionJSON `json:"csr_extra_extensions"`
 	PreferredRootCN             string              `json:"preferred_root_cn"`
+	Profile                     string              `json:"profile"`
 	CreatedAt                   int64               `json:"created_at"`
 	UpdatedAt                   int64               `json:"updated_at"`
 	ApiKey                      string              `json:"api_key"`
@@ -129,6 +131,7 @@ func (cert Certificate) detailedResponse() certificateDetailedResponse {
 		City:                        cert.City,
 		CSRExtraExtensions:          extraExtensions,
 		PreferredRootCN:             cert.PreferredRootCN,
+		Profile:                     cert.Profile,
 		CreatedAt:                   cert.CreatedAt.Unix(),
 		UpdatedAt:                   cert.UpdatedAt.Unix(),
 		ApiKey:                      cert.ApiKey,
@@ -155,7 +158,14 @@ func (cert *Certificate) NewOrderPayload() acme.NewOrderPayload {
 		}
 	}
 
+	// only send profile if it isn't blank
+	p := &cert.Profile
+	if cert.Profile == "" {
+		p = nil
+	}
+
 	return acme.NewOrderPayload{
 		Identifiers: identifiers,
+		Profile:     p,
 	}
 }

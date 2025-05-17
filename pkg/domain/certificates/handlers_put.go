@@ -4,6 +4,7 @@ import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/validation"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -29,6 +30,7 @@ type DetailsUpdatePayload struct {
 	PostProcessingCommand       *string             `json:"post_processing_command"`
 	PostProcessingEnvironment   []string            `json:"post_processing_environment"`
 	PostProcessingClientAddress *string             `json:"post_processing_client_address"`
+	Profile                     *string             `json:"profile"`
 	ApiKey                      *string             `json:"api_key"`
 	ApiKeyNew                   *string             `json:"api_key_new"`
 	ApiKeyViaUrl                *bool               `json:"api_key_via_url"`
@@ -85,6 +87,21 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 		if !subjectAltsValid(cert.SubjectAltNames) {
 			service.logger.Debug(ErrDomainBad)
 			return output.JsonErrValidationFailed(ErrDomainBad)
+		}
+	}
+	// profile Extension -- validate if specified
+	if payload.Profile != nil && *payload.Profile != "" {
+		// specified, validate against acme service
+		acmeService, err := service.acmeServerService.AcmeService(cert.CertificateAccount.AcmeServer.ID)
+		if err != nil {
+			err = fmt.Errorf("failed to retrieve acme service (%s)", err)
+			service.logger.Error(err)
+			return output.JsonErrInternal(err)
+		}
+		if !acmeService.ProfileValidate(*payload.Profile) {
+			err = fmt.Errorf("acme service for specified account does not advertise profile `%s`", *payload.Profile)
+			service.logger.Debug(err)
+			return output.JsonErrValidationFailed(err)
 		}
 	}
 	// api key must be at least 10 characters long

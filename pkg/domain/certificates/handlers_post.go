@@ -36,6 +36,7 @@ type NewPayload struct {
 	PostProcessingEnvironment   []string            `json:"post_processing_environment"`
 	PostProcessingClientAddress *string             `json:"post_processing_client_address"`
 	PostProcessingClientKeyB64  string              `json:"-"`
+	Profile                     *string             `json:"profile"`
 	ApiKey                      string              `json:"-"`
 	ApiKeyViaUrl                bool                `json:"-"`
 	CreatedAt                   int                 `json:"-"`
@@ -105,8 +106,14 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 		}
 	}
 	// acme account
-	if payload.AcmeAccountID == nil || !service.accounts.AccountUsable(*payload.AcmeAccountID) {
-		err = errors.New("acme account id is empty or account is not usable")
+	if payload.AcmeAccountID == nil {
+		err = errors.New("acme account id is unspecified")
+		service.logger.Debug(err)
+		return output.JsonErrValidationFailed(err)
+	}
+	acctUsable, acct := service.accounts.AccountUsable(*payload.AcmeAccountID)
+	if !acctUsable {
+		err = errors.New("acme account id does not exist or is not usable")
 		service.logger.Debug(err)
 		return output.JsonErrValidationFailed(err)
 	}
@@ -121,6 +128,24 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 		service.logger.Debug(ErrDomainBad)
 		return output.JsonErrValidationFailed(ErrDomainBad)
 	}
+	// profile Extension -- validate if specified, else blank
+	if payload.Profile == nil {
+		payload.Profile = new(string)
+	} else if *payload.Profile != "" {
+		// specified, validate against acme service
+		acmeService, err := service.acmeServerService.AcmeService(acct.AcmeServer.ID)
+		if err != nil {
+			err = fmt.Errorf("failed to retrieve acme service (%s)", err)
+			service.logger.Error(err)
+			return output.JsonErrInternal(err)
+		}
+		if !acmeService.ProfileValidate(*payload.Profile) {
+			err = fmt.Errorf("acme service for specified account does not advertise profile `%s`", *payload.Profile)
+			service.logger.Debug(err)
+			return output.JsonErrValidationFailed(err)
+		}
+	}
+
 	// CSR
 	// set to blank if don't exist
 	// TODO: Do any validation of CSR components?

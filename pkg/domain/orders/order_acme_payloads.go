@@ -16,11 +16,12 @@ type NewOrderAcmePayload struct {
 	AccountId      int
 	Status         string
 	KnownRevoked   bool
-	Expires        int
+	Expires        *int
 	DnsIds         []string
 	Error          *string
 	Authorizations []string
 	Finalize       string
+	Profile        *string
 	Location       string
 	CreatedAt      int
 	UpdatedAt      int
@@ -44,6 +45,7 @@ func makeNewOrderAcmePayload(cert certificates.Certificate, acmeResponse acme.Or
 		Error:          acmeErr,
 		Authorizations: acmeResponse.Authorizations,
 		Finalize:       acmeResponse.Finalize,
+		Profile:        acmeResponse.Profile,
 		Location:       acmeResponse.Location,
 		CreatedAt:      int(time.Now().Unix()),
 		UpdatedAt:      int(time.Now().Unix()),
@@ -60,6 +62,7 @@ type UpdateAcmeOrderPayload struct {
 	Error          *string
 	Authorizations []string
 	Finalize       string
+	Profile        *string
 	CertificateUrl *string
 	UpdatedAt      int
 	OrderId        int
@@ -74,11 +77,14 @@ func makeUpdateOrderAcmePayload(orderId int, acmeResponse acme.Order) UpdateAcme
 
 	return UpdateAcmeOrderPayload{
 		Status:         acmeResponse.Status,
+		Expires:        acmeResponse.Expires.ToUnixTime(),
 		DnsIds:         acmeResponse.Identifiers.DnsIdentifiers(),
 		Error:          acmeErr,
 		Authorizations: acmeResponse.Authorizations,
+		Finalize:       acmeResponse.Finalize,
+		Profile:        acmeResponse.Profile,
+		CertificateUrl: acmeResponse.Certificate,
 		UpdatedAt:      int(time.Now().Unix()),
 		OrderId:        orderId,
-		CertificateUrl: acmeResponse.Certificate,
 	}
 }

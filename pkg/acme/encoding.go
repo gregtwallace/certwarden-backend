@@ -59,19 +59,20 @@ type timeString string
 
 // ToUnixTime returns the unix time for a timeString. If the timeString is
 // nil or fails to parse, 0 is returned.
-func (ats *timeString) ToUnixTime() (unixTime int) {
+func (ats *timeString) ToUnixTime() (unixTime *int) {
 	if ats == nil {
-		return 0
+		return nil
 	}
 
 	// RFC3339
 	layout := "2006-01-02T15:04:05Z"
 
 	// Parse
-	time, err := time.Parse(layout, string(*ats))
+	t, err := time.Parse(layout, string(*ats))
 	if err != nil {
-		return 0
+		return new(int)
 	}
 
-	return int(time.Unix())
+	ts := int(t.Unix())
+	return &ts
 }

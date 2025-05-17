@@ -28,6 +28,9 @@ type directory struct {
 		Website                 string   `json:"website"`
 		CaaIdentities           []string `json:"caaIdentities"`
 		ExternalAccountRequired bool     `json:"externalAccountRequired"`
+
+		// ACME Profiles Extension - https://datatracker.ietf.org/doc/draft-aaron-acme-profiles/
+		Profiles map[string]string `json:"profiles,omitempty"`
 	} `json:"meta"`
 
 	// ACME ARI (ACME Renewal Information) Extension - https://datatracker.ietf.org/doc/draft-ietf-acme-ari/
@@ -192,4 +195,23 @@ func (service *Service) RequiresEAB() bool {
 // DirectoryRawResponse returns the ACME Service's raw directory response
 func (service *Service) DirectoryRawResponse() json.RawMessage {
 	return service.dir.raw
+}
+
+// Profiles returns the map of available profiles for the ACME service, or nil if
+// the profiles extension is not implemented (per the directory's meta response)
+// func (service *Service) Profiles() map[string]string {
+// 	return service.dir.Meta.Profiles
+// }
+
+// ProfileValidate returns true if the specified profileName exists in the ACME
+// service's meta profile map. If the profile does not exist (including if there
+// is no profile map at all), false is returned.
+func (service *Service) ProfileValidate(profileName string) bool {
+	for k := range service.dir.Meta.Profiles {
+		if k == profileName {
+			return true
+		}
+	}
+
+	return false
 }

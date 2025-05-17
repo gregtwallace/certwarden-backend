@@ -29,6 +29,7 @@ type orderDb struct {
 	validTo        sql.NullInt32
 	createdAt      int64
 	updatedAt      int64
+	profile        sql.NullString
 }
 
 func (order orderDb) toOrder() (orders.Order, error) {
@@ -70,5 +71,6 @@ func (order orderDb) toOrder() (orders.Order, error) {
 		ChainRootCN:    nullStringToString(order.chainRootCN),
 		CreatedAt:      time.Unix(order.createdAt, 0),
 		UpdatedAt:      time.Unix(order.updatedAt, 0),
+		Profile:        nullStringToString(order.profile),
 	}, nil
 }

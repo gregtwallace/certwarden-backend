@@ -95,21 +95,21 @@ func (service *Service) GetUsableAccounts() ([]Account, error) {
 	return accounts, nil
 }
 
-// AccountUsable returns true if the specified account exists
+// AccountUsable returns true and the Account if the specified account exists
 // in storage and it is in the UsableAccounts list
-func (service *Service) AccountUsable(accountId int) bool {
+func (service *Service) AccountUsable(accountId int) (bool, *Account) {
 	// get usable accounts list
 	accounts, err := service.GetUsableAccounts()
 	if err != nil {
-		return false
+		return false, nil
 	}
 
 	// verify specified account id is usable
-	for _, account := range accounts {
-		if account.ID == accountId {
-			return true
+	for i := range accounts {
+		if accounts[i].ID == accountId {
+			return true, &accounts[i]
 		}
 	}
 
-	return false
+	return false, nil
 }

@@ -53,6 +53,7 @@ func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId in
 				error,
 				authorizations,
 				finalize,
+				profile,
 				acme_location,
 				created_at,
 				updated_at
@@ -70,7 +71,8 @@ func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId in
 				$9,
 				$10,
 				$11,
-				$12
+				$12,
+				$13
 			)
 	RETURNING
 		id
@@ -86,6 +88,7 @@ func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId in
 		payload.Error,
 		makeJsonStringSlice(payload.Authorizations),
 		payload.Finalize,
+		payload.Profile,
 		payload.Location,
 		payload.CreatedAt,
 		payload.UpdatedAt,

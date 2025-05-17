@@ -32,6 +32,7 @@ type certificateDb struct {
 	postProcessingEnvironment   jsonStringSlice // stored as json array
 	postProcessingClientAddress string
 	postProcessingClientKeyB64  string // base64 raw url encoded AES 256 key
+	profile                     string
 }
 
 func (cert certificateDb) toCertificate() (certificates.Certificate, error) {
@@ -65,5 +66,6 @@ func (cert certificateDb) toCertificate() (certificates.Certificate, error) {
 		PostProcessingEnvironment:   cert.postProcessingEnvironment.toSlice(),
 		PostProcessingClientAddress: cert.postProcessingClientAddress,
 		PostProcessingClientKeyB64:  cert.postProcessingClientKeyB64,
+		Profile:                     cert.profile,
 	}, nil
 }

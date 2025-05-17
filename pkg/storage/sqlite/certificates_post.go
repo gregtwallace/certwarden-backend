@@ -20,8 +20,8 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates
 		csr_org, csr_ou, csr_country, csr_state, csr_city, csr_extra_extensions, preferred_root_cn, 
 		created_at, updated_at, api_key, api_key_via_url,
 		post_processing_command, post_processing_environment, post_processing_client_address, 
-		post_processing_client_key)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+		post_processing_client_key, profile)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
 	RETURNING id
 	`
 
@@ -48,6 +48,7 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates
 		makeJsonStringSlice(payload.PostProcessingEnvironment),
 		payload.PostProcessingClientKeyB64,
 		payload.PostProcessingClientAddress,
+		payload.Profile,
 	).Scan(&id)
 
 	if err != nil {

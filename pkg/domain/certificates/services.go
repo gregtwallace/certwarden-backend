@@ -2,6 +2,7 @@ package certificates
 
 import (
 	"certwarden-backend/pkg/domain/acme_accounts"
+	"certwarden-backend/pkg/domain/acme_servers"
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
@@ -17,6 +18,7 @@ type App interface {
 	GetLogger() *zap.SugaredLogger
 	GetOutputter() *output.Service
 	GetCertificatesStorage() Storage
+	GetAcmeServerService() *acme_servers.Service
 	GetKeysService() *private_keys.Service
 	GetAcctsService() *acme_accounts.Service
 }
@@ -41,11 +43,12 @@ type Storage interface {
 
 // Keys service struct
 type Service struct {
-	logger   *zap.SugaredLogger
-	output   *output.Service
-	storage  Storage
-	keys     *private_keys.Service
-	accounts *acme_accounts.Service
+	logger            *zap.SugaredLogger
+	output            *output.Service
+	storage           Storage
+	acmeServerService *acme_servers.Service
+	keys              *private_keys.Service
+	accounts          *acme_accounts.Service
 }
 
 // NewService creates a new service
@@ -67,6 +70,12 @@ func NewService(app App) (*Service, error) {
 	// storage
 	service.storage = app.GetCertificatesStorage()
 	if service.storage == nil {
+		return nil, errServiceComponent
+	}
+
+	// acme services
+	service.acmeServerService = app.GetAcmeServerService()
+	if service.acmeServerService == nil {
 		return nil, errServiceComponent
 	}
 

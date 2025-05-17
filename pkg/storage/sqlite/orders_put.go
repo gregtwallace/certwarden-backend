@@ -17,15 +17,16 @@ func (store *Storage) PutOrderAcme(payload orders.UpdateAcmeOrderPayload) (err e
 			acme_orders
 		SET
 			status = $1,
-			expires = case when $2 is null then expires else $2 end,
+			expires = $2,
 			dns_identifiers = $3,
-			error = case when $4 is null then error else $4 end,
+			error = $4,
 			authorizations = $5,
 			finalize = $6,
-			certificate_url = case when $7 is null then certificate_url else $7 end,
-			updated_at = $8
+			profile = $7,
+			certificate_url = $8,
+			updated_at = $9
 		WHERE
-			id = $9
+			id = $10
 		`
 
 	_, err = store.db.ExecContext(ctx, query,
@@ -35,6 +36,7 @@ func (store *Storage) PutOrderAcme(payload orders.UpdateAcmeOrderPayload) (err e
 		payload.Error,
 		makeJsonStringSlice(payload.Authorizations),
 		payload.Finalize,
+		payload.Profile,
 		payload.CertificateUrl,
 		payload.UpdatedAt,
 		payload.OrderId,

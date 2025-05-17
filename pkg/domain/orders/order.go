@@ -31,6 +31,7 @@ type Order struct {
 	ChainRootCN    *string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+	Profile        *string
 }
 
 // orderSummaryResponse is a JSON response containing only
@@ -47,6 +48,7 @@ type orderSummaryResponse struct {
 	ValidFrom         *int                            `json:"valid_from"`
 	ValidTo           *int                            `json:"valid_to"`
 	ChainRootCN       *string                         `json:"chain_root_cn"`
+	Profile           *string                         `json:"profile,omitempty"`
 	CreatedAt         int64                           `json:"created_at"`
 	UpdatedAt         int64                           `json:"updated_at"`
 }
@@ -133,6 +135,7 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 		ValidFrom:      validFromUnix,
 		ValidTo:        validToUnix,
 		ChainRootCN:    order.ChainRootCN,
+		Profile:        order.Profile,
 		CreatedAt:      order.CreatedAt.Unix(),
 		UpdatedAt:      order.UpdatedAt.Unix(),
 	}

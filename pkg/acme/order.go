@@ -12,12 +12,15 @@ import (
 type NewOrderPayload struct {
 	// notBefore and notAfter are optional and not implemented
 	Identifiers IdentifierSlice `json:"identifiers"`
+
+	// ACME Profiles Extension
+	Profile *string `json:"profile,omitempty"`
 }
 
 // LE response with order information
 type Order struct {
 	Status         string          `json:"status"`
-	Expires        timeString      `json:"expires"`
+	Expires        *timeString     `json:"expires"`
 	Identifiers    IdentifierSlice `json:"identifiers"`
 	Error          *Error          `json:"error,omitempty"`
 	Authorizations []string        `json:"authorizations"`
@@ -26,6 +29,9 @@ type Order struct {
 	NotBefore      *timeString     `json:"notBefore,omitempty"`
 	NotAfter       *timeString     `json:"notAfter,omitempty"`
 	Location       string          `json:"-"` // omit because it is in the header
+
+	// ACME Profiles Extension
+	Profile *string `json:"profile,omitempty"`
 }
 
 // Account response decoder
