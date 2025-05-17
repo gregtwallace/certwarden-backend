@@ -30,8 +30,8 @@ type directory struct {
 		ExternalAccountRequired bool     `json:"externalAccountRequired"`
 	} `json:"meta"`
 
-	// ACME ARI (ACME Renewal Information) - https://datatracker.ietf.org/doc/draft-ietf-acme-ari/
-	RenewalInfo *string `json:"renewalInfo"`
+	// ACME ARI (ACME Renewal Information) Extension - https://datatracker.ietf.org/doc/draft-ietf-acme-ari/
+	RenewalInfo *string `json:"renewalInfo,omitempty"`
 
 	// raw stores the directory URLs raw response
 	raw json.RawMessage `json:"-"`
