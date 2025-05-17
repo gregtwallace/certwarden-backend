@@ -7,6 +7,7 @@ import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
 	"certwarden-backend/pkg/validation"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -100,10 +101,22 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) *outp
 type newCertOptions struct {
 	output.JsonResponse
 	CertificateOptions struct {
-		AvailableKeys  []private_keys.KeySummaryResponse      `json:"private_keys"`
-		KeyAlgorithms  []key_crypto.Algorithm                 `json:"key_algorithms"`
-		UsableAccounts []acme_accounts.AccountSummaryResponse `json:"acme_accounts"`
+		AvailableKeys  []private_keys.KeySummaryResponse `json:"private_keys"`
+		KeyAlgorithms  []key_crypto.Algorithm            `json:"key_algorithms"`
+		UsableAccounts []usableAccount                   `json:"acme_accounts"`
 	} `json:"certificate_options"`
+}
+
+// usableAccount uses a custom AcmeServer struct to also output valid profile names
+type usableAccount struct {
+	acme_accounts.AccountSummaryResponse
+	AcmeServer struct {
+		ID           int               `json:"id"`
+		Name         string            `json:"name"`
+		DirectoryURL string            `json:"directory_url"`
+		IsStaging    bool              `json:"is_staging"`
+		Profiles     map[string]string `json:"profiles,omitempty"`
+	} `json:"acme_server"`
 }
 
 // GetNewCertOptions is an http handler that returns information the client GUI needs to properly
@@ -128,9 +141,27 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 		return output.JsonErrStorageGeneric(err)
 	}
 
-	outputAccounts := []acme_accounts.AccountSummaryResponse{}
+	outputAccounts := []usableAccount{}
 	for i := range accounts {
-		outputAccounts = append(outputAccounts, accounts[i].SummaryResponse())
+		acct := usableAccount{}
+		acct.AccountSummaryResponse = accounts[i].SummaryResponse()
+
+		// get profiles
+		acmeService, err := service.acmeServerService.AcmeService(accounts[i].AcmeServer.ID)
+		if err != nil {
+			err = fmt.Errorf("failed to retrieve acme service to list profiles (%s)", err)
+			service.logger.Error(err)
+			return output.JsonErrInternal(err)
+		}
+
+		// redo AcmeServer
+		acct.AcmeServer.ID = accounts[i].AcmeServer.ID
+		acct.AcmeServer.Name = accounts[i].AcmeServer.Name
+		acct.AcmeServer.DirectoryURL = accounts[i].AcmeServer.DirectoryURL
+		acct.AcmeServer.IsStaging = accounts[i].AcmeServer.IsStaging
+		acct.AcmeServer.Profiles = acmeService.Profiles()
+
+		outputAccounts = append(outputAccounts, acct)
 	}
 
 	// write response

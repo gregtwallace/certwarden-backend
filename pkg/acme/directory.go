@@ -199,9 +199,9 @@ func (service *Service) DirectoryRawResponse() json.RawMessage {
 
 // Profiles returns the map of available profiles for the ACME service, or nil if
 // the profiles extension is not implemented (per the directory's meta response)
-// func (service *Service) Profiles() map[string]string {
-// 	return service.dir.Meta.Profiles
-// }
+func (service *Service) Profiles() map[string]string {
+	return service.dir.Meta.Profiles
+}
 
 // ProfileValidate returns true if the specified profileName exists in the ACME
 // service's meta profile map. If the profile does not exist (including if there
