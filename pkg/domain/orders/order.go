@@ -207,7 +207,7 @@ func (order Order) PemContentChainOnly() string {
 // that involves one or more post processing actions
 func (order *Order) hasPostProcessingToDo() bool {
 	// post processing action = Client
-	if order.Certificate.PostProcessingClientKeyB64 != "" {
+	if order.Certificate.PostProcessingClientAddress != "" && order.Certificate.PostProcessingClientKeyB64 != "" {
 		return true
 	}
 
