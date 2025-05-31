@@ -45,8 +45,8 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 	SELECT
 		/* order */
 		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, 
-		ao.authorizations, ao.finalize, ao.certificate_url, ao.valid_from, ao.valid_to, ao.chain_root_cn,
-		ao.profile, ao.created_at, ao.updated_at, 
+		ao.authorizations, ao.finalize, ao.certificate_url, ao.pem, ao.valid_from, ao.valid_to, ao.chain_root_cn,
+		ao.profile, ao.renewal_info, ao.created_at, ao.updated_at, 
 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts,
@@ -136,10 +136,12 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			&oneOrder.authorizations,
 			&oneOrder.finalize,
 			&oneOrder.certificateUrl,
+			&oneOrder.pem,
 			&oneOrder.validFrom,
 			&oneOrder.validTo,
 			&oneOrder.chainRootCN,
 			&oneOrder.profile,
+			&oneOrder.renewalInfo,
 			&oneOrder.createdAt,
 			&oneOrder.updatedAt,
 
@@ -277,7 +279,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 		/* order */
 		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, 
 		ao.authorizations, ao.finalize, ao.certificate_url, ao.pem, ao.valid_from, ao.valid_to, ao.chain_root_cn,
-		ao.profile, ao.created_at, ao.updated_at, 
+		ao.profile, ao.renewal_info, ao.created_at, ao.updated_at, 
 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts,
@@ -359,6 +361,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			&oneOrder.validTo,
 			&oneOrder.chainRootCN,
 			&oneOrder.profile,
+			&oneOrder.renewalInfo,
 			&oneOrder.createdAt,
 			&oneOrder.updatedAt,
 
@@ -565,7 +568,7 @@ func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err erro
 		/* order */
 		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, 
 		ao.authorizations, ao.finalize, ao.certificate_url, ao.pem, ao.valid_from, ao.valid_to, ao.chain_root_cn,
-		ao.profile, ao.created_at, ao.updated_at, 
+		ao.profile, ao.renewal_info, ao.created_at, ao.updated_at, 
 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts,
@@ -633,6 +636,7 @@ func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err erro
 			&oneOrder.validTo,
 			&oneOrder.chainRootCN,
 			&oneOrder.profile,
+			&oneOrder.renewalInfo,
 			&oneOrder.createdAt,
 			&oneOrder.updatedAt,
 
@@ -772,7 +776,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		/* order */
 		ao.id, ao.acme_location, ao.status, ao.known_revoked, ao.error, ao.expires, ao.dns_identifiers, 
 		ao.authorizations, ao.finalize, ao.certificate_url, ao.pem, ao.valid_from, ao.valid_to, ao.chain_root_cn,
-		ao.profile, ao.created_at, ao.updated_at, 
+		ao.profile, ao.renewal_info, ao.created_at, ao.updated_at, 
 
 		/* order's cert */
 		c.id, c.name, c.description, c.subject, c.subject_alts,
@@ -855,6 +859,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		&oneOrder.validTo,
 		&oneOrder.chainRootCN,
 		&oneOrder.profile,
+		&oneOrder.renewalInfo,
 		&oneOrder.createdAt,
 		&oneOrder.updatedAt,
 

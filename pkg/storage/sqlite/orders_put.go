@@ -3,6 +3,8 @@ package sqlite
 import (
 	"certwarden-backend/pkg/domain/orders"
 	"context"
+	"encoding/json"
+	"fmt"
 )
 
 // UpdateOrderAcme updates the specified order ID with acme.Order response
@@ -40,6 +42,43 @@ func (store *Storage) PutOrderAcme(payload orders.UpdateAcmeOrderPayload) (err e
 		payload.CertificateUrl,
 		payload.UpdatedAt,
 		payload.OrderId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	// TODO: Handle 0 rows updated.
+
+	return nil
+}
+
+// PutRenewalInfo updates the specified order ID with its renewal information object
+func (store *Storage) PutRenewalInfo(payload orders.UpdateRenewalInfoPayload) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	defer cancel()
+
+	// update existing record
+	query := `
+		UPDATE
+			acme_orders
+		SET
+			renewal_info = $1,
+			updated_at = $2
+		WHERE
+			id = $3
+		`
+
+	// marshal struct
+	ari, err := json.Marshal(payload.RenewalInfo)
+	if err != nil {
+		return fmt.Errorf("storage: failed to marshal renewal info (%s)", err)
+	}
+
+	_, err = store.db.ExecContext(ctx, query,
+		string(ari),
+		payload.UpdatedAt,
+		payload.OrderID,
 	)
 
 	if err != nil {
@@ -113,7 +152,7 @@ func (store *Storage) UpdateFinalizedKey(orderId int, keyId int) (err error) {
 	return nil
 }
 
-// UpdateOrderCert updates the specified order ID with the specified certificate data
+// UpdateOrderCert updates the specified order ID with the specified certificate data and ari
 func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
 	defer cancel()
@@ -129,16 +168,24 @@ func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) 
 			valid_from = $2,
 			valid_to = $3,
 			chain_root_cn = $4,
-			updated_at = $5
+			renewal_info = $5,
+			updated_at = $6
 		WHERE
-			id = $6
+			id = $7
 		`
+
+	// marshal struct
+	ari, err := json.Marshal(payload.RenewalInfo)
+	if err != nil {
+		return fmt.Errorf("storage: failed to marshal renewal info (%s)", err)
+	}
 
 	_, err = store.db.ExecContext(ctx, query,
 		payload.AcmeCert.PEM(),
 		payload.AcmeCert.NotBefore().Unix(),
 		payload.AcmeCert.NotAfter().Unix(),
 		payload.AcmeCert.ChainRootCN(),
+		string(ari),
 		payload.UpdatedAt.Unix(),
 		orderId,
 	)

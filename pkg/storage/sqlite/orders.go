@@ -30,6 +30,7 @@ type orderDb struct {
 	createdAt      int64
 	updatedAt      int64
 	profile        sql.NullString
+	renewalInfo    sql.NullString
 }
 
 func (order orderDb) toOrder() (orders.Order, error) {
@@ -52,6 +53,12 @@ func (order orderDb) toOrder() (orders.Order, error) {
 		return orders.Order{}, err
 	}
 
+	// renewal info
+	ri := orders.UnmarshalRenewalInfo([]byte(order.renewalInfo.String))
+	if !order.renewalInfo.Valid {
+		ri = nil
+	}
+
 	return orders.Order{
 		ID:             order.id,
 		Certificate:    cert,
@@ -72,5 +79,6 @@ func (order orderDb) toOrder() (orders.Order, error) {
 		CreatedAt:      time.Unix(order.createdAt, 0),
 		UpdatedAt:      time.Unix(order.updatedAt, 0),
 		Profile:        nullStringToString(order.profile),
+		RenewalInfo:    ri,
 	}, nil
 }

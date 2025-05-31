@@ -90,6 +90,9 @@ take advantage of.
   + Remove `frontend_show_debug_info` in favor of a browser storage based
     value that can be toggled in the frontend.
 
-### [v0.5.0]
+### [v0.25.0]
 - config_version 3 -> 4
 - Add `precheck_wait` and `postcheck_wait` to provider configs.
+
+### [v0.27.0]
+- Remove `orders` config options. Auto ordering and timing are no longer configurable.

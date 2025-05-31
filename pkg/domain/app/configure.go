@@ -8,7 +8,6 @@ import (
 	"certwarden-backend/pkg/domain/app/auth"
 	"certwarden-backend/pkg/domain/app/backup"
 	"certwarden-backend/pkg/domain/app/updater"
-	"certwarden-backend/pkg/domain/orders"
 	"errors"
 	"fmt"
 	"io"
@@ -51,7 +50,6 @@ type config struct {
 	Auth                      auth.Config       `yaml:"auth"`
 	Backup                    backup.Config     `yaml:"backup"`
 	Updater                   updater.Config    `yaml:"updater"`
-	Orders                    orders.Config     `yaml:"orders"`
 	Challenges                challenges.Config `yaml:"challenges"`
 }
 
@@ -296,20 +294,6 @@ func (app *Application) setDefaultConfigValues() {
 	if app.config.Updater.Channel == nil {
 		app.config.Updater.Channel = new(updater.Channel)
 		*app.config.Updater.Channel = updater.ChannelBeta
-	}
-
-	// orders
-	if app.config.Orders.AutomaticOrderingEnable == nil {
-		app.config.Orders.AutomaticOrderingEnable = new(bool)
-		*app.config.Orders.AutomaticOrderingEnable = true
-	}
-	if app.config.Orders.RefreshTimeHour == nil {
-		app.config.Orders.RefreshTimeHour = new(int)
-		*app.config.Orders.RefreshTimeHour = 3
-	}
-	if app.config.Orders.RefreshTimeMinute == nil {
-		app.config.Orders.RefreshTimeMinute = new(int)
-		*app.config.Orders.RefreshTimeMinute = 12
 	}
 
 	// challenge dns checker services
