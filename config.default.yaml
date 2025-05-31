@@ -38,11 +38,6 @@
     'max_days': 180
     'max_count': -1
 
-'orders':
-  'auto_order_enable': true
-  'refresh_time_hour': 3
-  'refresh_time_minute': 12
-
 'challenges':
   'domain_aliases':
     'securedomain.com': 'lesssecuredomain.com'

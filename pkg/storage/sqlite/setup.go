@@ -19,7 +19,7 @@ import (
 // config for DB
 const dbTimeout = time.Duration(5 * time.Second)
 const DbFilename = "appdata.db"
-const DbCurrentUserVersion = 10
+const DbCurrentUserVersion = 11
 const dbFileMode = 0600
 
 var dbOptions = url.Values{
@@ -213,6 +213,14 @@ func OpenStorage(app App) (*Storage, error) {
 		}
 	}
 
+	// upgrade if schema 10
+	if fileUserVersion == 10 {
+		fileUserVersion, err = store.migrateV10toV11()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// fail if still not correct
 	if fileUserVersion != DbCurrentUserVersion {
 		return nil, fmt.Errorf("db schema user_version is %d (expected %d) and automatic migration failed", fileUserVersion, DbCurrentUserVersion)
@@ -253,7 +261,7 @@ func (store *Storage) populateNewDb() error {
 	}
 
 	// create tables
-	err = createDBTablesV10(tx)
+	err = createDBTablesV11(tx)
 	if err != nil {
 		return err
 	}

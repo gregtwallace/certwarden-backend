@@ -50,6 +50,7 @@ type Storage interface {
 
 	PutOrderAcme(payload UpdateAcmeOrderPayload) (err error)
 	PutOrderInvalid(orderId int) (err error)
+	PutRenewalInfo(UpdateRenewalInfoPayload) (err error)
 	UpdateFinalizedKey(orderId int, keyId int) (err error)
 	UpdateOrderCert(orderId int, CertPayload *CertPayload) (err error)
 	RevokeOrder(orderId int) (err error)
@@ -60,13 +61,6 @@ type Storage interface {
 
 	// certs
 	UpdateCertUpdatedTime(certId int) (err error)
-}
-
-// Configuration options
-type Config struct {
-	AutomaticOrderingEnable *bool `yaml:"auto_order_enable"`
-	RefreshTimeHour         *int  `yaml:"refresh_time_hour"`
-	RefreshTimeMinute       *int  `yaml:"refresh_time_minute"`
 }
 
 // service struct
@@ -89,7 +83,7 @@ type Service struct {
 }
 
 // NewService creates a new private_key service
-func NewService(app App, cfg *Config) (*Service, error) {
+func NewService(app App) (*Service, error) {
 	service := new(Service)
 
 	// shutdown context
@@ -178,7 +172,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	}
 
 	// start service to automatically place and complete orders
-	service.startAutoOrderService(cfg, app.GetShutdownContext(), app.GetShutdownWaitGroup())
+	service.startAutoOrderService(app.GetShutdownContext(), app.GetShutdownWaitGroup())
 
 	return service, nil
 }

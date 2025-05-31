@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+var ErrUnsupportedARI = errors.New("acme: server does not support ARI (directory missing 'renewalInfo' key)")
+
 // ACMERenewalInfo contains the ACME Renewal Info (ARI) response
 type ACMERenewalInfo struct {
 	SuggestedWindow struct {
@@ -23,16 +25,16 @@ type ACMERenewalInfo struct {
 }
 
 // unmarshalACMERenewalInfo attempts to unmarshal
-func unmarshalACMERenewalInfo(jsonResp json.RawMessage, headers http.Header) (ari ACMERenewalInfo, _ error) {
+func unmarshalACMERenewalInfo(jsonResp json.RawMessage, headers http.Header) (ari *ACMERenewalInfo, _ error) {
 	err := json.Unmarshal(jsonResp, &ari)
 	if err != nil {
-		return ACMERenewalInfo{}, err
+		return nil, err
 	}
 
 	// get Retry-After value from header
 	retryAfter := headers.Get("Retry-After")
 	if retryAfter == "" {
-		return ACMERenewalInfo{}, errors.New("acme: ari response missing Retry-After header")
+		return nil, errors.New("acme: ari response missing Retry-After header")
 	}
 
 	// check if header was in seconds and ensure > 0
@@ -54,29 +56,34 @@ func unmarshalACMERenewalInfo(jsonResp json.RawMessage, headers http.Header) (ar
 	}
 
 	if !parsedOk {
-		return ACMERenewalInfo{}, fmt.Errorf("acme: ari response Retry-After header value '%s' could not be parsed", retryAfter)
+		return nil, fmt.Errorf("acme: ari response Retry-After header value '%s' could not be parsed", retryAfter)
 	}
 
 	return ari, nil
 }
 
-// GatACMERenewalInfo sends an unauthenticated GET request to retrieve the ARI information
+// SupportsARIExtension returns true if the ACME Service supports ARI (ACME Renewal Info) extension
+func (service *Service) SupportsARIExtension() bool {
+	return service.dir.RenewalInfo != nil
+}
+
+// GetACMERenewalInfo sends an unauthenticated GET request to retrieve the ARI information
 // for the specified certificate PEM.
-func (service *Service) GatACMERenewalInfo(certPem string) (ACMERenewalInfo, error) {
-	// only some servers support this, ensure its in the directory
-	if service.dir.RenewalInfo == nil {
-		return ACMERenewalInfo{}, errors.New("acme: server does not support ARI (directory missing 'renewalInfo' key)")
+func (service *Service) GetACMERenewalInfo(certPem string) (*ACMERenewalInfo, error) {
+	// only some servers support this
+	if !service.SupportsARIExtension() {
+		return nil, ErrUnsupportedARI
 	}
 
 	// decode and parse the pem to a Certificate
 	certBlock, _ := pem.Decode([]byte(certPem))
 	if certBlock == nil {
-		return ACMERenewalInfo{}, errors.New("acme: cert pem block is nil")
+		return nil, errors.New("acme: cert pem block is nil")
 	}
 
 	cert, err := x509.ParseCertificate(certBlock.Bytes)
 	if err != nil {
-		return ACMERenewalInfo{}, fmt.Errorf("acme: cert pem block failed to parse (%v)", err)
+		return nil, fmt.Errorf("acme: cert pem block failed to parse (%v)", err)
 	}
 
 	// assemble the link and do GET
@@ -86,13 +93,13 @@ func (service *Service) GatACMERenewalInfo(certPem string) (ACMERenewalInfo, err
 
 	resp, headers, err := service.get(url)
 	if err != nil {
-		return ACMERenewalInfo{}, fmt.Errorf("acme: ari get failed (%v)", err)
+		return nil, fmt.Errorf("acme: ari get failed (%v)", err)
 	}
 
 	// unmarshal response
 	ari, err := unmarshalACMERenewalInfo(resp, headers)
 	if err != nil {
-		return ACMERenewalInfo{}, err
+		return nil, err
 	}
 
 	return ari, nil

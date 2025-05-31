@@ -134,8 +134,18 @@ fulfillLoop:
 				return // done, failed
 			}
 
+			// get ari, if supported
+			var acmeARI *acme.ACMERenewalInfo
+			if acmeService.SupportsARIExtension() {
+				var err error
+				acmeARI, err = acmeService.GetACMERenewalInfo(cert.PEM())
+				if err != nil {
+					j.service.logger.Errorf("orders: fulfilling worker %d: failed to fetch ari info for newly completed order (%s)", workerID, err)
+				}
+			}
+
 			// process pem and save to storage
-			err = j.saveAcmeCert(order.ID, cert)
+			err = j.saveAcmeCert(order.ID, cert, acmeARI)
 			if err != nil {
 				j.service.logger.Errorf("orders: fulfilling worker %d: save pem error: %s", workerID, err)
 				return // done, failed

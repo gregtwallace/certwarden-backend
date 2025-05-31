@@ -102,14 +102,6 @@
     'max_count': -1
     # If multiple criteria are specified, files are deleted when either criteria is met
 
-# Orders configuration
-'orders':
-  # settings for automatic ordering when certs are close to expiring
-  'auto_order_enable': true
-  # time for the daily ordering to occur
-  'refresh_time_hour': 1
-  'refresh_time_minute': 35
-
 # Challenge Providers
 'challenges':
   # Domain Aliases allow the mapping of an ACME DNS Identifier (i.e., the domain a certificate

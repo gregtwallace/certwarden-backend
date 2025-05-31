@@ -218,7 +218,7 @@ func create() (*Application, error) {
 	}
 
 	// orders service
-	app.orders, err = orders.NewService(app, &app.config.Orders)
+	app.orders, err = orders.NewService(app)
 	if err != nil {
 		app.logger.Errorf("failed to configure app orders (%s)", err)
 		return app, err
