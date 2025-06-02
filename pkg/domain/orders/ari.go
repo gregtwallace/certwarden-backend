@@ -8,7 +8,6 @@ import (
 
 // expiringAfterElapsedRatio is the ratio of a certificate's elapsed validity / total validity
 // after which the certificate should be considered expiring
-// KEEP IN SYNC with frontend `FlagExpireDays.tsx` consts
 const (
 	// shortLivedValidityThreshold is the amount of validity time under which this application will consider
 	// a certificate to be "short-lived"
