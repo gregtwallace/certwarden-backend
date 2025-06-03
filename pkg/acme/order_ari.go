@@ -31,6 +31,17 @@ func unmarshalACMERenewalInfo(jsonResp json.RawMessage, headers http.Header) (ar
 		return nil, err
 	}
 
+	// if window has a 0 value, didn't unmarshal a valid response
+	if ari.SuggestedWindow.Start.IsZero() || ari.SuggestedWindow.End.IsZero() {
+		return nil, errors.New("acme: ari response invalid (suggested window has 0 time value)")
+	}
+
+	// s 4.2 dictates "A RenewalInfo object in which the end timestamp equals or precedes
+	// the start timestamp is invalid" and requires it to be treated as if it was not received
+	if ari.SuggestedWindow.End.Equal(ari.SuggestedWindow.Start) || ari.SuggestedWindow.End.Before(ari.SuggestedWindow.Start) {
+		return nil, errors.New("acme: ari response invalid (suggested window not valid)")
+	}
+
 	// get Retry-After value from header
 	retryAfter := headers.Get("Retry-After")
 	if retryAfter == "" {
@@ -59,6 +70,15 @@ func unmarshalACMERenewalInfo(jsonResp json.RawMessage, headers http.Header) (ar
 		return nil, fmt.Errorf("acme: ari response Retry-After header value '%s' could not be parsed", retryAfter)
 	}
 
+	// s 4.3.2 - impose limits on Retry-After
+	// if < 1 minute, set to 1 minute
+	if ari.RetryAfter.Add(-1 * time.Minute).Before(time.Now()) {
+		ari.RetryAfter = time.Now().Add(1 * time.Minute)
+	} else if time.Now().Before(ari.RetryAfter.Add(-24 * time.Hour)) {
+		// if > 24 hours, set to 24 hours
+		ari.RetryAfter = time.Now().Add(24 * time.Hour)
+	}
+
 	return ari, nil
 }
 
@@ -84,6 +104,11 @@ func (service *Service) GetACMERenewalInfo(certPem string) (*ACMERenewalInfo, er
 	cert, err := x509.ParseCertificate(certBlock.Bytes)
 	if err != nil {
 		return nil, fmt.Errorf("acme: cert pem block failed to parse (%v)", err)
+	}
+
+	// s 4.3 forbids checking renewal info after cert expiration
+	if cert.NotAfter.Before(time.Now()) {
+		return nil, fmt.Errorf("acme: cert expired, ari check is forbidden")
 	}
 
 	// assemble the link and do GET
