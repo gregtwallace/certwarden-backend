@@ -1,13 +1,9 @@
 package acme
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-
-	"go.uber.org/zap/zapcore"
 )
 
 // get does an unauthenticated GET request to an ACME endpoint
@@ -27,15 +23,15 @@ func (service *Service) get(url string) (bodyBytes []byte, _ http.Header, _ erro
 
 	// ACME response body (debugging)
 	// indent (if possible) before debug logging
-	if service.logger.Level() == zapcore.DebugLevel {
-		var prettyBytes bytes.Buffer
-		prettyErr := json.Indent(&prettyBytes, bodyBytes, "", "\t")
-		if prettyErr != nil {
-			service.logger.Debugf("acme: get %s response code: %d ; body: %s", url, resp.StatusCode, string(bodyBytes))
-		} else {
-			service.logger.Debugf("acme: get %s response code: %d ; body: %s", url, resp.StatusCode, prettyBytes.String())
-		}
-	}
+	// if service.logger.Level() == zapcore.DebugLevel {
+	// 	var prettyBytes bytes.Buffer
+	// 	prettyErr := json.Indent(&prettyBytes, bodyBytes, "", "\t")
+	// 	if prettyErr != nil {
+	// 		service.logger.Debugf("acme: get %s response code: %d ; body: %s", url, resp.StatusCode, string(bodyBytes))
+	// 	} else {
+	// 		service.logger.Debugf("acme: get %s response code: %d ; body: %s", url, resp.StatusCode, prettyBytes.String())
+	// 	}
+	// }
 
 	// try to decode AcmeError
 	acmeError := unmarshalErrorResponse(bodyBytes)

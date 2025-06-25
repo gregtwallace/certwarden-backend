@@ -18,7 +18,7 @@ func (service *Service) orderExpiringCerts() {
 		return
 	}
 
-	// aysnc checking and updating the authz for validity
+	// aysnc checking and updating
 	var wg sync.WaitGroup
 	wg.Add(len(orders))
 
