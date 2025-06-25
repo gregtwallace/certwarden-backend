@@ -28,7 +28,7 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		return Order{}, output.JsonErrInternal(err)
 	}
 
-	acmeResponse, err := acmeService.NewOrder(cert.NewOrderPayload(), key)
+	acmeResponse, err := acmeService.NewOrder(service.NewOrderPayload(cert), key)
 	if err != nil {
 		service.logger.Error(err)
 		return Order{}, output.JsonErrInternal(err)
