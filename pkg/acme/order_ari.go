@@ -87,6 +87,16 @@ func (service *Service) SupportsARIExtension() bool {
 	return service.dir.RenewalInfo != nil
 }
 
+// ACMERenewalInfoIdentifier returns the unique identifer for the passed in cert
+// as specified in the ACME ARI Draft v8 s 4.1
+func ACMERenewalInfoIdentifier(cert *x509.Certificate) string {
+	// assemble the unique id
+	akiStr := base64.RawURLEncoding.EncodeToString(cert.AuthorityKeyId)
+	serialStr := base64.RawURLEncoding.EncodeToString(cert.SerialNumber.Bytes())
+
+	return akiStr + "." + serialStr
+}
+
 // GetACMERenewalInfo sends an unauthenticated GET request to retrieve the ARI information
 // for the specified certificate PEM.
 func (service *Service) GetACMERenewalInfo(certPem string) (*ACMERenewalInfo, error) {
@@ -111,11 +121,8 @@ func (service *Service) GetACMERenewalInfo(certPem string) (*ACMERenewalInfo, er
 		return nil, fmt.Errorf("acme: cert expired, ari check is forbidden")
 	}
 
-	// assemble the link and do GET
-	akiStr := base64.RawURLEncoding.EncodeToString(cert.AuthorityKeyId)
-	serialStr := base64.RawURLEncoding.EncodeToString(cert.SerialNumber.Bytes())
-	url := *service.dir.RenewalInfo + "/" + akiStr + "." + serialStr
-
+	// create link and do GET
+	url := *service.dir.RenewalInfo + "/" + ACMERenewalInfoIdentifier(cert)
 	resp, headers, err := service.get(url)
 	if err != nil {
 		return nil, fmt.Errorf("acme: ari get failed (%v)", err)

@@ -15,6 +15,9 @@ type NewOrderPayload struct {
 
 	// ACME Profiles Extension
 	Profile *string `json:"profile,omitempty"`
+
+	// ACME ARI Extension
+	Replaces *string `json:"replaces,omitempty"`
 }
 
 // LE response with order information
@@ -32,6 +35,9 @@ type Order struct {
 
 	// ACME Profiles Extension
 	Profile *string `json:"profile,omitempty"`
+
+	// ACME ARI Extension
+	Replaces *string `json:"replaces,omitempty"`
 }
 
 // Account response decoder
@@ -49,8 +55,22 @@ func unmarshalOrder(jsonResp []byte, headers http.Header) (order Order, err erro
 
 // NewOrder posts a secure message to the NewOrder URL of the directory
 func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey) (order Order, err error) {
+	// Strip `replaces` if server doesn't indicate support, per recommendation in ARI s 5
+	if payload.Replaces != nil && !service.SupportsARIExtension() {
+		payload.Replaces = nil
+	}
+
 	// post new-order
 	jsonResp, headers, err := service.postToUrlSigned(payload, service.dir.NewOrder, accountKey)
+	// if there is an acme.Error of type `malformed` or `alreadyReplaced` AND the `replaces` field is
+	// set, strip the replaces filed and do exactly 1 retry
+	acmeErr, isAcmeErr := err.(*Error)
+	if isAcmeErr && payload.Replaces != nil && acmeErr != nil &&
+		(acmeErr.Type == "urn:ietf:params:acme:error:malformed" || acmeErr.Type == "urn:ietf:params:acme:error:alreadyReplaced") {
+
+		payload.Replaces = nil
+		jsonResp, headers, err = service.postToUrlSigned(payload, service.dir.NewOrder, accountKey)
+	}
 	if err != nil {
 		return Order{}, err
 	}

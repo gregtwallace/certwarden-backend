@@ -1,7 +1,6 @@
 package certificates
 
 import (
-	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/domain/acme_accounts"
 	"certwarden-backend/pkg/domain/private_keys"
 	"time"
@@ -140,32 +139,5 @@ func (cert Certificate) detailedResponse() certificateDetailedResponse {
 		PostProcessingEnvironment:   cert.PostProcessingEnvironment,
 		PostProcessingClientAddress: cert.PostProcessingClientAddress,
 		PostProcessingClientKeyB64:  cert.PostProcessingClientKeyB64,
-	}
-}
-
-// NewOrderPayload creates the appropriate newOrder payload for ACME
-func (cert *Certificate) NewOrderPayload() acme.NewOrderPayload {
-	var identifiers []acme.Identifier
-
-	// subject is always required and should be first
-	// dns is the only supported type and is hardcoded
-	identifiers = append(identifiers, acme.Identifier{Type: "dns", Value: cert.Subject})
-
-	// add alt names if they exist
-	if cert.SubjectAltNames != nil {
-		for _, name := range cert.SubjectAltNames {
-			identifiers = append(identifiers, acme.Identifier{Type: "dns", Value: name})
-		}
-	}
-
-	// only send profile if it isn't blank
-	p := &cert.Profile
-	if cert.Profile == "" {
-		p = nil
-	}
-
-	return acme.NewOrderPayload{
-		Identifiers: identifiers,
-		Profile:     p,
 	}
 }

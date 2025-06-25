@@ -5,7 +5,11 @@ import (
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/domain/certificates"
 	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/pagination_sort"
+	"certwarden-backend/pkg/storage"
+	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -220,4 +224,93 @@ func (order *Order) hasPostProcessingToDo() bool {
 	}
 
 	return false
+}
+
+// NewOrderPayload creates the appropriate newOrder payload for ACME
+func (service *Service) NewOrderPayload(cert certificates.Certificate) acme.NewOrderPayload {
+	var identifiers []acme.Identifier
+
+	// subject is always required and should be first
+	// dns is the only supported type and is hardcoded
+	identifiers = append(identifiers, acme.Identifier{Type: "dns", Value: cert.Subject})
+
+	// add alt names if they exist
+	if cert.SubjectAltNames != nil {
+		for _, name := range cert.SubjectAltNames {
+			identifiers = append(identifiers, acme.Identifier{Type: "dns", Value: name})
+		}
+	}
+
+	// ACME Profile Extension: only send profile if it isn't blank
+	p := &cert.Profile
+	if cert.Profile == "" {
+		p = nil
+	}
+
+	// ACME ARI Extension: try to include the `replaces` field
+	replaces := func() *string {
+		acmeServ, err := service.acmeServerService.AcmeService(cert.CertificateAccount.AcmeServer.ID)
+		if err != nil {
+			service.logger.Errorf("orders: new order cant populated `replaces`, failed to get acme service for cert %d (%s)", cert.ID, err)
+			return nil
+		}
+
+		// ARI extension not supported
+		if !acmeServ.SupportsARIExtension() {
+			return nil
+		}
+
+		// get all orders from storage
+		orders, _, err := service.storage.GetOrdersByCert(cert.ID, pagination_sort.Query{})
+		if err != nil {
+			// no records isn't an error worth logging
+			if !errors.Is(err, storage.ErrNoRecord) {
+				service.logger.Error(err)
+			}
+			return nil
+		}
+
+		// found orders
+		var mostRecentValidFrom time.Time
+		mostRecentPem := ""
+		for i := range orders {
+			if orders[i].Pem == nil {
+				continue
+			}
+
+			if orders[i].ValidFrom != nil && orders[i].ValidFrom.After(mostRecentValidFrom) {
+				mostRecentValidFrom = *orders[i].ValidFrom
+				mostRecentPem = *orders[i].Pem
+			}
+		}
+
+		// no order PEM to use for replaces
+		if mostRecentPem == "" {
+			return nil
+		}
+
+		// use the order's pem to create the unique ID for `replaces`
+		certBlock, _ := pem.Decode([]byte(mostRecentPem))
+		if certBlock == nil {
+			service.logger.Errorf("orders: new order cant populated `replaces`, cert pem block of latest order of cert %d is nil", cert.ID)
+			return nil
+		}
+
+		x509Cert, err := x509.ParseCertificate(certBlock.Bytes)
+		if err != nil {
+			service.logger.Errorf("orders: new order cant populated `replaces`, cert pem block of latest order of cert %d failed to parse (%s)", cert.ID, err)
+			return nil
+		}
+
+		r := new(string)
+		*r = acme.ACMERenewalInfoIdentifier(x509Cert)
+
+		return r
+	}()
+
+	return acme.NewOrderPayload{
+		Identifiers: identifiers,
+		Profile:     p,
+		Replaces:    replaces,
+	}
 }
