@@ -110,5 +110,9 @@ func (service *Service) orderExpiringCerts() {
 	// wait for task completion
 	wg.Wait()
 
-	service.logger.Infof("orders: auto order added %d orders to queue", addedCount)
+	if addedCount > 0 {
+		service.logger.Infof("orders: auto order added %d orders to queue", addedCount)
+	} else {
+		service.logger.Debugf("orders: auto order added %d orders to queue", addedCount)
+	}
 }
