@@ -47,8 +47,10 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 		return outErr
 	}
 
-	// email (update cannot be to blank)
-	if payload.Email == nil || !validation.EmailValid(*payload.Email) {
+	// email (allow user to try blank -- ACME Server may reject though)
+	// but do reject field was missing
+	if payload.Email == nil ||
+		(*payload.Email != "" && !validation.EmailValid(*payload.Email)) {
 		service.logger.Debug(ErrEmailBad)
 		return output.JsonErrValidationFailed(ErrEmailBad)
 	}

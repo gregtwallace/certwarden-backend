@@ -3,6 +3,7 @@ package acme_accounts
 import (
 	"certwarden-backend/pkg/domain/private_keys/key_crypto"
 	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/validation"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,8 +15,9 @@ import (
 
 // register payload contains External Account Binding information (if required)
 type registerPayload struct {
-	EabKid     string `json:"eab_kid"`
-	EabHmacKey string `json:"eab_hmac_key"`
+	Email      *string `json:"email"`
+	EabKid     string  `json:"eab_kid"`
+	EabHmacKey string  `json:"eab_hmac_key"`
 }
 
 // NewAcmeAccount sends the account information to the ACME new-account endpoint
@@ -52,6 +54,13 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
+
+	// validate override email if it exists
+	if payload.Email != nil && *payload.Email != "" && !validation.EmailValid(*payload.Email) {
+		service.logger.Debug(ErrEmailBad)
+		return output.JsonErrValidationFailed(ErrEmailBad)
+	}
+
 	// end validation
 
 	// send the new-account to ACME
@@ -62,7 +71,7 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *
 	}
 
 	var acmeAccount AcmeAccount
-	acmeAccount.Account, err = acmeService.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey), key)
+	acmeAccount.Account, err = acmeService.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey, payload.Email), key)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
