@@ -3,6 +3,7 @@ package certificates
 import (
 	"certwarden-backend/pkg/domain/acme_accounts"
 	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/domain/private_keys/key_crypto"
 	"time"
 )
 
@@ -50,8 +51,9 @@ type certificateSummaryResponse struct {
 }
 
 type certificateKeySummaryResponse struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID        int                  `json:"id"`
+	Name      string               `json:"name"`
+	Algorithm key_crypto.Algorithm `json:"algorithm"`
 }
 
 type certificateAccountSummaryResponse struct {
@@ -72,8 +74,9 @@ func (cert Certificate) summaryResponse() certificateSummaryResponse {
 		Name:        cert.Name,
 		Description: cert.Description,
 		CertificateKey: certificateKeySummaryResponse{
-			ID:   cert.CertificateKey.ID,
-			Name: cert.CertificateKey.Name,
+			ID:        cert.CertificateKey.ID,
+			Name:      cert.CertificateKey.Name,
+			Algorithm: cert.CertificateKey.Algorithm,
 		},
 		CertificateAccount: certificateAccountSummaryResponse{
 			ID:   cert.CertificateAccount.ID,
