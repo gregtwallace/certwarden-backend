@@ -28,19 +28,15 @@ func encodeJson(data any) (string, error) {
 
 // encodeInt returns the value of an int properly encoded for ACME jwk
 func encodeInt(integer int) (string, error) {
-	bytesBuf := new(bytes.Buffer)
-
 	// uint32 also seems to work, but uint does not
-	err := binary.Write(bytesBuf, binary.BigEndian, uint64(integer))
-	if err != nil {
-		return "", err
-	}
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, uint64(integer))
 
 	// trim off left 00s
 	// fixes: https://github.com/gregtwallace/certwarden-backend/issues/1
-	trimmedInt := bytes.TrimLeft(bytesBuf.Bytes(), "\x00")
+	b = bytes.TrimLeft(b, "\x00")
 
-	return encodeString(trimmedInt), nil
+	return encodeString(b), nil
 }
 
 // encodeBigInt returns the bytes of a bigInt properly encoded (based on the
