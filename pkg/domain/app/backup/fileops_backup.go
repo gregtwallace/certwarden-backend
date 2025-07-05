@@ -30,9 +30,9 @@ func (service *Service) createDataBackup(withOnDiskBackups bool) (zipFileBytes [
 	defer unlock()
 
 	// make buffer, hasher, and writer for internal backup zip
-	internalZipBuffer := new(bytes.Buffer)
+	var internalZipBuffer bytes.Buffer
 	internalZipHasher := sha1.New()
-	internalZipWriter := zip.NewWriter(io.MultiWriter(internalZipBuffer, internalZipHasher))
+	internalZipWriter := zip.NewWriter(io.MultiWriter(&internalZipBuffer, internalZipHasher))
 
 	// walker function to and add to zip, preserving file path
 	zipWalker := func(path string, info fs.FileInfo, err error) error {
@@ -92,8 +92,8 @@ func (service *Service) createDataBackup(withOnDiskBackups bool) (zipFileBytes [
 
 	// create wrapper zip that contains the hashed backup and the hash
 	// file itself
-	wrapperZipBuffer := new(bytes.Buffer)
-	wrapperZipWriter := zip.NewWriter(wrapperZipBuffer)
+	var wrapperZipBuffer bytes.Buffer
+	wrapperZipWriter := zip.NewWriter(&wrapperZipBuffer)
 
 	// write internal backup zip
 	zipFile, err := wrapperZipWriter.Create(internalBackupFile)
@@ -102,7 +102,7 @@ func (service *Service) createDataBackup(withOnDiskBackups bool) (zipFileBytes [
 	}
 
 	// copy internal backup zip into wrapper
-	_, err = io.Copy(zipFile, internalZipBuffer)
+	_, err = io.Copy(zipFile, &internalZipBuffer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to copy internal backup zip into wrapper zip (%s)", err)
 	}

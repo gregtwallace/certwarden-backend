@@ -40,10 +40,10 @@ func readAndParseLogFile(filePathAndName string) ([]logEntry, error) {
 	defer logFile.Close()
 
 	// read in the log file (with slight modifications to make valid json array)
-	logBuffer := &bytes.Buffer{}
+	var logBuffer bytes.Buffer
 	// add opening wrap and bracket for json
 	_, _ = logBuffer.WriteString("[")
-	_, _ = io.Copy(logBuffer, logFile)
+	_, _ = io.Copy(&logBuffer, logFile)
 	// remove line break and comma after last log item
 	logBuffer.Truncate(logBuffer.Len() - 2)
 	// add end of json
