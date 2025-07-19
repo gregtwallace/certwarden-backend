@@ -18,7 +18,7 @@ require (
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.32
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.37.0
-	golang.org/x/oauth2 v0.24.0
+	golang.org/x/oauth2 v0.30.0
 	golang.org/x/time v0.8.0
 	gopkg.in/yaml.v3 v3.0.1
 	software.sslmate.com/src/go-pkcs12 v0.5.0
