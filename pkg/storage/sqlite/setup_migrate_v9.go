@@ -56,6 +56,8 @@ func (store *Storage) migrateV8toV9() (int, error) {
 		UPDATE certificates
 		SET post_processing_client_address = subject
 		WHERE post_processing_client_key <> ''
+		AND
+		subject NOT LIKE '*%'
 	`
 	_, err = tx.ExecContext(ctx, query)
 	if err != nil {
