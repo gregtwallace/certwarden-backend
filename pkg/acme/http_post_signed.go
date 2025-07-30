@@ -6,125 +6,51 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"go.uber.org/zap/zapcore"
 )
 
-// acmeSignedMessage is the ACME signed message payload
-type acmeSignedMessage struct {
-	Payload         string `json:"payload"`
-	ProtectedHeader string `json:"protected"`
-	Signature       string `json:"signature"`
-}
-
-// dataToSign assembles the byte slice that should be signed by
-// a signing method to create the signature field
-func (asm *acmeSignedMessage) dataToSign() []byte {
-	return []byte(strings.Join([]string{asm.ProtectedHeader, asm.Payload}, "."))
-}
-
-// ProtectedHeader piece of the ACME payload
-type protectedHeader struct {
-	Algorithm  string      `json:"alg"`
-	JsonWebKey *jsonWebKey `json:"jwk,omitempty"`
-	KeyId      string      `json:"kid,omitempty"`
-	Nonce      string      `json:"nonce,omitempty"`
-	Url        string      `json:"url"`
-}
-
 // postToUrlSigned posts the payload to the specified url, using the specified AccountKeyInfo
 // and returns the response body (data / bytes) and headers from ACME
 func (service *Service) postToUrlSigned(payload any, url string, accountKey AccountKey) (bodyBytes []byte, headers http.Header, err error) {
-	// message is what will ultimately be posted to ACME
-	var message acmeSignedMessage
-
-	// build most of the header (pieces that won't change in the loop)
-	var header protectedHeader
-
-	// alg
-	header.Algorithm, err = accountKey.signingAlg()
+	nonce, err := service.nonceManager.Nonce()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// key or kid
-	// use kid if available, otherwise use jsonWebKey
-	if accountKey.Kid != "" {
-		header.JsonWebKey = nil
-		header.KeyId = accountKey.Kid
-	} else {
-		header.JsonWebKey, err = accountKey.jwk()
-		if err != nil {
-			return nil, nil, err
-		}
-		header.KeyId = ""
-	}
-
-	// nonce
-	header.Nonce, err = service.nonceManager.Nonce()
+	// make acme msg
+	msg, err := makeAcmeSignedMessage(payload, nonce, url, accountKey)
 	if err != nil {
-		return nil, nil, err
-	}
-
-	// url
-	header.Url = url
-
-	// Debugging
-	//unencodedHeaderJson, _ := json.MarshalIndent(header, "", "\t")
-	//service.logger.Debugf("unencoded acme header: %s", unencodedHeaderJson)
-
-	// header (end)
-
-	// debug log payload content & destination
-	if service.logger.Level() == zapcore.DebugLevel {
-		prettyPayload, prettyErr := json.MarshalIndent(payload, "", "\t")
-		if prettyErr != nil {
-			service.logger.Debugf("sending acme signed post (using kid: %s) to: %s ; unencoded payload: %s", accountKey.Kid, url, payload)
-		} else {
-			service.logger.Debugf("sending acme signed post (using kid: %s) to: %s ; unencoded payload: %s", accountKey.Kid, url, string(prettyPayload))
-		}
-	}
-
-	// set payload - won't change in the loop (if payload is empty, don't encode it)
-	if payload == "" {
-		message.Payload = ""
-	} else {
-		message.Payload, err = encodeJson(payload)
-		if err != nil {
-			return nil, nil, err
-		}
+		return nil, nil, fmt.Errorf("acme: failed to make signed post message (%s)", err)
 	}
 
 	// post
 	var response *http.Response
 
 	// loop to retry on badNonce error, capped at 4 tries
-	for i := 0; i < 4; i++ {
-		// encord and insert header
-		message.ProtectedHeader, err = encodeJson(header)
-		if err != nil {
-			return nil, nil, err
-		}
+	for range 4 {
+		// debug log payload content & destination
+		if service.logger.Level() == zapcore.DebugLevel {
+			// VERY VERBOSE, includes Header & Signature, in addition to Payload
 
-		// sign
-		err = message.Sign(accountKey)
-		if err != nil {
-			return nil, nil, err
-		}
+			// prettyMsg, prettyErr := json.MarshalIndent(msg, "", "\t")
+			// if prettyErr != nil {
+			// 	service.logger.Debugf("sending acme signed post to: %s ; unencoded msg: %s", url, msg)
+			// } else {
+			// 	service.logger.Debugf("sending acme signed post to: %s ; unencoded msg: %s", url, string(prettyMsg))
+			// }
 
-		// marshal for posting
-		var messageBodyJson json.RawMessage
-		messageBodyJson, err = json.Marshal(message)
-		if err != nil {
-			return nil, nil, err
+			// just the payload
+			prettyPayload, prettyErr := json.MarshalIndent(msg.Payload, "", "\t")
+			if prettyErr != nil {
+				service.logger.Debugf("sending acme signed post (using kid: %s) to: %s ; unencoded payload: %s", accountKey.Kid, url, msg.Payload)
+			} else {
+				service.logger.Debugf("sending acme signed post (using kid: %s) to: %s ; unencoded payload: %s", accountKey.Kid, url, string(prettyPayload))
+			}
 		}
-
-		// data to POST (debugging)
-		//service.logger.Debugf("acme post signed body: %s", string(messageBodyJson))
 
 		// post to ACME
-		response, err = service.httpClient.Post(url, "application/jose+json", bytes.NewBuffer(messageBodyJson))
+		response, err = service.httpClient.Post(url, "application/jose+json", msg.SignedHTTPBody())
 		if err != nil {
 			return nil, nil, err
 		}
@@ -162,16 +88,16 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 				// RFC8555 s6.5: "An error response with the "badNonce" error type MUST include a
 				// Replay-Nonce header field with a fresh nonce that the server will accept in a
 				// retry of the original query"
-				header.Nonce = response.Header.Get("Replay-Nonce")
+				nextNonce := response.Header.Get("Replay-Nonce")
 
 				// BANDAID for non-compliant ACME servers
 				// if ACME server doesn't comply with spec (i.e. nonce header was empty); get a new
 				// nonce from nonce manager
-				if header.Nonce == "" {
+				if nextNonce == "" {
 					service.logger.Warn("acme signed post: err badNonce but acme server did not provide new nonce in error response (server violates the spec; report it to the server dev)")
 
 					var mgrErr error
-					header.Nonce, mgrErr = service.nonceManager.Nonce()
+					nextNonce, mgrErr = service.nonceManager.Nonce()
 					if mgrErr != nil {
 						// acme server didn't give proper nonce and getting one from nonce manager also failed;
 						// break and return original acmeError
@@ -181,7 +107,8 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 				}
 				// BANDAID - END
 
-				// no need to sleep, remote server is working ok
+				// update msg & try again
+				msg.setNonceAndSign(nextNonce, accountKey)
 				continue
 			}
 		}

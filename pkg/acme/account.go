@@ -80,7 +80,7 @@ func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.
 	url := service.dir.NewAccount
 
 	// real ACME payload
-	acmePayload := acmeNewAccountPayload{
+	acmePayload := &acmeNewAccountPayload{
 		Contact:   payload.Contact,
 		TosAgreed: payload.TosAgreed,
 	}
@@ -181,50 +181,18 @@ func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountK
 		return errors.New("acme: account key rollover failed (acme directory does not contain a keyChange url)")
 	}
 
-	// build payload
-	payload := acmeSignedMessage{}
-
-	// Create ACME accountKey for new key, never use kid always use JWK
+	// build payload (which is itself an acme signed message with some special properties)
+	// Create ACME accountKey for new key, ALWAYS use JWK (NEVER kid)
 	newKeyAccountKey := AccountKey{
 		Key: newKey,
 	}
 
-	// inner (payload's) header
-	var innerHeader protectedHeader
-
-	// new key's alg
-	innerHeader.Algorithm, err = newKeyAccountKey.signingAlg()
-	if err != nil {
-		return err
-	}
-
-	// new key's jwk
-	innerHeader.JsonWebKey, err = newKeyAccountKey.jwk()
-	if err != nil {
-		return err
-	}
-
-	// omit kid
-	// omit nonce
-
-	// url
-	innerHeader.Url = service.dir.KeyChange
-
-	// encode and add to payload
-	payload.ProtectedHeader, err = encodeJson(innerHeader)
-	if err != nil {
-		return err
-	}
-	// end inner (payload's) header
-
-	// inner (payload's) payload
-	// old key's jwk
+	// payload of the payload is this special struct
 	oldJwk, err := oldAccountKey.jwk()
 	if err != nil {
 		return err
 	}
 
-	// build inner payload
 	innerPayload := struct {
 		AccountUrl string     `json:"account"`
 		OldKeyJwk  jsonWebKey `json:"oldKey"`
@@ -233,23 +201,15 @@ func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountK
 		OldKeyJwk:  *oldJwk,
 	}
 
-	// encode and add to payload
-	payload.Payload, err = encodeJson(innerPayload)
+	// build payload message with new key
+	msg, err := makeAcmeSignedMessage(innerPayload, "", service.dir.KeyChange, newKeyAccountKey)
 	if err != nil {
 		return err
 	}
-	// end inner (payload's) payload
-
-	// sign inner payload
-	err = payload.Sign(newKeyAccountKey)
-	if err != nil {
-		return err
-	}
-	// end inner (payload's) signature
 
 	// post key change
 	// no response/headers expected on key roll (see rfc 8555 s 7.3.5)
-	_, _, err = service.postToUrlSigned(payload, service.dir.KeyChange, oldAccountKey)
+	_, _, err = service.postToUrlSigned(msg, service.dir.KeyChange, oldAccountKey)
 	if err != nil {
 		return err
 	}

@@ -1,40 +1,35 @@
 package acme
 
-// makeExternalAccountBinding creates a signed EAB for a newAccount using the provided params.
-func (accountKey *AccountKey) makeExternalAccountBinding(eabKid, eabHmacKey, url string) (*acmeSignedMessage, error) {
-	eab := new(acmeSignedMessage)
-	var err error
+import (
+	"encoding/base64"
+)
 
-	// make EAB protected header
-	// hardcode to newAccount url
-	eabHeader := protectedHeader{
-		Algorithm: "HS256",
-		KeyId:     eabKid,
-		Url:       url,
-	}
-
-	eab.ProtectedHeader, err = encodeJson(eabHeader)
-	if err != nil {
-		return nil, err
-	}
-
-	// make payload (encoded jwk)
+// makeExternalAccountBinding creates a signed message object using the provided params
+// which is used in the `externalAccountBinding` of a newAccount that requires EAB
+func (accountKey *AccountKey) makeExternalAccountBinding(eabKid, encodedHmacKey, url string) (*acmeSignedMessage, error) {
+	// EAB Payload is the new account's jwk
 	eabPayload, err := accountKey.jwk()
 	if err != nil {
 		return nil, err
 	}
 
-	eab.Payload, err = encodeJson(eabPayload)
+	// decode HMAC key
+	decodedKey, err := base64.RawURLEncoding.DecodeString(encodedHmacKey)
 	if err != nil {
 		return nil, err
 	}
 
-	// sign EAB
-	err = eab.SignEAB(eabHmacKey)
+	// make an accountKey object for signing
+	eabKey := AccountKey{
+		Key: decodedKey,
+		Kid: eabKid,
+	}
+
+	eabMsg, err := makeAcmeSignedMessage(eabPayload, "", url, eabKey)
 	if err != nil {
 		return nil, err
 	}
 
-	// add EAB to the ACME payload
-	return eab, nil
+	// return EAB message
+	return eabMsg, nil
 }
