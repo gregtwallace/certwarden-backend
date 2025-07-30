@@ -28,7 +28,7 @@ const appVersion = "0.27.0"
 
 // config version
 // increment any time there is a breaking change between versions
-const appConfigVersion = 4
+const appConfigVersion = 5
 
 // data storage root
 const dataStorageRootPath = "./data"

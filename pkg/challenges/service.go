@@ -1,7 +1,6 @@
 package challenges
 
 import (
-	"certwarden-backend/pkg/challenges/dns_checker"
 	"certwarden-backend/pkg/challenges/providers"
 	"certwarden-backend/pkg/datatypes/safemap"
 	"certwarden-backend/pkg/output"
@@ -39,21 +38,18 @@ type application interface {
 
 // Config holds all of the challenge config
 type Config struct {
-	DnsCheckerConfig dns_checker.Config `yaml:"dns_checker"`
-	ProviderConfigs  providers.Config   `yaml:"providers"`
-	DNSIDtoDomain    map[string]string  `yaml:"domain_aliases"`
+	ProviderConfigs providers.Config  `yaml:"providers"`
+	DNSIDtoDomain   map[string]string `yaml:"domain_aliases"`
 }
 
 // service struct
 type Service struct {
 	app                    application
-	dnsCheckerCfg          dns_checker.Config
 	logger                 *zap.SugaredLogger
 	shutdownContext        context.Context
 	shutdownWaitgroup      *sync.WaitGroup
 	output                 *output.Service
 	configFile             string
-	dnsChecker             *dns_checker.Service
 	DNSIdentifierProviders *providers.Manager
 	dnsIDtoDomain          *safemap.SafeMap[string] // DNSIdentifierValue[Domain]
 	apiRateLimiter         *rate.Limiter
@@ -65,9 +61,6 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 
 	// save app pointer for use later in reconfiguring providers
 	service.app = app
-
-	// save dns checker config for use later in reconfiguring providers
-	service.dnsCheckerCfg = cfg.DnsCheckerConfig
 
 	// logger
 	service.logger = app.GetLogger()
@@ -89,13 +82,6 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 	service.DNSIdentifierProviders, err = providers.MakeManager(app, cfg.ProviderConfigs)
 	if err != nil {
 		service.logger.Errorf("challenges: failed to configure challenge provider(s) (%s)", err)
-		return nil, err
-	}
-
-	// create dns checker regardless of if using dns (since providers can change)
-	service.dnsChecker, err = dns_checker.NewService(app, cfg.DnsCheckerConfig)
-	if err != nil {
-		service.logger.Errorf("challenges: failed to configure dns checker (%s)", err)
 		return nil, err
 	}
 

@@ -2,7 +2,6 @@ package app
 
 import (
 	"certwarden-backend/pkg/challenges"
-	"certwarden-backend/pkg/challenges/dns_checker"
 	"certwarden-backend/pkg/challenges/providers"
 	"certwarden-backend/pkg/challenges/providers/http01internal"
 	"certwarden-backend/pkg/domain/app/auth"
@@ -162,6 +161,14 @@ func (app *Application) loadConfigFile() (err error) {
 		}
 	}
 
+	// upgrade if schema 4
+	if cfgVer == 4 {
+		cfgVer, err = configMigrateV4toV5(cfgFileYamlObj)
+		if err != nil {
+			return err
+		}
+	}
+
 	// fail if still not correct
 	if cfgVer != appConfigVersion {
 		return fmt.Errorf("config schema version is %d (expected %d) and cannot be fixed automatically; fix the config file", cfgVer, appConfigVersion)
@@ -296,27 +303,6 @@ func (app *Application) setDefaultConfigValues() {
 		*app.config.Updater.Channel = updater.ChannelBeta
 	}
 
-	// challenge dns checker services
-	if len(app.config.Challenges.DnsCheckerConfig.DnsServices) <= 0 {
-		app.config.Challenges.DnsCheckerConfig.DnsServices = []dns_checker.DnsServiceIPPair{
-			// Cloudflare
-			{
-				Primary:   "1.1.1.1",
-				Secondary: "1.0.0.1",
-			},
-			// Quad9
-			{
-				Primary:   "9.9.9.9",
-				Secondary: "149.112.112.112",
-			},
-			// Google
-			{
-				Primary:   "8.8.8.8",
-				Secondary: "8.8.4.4",
-			},
-		}
-	}
-
 	// challenge provider
 	if app.config.Challenges.ProviderConfigs.Len() <= 0 {
 		http01Port := new(int)
@@ -324,9 +310,8 @@ func (app *Application) setDefaultConfigValues() {
 
 		app.config.Challenges.ProviderConfigs.Http01InternalConfigs = []providers.ConfigManagerHttp01Internal{{
 			InternalConfig: providers.InternalConfig{
-				Domains:              []string{"*"},
-				PreCheckWaitSeconds:  0,
-				PostCheckWaitSeconds: 0,
+				Domains:                  []string{"*"},
+				PostProvisionWaitSeconds: 5,
 			},
 			Config: &http01internal.Config{
 				Port: http01Port,

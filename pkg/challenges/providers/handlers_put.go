@@ -24,9 +24,8 @@ type modifyPayload struct {
 	Tag string `json:"tag"`
 
 	// optional
-	Domains              []string `json:"domains,omitempty"`
-	PreCheckWaitSeconds  *int     `json:"precheck_wait"`
-	PostCheckWaitSeconds *int     `json:"postcheck_wait"`
+	Domains                  []string `json:"domains,omitempty"`
+	PostProvisionWaitSeconds *int     `json:"post_resource_provision_wait"`
 
 	// plus only one of these
 	Http01InternalConfig  *http01internal.Config  `json:"http_01_internal,omitempty"`
@@ -198,12 +197,12 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	// update any internal config changes
 	mgr.unsafeUpdateProviderDomains(p, payload.Domains)
 
-	if payload.PreCheckWaitSeconds != nil {
-		p.PreCheckWaitSeconds = *payload.PreCheckWaitSeconds
+	if payload.PostProvisionWaitSeconds != nil {
+		p.PostProvisionWaitSeconds = *payload.PostProvisionWaitSeconds
 	}
 
-	if payload.PostCheckWaitSeconds != nil {
-		p.PostCheckWaitSeconds = *payload.PostCheckWaitSeconds
+	if payload.PostProvisionWaitSeconds != nil {
+		p.PostProvisionWaitSeconds = *payload.PostProvisionWaitSeconds
 	}
 
 	// update config file

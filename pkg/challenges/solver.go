@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	errDnsDidntPropagate         = errors.New("challenges: solving failed: dns record didn't propagate")
 	errChallengeRetriesExhausted = errors.New("challenges: solving failed: challenge failed to move to final state (timeout)")
 	errChallengeTypeNotFound     = errors.New("challenges: solving failed: provider's challenge type not found in challenges array (possibly trying to use a wildcard with http-01)")
 )
@@ -74,12 +73,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 			return fmt.Errorf("challenges: challenge type %s doesnt support using a domain alias (domain: %s)", challengeType, domain)
 		}
 
-		exists := service.dnsChecker.CheckCNAME(cnamePointsFrom, cnamePointsTo)
-		if !exists {
-			return fmt.Errorf("challenges: cname record %s doesn't exist or doesn't point to %s", cnamePointsFrom, cnamePointsTo)
-		}
-
-		service.logger.Debugf(("challenges: cname record %s found and points to %s"), cnamePointsFrom, cnamePointsTo)
+		service.logger.Debugf(("challenges: manual cname record pointing from %s to %s is required"), cnamePointsFrom, cnamePointsTo)
 	}
 
 	// provision the needed resource for validation and defer deprovisioning
@@ -110,40 +104,17 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// specified wait time prior to resource check
-	preCheckWait := provider.WaitDurationPreResourceCheck()
-	if preCheckWait != time.Duration(0) {
-		service.logger.Infof("challenges: waiting until %s before checking resource propagation of %s", time.Now().Add(preCheckWait).Format(time.RFC1123), identifier.Value)
+	wait := provider.PostProvisionResourceWait()
+	if wait != time.Duration(0) {
+		service.logger.Infof("challenges: waiting to validate %s until %s (delay for propagation of resource)", identifier.Value, time.Now().Add(wait).Format(time.RFC1123))
 		select {
-		case <-time.After(preCheckWait):
+		case <-time.After(wait):
 			// continue
 		case <-service.shutdownContext.Done():
 			return errShutdown(domain)
 		}
-	}
-
-	// if using dns-01 provider, utilize dnsChecker
-	if challengeType == acme.ChallengeTypeDns01 {
-		// get dns record to check
-		dnsRecordName, dnsRecordValue := acme.ValidationResourceDns01(domain, keyAuth)
-
-		// check for propagation
-		propagated := service.dnsChecker.CheckTXTWithRetry(dnsRecordName, dnsRecordValue)
-		// if failed to propagate
-		if !propagated {
-			return errDnsDidntPropagate
-		}
-	}
-
-	// specified wait time after confirming resource exists
-	postCheckWait := provider.WaitDurationPostResourceCheck()
-	if postCheckWait != time.Duration(0) {
-		service.logger.Infof("challenges: resource check of %s complete; waiting until %s to proceed to validation", identifier.Value, time.Now().Add(postCheckWait).Format(time.RFC1123))
-		select {
-		case <-time.After(postCheckWait):
-			// continue
-		case <-service.shutdownContext.Done():
-			return errShutdown(domain)
-		}
+	} else {
+		service.logger.Debugf("challenges: no wait configured for propagation of resource for %s", identifier.Value)
 	}
 
 	// Below this point is to inform ACME the challenge is ready to be validated

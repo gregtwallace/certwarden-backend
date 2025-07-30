@@ -19,8 +19,7 @@ type newPayload struct {
 	Domains []string `json:"domains"`
 
 	// optional
-	PreCheckWaitSeconds  *int `json:"precheck_wait"`
-	PostCheckWaitSeconds *int `json:"postcheck_wait"`
+	PostProvisionWaitSeconds *int `json:"post_resource_provision_wait"`
 
 	// + mandatory, only one of these
 	Http01InternalConfig  *http01internal.Config  `json:"http_01_internal,omitempty"`
@@ -74,15 +73,10 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 	internalCfg := InternalConfig{
 		Domains: payload.Domains,
 	}
-	if payload.PreCheckWaitSeconds != nil {
-		internalCfg.PreCheckWaitSeconds = *payload.PreCheckWaitSeconds
+	if payload.PostProvisionWaitSeconds != nil {
+		internalCfg.PostProvisionWaitSeconds = *payload.PostProvisionWaitSeconds
 	} else {
-		internalCfg.PreCheckWaitSeconds = 3 * 60
-	}
-	if payload.PostCheckWaitSeconds != nil {
-		internalCfg.PostCheckWaitSeconds = *payload.PostCheckWaitSeconds
-	} else {
-		//internalCfg.PostCheckWaitSeconds = 0
+		internalCfg.PostProvisionWaitSeconds = 5 * 60
 	}
 
 	// try to add the specified provider (actual action)

@@ -11,9 +11,8 @@ import (
 
 // internal base config
 type InternalConfig struct {
-	Domains              []string `yaml:"domains"`
-	PreCheckWaitSeconds  int      `yaml:"precheck_wait"`
-	PostCheckWaitSeconds int      `yaml:"postcheck_wait"`
+	Domains                  []string `yaml:"domains"`
+	PostProvisionWaitSeconds int      `yaml:"post_resource_provision_wait"`
 }
 
 // provider manager configs

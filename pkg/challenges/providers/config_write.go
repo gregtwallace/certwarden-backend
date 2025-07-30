@@ -28,9 +28,8 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 			mgrCfg.Http01InternalConfigs = append(mgrCfg.Http01InternalConfigs,
 				ConfigManagerHttp01Internal{
 					InternalConfig: InternalConfig{
-						Domains:              p.Domains,
-						PreCheckWaitSeconds:  p.PreCheckWaitSeconds,
-						PostCheckWaitSeconds: p.PostCheckWaitSeconds,
+						Domains:                  p.Domains,
+						PostProvisionWaitSeconds: p.PostProvisionWaitSeconds,
 					},
 					Config: realCfg,
 				},
@@ -40,9 +39,8 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 			mgrCfg.Dns01ManualConfigs = append(mgrCfg.Dns01ManualConfigs,
 				ConfigManagerDns01Manual{
 					InternalConfig: InternalConfig{
-						Domains:              p.Domains,
-						PreCheckWaitSeconds:  p.PreCheckWaitSeconds,
-						PostCheckWaitSeconds: p.PostCheckWaitSeconds,
+						Domains:                  p.Domains,
+						PostProvisionWaitSeconds: p.PostProvisionWaitSeconds,
 					},
 					Config: realCfg,
 				},
@@ -52,9 +50,8 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 			mgrCfg.Dns01AcmeDnsConfigs = append(mgrCfg.Dns01AcmeDnsConfigs,
 				ConfigManagerDns01AcmeDns{
 					InternalConfig: InternalConfig{
-						Domains:              p.Domains,
-						PreCheckWaitSeconds:  p.PreCheckWaitSeconds,
-						PostCheckWaitSeconds: p.PostCheckWaitSeconds,
+						Domains:                  p.Domains,
+						PostProvisionWaitSeconds: p.PostProvisionWaitSeconds,
 					},
 					Config: realCfg,
 				},
@@ -64,9 +61,8 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 			mgrCfg.Dns01AcmeShConfigs = append(mgrCfg.Dns01AcmeShConfigs,
 				ConfigManagerDns01AcmeSh{
 					InternalConfig: InternalConfig{
-						Domains:              p.Domains,
-						PreCheckWaitSeconds:  p.PreCheckWaitSeconds,
-						PostCheckWaitSeconds: p.PostCheckWaitSeconds,
+						Domains:                  p.Domains,
+						PostProvisionWaitSeconds: p.PostProvisionWaitSeconds,
 					},
 					Config: realCfg,
 				},
@@ -76,9 +72,8 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 			mgrCfg.Dns01CloudflareConfigs = append(mgrCfg.Dns01CloudflareConfigs,
 				ConfigManagerDns01Cloudflare{
 					InternalConfig: InternalConfig{
-						Domains:              p.Domains,
-						PreCheckWaitSeconds:  p.PreCheckWaitSeconds,
-						PostCheckWaitSeconds: p.PostCheckWaitSeconds,
+						Domains:                  p.Domains,
+						PostProvisionWaitSeconds: p.PostProvisionWaitSeconds,
 					},
 					Config: realCfg,
 				},
@@ -88,9 +83,8 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 			mgrCfg.Dns01GoAcmeConfigs = append(mgrCfg.Dns01GoAcmeConfigs,
 				ConfigManagerDns01GoAcme{
 					InternalConfig: InternalConfig{
-						Domains:              p.Domains,
-						PreCheckWaitSeconds:  p.PreCheckWaitSeconds,
-						PostCheckWaitSeconds: p.PostCheckWaitSeconds,
+						Domains:                  p.Domains,
+						PostProvisionWaitSeconds: p.PostProvisionWaitSeconds,
 					},
 					Config: realCfg,
 				},

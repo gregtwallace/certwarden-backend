@@ -221,8 +221,6 @@ replace certwarden-backend/pkg/acme/nonces => /pkg/acme/nonces
 
 replace certwarden-backend/pkg/challenges => /pkg/challenges
 
-replace certwarden-backend/pkg/challenges/dns_checker => /pkg/challenges/dns_checker
-
 replace certwarden-backend/pkg/challenges/providers => /pkg/challenges/providers
 
 replace certwarden-backend/pkg/challenges/providers/dns01acmedns => /pkg/challenges/providers/dns01acmedns

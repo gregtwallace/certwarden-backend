@@ -18,30 +18,17 @@ type Service interface {
 
 // provider is the structure of a provider that is being managed
 type provider struct {
-	ID                   int      `json:"id"`
-	Tag                  string   `json:"tag"`
-	Type                 string   `json:"type"`
-	Domains              []string `json:"domains"`
-	PreCheckWaitSeconds  int      `json:"precheck_wait"`
-	PostCheckWaitSeconds int      `json:"postcheck_wait"`
-	Config               any      `json:"config"`
-	Service              `json:"-"`
+	ID                       int      `json:"id"`
+	Tag                      string   `json:"tag"`
+	Type                     string   `json:"type"`
+	Domains                  []string `json:"domains"`
+	PostProvisionWaitSeconds int      `json:"post_resource_provision_wait"`
+	Config                   any      `json:"config"`
+	Service                  `json:"-"`
 }
 
-// WaitDurationPreResourceCheck returns a duration that should be slept after a resource
-// is provisioned, but before checks are performed to confirm the existence of the resource.
-// This is useful to avoid unncessary early checking if it is known the resoucres take some
-// minimum amount of time to propagate.
-func (p *provider) WaitDurationPreResourceCheck() time.Duration {
-	return time.Duration(p.PreCheckWaitSeconds * int(time.Second))
-}
-
-// WaitDurationPostResourceCheck returns a duration that should be slept after a resource
-// is provisioned, and after checks are performed to confirm the existence of the resource
-// and those checks confirmed the existence of the resource.
-// This is useful to ensure full resource propation, such as cases where the checks may
-// have confirmed existence but some additional time is desired to really make sure things
-// completely propagated.
-func (p *provider) WaitDurationPostResourceCheck() time.Duration {
-	return time.Duration(p.PostCheckWaitSeconds * int(time.Second))
+// PostProvisionResourceWait returns a duration that should be slept after a resource is
+// provisioned, to ensure the resource has completely propagated.
+func (p *provider) PostProvisionResourceWait() time.Duration {
+	return time.Duration(p.PostProvisionWaitSeconds * int(time.Second))
 }

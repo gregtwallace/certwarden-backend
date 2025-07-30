@@ -63,14 +63,13 @@ func (mgr *Manager) unsafeAddProvider(internalCfg InternalConfig, cfg providerCo
 	typeOf, _ = strings.CutSuffix(typeOf, ".Config")
 
 	p := &provider{
-		ID:                   mgr.nextId,
-		Tag:                  randomness.GenerateInsecureString(10),
-		Domains:              internalCfg.Domains,
-		PreCheckWaitSeconds:  internalCfg.PreCheckWaitSeconds,
-		PostCheckWaitSeconds: internalCfg.PostCheckWaitSeconds,
-		Type:                 typeOf,
-		Config:               cfg,
-		Service:              serv,
+		ID:                       mgr.nextId,
+		Tag:                      randomness.GenerateInsecureString(10),
+		Domains:                  internalCfg.Domains,
+		PostProvisionWaitSeconds: internalCfg.PostProvisionWaitSeconds,
+		Type:                     typeOf,
+		Config:                   cfg,
+		Service:                  serv,
 	}
 
 	// increment next id
