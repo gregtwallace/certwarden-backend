@@ -111,27 +111,6 @@
   #   acmeSecuredDomain.com: domainToProvisionRecordsOn.com
   'domain_aliases':
     'securedomain.com': 'lesssecuredomain.com'
-  # DNS Checker allows Cert Warden to verify DNS records have propagated before informing
-  # the ACME server the challenge is ready. If no providers are configured that
-  # use DNS, this functionality is automatically disabled.
-  'dns_checker':
-    # specifying skip check wait disables dns record validation and instead
-    # sleeps for the specified number of seconds and then assumes the record
-    # is fully propagated
-    'skip_check_wait_seconds': 180
-    # services to use if checker is not disabled
-    # Note: these are defined here, but because the check wait seconds are defined
-    # if this were an actual deployment, this part of dns_checker config would be
-    # ignored.
-    'dns_services':
-      # generally you do NOT want these to be internal dns servers
-      # internal dns usually has long cache and doesn't truly check propagation
-      # if you don't want external dns checking, use skip_check above
-      # primary and secondary should be for the same provider
-      - 'primary_ip': '208.67.222.222'
-        'secondary_ip': '208.67.220.220'
-      - 'primary_ip': '45.90.28.0'
-        'secondary_ip': '45.90.28.255'
 
   # Providers are critical to Cert Warden's function. These are how you verify control over
   # the domains you issue certificates for. You must have at least one provider.
@@ -150,22 +129,19 @@
           - 'somedomain.com'
         # port to run the http challenge server on
         'port': 4060
-        'precheck_wait': 0
-        'postcheck_wait': 0
+        'post_resource_provision_wait': 5
       # another instance of http-01 internal (if for some odd reason you wanted 2)
       - 'domains':
           - 'somedomain2.com'
         'port': 4099
-        'precheck_wait': 0
-        'postcheck_wait': 0
+        'post_resource_provision_wait': 5
 
     # dns-01 manual uses custom scripts you must write (or otherwise source). It calls
     # the scripts at the specified path and uses the specified environment variables.
     'dns_01_manual':
       - 'domains':
           - 'example.com'
-        'precheck_wait': 180
-        'postcheck_wait': 0
+        'post_resource_provision_wait': 300
         'environment':
           - 'MY_EXPORT_VAR=some_value'
           - 'ANOTHER_EXPORT_ENV=another_value'
@@ -181,8 +157,7 @@
     'dns_01_acme_dns':
       - 'domains':
           - 'domain.com'
-        'precheck_wait': 180
-        'postcheck_wait': 0
+        'post_resource_provision_wait': 600
         'acme_dns_address': 'http://localhost:8880'
         'resources':
           # repeat this block as many times as needed
@@ -210,8 +185,7 @@
     'dns_01_acme_sh':
       - 'domains':
           - 'another.net'
-        'precheck_wait': 180
-        'postcheck_wait': 0
+        'post_resource_provision_wait': 600
         # path to the acme.sh script. /dnsapi subfolder must also exist and contain
         # the script for the relevant dns provider (hook script)
         # acme.sh is installed with Cert Warden by default at the default path so
@@ -231,8 +205,7 @@
       # another acme.sh instance
       - 'domains':
           - 'another2.net'
-        'precheck_wait': 180
-        'postcheck_wait': 0
+        'post_resource_provision_wait': 600
         'acme_sh_path': './scripts/acme.sh'
         'environment':
           - 'MY_EXPORT_VAR=some_other_value'
@@ -251,15 +224,13 @@
       - 'domains':
           - 'mydomain.org'
           - 'myotherdomain.org'
-        'precheck_wait': 180
-        'postcheck_wait': 0
+        'post_resource_provision_wait': 600
         'api_token': '123abc'
 
       # another instance but with an account and setting it as the wild card provider
       - 'domains':
           - '*'
-        'precheck_wait': 180
-        'postcheck_wait': 0
+        'post_resource_provision_wait': 600
         'account':
           'email': 'user@example.com'
           'global_api_key': '12345abcde'

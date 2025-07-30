@@ -96,3 +96,8 @@ take advantage of.
 
 ### [v0.27.0]
 - Remove `orders` config options. Auto ordering and timing are no longer configurable.
+
+### [v0.28.0]
+- Remove `precheck_wait` and `postcheck_wait` from provider.
+- Remove entire `dns_checker` section.
+- Add `post_resource_provision_wait` to provider.
