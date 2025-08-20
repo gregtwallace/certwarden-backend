@@ -180,8 +180,8 @@ func listLogFiles() ([]string, error) {
 		filename := files[i].Name()
 
 		// confirm prefix and suffix then add to the list (also include active log file)
-		if !(strings.HasPrefix(filename, logFileBaseName+"-") && strings.HasSuffix(filename, logFileSuffix)) ||
-			filename == logFileName {
+		if !(strings.HasPrefix(filename, logFileBaseName+"-") && strings.HasSuffix(filename, logFileSuffix)) &&
+			filename != logFileName {
 			continue
 		}
 
