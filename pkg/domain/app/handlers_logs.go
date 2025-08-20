@@ -2,6 +2,7 @@ package app
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"certwarden-backend/pkg/output"
 	"encoding/json"
@@ -39,22 +40,30 @@ func readAndParseLogFile(filePathAndName string) ([]logEntry, error) {
 	}
 	defer logFile.Close()
 
-	// read in the log file (with slight modifications to make valid json array)
-	var logBuffer bytes.Buffer
-	// add opening wrap and bracket for json
-	_, _ = logBuffer.WriteString("[")
-	_, _ = io.Copy(&logBuffer, logFile)
-	// remove line break and comma after last log item
-	logBuffer.Truncate(logBuffer.Len() - 2)
-	// add end of json
-	_, _ = logBuffer.WriteString("]")
-
-	// Unmarshal the log entries in response
-
+	// read log line by line
 	entries := []logEntry{}
-	err = json.Unmarshal(logBuffer.Bytes(), &entries)
-	if err != nil {
-		return nil, err
+	scanner := bufio.NewScanner(logFile)
+
+	for scanner.Scan() {
+		// read a line and remove the trailing comma
+		entryLine := scanner.Bytes()
+		entryLine = bytes.TrimSuffix(entryLine, []byte{','})
+
+		entry := logEntry{}
+		err = json.Unmarshal(entryLine, &entry)
+		if err != nil {
+			// if line failed to unmarshal, add an entry describing the corruption
+			entry = logEntry{
+				// use linux epoch time as garbage value since most users should recognize it
+				// as unix epoch, and thus assume it is probably nonsense
+				TimeStamp: time.Unix(0, 0).Format("2006-01-02T15:04:05.000Z0700"),
+				Level:     "error",
+				Caller:    "unknown",
+				Message:   "failed to parse log line (log file line is corrupt)",
+			}
+		}
+
+		entries = append(entries, entry)
 	}
 
 	return entries, nil
