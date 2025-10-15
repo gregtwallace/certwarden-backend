@@ -157,7 +157,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		service.logger.Infof("challenges: %s, will check again in %s", funcErr, dur.Round(100*time.Millisecond))
 	}
 
-	bo := randomness.BackoffACME(service.shutdownContext)
+	bo := randomness.BackoffACME(30*time.Minute, service.shutdownContext)
 	err = backoff.RetryNotify(challCheckFunc, bo, notifyFunc)
 	// if err returned, retry was exhausted
 	if err != nil {

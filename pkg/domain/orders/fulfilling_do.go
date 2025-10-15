@@ -55,13 +55,13 @@ func (j *orderFulfillJob) Do(workerID int) {
 		return // done, failed
 	}
 
-	// exponential backoff for retrying while 'processing'
-	bo := randomness.BackoffACME(j.service.shutdownContext)
-
 	// Use loop to retry order. Cap loop at 2 hours to avoid indefinite loop if something unexpected
 	// occurs (e.g., somethign broken with the acme server).
 	startTime := time.Now()
 	timeoutLength := 2 * time.Hour
+
+	// exponential backoff for retrying while 'processing' (no max as outer loop will handle timeout)
+	bo := randomness.BackoffACME(0, j.service.shutdownContext)
 
 fulfillLoop:
 	for time.Since(startTime) <= timeoutLength {
@@ -155,6 +155,12 @@ fulfillLoop:
 			break fulfillLoop
 
 		case "processing":
+			// check if timeout will be exceeded after next BO; if so don't wait and fail now
+			nextBackoffDuration := bo.NextBackOff()
+			if time.Now().Add(nextBackoffDuration).After(startTime.Add(timeoutLength)) {
+				break
+			}
+
 			// sleep and loop again, ACME server is working on it
 			select {
 			// cancel on shutdown context
@@ -162,7 +168,7 @@ fulfillLoop:
 				j.service.logger.Errorf("orders: fulfilling worker %d: order job canceled due to shutdown", workerID)
 				return
 
-			case <-time.After(bo.NextBackOff()):
+			case <-time.After(nextBackoffDuration):
 				// retry after exponential backoff
 			}
 
