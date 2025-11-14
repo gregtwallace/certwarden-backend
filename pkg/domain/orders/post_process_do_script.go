@@ -41,6 +41,8 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 	// {{CERTIFICATE_NAME}}					= the `Name` of the certificate
 	// {{CERTIFICATE_PEM}}					= the pem of the complete certificate chain for the order
 	// {{CERTIFICATE_COMMON_NAME}}	= the common name of the certificate
+	// {{TECH_PHONE}}					= the tech contact phone number
+	// {{TECH_EMAIL}}					= the tech contact email address
 
 	// make Params (which sanitizes the env params and handles things like removing quotes)
 	envParams, invalidParams := environment.NewParams(order.Certificate.PostProcessingEnvironment)
@@ -66,6 +68,12 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 
 		case "{{CERTIFICATE_COMMON_NAME}}":
 			val = order.Certificate.Subject
+
+		case "{{TECH_PHONE}}":
+			val = order.Certificate.TechPhone
+
+		case "{{TECH_EMAIL}}":
+			val = order.Certificate.TechEmail
 
 		default:
 			// no-op - user specified some other value

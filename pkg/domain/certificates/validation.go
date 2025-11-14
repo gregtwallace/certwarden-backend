@@ -28,6 +28,10 @@ var (
 	// domain
 	ErrDomainBad        = errors.New("domain or subject name not valid")
 	ErrClientAddressBad = errors.New("client address is not valid")
+
+	// tech contacts
+	ErrPhoneBad        = errors.New("contact phone is not valid")
+	ErrEmailBad        = errors.New("contact email is not valid")
 )
 
 // GetCertificate returns the Certificate for the specified id.
