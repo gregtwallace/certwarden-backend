@@ -46,8 +46,8 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates
 		payload.ApiKeyViaUrl,
 		payload.PostProcessingCommand,
 		makeJsonStringSlice(payload.PostProcessingEnvironment),
-		payload.PostProcessingClientKeyB64,
 		payload.PostProcessingClientAddress,
+		payload.PostProcessingClientKeyB64,
 		payload.Profile,
 	).Scan(&id)
 
