@@ -26,7 +26,7 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 			csr_country = case when $7 is null then csr_country else $7 end,
 			csr_state = case when $8 is null then csr_state else $8 end,
 			csr_city = case when $9 is null then csr_city else $9 end,
-			csr_extra_extensions = case when $10 is null then csr_city else $10 end,
+			csr_extra_extensions = case when $10 is null then csr_extra_extensions else $10 end,
 			preferred_root_cn = case when $11 is null then preferred_root_cn else $11 end,
 			api_key = case when $12 is null then api_key else $12 end,
 			api_key_new = case when $13 is null then api_key_new else $13 end,
