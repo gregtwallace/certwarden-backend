@@ -37,6 +37,8 @@ type NewPayload struct {
 	PostProcessingClientAddress *string             `json:"post_processing_client_address"`
 	PostProcessingClientKeyB64  string              `json:"-"`
 	Profile                     *string             `json:"profile"`
+	TechPhone                   *string             `json:"tech_phone"`
+	TechEmail                   *string             `json:"tech_email"`
 	ApiKey                      string              `json:"-"`
 	ApiKeyViaUrl                bool                `json:"-"`
 	CreatedAt                   int                 `json:"-"`
@@ -193,6 +195,30 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 		if !valid {
 			service.logger.Debug(ErrClientAddressBad)
 			return output.JsonErrValidationFailed(ErrClientAddressBad)
+		}
+	}
+	// end validation
+
+	// tech phone number
+	if payload.TechPhone == nil {
+		payload.TechPhone = new(string)
+	} else if *payload.TechPhone != "" {
+		valid := validation.PhoneValid(*payload.TechPhone)
+		if !valid {
+			service.logger.Debug(ErrPhoneBad)
+			return output.JsonErrValidationFailed(ErrPhoneBad)
+		}
+	}
+	// end validation
+
+	// tech email address
+	if payload.TechEmail == nil {
+		payload.TechEmail = new(string)
+	} else if *payload.TechEmail != "" {
+		valid := validation.EmailValid(*payload.TechEmail)
+		if !valid {
+			service.logger.Debug(ErrEmailBad)
+			return output.JsonErrValidationFailed(ErrEmailBad)
 		}
 	}
 	// end validation

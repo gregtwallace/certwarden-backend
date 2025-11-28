@@ -29,6 +29,8 @@ type Certificate struct {
 	ApiKey                      string
 	ApiKeyNew                   string
 	ApiKeyViaUrl                bool
+	TechPhone                   string
+	TechEmail                   string
 	PostProcessingCommand       string
 	PostProcessingEnvironment   []string
 	PostProcessingClientAddress string
@@ -110,6 +112,8 @@ type certificateDetailedResponse struct {
 	UpdatedAt                   int64               `json:"updated_at"`
 	ApiKey                      string              `json:"api_key"`
 	ApiKeyNew                   string              `json:"api_key_new,omitempty"`
+	TechPhone                   string              `json:"tech_phone"`
+	TechEmail                   string              `json:"tech_email"`
 	PostProcessingCommand       string              `json:"post_processing_command"`
 	PostProcessingEnvironment   []string            `json:"post_processing_environment"`
 	PostProcessingClientAddress string              `json:"post_processing_client_address"`
@@ -138,6 +142,8 @@ func (cert Certificate) detailedResponse() certificateDetailedResponse {
 		UpdatedAt:                   cert.UpdatedAt.Unix(),
 		ApiKey:                      cert.ApiKey,
 		ApiKeyNew:                   cert.ApiKeyNew,
+		TechPhone:                   cert.TechPhone,
+		TechEmail:                   cert.TechEmail,
 		PostProcessingCommand:       cert.PostProcessingCommand,
 		PostProcessingEnvironment:   cert.PostProcessingEnvironment,
 		PostProcessingClientAddress: cert.PostProcessingClientAddress,
