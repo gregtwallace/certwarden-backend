@@ -38,8 +38,10 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 	// their own name for the environment variable)
 	// {{PRIVATE_KEY_NAME}}					= the `Name` of the private key used to finalize the order
 	// {{PRIVATE_KEY_PEM}}					= the pem of the private key
+	// {{PRIVATE_KEY_API_KEY}}			= the api key of the private key
 	// {{CERTIFICATE_NAME}}					= the `Name` of the certificate
 	// {{CERTIFICATE_PEM}}					= the pem of the complete certificate chain for the order
+	// {{CERTIFICATE_API_KEY}}			= the api key of the certificate
 	// {{CERTIFICATE_COMMON_NAME}}	= the common name of the certificate
 
 	// make Params (which sanitizes the env params and handles things like removing quotes)
@@ -58,11 +60,17 @@ func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) 
 		case "{{PRIVATE_KEY_PEM}}":
 			val = order.FinalizedKey.Pem
 
+		case "{{PRIVATE_KEY_API_KEY}}":
+			val = order.FinalizedKey.ApiKey
+
 		case "{{CERTIFICATE_NAME}}":
 			val = order.Certificate.Name
 
 		case "{{CERTIFICATE_PEM}}":
 			val = *order.Pem
+
+		case "{{CERTIFICATE_API_KEY}}":
+			val = order.Certificate.ApiKey
 
 		case "{{CERTIFICATE_COMMON_NAME}}":
 			val = order.Certificate.Subject
