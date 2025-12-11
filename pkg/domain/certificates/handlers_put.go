@@ -131,7 +131,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	if payload.PostProcessingClientAddress == nil {
 		payload.PostProcessingClientAddress = new(string)
 	} else if *payload.PostProcessingClientAddress != "" {
-		valid := validation.DomainValid(*payload.PostProcessingClientAddress, false)
+		valid := validation.DomainAndPortValid(*payload.PostProcessingClientAddress)
 		if !valid {
 			service.logger.Debug(ErrClientAddressBad)
 			return output.JsonErrValidationFailed(ErrClientAddressBad)

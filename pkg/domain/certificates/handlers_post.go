@@ -189,7 +189,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	if payload.PostProcessingClientAddress == nil {
 		payload.PostProcessingClientAddress = new(string)
 	} else if *payload.PostProcessingClientAddress != "" {
-		valid := validation.DomainValid(*payload.PostProcessingClientAddress, false)
+		valid := validation.DomainAndPortValid(*payload.PostProcessingClientAddress)
 		if !valid {
 			service.logger.Debug(ErrClientAddressBad)
 			return output.JsonErrValidationFailed(ErrClientAddressBad)

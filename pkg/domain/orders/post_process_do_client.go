@@ -10,10 +10,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 const postProcessClientPostRoute = "/certwardenclient/api/v1/install"
-const postProcessClientPort = 5055
+const postProcessClientPortDefault = 5055
 
 // postProcessInnerClientPayload is the data that will be marshalled and
 // encrypted, then encoded, then embedded in the outer struct before sending to client
@@ -98,7 +100,23 @@ func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
 	}
 
 	// send post to client
-	postTo := fmt.Sprintf("https://%s:%d%s", order.Certificate.PostProcessingClientAddress, postProcessClientPort, postProcessClientPostRoute)
+	clientAddress := order.Certificate.PostProcessingClientAddress
+	clientPort := postProcessClientPortDefault
+	clientAddrSplit := strings.Split(order.Certificate.PostProcessingClientAddress, ":")
+	if len(clientAddrSplit) == 2 {
+		portNumb, err := strconv.Atoi(clientAddrSplit[1])
+		if err != nil {
+			j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to parse client port number (%s) (cert: %d, cn: %s, addr: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
+			return
+		}
+
+		clientAddress = clientAddrSplit[0]
+		clientPort = portNumb
+	} else if len(clientAddrSplit) > 2 {
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to parse client address/port (%s) (cert: %d, cn: %s, addr: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
+		return
+	}
+	postTo := fmt.Sprintf("https://%s:%d%s", clientAddress, clientPort, postProcessClientPostRoute)
 	resp, err := j.service.httpClient.Post(postTo, "application/json", bytes.NewBuffer(dataPayload))
 	if err != nil {
 		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to post to client (%s) (cert: %d, cn: %s, addr: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
