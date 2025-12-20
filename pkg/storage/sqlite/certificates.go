@@ -33,6 +33,8 @@ type certificateDb struct {
 	postProcessingClientAddress string
 	postProcessingClientKeyB64  string // base64 raw url encoded AES 256 key
 	profile                     string
+	techPhone                   string
+	techEmail                   string
 }
 
 func (cert certificateDb) toCertificate() (certificates.Certificate, error) {
@@ -67,5 +69,7 @@ func (cert certificateDb) toCertificate() (certificates.Certificate, error) {
 		PostProcessingClientAddress: cert.postProcessingClientAddress,
 		PostProcessingClientKeyB64:  cert.postProcessingClientKeyB64,
 		Profile:                     cert.profile,
+		TechPhone:                   cert.techPhone,
+		TechEmail:                   cert.techEmail,
 	}, nil
 }

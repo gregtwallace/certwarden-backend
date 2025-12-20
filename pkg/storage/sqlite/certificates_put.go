@@ -35,9 +35,11 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 			post_processing_environment = case when $16 is null then post_processing_environment else $16 end,
 			post_processing_client_address = case when $17 is null then post_processing_client_address else $17 end,
 			profile = case when $18 is null then profile else $18 end,
-			updated_at = $19
+			tech_phone = case when $19 is null then profile else $19 end,
+			tech_email = case when $20 is null then profile else $20 end,
+			updated_at = $21
 		WHERE
-			id = $20
+			id = $22
 		`
 
 	_, err := store.db.ExecContext(ctx, query,
@@ -59,6 +61,8 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 		makeJsonStringSlice(payload.PostProcessingEnvironment, true),
 		payload.PostProcessingClientAddress,
 		payload.Profile,
+		payload.TechPhone,
+		payload.TechEmail,
 		payload.UpdatedAt,
 		payload.ID,
 	)
