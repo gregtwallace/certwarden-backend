@@ -48,6 +48,9 @@ func (mgr *Manager) unsafeAddProvider(internalCfg InternalConfig, cfg providerCo
 		serv, err = dns01goacme.NewService(mgr.childApp, realCfg)
 
 	case *dnspersist01manual.Config:
+		// todo: remove this if this Config ever has any values added to it
+		cfg = new(dnspersist01manual.Config)
+
 		serv, err = dnspersist01manual.NewService(mgr.childApp, realCfg)
 
 	default:

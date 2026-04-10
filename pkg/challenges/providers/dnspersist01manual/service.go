@@ -24,6 +24,7 @@ func (service *Service) Stop() error { return nil }
 
 // Configuration options - none
 type Config struct {
+	// todo: if config ever has anything, remove `unsafeAddProvider` in mgr package, line `cfg = new(dnspersist01manual.Config)`
 }
 
 // NewService creates a new service
