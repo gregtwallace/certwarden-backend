@@ -33,8 +33,8 @@ func (service *Service) provision(domain string, token string, keyAuth acme.KeyA
 		return err
 	}
 
-	service.logger.Infof("challenges: provisioned domain %s", domain)
-	service.logger.Debugf("challenges: domain %s used token %s (key auth: %s)", domain, token, keyAuth)
+	service.logger.Infof("challenges: success on any needed provision action for domain %s", domain)
+	service.logger.Debugf("challenges: domain %s used token '%s' (key auth: '%s')", domain, token, keyAuth)
 	return nil
 }
 
@@ -56,7 +56,7 @@ func (service *Service) deprovision(domain string, token string, keyAuth acme.Ke
 		return err
 	}
 
-	service.logger.Infof("challenges: deprovisioned domain %s", domain)
-	service.logger.Debugf("challenges: domain %s previously used token %s (key auth: %s)", domain, token, keyAuth)
+	service.logger.Infof("challenges: success on any needed deprovision action for domain %s", domain)
+	service.logger.Debugf("challenges: domain %s previously used token '%s' (key auth: '%s')", domain, token, keyAuth)
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"certwarden-backend/pkg/challenges/providers/dns01cloudflare"
 	"certwarden-backend/pkg/challenges/providers/dns01goacme"
 	"certwarden-backend/pkg/challenges/providers/dns01manual"
+	"certwarden-backend/pkg/challenges/providers/dnspersist01manual"
 	"certwarden-backend/pkg/challenges/providers/http01internal"
 	"certwarden-backend/pkg/output"
 	"encoding/json"
@@ -22,12 +23,13 @@ type newPayload struct {
 	PostProvisionWaitSeconds *int `json:"post_resource_provision_wait"`
 
 	// + mandatory, only one of these
-	Http01InternalConfig  *http01internal.Config  `json:"http_01_internal,omitempty"`
-	Dns01ManualConfig     *dns01manual.Config     `json:"dns_01_manual,omitempty"`
-	Dns01AcmeDnsConfig    *dns01acmedns.Config    `json:"dns_01_acme_dns,omitempty"`
-	Dns01AcmeShConfig     *dns01acmesh.Config     `json:"dns_01_acme_sh,omitempty"`
-	Dns01CloudflareConfig *dns01cloudflare.Config `json:"dns_01_cloudflare,omitempty"`
-	Dns01GoAcmeConfig     *dns01goacme.Config     `json:"dns_01_go_acme,omitempty"`
+	Http01InternalConfig  *http01internal.Config     `json:"http_01_internal,omitempty"`
+	Dns01ManualConfig     *dns01manual.Config        `json:"dns_01_manual,omitempty"`
+	Dns01AcmeDnsConfig    *dns01acmedns.Config       `json:"dns_01_acme_dns,omitempty"`
+	Dns01AcmeShConfig     *dns01acmesh.Config        `json:"dns_01_acme_sh,omitempty"`
+	Dns01CloudflareConfig *dns01cloudflare.Config    `json:"dns_01_cloudflare,omitempty"`
+	Dns01GoAcmeConfig     *dns01goacme.Config        `json:"dns_01_go_acme,omitempty"`
+	DnsPersist01Manual    *dnspersist01manual.Config `json:"dns_persist_01_manual,omitempty"`
 }
 
 // CreateProvider creates a new provider using the specified configuration.
@@ -61,6 +63,9 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 		configCount++
 	}
 	if payload.Dns01GoAcmeConfig != nil {
+		configCount++
+	}
+	if payload.DnsPersist01Manual != nil {
 		configCount++
 	}
 	if configCount != 1 {
@@ -98,6 +103,9 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 
 	} else if payload.Dns01GoAcmeConfig != nil {
 		p, err = mgr.unsafeAddProvider(internalCfg, payload.Dns01GoAcmeConfig)
+
+	} else if payload.DnsPersist01Manual != nil {
+		p, err = mgr.unsafeAddProvider(internalCfg, payload.DnsPersist01Manual)
 
 	} else {
 		mgr.logger.Error("new provider cfg missing, this error should never trigger though, report bug to developer")

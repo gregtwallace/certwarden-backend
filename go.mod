@@ -238,6 +238,8 @@ replace certwarden-backend/pkg/challenges/providers/dns01cloudflare => /pkg/chal
 
 replace certwarden-backend/pkg/challenges/providers/dns01manual => /pkg/challenges/providers/dns01manual
 
+replace certwarden-backend/pkg/challenges/providers/dnspersist01manual => /pkg/challenges/providers/dnspersist01manual
+
 replace certwarden-backend/pkg/challenges/providers/http01internal => /pkg/challenges/providers/http01internal
 
 replace certwarden-backend/pkg/datatypes/environment => /pkg/datatypes/environment

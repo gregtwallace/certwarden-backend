@@ -58,22 +58,27 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		return fmt.Errorf("challenges: failed to make key auth (%s)", err)
 	}
 
-	// if using an alias, ensure the proper CNAME record exists
+	// if using an alias, emit debug log message about required CNAME record (or error if challenge
+	// type doesn't support a CNAME record)
 	if domain != identifier.Value {
 		// exact cname domain depends on challenge type
 		cnamePointsFrom := ""
 		cnamePointsTo := ""
-		if challengeType == acme.ChallengeTypeDns01 {
+
+		switch challengeType {
+		case acme.ChallengeTypeDns01:
 			cnamePointsFrom = "_acme-challenge." + identifier.Value
 			cnamePointsTo = "_acme-challenge." + domain
-		} else if challengeType == acme.ChallengeTypeHttp01 {
+
+		case acme.ChallengeTypeHttp01:
 			cnamePointsFrom = identifier.Value
 			cnamePointsTo = domain
-		} else {
+
+		default:
 			return fmt.Errorf("challenges: challenge type %s doesnt support using a domain alias (domain: %s)", challengeType, domain)
 		}
 
-		service.logger.Debugf(("challenges: manual cname record pointing from %s to %s is required"), cnamePointsFrom, cnamePointsTo)
+		service.logger.Debugf(("challenges: user created cname record pointing from %s to %s is required"), cnamePointsFrom, cnamePointsTo)
 	}
 
 	// provision the needed resource for validation and defer deprovisioning
