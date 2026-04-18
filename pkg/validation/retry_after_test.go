@@ -10,12 +10,6 @@ import (
 // http date format: `Wed, 01 Jan 2020 11:05:28 GMT`
 var nowTestingFunc = func() time.Time { return time.Unix(1577876728, 0) }
 
-// getANSICoffset returns a value to adjust the ANSIC format by (based on local time condition)
-func getANSICoffset() time.Duration {
-	_, tzOffset := time.Now().Zone()
-	return time.Duration(tzOffset) * time.Second
-}
-
 // test structure
 type retryAfterTest struct {
 	retryAfterValue string
@@ -62,8 +56,8 @@ var retryAfterTests = []retryAfterTest{
 	},
 	// valid ANSIC
 	{
-		retryAfterValue: "Wed Apr  1 18:05:28 2020",
-		expectedValue:   time.Unix(1585778728, 0).Add(getANSICoffset()),
+		retryAfterValue: "Wed Apr  1 22:05:28 2020",
+		expectedValue:   time.Unix(1585778728, 0),
 		expectedError:   nil,
 	},
 	// valid RFC850
@@ -77,7 +71,7 @@ var retryAfterTests = []retryAfterTest{
 // test invalid formats
 var retryAfterInvalidFormatTests = []string{
 	time.Layout,
-	time.UnixDate,
+	"Mon Jan  2 15:04:05 MST 2006", //time.UnixDate,
 	time.RubyDate,
 	time.RFC822,
 	time.RFC822Z,
@@ -86,10 +80,10 @@ var retryAfterInvalidFormatTests = []string{
 	time.RFC3339,
 	time.RFC3339Nano,
 	time.Kitchen,
-	time.Stamp,
-	time.StampMilli,
-	time.StampMicro,
-	time.StampNano,
+	"Jan  2 15:04:05",           // time.Stamp,
+	"Jan  2 15:04:05.000",       // time.StampMilli,
+	"Jan  2 15:04:05.000000",    // time.StampMicro,
+	"Jan  2 15:04:05.000000000", // time.StampNano,
 	time.DateTime,
 	time.DateOnly,
 	time.TimeOnly,
