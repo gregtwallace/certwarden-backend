@@ -53,6 +53,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
 		c.last_access, c.created_at, c.updated_at, c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, 
 		c.post_processing_environment, c.post_processing_client_address, c.post_processing_client_key, c.profile,
+		c.tech_phone, c.tech_email,
 		
 		/* cert's key */
 		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new,
@@ -168,6 +169,8 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			&oneOrder.certificate.postProcessingClientAddress,
 			&oneOrder.certificate.postProcessingClientKeyB64,
 			&oneOrder.certificate.profile,
+			&oneOrder.certificate.techPhone,
+			&oneOrder.certificate.techEmail,
 
 			&oneOrder.certificate.certificateKeyDb.id,
 			&oneOrder.certificate.certificateKeyDb.name,
@@ -287,6 +290,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 		c.last_access, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
 		c.post_processing_client_address, c.post_processing_client_key, c.profile,
+		c.tech_phone, c.tech_email,
 		
 		/* cert's key */
 		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new, ck.api_key_disabled,
@@ -388,6 +392,8 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			&oneOrder.certificate.postProcessingClientAddress,
 			&oneOrder.certificate.postProcessingClientKeyB64,
 			&oneOrder.certificate.profile,
+			&oneOrder.certificate.techPhone,
+			&oneOrder.certificate.techEmail,
 
 			&oneOrder.certificate.certificateKeyDb.id,
 			&oneOrder.certificate.certificateKeyDb.name,
@@ -575,7 +581,7 @@ func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err erro
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
 		c.last_access, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
-		c.post_processing_client_address, c.post_processing_client_key, c.profile, 
+		c.post_processing_client_address, c.post_processing_client_key, c.profile, c.tech_phone, c.tech_email,
 		
 		/* cert's key */
 		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ak.api_key_new, ck.api_key_disabled,
@@ -663,6 +669,8 @@ func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err erro
 			&oneOrder.certificate.postProcessingClientAddress,
 			&oneOrder.certificate.postProcessingClientKeyB64,
 			&oneOrder.certificate.profile,
+			&oneOrder.certificate.techPhone,
+			&oneOrder.certificate.techEmail,
 
 			&oneOrder.certificate.certificateKeyDb.id,
 			&oneOrder.certificate.certificateKeyDb.name,
@@ -783,7 +791,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		c.csr_org, c.csr_ou, c.csr_country, c.csr_state, c.csr_city, c.csr_extra_extensions, c.preferred_root_cn,
 		c.last_access, c.created_at, c.updated_at,
 		c.api_key, c.api_key_new, c.api_key_via_url, c.post_processing_command, c.post_processing_environment,
-		c.post_processing_client_address, c.post_processing_client_key, c.profile,
+		c.post_processing_client_address, c.post_processing_client_key, c.profile, c.tech_phone, c.tech_email,
 		
 		/* cert's key */
 		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ak.api_key_new, ck.api_key_disabled,
@@ -886,6 +894,8 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		&oneOrder.certificate.postProcessingClientAddress,
 		&oneOrder.certificate.postProcessingClientKeyB64,
 		&oneOrder.certificate.profile,
+		&oneOrder.certificate.techPhone,
+		&oneOrder.certificate.techEmail,
 
 		&oneOrder.certificate.certificateKeyDb.id,
 		&oneOrder.certificate.certificateKeyDb.name,
