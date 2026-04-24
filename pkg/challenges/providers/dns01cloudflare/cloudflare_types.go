@@ -24,12 +24,16 @@ func (service *Service) cloudflareResource(dnsRecordName string) (*cloudflare.Re
 	}
 
 	// find the zone for this resource
+	var bestMatch string
 	resourceZone := cloudflare.Zone{}
 	for i := range availableZones {
 		// check if zone name is the suffix of resource name (i.e. this is the correct zone)
 		if strings.HasSuffix(dnsRecordName, availableZones[i].Name) {
-			resourceZone = availableZones[i]
-			break
+			// update selected zone if a more exact match is found
+			if len(bestMatch) < len(availableZones[i].Name) {
+			    resourceZone = availableZones[i]
+				bestMatch = availableZones[i].Name
+		    }
 		}
 	}
 	// defer err check to after perm (zone not found won't have needed permission)
