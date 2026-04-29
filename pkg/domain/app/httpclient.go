@@ -11,9 +11,9 @@ import (
 	"github.com/cloudfoundry/jibber_jabber"
 )
 
-// rate limit: even more conservative than what is set by Let's Encrypt
-// at: https://letsencrypt.org/docs/rate-limits/#overall-requests-limit
-const rateLimit = 3 // per second
+// rate limit: relatively conservative
+// see also: https://letsencrypt.org/docs/rate-limits/#overall-requests-limit
+const rateLimit = 10 // per second
 
 // default Accept-Language header values
 const (
