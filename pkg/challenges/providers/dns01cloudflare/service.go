@@ -2,11 +2,11 @@ package dns01cloudflare
 
 import (
 	"certwarden-backend/pkg/acme"
-	"certwarden-backend/pkg/output"
+	"context"
 	"errors"
 	"net/http"
 
-	"github.com/cloudflare/cloudflare-go"
+	"github.com/cloudflare/cloudflare-go/v6"
 	"go.uber.org/zap"
 )
 
@@ -17,14 +17,16 @@ var (
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
+	GetShutdownContext() context.Context
 	GetHttpClient() *http.Client
 }
 
 // provider Service struct
 type Service struct {
-	logger        *zap.SugaredLogger
-	httpClient    *http.Client
-	cloudflareApi *cloudflare.API
+	logger           *zap.SugaredLogger
+	shutdownContext  context.Context
+	httpClient       *http.Client
+	cloudflareClient *cloudflare.Client
 }
 
 // ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
@@ -52,11 +54,14 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
+	// shutdown ctx
+	service.shutdownContext = app.GetShutdownContext()
+
 	// http client for api calls
 	service.httpClient = app.GetHttpClient()
 
-	// cloudflare api
-	err := service.configureCloudflareAPI(cfg)
+	// cloudflare client
+	err := service.configureCloudflareClient(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -82,27 +87,4 @@ func (service *Service) UpdateService(app App, cfg *Config) error {
 	*service = *newServ
 
 	return nil
-}
-
-// apiIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
-// (depending on which is in use for the API instance) and returns it.
-func (service *Service) apiIdentifier() string {
-	// return whichever is present
-	if len(service.cloudflareApi.APIToken) > 0 {
-		return service.cloudflareApi.APIToken
-	} else if len(service.cloudflareApi.APIKey) > 0 {
-		return service.cloudflareApi.APIKey
-	} else if len(service.cloudflareApi.APIUserServiceKey) > 0 {
-		return service.cloudflareApi.APIUserServiceKey
-	}
-
-	// none present, return unknown
-	return "unknown"
-}
-
-// redactedApiIdentifier selects either the APIKey, APIUserServiceKey, or APIToken
-// (depending on which is in use for the API instance) and then partially redacts
-// it. This is useful for logging issues without saving the full credential to logs.
-func (service *Service) redactedApiIdentifier() string {
-	return output.RedactString(service.apiIdentifier())
 }

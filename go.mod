@@ -6,7 +6,7 @@ require github.com/julienschmidt/httprouter v1.3.0
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/cloudflare/cloudflare-go v0.116.0
+	github.com/cloudflare/cloudflare-go/v6 v6.10.0
 	github.com/cloudfoundry/jibber_jabber v0.0.0-20151120183258-bcc4c8345a21
 	github.com/coreos/go-oidc/v3 v3.16.0
 	github.com/go-acme/lego/v4 v4.35.2
@@ -102,7 +102,6 @@ require (
 	github.com/go-playground/validator/v10 v10.23.0 // indirect
 	github.com/go-resty/resty/v2 v2.17.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
-	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
 	github.com/gofrs/flock v0.13.0 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
@@ -197,6 +196,10 @@ require (
 	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.3.83 // indirect
+	github.com/tidwall/gjson v1.18.0 // indirect
+	github.com/tidwall/match v1.2.0 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
+	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/transip/gotransip/v6 v6.26.2 // indirect
 	github.com/ucloud/ucloud-sdk-go v0.22.63 // indirect

@@ -1,12 +1,11 @@
 package dns01cloudflare
 
 import (
-	"certwarden-backend/pkg/output"
 	"errors"
-	"fmt"
 	"time"
 
-	"github.com/cloudflare/cloudflare-go"
+	"github.com/cloudflare/cloudflare-go/v6"
+	"github.com/cloudflare/cloudflare-go/v6/option"
 )
 
 var (
@@ -29,29 +28,9 @@ type Config struct {
 	ApiToken *string `yaml:"api_token,omitempty" json:"api_token,omitempty"`
 }
 
-// redactedIdentifier selects the correct identifier field and then returns the identifier
-// in its redacted form
-func (cfg *Config) redactedIdentifier() string {
-	// if token specified
-	if cfg.ApiToken != nil {
-		return output.RedactString(*cfg.ApiToken)
-	}
-
-	// if global api key
-	if cfg.Account.GlobalApiKey != nil {
-		id := output.RedactString(*cfg.Account.GlobalApiKey)
-		if cfg.Account.Email != nil {
-			id = id + " - " + *cfg.Account.Email
-		}
-		return id
-	}
-
-	return "unknown"
-}
-
 // configureCloudflareAPI configures the service to use the API Tokens
 // and Accounts specified within the config.
-func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
+func (service *Service) configureCloudflareClient(cfg *Config) (err error) {
 	// if blank value, change to nil pointer (treat as omitted)
 	if cfg.Account != nil && ((cfg.Account.Email != nil && *cfg.Account.Email == "") || (cfg.Account.GlobalApiKey != nil && *cfg.Account.GlobalApiKey == "")) {
 		cfg.Account.Email = nil
@@ -67,30 +46,22 @@ func (service *Service) configureCloudflareAPI(cfg *Config) (err error) {
 	}
 
 	// make option to use the custom http.Client
-	opts := []cloudflare.Option{
-		cloudflare.HTTPClient(service.httpClient),
-	}
+	opts := []option.RequestOption{option.WithHTTPClient(service.httpClient)}
 
 	// if using apiToken
 	if cfg.ApiToken != nil {
 		// make api for the token
-		service.cloudflareApi, err = cloudflare.NewWithAPIToken(*cfg.ApiToken, opts...)
-		// defer to common err check
+		opts = append(opts, option.WithAPIToken(*cfg.ApiToken))
 	} else if cfg.Account != nil && cfg.Account.Email != nil && cfg.Account.GlobalApiKey != nil {
 		// else if using Account
-		service.cloudflareApi, err = cloudflare.New(*cfg.Account.GlobalApiKey, *cfg.Account.Email, opts...)
-		// defer to common err check
+		opts = append(opts, option.WithAPIEmail(*cfg.Account.Email))
+		opts = append(opts, option.WithAPIKey(*cfg.Account.GlobalApiKey))
 	} else {
 		// else incomplete config
 		return errMissingConfigInfo
 	}
 
-	// common err check
-	if err != nil {
-		err = fmt.Errorf("failed to create api instance %s (%s)", cfg.redactedIdentifier(), err)
-		service.logger.Error(err)
-		return err
-	}
+	service.cloudflareClient = cloudflare.NewClient(opts...)
 
 	return nil
 }
