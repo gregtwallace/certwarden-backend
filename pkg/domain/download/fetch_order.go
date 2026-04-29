@@ -48,7 +48,9 @@ func (service *Service) getCertNewestValidOrder(certName string, apiKeyOrKeys st
 	}
 
 	// verify cert apikey matches cert's cert apikey (new or old)
-	if (certApiKey != order.Certificate.ApiKey) && (certApiKey != order.Certificate.ApiKeyNew) {
+	// also ensure blank can't be a match (i.e. apiKey missing)
+	if (order.Certificate.ApiKey == "" || certApiKey != order.Certificate.ApiKey) &&
+		(order.Certificate.ApiKeyNew == "" || certApiKey != order.Certificate.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
 		return orders.Order{}, output.JsonErrUnauthorized
 	}
@@ -111,7 +113,9 @@ func (service *Service) getCertNewestValidOrder(certName string, apiKeyOrKeys st
 	}
 
 	// validate the apiKey for the private key is correct (new or old)
-	if (keyApiKey != order.FinalizedKey.ApiKey) && (keyApiKey != order.FinalizedKey.ApiKeyNew) {
+	// also ensure blank can't be a match (i.e. apiKey missing)
+	if (order.FinalizedKey.ApiKey == "" || keyApiKey != order.FinalizedKey.ApiKey) &&
+		(order.FinalizedKey.ApiKeyNew == "" || keyApiKey != order.FinalizedKey.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
 		return orders.Order{}, output.JsonErrUnauthorized
 	}
