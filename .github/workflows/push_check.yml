@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  built-test-and-lint:
+  run-all-tests:
     runs-on: ubuntu-24.04
 
     steps:
