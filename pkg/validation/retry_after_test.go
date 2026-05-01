@@ -62,7 +62,7 @@ var retryAfterTests = []retryAfterTest{
 	},
 	// valid RFC850
 	{
-		retryAfterValue: "Wednesday, 09-Jan-20 03:05:27 EST",
+		retryAfterValue: "Wednesday, 09-Jan-20 08:05:27 UTC",
 		expectedValue:   time.Unix(1578557127, 0),
 		expectedError:   nil,
 	},
