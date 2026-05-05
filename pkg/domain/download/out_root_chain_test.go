@@ -19,6 +19,7 @@ func TestOutCertRootChainViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: blank/empty apikey provided
 	apiKey := ""
@@ -27,6 +28,7 @@ func TestOutCertRootChainViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: incorrect apikey provided
 	apiKey = "something"
@@ -35,6 +37,7 @@ func TestOutCertRootChainViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: key apikey provided instead of cert apikey
 	apiKey = "k-123"
@@ -43,6 +46,7 @@ func TestOutCertRootChainViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: key apikey variants
 	apiKey = ".k-123"
@@ -51,24 +55,28 @@ func TestOutCertRootChainViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "k-123."
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "123.k-123"
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "k-123.123"
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: correct apikey provided but via url
 	apiKey = "c-abc"
@@ -77,6 +85,7 @@ func TestOutCertRootChainViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	// `d` doesnt have a any correct apikey
 	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: correct new apikey provided but via url
 	apiKey = "c-abc-new"
@@ -147,6 +156,26 @@ Af8wHQYDVR0OBBYEFPggvDzOv1cAig6XMGB8mxeogmguMA0GCSqGSIb3DQEBCwUA
 A0EAEKXN9SngV8TnwoWVtZjHlZy3Y/kaY3vRfnRQB4cLeE6/UD4VshDFC9LbvH9P
 BcJ3umu+SsvpqDQvQagT/D/bZg==
 -----END CERTIFICATE-----`, nil)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", `-----BEGIN CERTIFICATE-----
+MIIBZzCCARGgAwIBAgIBTTANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZzAeFw0yNjA1MDIwNDAyNThaFw0zNjA1MDIwNDAyNThaMB4xHDAaBgNV
+BAoTE0ludGVybWVkaWF0ZS1UZXN0LWcwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+k58mZ4Z1BCkdmzl4Cna9rFTinSKvy9y/fcYtJPUHwd/Mf62WCGaRAKGTBRNxBkDk
+RJKfrgdNP125SZyERh7VcQIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAgQwDwYDVR0T
+AQH/BAUwAwEB/zAdBgNVHQ4EFgQUA0ZZBv8e35/IXD7eu6qI6R4WKcMwDQYJKoZI
+hvcNAQELBQADQQACsq/GqXJVzUGig4voguB96cBXxlLNP2UHnhAihLQZ8BY+g4mm
+HZtRvh8TK5VI0J64ed//xMalyNSeh9gva5KB
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBXzCCAQmgAwIBAgIBBzANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZzAeFw0yNjA1MDIwNDAyNThaFw0zNjA1MDIwNDAyNThaMBYxFDASBgNV
+BAoTC1Jvb3QtVGVzdC1nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKcI7qmhpJNm
+rmwcq8mQOa/82H4vMgg1dhZy7x8wi6HLIl3VCDiKeRrt4zr4r9DsOb1yP79QMjKV
+H0XpgTAepLkCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
+Af8wHQYDVR0OBBYEFLPogQY9cmqJ2oYKbYDPjB1fBKvgMA0GCSqGSIb3DQEBCwUA
+A0EAdy9WLjVZ1N5Fwb7DbteJ6FpatKIUG2i8gc1dnmHOEuchTc9P07KfjVeWMa2d
+3yrTcq88EI0Rc3ItjF7Ao6d8gg==
+-----END CERTIFICATE-----`, nil)
 
 	// Test: correct new apikey provided
 	apiKey = "c-abc-new"
@@ -206,6 +235,7 @@ func TestOutCertRootChainViaURL(t *testing.T) {
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: blank/empty apikey provided
 	apiKey := ""
@@ -214,6 +244,7 @@ func TestOutCertRootChainViaURL(t *testing.T) {
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: incorrect apikey provided
 	apiKey = "something"
@@ -222,6 +253,7 @@ func TestOutCertRootChainViaURL(t *testing.T) {
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: key apikey provided instead of cert apikey
 	apiKey = "k-123"
@@ -230,6 +262,7 @@ func TestOutCertRootChainViaURL(t *testing.T) {
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: key apikey variants
 	apiKey = ".k-123"
@@ -238,24 +271,28 @@ func TestOutCertRootChainViaURL(t *testing.T) {
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "k-123."
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "123.k-123"
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "k-123.123"
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: correct apikey provided
 	apiKey = "c-abc"
@@ -282,6 +319,26 @@ q528WfMRsAkCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
 Af8wHQYDVR0OBBYEFPggvDzOv1cAig6XMGB8mxeogmguMA0GCSqGSIb3DQEBCwUA
 A0EAEKXN9SngV8TnwoWVtZjHlZy3Y/kaY3vRfnRQB4cLeE6/UD4VshDFC9LbvH9P
 BcJ3umu+SsvpqDQvQagT/D/bZg==
+-----END CERTIFICATE-----`, nil)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", `-----BEGIN CERTIFICATE-----
+MIIBZzCCARGgAwIBAgIBTTANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZzAeFw0yNjA1MDIwNDAyNThaFw0zNjA1MDIwNDAyNThaMB4xHDAaBgNV
+BAoTE0ludGVybWVkaWF0ZS1UZXN0LWcwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+k58mZ4Z1BCkdmzl4Cna9rFTinSKvy9y/fcYtJPUHwd/Mf62WCGaRAKGTBRNxBkDk
+RJKfrgdNP125SZyERh7VcQIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAgQwDwYDVR0T
+AQH/BAUwAwEB/zAdBgNVHQ4EFgQUA0ZZBv8e35/IXD7eu6qI6R4WKcMwDQYJKoZI
+hvcNAQELBQADQQACsq/GqXJVzUGig4voguB96cBXxlLNP2UHnhAihLQZ8BY+g4mm
+HZtRvh8TK5VI0J64ed//xMalyNSeh9gva5KB
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBXzCCAQmgAwIBAgIBBzANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZzAeFw0yNjA1MDIwNDAyNThaFw0zNjA1MDIwNDAyNThaMBYxFDASBgNV
+BAoTC1Jvb3QtVGVzdC1nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKcI7qmhpJNm
+rmwcq8mQOa/82H4vMgg1dhZy7x8wi6HLIl3VCDiKeRrt4zr4r9DsOb1yP79QMjKV
+H0XpgTAepLkCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
+Af8wHQYDVR0OBBYEFLPogQY9cmqJ2oYKbYDPjB1fBKvgMA0GCSqGSIb3DQEBCwUA
+A0EAdy9WLjVZ1N5Fwb7DbteJ6FpatKIUG2i8gc1dnmHOEuchTc9P07KfjVeWMa2d
+3yrTcq88EI0Rc3ItjF7Ao6d8gg==
 -----END CERTIFICATE-----`, nil)
 
 	// Test: correct new apikey provided

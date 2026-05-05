@@ -19,6 +19,7 @@ func TestOutKeyViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: blank/empty apikey provided
 	apiKey := ""
@@ -27,6 +28,7 @@ func TestOutKeyViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: incorrect apikey provided
 	apiKey = "something"
@@ -35,6 +37,7 @@ func TestOutKeyViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: cert apikey provided instead of key apikey
 	apiKey = "c-abc"
@@ -43,6 +46,7 @@ func TestOutKeyViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: cert apikey variants
 	apiKey = ".c-abc"
@@ -51,24 +55,28 @@ func TestOutKeyViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "c-abc."
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "123.c-abc"
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "c-abc.123"
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: correct apikey provided but via url
 	apiKey = "k-123"
@@ -82,6 +90,7 @@ func TestOutKeyViaHeader(t *testing.T) {
 	apiKey = "k-123-new"
 	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: correct apikey provided
 	apiKey = "k-123"
@@ -113,6 +122,15 @@ iQIhANbGnhTb6PD+ja1lTHuoxb16cKe3YjWRzu5QcqWwziE5AiEA49fKUxVQ5+gn
 vYeAzr1zmAnmlvSpgEYiFIx8ENN7xtUCICN0qHYjE6JtM3BTj7u+Ud6EzwIw+OqF
 Bpc6+qI1vOGpAiAZg7HBihKMVcAVhlYTUL3gGcO7xdwxZCku2eiOzc//nQIhALuF
 N/VC8wvORy4lKBkAeRy0oK+9o6R5mdzP3Fjpz9I4
+-----END RSA PRIVATE KEY-----`, nil)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", `-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAMGrhUa3l1WkRKNw5Sl/co9a5l+BjrJkokB/WBqMreyk+KYXaBFz
+9Phq2cWgQJZH1//Q1Hq+GBocmzXevS/DPjUCAwEAAQI/ZoHiiQujjjDkI54drVlH
+yZjTVrm8Ta/2MS019NeBNz8tk115EElXbuddVw025TiSG8X7h4LKiV3qZD8+VUhx
+AiEAymNMrOtjqQ8oRxcEY6E+6vrhTno9onaxcmGETgMLPp0CIQD0+QcYzbifkeOL
+m9/GYrx5Jkr7guA1T/2rpcIXK7leeQIhAJbXLZWPluawuldJq2bKDge6VmRULU3B
+4v0Z+y7di+rtAiA9S2oZLLA7TPeQYQoWy3G5JnmwgMi0zjT8k9cCkTAqkQIhAMGF
+j1f1P6e7Khe0uXD3N+r34piMQT0WX0po2rf16x0i
 -----END RSA PRIVATE KEY-----`, nil)
 
 	// Test: correct new apikey provided
@@ -155,6 +173,7 @@ func TestOutKeyViaURL(t *testing.T) {
 	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: blank/empty apikey provided
 	apiKey := ""
@@ -163,6 +182,7 @@ func TestOutKeyViaURL(t *testing.T) {
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: incorrect apikey provided
 	apiKey = "something"
@@ -171,6 +191,7 @@ func TestOutKeyViaURL(t *testing.T) {
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: cert apikey provided instead of key apikey
 	apiKey = "c-abc"
@@ -179,6 +200,7 @@ func TestOutKeyViaURL(t *testing.T) {
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: cert apikey variants
 	apiKey = ".c-abc"
@@ -187,24 +209,28 @@ func TestOutKeyViaURL(t *testing.T) {
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "c-abc."
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "123.c-abc"
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "c-abc.123"
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: correct apikey provided
 	apiKey = "k-123"
@@ -220,6 +246,15 @@ iQIhANbGnhTb6PD+ja1lTHuoxb16cKe3YjWRzu5QcqWwziE5AiEA49fKUxVQ5+gn
 vYeAzr1zmAnmlvSpgEYiFIx8ENN7xtUCICN0qHYjE6JtM3BTj7u+Ud6EzwIw+OqF
 Bpc6+qI1vOGpAiAZg7HBihKMVcAVhlYTUL3gGcO7xdwxZCku2eiOzc//nQIhALuF
 N/VC8wvORy4lKBkAeRy0oK+9o6R5mdzP3Fjpz9I4
+-----END RSA PRIVATE KEY-----`, nil)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", `-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAMGrhUa3l1WkRKNw5Sl/co9a5l+BjrJkokB/WBqMreyk+KYXaBFz
+9Phq2cWgQJZH1//Q1Hq+GBocmzXevS/DPjUCAwEAAQI/ZoHiiQujjjDkI54drVlH
+yZjTVrm8Ta/2MS019NeBNz8tk115EElXbuddVw025TiSG8X7h4LKiV3qZD8+VUhx
+AiEAymNMrOtjqQ8oRxcEY6E+6vrhTno9onaxcmGETgMLPp0CIQD0+QcYzbifkeOL
+m9/GYrx5Jkr7guA1T/2rpcIXK7leeQIhAJbXLZWPluawuldJq2bKDge6VmRULU3B
+4v0Z+y7di+rtAiA9S2oZLLA7TPeQYQoWy3G5JnmwgMi0zjT8k9cCkTAqkQIhAMGF
+j1f1P6e7Khe0uXD3N+r34piMQT0WX0po2rf16x0i
 -----END RSA PRIVATE KEY-----`, nil)
 
 	// Test: correct new key provided

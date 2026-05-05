@@ -19,6 +19,7 @@ func TestOutPrivateCertViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadPrivateCertViaHeader, nil, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, nil, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, nil, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, nil, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: blank/empty apikey provided
 	apiKey := ""
@@ -27,6 +28,7 @@ func TestOutPrivateCertViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: incorrect apikey provided
 	apiKey = "something"
@@ -35,12 +37,14 @@ func TestOutPrivateCertViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "something.something"
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: just one of the apikeys
 	apiKey = "c-abc"
@@ -49,12 +53,14 @@ func TestOutPrivateCertViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "k-123"
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: apikey variants
 	apiKey = ".k-123"
@@ -63,48 +69,56 @@ func TestOutPrivateCertViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = ".c-abc"
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "k-123."
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "c-abc."
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "123.k-123"
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "k-123.123"
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "123.c-abc"
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "c-abc.123"
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: correct apikey provided but via url
 	apiKey = "c-abc.k-123"
@@ -113,6 +127,7 @@ func TestOutPrivateCertViaHeader(t *testing.T) {
 	oneTest(t, service.DownloadPrivateCertViaHeader, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	// `d` doesnt have a any correct apikey
 	oneTest(t, service.DownloadPrivateCertViaHeader, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaHeader, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: correct new apikey provided but via url
 	apiKey = "c-abc-new.k-123-new"
@@ -180,6 +195,25 @@ BgkqhkiG9w0BAQsFAANBAEUmUcREcOiU+NtRS+HVTGqMoWfoiOQ4aVPaADeRFUp4
 K+zKNM52f8wc8lFE6qlB2zDJICwzauZZGql3PuUuBss=
 -----END CERTIFICATE-----
 `, nil)
+	oneTest(t, service.DownloadPrivateCertViaHeader, &apiKey, nil, "test-g", `-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAMGrhUa3l1WkRKNw5Sl/co9a5l+BjrJkokB/WBqMreyk+KYXaBFz
+9Phq2cWgQJZH1//Q1Hq+GBocmzXevS/DPjUCAwEAAQI/ZoHiiQujjjDkI54drVlH
+yZjTVrm8Ta/2MS019NeBNz8tk115EElXbuddVw025TiSG8X7h4LKiV3qZD8+VUhx
+AiEAymNMrOtjqQ8oRxcEY6E+6vrhTno9onaxcmGETgMLPp0CIQD0+QcYzbifkeOL
+m9/GYrx5Jkr7guA1T/2rpcIXK7leeQIhAJbXLZWPluawuldJq2bKDge6VmRULU3B
+4v0Z+y7di+rtAiA9S2oZLLA7TPeQYQoWy3G5JnmwgMi0zjT8k9cCkTAqkQIhAMGF
+j1f1P6e7Khe0uXD3N+r34piMQT0WX0po2rf16x0i
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIBPDCB56ADAgECAgIDCTANBgkqhkiG9w0BAQsFADAeMRwwGgYDVQQKExNJbnRl
+cm1lZGlhdGUtVGVzdC1nMB4XDTI2MDUwMjA0MDI1OFoXDTM2MDUwMjA0MDI1OFow
+FjEUMBIGA1UEChMLTGVhZi1UZXN0LWcwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+k58mZ4Z1BCkdmzl4Cna9rFTinSKvy9y/fcYtJPUHwd/Mf62WCGaRAKGTBRNxBkDk
+RJKfrgdNP125SZyERh7VcQIDAQABoxcwFTATBgNVHSUEDDAKBggrBgEFBQcDATAN
+BgkqhkiG9w0BAQsFAANBAB/Hjf+5i3xZ6kH9lQ4b96v4odYFaB+9oP8Tk00zmH7O
+xypvBwCIZaItlxUgJzOGAEPMpVkwE69KJMzR3N+YG5o=
+-----END CERTIFICATE-----
+`, nil)
 
 	// Test: correct new apikey provided
 	apiKey = "c-abc-new.k-123-new"
@@ -237,6 +271,7 @@ func TestOutPrivateCertViaURL(t *testing.T) {
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, nil, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, nil, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, nil, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, nil, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: blank/empty apikey provided
 	apiKey := ""
@@ -245,6 +280,7 @@ func TestOutPrivateCertViaURL(t *testing.T) {
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: incorrect apikey provided
 	apiKey = "something"
@@ -253,12 +289,14 @@ func TestOutPrivateCertViaURL(t *testing.T) {
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "something.something"
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: just one of the apikeys
 	apiKey = "c-abc"
@@ -267,12 +305,14 @@ func TestOutPrivateCertViaURL(t *testing.T) {
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "k-123"
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: apikey variants
 	apiKey = ".k-123"
@@ -281,48 +321,56 @@ func TestOutPrivateCertViaURL(t *testing.T) {
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = ".c-abc"
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "k-123."
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "c-abc."
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "123.k-123"
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "k-123.123"
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "123.c-abc"
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 	apiKey = "c-abc.123"
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
 	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
 
 	// Test: correct apikey provided
 	apiKey = "c-abc.k-123"
@@ -347,6 +395,25 @@ rsPDF/cFzPtIHXEiaJf1EGI/SKFk+2fK7LaVqIJqDdECHOxz7e8MtdapREVkSvxV
 apaHsWlWwZ0dibcReFR0CQIDAQABoxcwFTATBgNVHSUEDDAKBggrBgEFBQcDATAN
 BgkqhkiG9w0BAQsFAANBAEUmUcREcOiU+NtRS+HVTGqMoWfoiOQ4aVPaADeRFUp4
 K+zKNM52f8wc8lFE6qlB2zDJICwzauZZGql3PuUuBss=
+-----END CERTIFICATE-----
+`, nil)
+	oneTest(t, service.DownloadPrivateCertViaUrl, nil, &apiKey, "test-g", `-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAMGrhUa3l1WkRKNw5Sl/co9a5l+BjrJkokB/WBqMreyk+KYXaBFz
+9Phq2cWgQJZH1//Q1Hq+GBocmzXevS/DPjUCAwEAAQI/ZoHiiQujjjDkI54drVlH
+yZjTVrm8Ta/2MS019NeBNz8tk115EElXbuddVw025TiSG8X7h4LKiV3qZD8+VUhx
+AiEAymNMrOtjqQ8oRxcEY6E+6vrhTno9onaxcmGETgMLPp0CIQD0+QcYzbifkeOL
+m9/GYrx5Jkr7guA1T/2rpcIXK7leeQIhAJbXLZWPluawuldJq2bKDge6VmRULU3B
+4v0Z+y7di+rtAiA9S2oZLLA7TPeQYQoWy3G5JnmwgMi0zjT8k9cCkTAqkQIhAMGF
+j1f1P6e7Khe0uXD3N+r34piMQT0WX0po2rf16x0i
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIBPDCB56ADAgECAgIDCTANBgkqhkiG9w0BAQsFADAeMRwwGgYDVQQKExNJbnRl
+cm1lZGlhdGUtVGVzdC1nMB4XDTI2MDUwMjA0MDI1OFoXDTM2MDUwMjA0MDI1OFow
+FjEUMBIGA1UEChMLTGVhZi1UZXN0LWcwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+k58mZ4Z1BCkdmzl4Cna9rFTinSKvy9y/fcYtJPUHwd/Mf62WCGaRAKGTBRNxBkDk
+RJKfrgdNP125SZyERh7VcQIDAQABoxcwFTATBgNVHSUEDDAKBggrBgEFBQcDATAN
+BgkqhkiG9w0BAQsFAANBAB/Hjf+5i3xZ6kH9lQ4b96v4odYFaB+9oP8Tk00zmH7O
+xypvBwCIZaItlxUgJzOGAEPMpVkwE69KJMzR3N+YG5o=
 -----END CERTIFICATE-----
 `, nil)
 

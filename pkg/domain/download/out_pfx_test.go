@@ -68,6 +68,7 @@ func TestOutPFXViaHeader(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaHeader, nil, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, nil, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, nil, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, nil, nil, "test-g", output.JsonErrUnauthorized)
 
 	// Test: blank/empty apikey provided
 	apiKey := ""
@@ -76,6 +77,7 @@ func TestOutPFXViaHeader(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 
 	// Test: incorrect apikey provided
 	apiKey = "something"
@@ -84,12 +86,14 @@ func TestOutPFXViaHeader(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 	apiKey = "something.something"
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 
 	// Test: just one of the apikeys
 	apiKey = "c-abc"
@@ -98,12 +102,14 @@ func TestOutPFXViaHeader(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 	apiKey = "k-123"
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 
 	// Test: apikey variants
 	apiKey = ".k-123"
@@ -112,48 +118,56 @@ func TestOutPFXViaHeader(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 	apiKey = ".c-abc"
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 	apiKey = "k-123."
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 	apiKey = "c-abc."
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 	apiKey = "123.k-123"
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 	apiKey = "k-123.123"
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 	apiKey = "123.c-abc"
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 	apiKey = "c-abc.123"
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", output.JsonErrUnauthorized)
 
 	// Test: correct apikey provided but via url
 	apiKey = "c-abc.k-123"
@@ -162,6 +176,7 @@ func TestOutPFXViaHeader(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaHeader, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	// `d` doesnt have a any correct apikey
 	onePfxTest(t, service.DownloadPfxViaHeader, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaHeader, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 
 	// Test: correct new apikey provided but via url
 	apiKey = "c-abc-new.k-123-new"
@@ -173,8 +188,9 @@ func TestOutPFXViaHeader(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-a", nil)
 	// `b` doesn't have a non-new apikey
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-c", nil)
-	// // `d` doesnt have a any correct apikey
+	// `d` doesnt have a any correct apikey
 	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-e", nil)
+	onePfxTest(t, service.DownloadPfxViaHeader, &apiKey, nil, "test-g", nil)
 
 	// Test: correct new apikey provided
 	apiKey = "c-abc-new.k-123-new"
@@ -196,6 +212,7 @@ func TestOutPFXViaURL(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, nil, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, nil, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, nil, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, nil, "test-g", output.JsonErrUnauthorized)
 
 	// Test: blank/empty apikey provided
 	apiKey := ""
@@ -204,6 +221,7 @@ func TestOutPFXViaURL(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 
 	// Test: incorrect apikey provided
 	apiKey = "something"
@@ -212,12 +230,14 @@ func TestOutPFXViaURL(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 	apiKey = "something.something"
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 
 	// Test: just one of the apikeys
 	apiKey = "c-abc"
@@ -226,12 +246,14 @@ func TestOutPFXViaURL(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 	apiKey = "k-123"
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 
 	// Test: apikey variants
 	apiKey = ".k-123"
@@ -240,48 +262,56 @@ func TestOutPFXViaURL(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 	apiKey = ".c-abc"
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 	apiKey = "k-123."
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 	apiKey = "c-abc."
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 	apiKey = "123.k-123"
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 	apiKey = "k-123.123"
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 	apiKey = "123.c-abc"
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 	apiKey = "c-abc.123"
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-a", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-b", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-d", output.JsonErrUnauthorized)
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", output.JsonErrUnauthorized)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", output.JsonErrUnauthorized)
 
 	// Test: correct apikey provided
 	apiKey = "c-abc.k-123"
@@ -290,6 +320,7 @@ func TestOutPFXViaURL(t *testing.T) {
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-c", output.JsonErrUnauthorized)
 	// // `d` doesnt have a any correct apikey
 	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-e", nil)
+	onePfxTest(t, service.DownloadPfxViaUrl, nil, &apiKey, "test-g", nil)
 
 	// Test: correct new apikey provided
 	apiKey = "c-abc-new.k-123-new"
