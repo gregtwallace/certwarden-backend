@@ -36,7 +36,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 	sort := sortField + " " + q.SortDirection()
 
 	// query
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// WARNING: SQL Injection is possible if the variables are not properly
@@ -269,7 +269,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 	sort := sortField + " " + q.SortDirection()
 
 	// do query
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// WARNING: SQL Injection is possible if the variables are not properly
@@ -466,7 +466,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 
 // GetAllIncompleteOrderIds returns an array of all of the incomplete orders in storage.
 func (store *Storage) GetAllIncompleteOrderIds() (orderIds []int, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -507,7 +507,7 @@ func (store *Storage) GetAllIncompleteOrderIds() (orderIds []int, err error) {
 // GetNewestIncompleteCertOrderId returns the most recent incomplete order for a specified certId,
 // assuming there is one.
 func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -551,7 +551,7 @@ func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, e
 // GetOrders fetches the Order for each ID in the orderIDs slice and returns the
 // slice of Order
 func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// turn IDs into comma sep string
@@ -768,7 +768,7 @@ func (store *Storage) GetCertNewestValidOrderByName(name string) (order orders.O
 
 // getCertNewestValidOrder fetches the newest valid order for the specified cert
 func (store *Storage) getCertNewestValidOrder(certId int, certName string) (order orders.Order, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `

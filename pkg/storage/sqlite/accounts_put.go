@@ -9,7 +9,7 @@ import (
 // TODO: refactor to more generic for anything that can be updated??
 func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) (acme_accounts.Account, error) {
 	// database update
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -46,7 +46,7 @@ func (store *Storage) PutNameDescAccount(payload acme_accounts.NameDescPayload) 
 // PutAcmeAccountResponse populates an account with data that is returned by LE when
 // an account is POSTed to
 func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccount) (acme_accounts.Account, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -85,7 +85,7 @@ func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccount) 
 
 // PutNewAccountKey updates the specified account to the new key id
 func (store *Storage) PutNewAccountKey(payload acme_accounts.RolloverKeyPayload) (acme_accounts.Account, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `

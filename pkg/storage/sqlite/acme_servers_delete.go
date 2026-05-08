@@ -8,7 +8,7 @@ import (
 // ServerHasAccounts returns true if the specified serverId matches
 // any of the accounts in the db
 func (store *Storage) ServerHasAccounts(serverId int) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// check server id is not in use in certificates
@@ -28,7 +28,7 @@ func (store *Storage) ServerHasAccounts(serverId int) bool {
 
 // DeleteServer deletes an acme server from the database
 func (store *Storage) DeleteServer(serverId int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	tx, err := store.db.BeginTx(ctx, nil)

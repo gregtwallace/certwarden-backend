@@ -8,7 +8,7 @@ import (
 // KeyInUse returns a bool if the specified key is in use, it returns
 // an error if the key does not exist (or any other error)
 func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// check key exists
@@ -93,7 +93,7 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 
 // DeleteKey deletes a private key from the database
 func (store *Storage) DeleteKey(id int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// check that delete is safe

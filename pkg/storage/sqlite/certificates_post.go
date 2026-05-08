@@ -8,7 +8,7 @@ import (
 // PostNewAccount inserts a new cert into the db
 func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates.Certificate, error) {
 	// database update
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// don't check for in use in storage. main app business logic should

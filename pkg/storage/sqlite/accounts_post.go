@@ -7,7 +7,7 @@ import (
 
 // PostNewAccount inserts a new account into the db
 func (store *Storage) PostNewAccount(payload acme_accounts.NewPayload) (acme_accounts.Account, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// don't check for in use in storage. main app business logic should

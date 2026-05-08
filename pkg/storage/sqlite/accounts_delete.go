@@ -8,7 +8,7 @@ import (
 // AccountHasCerts returns true if the specified accountId matches
 // any of the certificates in the db
 func (store *Storage) AccountHasCerts(accountId int) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// don't check account exists, business logic in app should do this
@@ -30,7 +30,7 @@ func (store *Storage) AccountHasCerts(accountId int) bool {
 
 // DeleteAccount deletes an account from the database
 func (store *Storage) DeleteAccount(id int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	tx, err := store.db.BeginTx(ctx, nil)

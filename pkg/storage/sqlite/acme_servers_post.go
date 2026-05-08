@@ -8,7 +8,7 @@ import (
 // PostNewServer saves the KeyExtended to the db as a new key
 func (store *Storage) PostNewServer(payload acme_servers.NewPayload) (acme_servers.Server, error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `

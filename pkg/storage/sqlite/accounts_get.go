@@ -41,7 +41,7 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 	sort := sortField + " " + q.SortDirection()
 
 	// do query
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// WARNING: SQL Injection is possible if the variables are not properly
@@ -144,7 +144,7 @@ func (store *Storage) GetOneAccountByName(name string) (acme_accounts.Account, e
 
 // getOneAccount returns an Account based on either its unique id or its unique name
 func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `

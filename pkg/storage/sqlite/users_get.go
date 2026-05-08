@@ -22,7 +22,7 @@ func (userDb *userDb) dbToUser() (user auth.User) {
 // GetOneUserByName returns a user from the db based on
 // username
 func (store Storage) GetOneUserByName(username string) (auth.User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `

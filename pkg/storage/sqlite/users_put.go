@@ -6,7 +6,7 @@ import "context"
 // hash.
 func (store *Storage) UpdateUserPassword(username string, newPasswordHash string) (userId int, err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `

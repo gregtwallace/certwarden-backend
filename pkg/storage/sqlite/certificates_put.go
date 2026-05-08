@@ -10,7 +10,7 @@ import (
 // the details which are provided
 func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) (certificates.Certificate, error) {
 	// database update
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -78,7 +78,7 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 
 // UpdateCertUpdatedTime sets the specified order's updated_at to now
 func (store *Storage) UpdateCertUpdatedTime(certId int) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -106,7 +106,7 @@ func (store *Storage) UpdateCertUpdatedTime(certId int) (err error) {
 // PutCertNewApiKey sets a cert's new api key and updates the updated at time
 func (store *Storage) PutCertNewApiKey(certId int, newApiKey string, updateTimeUnix int) (err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -135,7 +135,7 @@ func (store *Storage) PutCertNewApiKey(certId int, newApiKey string, updateTimeU
 // PutCertApiKey sets a cert's api key and updates the updated at time
 func (store *Storage) PutCertApiKey(certId int, apiKey string, updateTimeUnix int) (err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -164,7 +164,7 @@ func (store *Storage) PutCertApiKey(certId int, apiKey string, updateTimeUnix in
 // PutCertClientKey sets a cert's client key and updates the updated at time
 func (store *Storage) PutCertClientKey(certId int, newClientKeyB64 string, updateTimeUnix int) (err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -193,7 +193,7 @@ func (store *Storage) PutCertClientKey(certId int, newClientKeyB64 string, updat
 // PutCertLastAccess sets a cert's last access time
 func (store *Storage) PutCertLastAccess(certId int, unixLastAccessTime int64) (err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `

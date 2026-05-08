@@ -7,7 +7,7 @@ import (
 
 // DeleteCert deletes a cert from the database
 func (store *Storage) DeleteCert(id int) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	tx, err := store.db.BeginTx(ctx, nil)

@@ -8,7 +8,7 @@ import (
 // PutServerUpdate updates details about an acme Server
 func (store *Storage) PutServerUpdate(payload acme_servers.UpdatePayload) (acme_servers.Server, error) {
 	// database update
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `

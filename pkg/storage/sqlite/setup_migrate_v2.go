@@ -213,9 +213,7 @@ func (store *Storage) migrateV1toV2() (int, error) {
 	oldSchemaVer := 1
 	newSchemaVer := 2
 
-	store.logger.Infof("updating database user_version from %d to %d", oldSchemaVer, newSchemaVer)
-
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// create sql transaction to roll back in the event an error occurs
@@ -309,6 +307,5 @@ func (store *Storage) migrateV1toV2() (int, error) {
 		return -1, err
 	}
 
-	store.logger.Infof("database user_version successfully upgraded from %d to %d", oldSchemaVer, newSchemaVer)
 	return newSchemaVer, nil
 }

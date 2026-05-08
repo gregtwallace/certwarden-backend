@@ -33,7 +33,7 @@ func (store *Storage) GetAllAcmeServers(q pagination_sort.Query) (accounts []acm
 	sort := sortField + " " + q.SortDirection()
 
 	// do query
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// WARNING: SQL Injection is possible if the variables are not properly
@@ -103,7 +103,7 @@ func (store *Storage) GetOneServerByName(name string) (acme_servers.Server, erro
 
 // dbGetOneServer returns a Server based on unique id or unique name
 func (store Storage) dbGetOneServer(acmeServerId int, name string) (acme_servers.Server, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `

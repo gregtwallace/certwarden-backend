@@ -300,6 +300,8 @@ replace certwarden-backend/pkg/storage => /pkg/storage
 
 replace certwarden-backend/pkg/storage/sqlite => /pkg/storage/sqlite
 
+replace certwarden-backend/pkg/storage/sqlite3 => /pkg/storage/sqlite3
+
 replace certwarden-backend/pkg/randomness => /pkg/randomness
 
 replace certwarden-backend/pkg/validation => /pkg/validation

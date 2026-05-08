@@ -29,7 +29,7 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 	sort := sortField + " " + q.SortDirection()
 
 	// do query
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// WARNING: SQL Injection is possible if the variables are not properly
@@ -105,7 +105,7 @@ func (store *Storage) GetOneKeyByName(name string) (private_keys.Key, error) {
 
 // dbGetOneKey returns a KeyExtended based on unique id or unique name
 func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -155,7 +155,7 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 // GetAvailableKeys returns a slice of private keys that exist but are not already associated
 // with a known ACME account or certificate
 func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `

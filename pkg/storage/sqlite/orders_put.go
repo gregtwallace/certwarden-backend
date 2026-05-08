@@ -10,7 +10,7 @@ import (
 // UpdateOrderAcme updates the specified order ID with acme.Order response
 // data
 func (store *Storage) PutOrderAcme(payload orders.UpdateAcmeOrderPayload) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// update existing record
@@ -55,7 +55,7 @@ func (store *Storage) PutOrderAcme(payload orders.UpdateAcmeOrderPayload) (err e
 
 // PutRenewalInfo updates the specified order ID with its renewal information object
 func (store *Storage) PutRenewalInfo(payload orders.UpdateRenewalInfoPayload) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// update existing record
@@ -92,7 +92,7 @@ func (store *Storage) PutRenewalInfo(payload orders.UpdateRenewalInfoPayload) (e
 
 // PutOrderInvalid updates the specified order ID to the status of 'invalid'.
 func (store *Storage) PutOrderInvalid(orderId int) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// update existing record
@@ -121,7 +121,7 @@ func (store *Storage) PutOrderInvalid(orderId int) (err error) {
 
 // UpdateFinalizedKey updates the specified order ID with key id
 func (store *Storage) UpdateFinalizedKey(orderId int, keyId int) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// no checks or validation (shouldn't be needed)
@@ -154,7 +154,7 @@ func (store *Storage) UpdateFinalizedKey(orderId int, keyId int) (err error) {
 
 // UpdateOrderCert updates the specified order ID with the specified certificate data and ari
 func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// no checks or validation (shouldn't be needed)
@@ -201,7 +201,7 @@ func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) 
 
 // RevokeOrder updates the revoked flag in db to true (1)
 func (store *Storage) RevokeOrder(orderId int) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// no checks or validation (shouldn't be needed)

@@ -1,7 +1,5 @@
 package sqlite
 
-import "context"
-
 // LockForBackup starts a sql transaction that aquires a SHARED (read only)
 // lock on the db and returns a function to end that lock. File copy or other
 // filesystem backup action should be performed between the two functions
@@ -9,7 +7,7 @@ func (store *Storage) LockDBForBackup() (unlockFunc func(), err error) {
 	// start sql transaction
 	// Do not use timeout, use background to ensure backup actions have all the
 	// time they want to do the backup
-	tx, err := store.db.BeginTx(context.Background(), nil)
+	tx, err := store.db.BeginTx(store.shutdownContext, nil)
 	if err != nil {
 		return nil, err
 	}

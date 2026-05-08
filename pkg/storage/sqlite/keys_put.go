@@ -9,7 +9,7 @@ import (
 // fields specified in the UpdatePayload.
 func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_keys.Key, error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -54,7 +54,7 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_
 // PutKeyUpdate sets a key's new api key and updates the updated at time
 func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUnix int) (err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -83,7 +83,7 @@ func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUni
 // PutKeyApiKey sets a key's api key and updates the updated at time
 func (store *Storage) PutKeyApiKey(keyId int, apiKey string, updateTimeUnix int) (err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
@@ -112,7 +112,7 @@ func (store *Storage) PutKeyApiKey(keyId int, apiKey string, updateTimeUnix int)
 // PutKeyLastAccess sets a key's last access time
 func (store *Storage) PutKeyLastAccess(keyId int, unixLastAccessTime int64) (err error) {
 	// database action
-	ctx, cancel := context.WithTimeout(context.Background(), store.timeout)
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	query := `
