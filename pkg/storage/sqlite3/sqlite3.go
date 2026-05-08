@@ -16,7 +16,7 @@ const dbFilename = "appdata.db"
 const dbFileMode = 0600
 
 var dbOptions = url.Values{
-	"_fk": []string{"true"},
+	"_fk": []string{"true"}, // enforce foreign key constraints
 }
 
 type App interface {
