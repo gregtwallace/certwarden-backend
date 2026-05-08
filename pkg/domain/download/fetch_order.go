@@ -3,7 +3,7 @@ package download
 import (
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage"
+	"database/sql"
 	"errors"
 	"strings"
 	"time"
@@ -24,7 +24,7 @@ func (service *Service) getCertNewestValidOrder(certName string, apiKeyOrKeys st
 	order, err := service.storage.GetCertNewestValidOrderByName(certName)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
 			// not yet authorized
 			return orders.Order{}, output.JsonErrNotFound(nil)

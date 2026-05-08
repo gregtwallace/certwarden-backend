@@ -2,8 +2,8 @@ package certificates
 
 import (
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/validation"
+	"database/sql"
 	"errors"
 	"fmt"
 )
@@ -42,7 +42,7 @@ func (service *Service) GetCertificate(id int) (Certificate, *output.JsonError) 
 	account, err := service.storage.GetOneCertById(id)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
 			return Certificate{}, output.JsonErrNotFound(fmt.Errorf("certificate id %d not found", id))
 		} else {
@@ -64,7 +64,7 @@ func (service *Service) nameValid(certName string, certId *int) bool {
 
 	// make sure the name isn't already in use in storage
 	cert, err := service.storage.GetOneCertByName(certName)
-	if errors.Is(err, storage.ErrNoRecord) {
+	if errors.Is(err, sql.ErrNoRows) {
 		// no rows means name is not in use
 		return true
 	} else if err != nil {

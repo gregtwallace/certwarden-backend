@@ -14,7 +14,7 @@ import (
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage/sqlite"
+	"certwarden-backend/pkg/storage"
 	"context"
 	"errors"
 	"os"
@@ -130,7 +130,7 @@ func create() (*Application, error) {
 	app.backup.StartAutoBackupService(app, &app.config.Backup)
 
 	// storage
-	app.storage, err = sqlite.OpenStorage(app)
+	app.storage, err = storage.OpenStorage(app)
 	if err != nil {
 		app.logger.Errorf("failed to configure app storage (%s)", err)
 		return app, err

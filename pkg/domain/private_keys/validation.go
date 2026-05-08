@@ -2,8 +2,8 @@ package private_keys
 
 import (
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/validation"
+	"database/sql"
 	"errors"
 	"fmt"
 )
@@ -32,7 +32,7 @@ func (service *Service) getKey(id int) (Key, *output.JsonError) {
 	key, err := service.storage.GetOneKeyById(id)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
 			return Key{}, output.JsonErrNotFound(fmt.Errorf("key id %d not found", id))
 		} else {
@@ -57,7 +57,7 @@ func (service *Service) NameValid(keyName string, keyId *int) bool {
 
 	// make sure the name isn't already in use in storage
 	key, err := service.storage.GetOneKeyByName(keyName)
-	if errors.Is(err, storage.ErrNoRecord) {
+	if errors.Is(err, sql.ErrNoRows) {
 		// no rows means name is not in use
 		return true
 	} else if err != nil {

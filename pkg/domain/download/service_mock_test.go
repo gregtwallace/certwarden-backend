@@ -5,8 +5,8 @@ import (
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage"
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -420,7 +420,7 @@ j1f1P6e7Khe0uXD3N+r34piMQT0WX0po2rf16x0i
 			}}, nil
 	}
 
-	return orders.Order{}, storage.ErrNoRecord
+	return orders.Order{}, sql.ErrNoRows
 }
 func (fs *fakeStorage) PutKeyLastAccess(keyId int, unixLastAccessTime int64) (err error) {
 	return errors.New("not implemented")

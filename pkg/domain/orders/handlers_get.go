@@ -3,7 +3,7 @@ package orders
 import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
-	"certwarden-backend/pkg/storage"
+	"database/sql"
 	"errors"
 	"net/http"
 	"strconv"
@@ -42,7 +42,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 	orders, totalRows, err := service.storage.GetOrdersByCert(certId, query)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
 			return output.JsonErrNotFound(err)
 		} else {
@@ -83,7 +83,7 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 	orders, totalRows, err := service.storage.GetAllValidCurrentOrders(query)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
 			return output.JsonErrNotFound(err)
 		} else {

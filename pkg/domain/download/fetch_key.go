@@ -3,7 +3,7 @@ package download
 import (
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage"
+	"database/sql"
 	"errors"
 	"time"
 )
@@ -22,7 +22,7 @@ func (service *Service) getKey(keyName string, apiKey string, apiKeyViaUrl bool)
 	key, err := service.storage.GetOneKeyByName(keyName)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
 			// exclude specific error since not authenticated
 			return private_keys.Key{}, output.JsonErrNotFound(nil)
