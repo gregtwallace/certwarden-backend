@@ -1,7 +1,9 @@
-package download
+package download_test
 
 import (
+	"certwarden-backend/pkg/domain/download"
 	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/test_helpers"
 	"context"
 	"errors"
 	"net/http"
@@ -40,24 +42,24 @@ func onePfxTest(t *testing.T, handler func(w http.ResponseWriter, r *http.Reques
 	jsonErr := handler(w, r)
 
 	if !errors.Is(jsonErr, expectedJsonErr) {
-		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned error '%s' but expected '%s'", getFunctionName(handler),
-			certName, stringPointerToVal(apiKeyHeader), stringPointerToVal(apiKeyURL), jsonErr, expectedJsonErr)
+		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned error '%s' but expected '%s'", test_helpers.GetFunctionName(handler),
+			certName, test_helpers.StringPointerToVal(apiKeyHeader), test_helpers.StringPointerToVal(apiKeyURL), jsonErr, expectedJsonErr)
 	}
 
 	body := w.Body.String()
 	if jsonErr != nil && body != "" {
-		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned body data but expected none", getFunctionName(handler),
-			certName, stringPointerToVal(apiKeyHeader), stringPointerToVal(apiKeyURL))
+		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned body data but expected none", test_helpers.GetFunctionName(handler),
+			certName, test_helpers.StringPointerToVal(apiKeyHeader), test_helpers.StringPointerToVal(apiKeyURL))
 	} else if jsonErr == nil && body == "" {
-		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned empty body but data was expected", getFunctionName(handler),
-			certName, stringPointerToVal(apiKeyHeader), stringPointerToVal(apiKeyURL))
+		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned empty body but data was expected", test_helpers.GetFunctionName(handler),
+			certName, test_helpers.StringPointerToVal(apiKeyHeader), test_helpers.StringPointerToVal(apiKeyURL))
 	}
 }
 
 func TestOutPFXViaHeader(t *testing.T) {
 	// create testing service
 	app := makeFakeApp(t)
-	service, err := NewService(app)
+	service, err := download.NewService(app)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -201,7 +203,7 @@ func TestOutPFXViaHeader(t *testing.T) {
 func TestOutPFXViaURL(t *testing.T) {
 	// create testing service
 	app := makeFakeApp(t)
-	service, err := NewService(app)
+	service, err := download.NewService(app)
 	if err != nil {
 		t.Fatal(err)
 	}
