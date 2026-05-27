@@ -1,11 +1,15 @@
 package storage_test
 
 import (
+	"certwarden-backend/pkg/pagination_sort"
 	"certwarden-backend/pkg/storage"
 	"context"
 	"errors"
 	"io"
+	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 	"testing"
 
 	"go.uber.org/zap"
@@ -96,4 +100,26 @@ func openStorageWithTestData(t *testing.T, testName string) (_ *storage.Storage,
 	}
 
 	return storage, nil
+}
+
+// QueryBuilderForTest generates a Query for use in tests
+func QueryBuilderForTest(limit int, offset int, sortField string, sortAsc bool) pagination_sort.Query {
+	sortDirText := "desc"
+	if sortAsc {
+		sortDirText = "asc"
+	}
+
+	p := url.Values{
+		"limit":  {strconv.Itoa(limit)},
+		"offset": {strconv.Itoa(offset)},
+		"sort":   {sortField + "." + sortDirText},
+	}
+
+	// make fake request just for query parsing
+	r := &http.Request{}
+	u, _ := url.Parse("https://example.com/")
+	r.URL = u
+	r.URL.RawQuery = p.Encode()
+
+	return pagination_sort.ParseRequestToQuery(r)
 }

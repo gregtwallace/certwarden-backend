@@ -3,6 +3,7 @@ package storage_test
 import (
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/domain/private_keys/key_crypto"
+	"certwarden-backend/pkg/pagination_sort"
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
 	"errors"
@@ -67,7 +68,59 @@ red-67
 	}
 )
 
-// TODO: TestGetAllKeys
+// TestGetAllKeys does spot checking of expected results
+func TestGetAllKeys(t *testing.T) {
+	// create testing service
+	storage, err := openStorageWithTestData(t, "getallkeys")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// no/default query
+	keys, totalCt, err := storage.GetAllKeys(pagination_sort.Query{})
+	if err != nil {
+		t.Fatalf("get all keys failed")
+	}
+	if totalCt != 19 {
+		t.Errorf("get all keys returned incorrect total count, expected '%d' but got '%d'", 19, totalCt)
+	}
+	if len(keys) != 19 {
+		t.Errorf("get all keys returned incorrect keys length, expected '%d' but got '%d'", 19, len(keys))
+	}
+	if len(keys) > 0 {
+		KeyCompare(t, keys[0], key63)
+	}
+
+	// alternate query
+	keys, totalCt, err = storage.GetAllKeys(QueryBuilderForTest(5, 15, "algorithm", true))
+	if err != nil {
+		t.Fatalf("get all keys failed")
+	}
+	if totalCt != 19 {
+		t.Errorf("get all keys returned incorrect total count, expected '%d' but got '%d'", 19, totalCt)
+	}
+	if len(keys) != 4 {
+		t.Errorf("get all keys returned incorrect keys length, expected '%d' but got '%d'", 4, len(keys))
+	}
+	if len(keys) > 0 {
+		KeyCompare(t, keys[2], key67)
+	}
+
+	// alternate query 2
+	keys, totalCt, err = storage.GetAllKeys(QueryBuilderForTest(10, 0, "last_access", false))
+	if err != nil {
+		t.Fatalf("get all keys failed")
+	}
+	if totalCt != 19 {
+		t.Errorf("get all keys returned incorrect total count, expected '%d' but got '%d'", 19, totalCt)
+	}
+	if len(keys) != 10 {
+		t.Errorf("get all keys returned incorrect keys length, expected '%d' but got '%d'", 10, len(keys))
+	}
+	if len(keys) > 0 {
+		KeyCompare(t, keys[1], key31)
+	}
+}
 
 func TestGetOneKeyById(t *testing.T) {
 	// create testing service
