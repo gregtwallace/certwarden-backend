@@ -7,6 +7,7 @@ import (
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -70,118 +71,101 @@ red-67
 
 // TestGetAllKeys does spot checking of expected results
 func TestGetAllKeys(t *testing.T) {
+	testCases := []struct {
+		q                 pagination_sort.Query
+		expectedTotalCt   int
+		expectedResultLen int
+		testIndx          int
+		expectedKeyAtIndx private_keys.Key
+	}{
+		{pagination_sort.Query{}, 19, 19, 0, key63},
+		{QueryBuilderForTest(5, 15, "algorithm", true), 19, 4, 2, key67},
+		{QueryBuilderForTest(10, 0, "last_access", false), 19, 10, 1, key31},
+	}
+
 	// create testing service
 	storage, err := openStorageWithTestData(t, "getallkeys")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// no/default query
-	keys, totalCt, err := storage.GetAllKeys(pagination_sort.Query{})
-	if err != nil {
-		t.Fatalf("get all keys failed")
-	}
-	if totalCt != 19 {
-		t.Errorf("get all keys returned incorrect total count, expected '%d' but got '%d'", 19, totalCt)
-	}
-	if len(keys) != 19 {
-		t.Errorf("get all keys returned incorrect keys length, expected '%d' but got '%d'", 19, len(keys))
-	}
-	if len(keys) > 0 {
-		KeyCompare(t, keys[0], key63)
-	}
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedKeyAtIndx.Name), func(t *testing.T) {
+			keys, totalCt, err := storage.GetAllKeys(tc.q)
+			if err != nil {
+				t.Errorf("get all keys failed")
+				return
+			}
 
-	// alternate query
-	keys, totalCt, err = storage.GetAllKeys(QueryBuilderForTest(5, 15, "algorithm", true))
-	if err != nil {
-		t.Fatalf("get all keys failed")
-	}
-	if totalCt != 19 {
-		t.Errorf("get all keys returned incorrect total count, expected '%d' but got '%d'", 19, totalCt)
-	}
-	if len(keys) != 4 {
-		t.Errorf("get all keys returned incorrect keys length, expected '%d' but got '%d'", 4, len(keys))
-	}
-	if len(keys) > 0 {
-		KeyCompare(t, keys[2], key67)
-	}
-
-	// alternate query 2
-	keys, totalCt, err = storage.GetAllKeys(QueryBuilderForTest(10, 0, "last_access", false))
-	if err != nil {
-		t.Fatalf("get all keys failed")
-	}
-	if totalCt != 19 {
-		t.Errorf("get all keys returned incorrect total count, expected '%d' but got '%d'", 19, totalCt)
-	}
-	if len(keys) != 10 {
-		t.Errorf("get all keys returned incorrect keys length, expected '%d' but got '%d'", 10, len(keys))
-	}
-	if len(keys) > 0 {
-		KeyCompare(t, keys[1], key31)
+			if totalCt != tc.expectedTotalCt {
+				t.Errorf("get all keys returned incorrect total count, expected '%d' but got '%d'", tc.expectedTotalCt, totalCt)
+			}
+			if len(keys) != tc.expectedResultLen {
+				t.Errorf("get all keys returned incorrect keys length, expected '%d' but got '%d'", tc.expectedResultLen, len(keys))
+			}
+			if tc.testIndx <= len(keys)-1 {
+				KeyCompare(t, keys[tc.testIndx], tc.expectedKeyAtIndx)
+			} else {
+				t.Errorf("couldnt test key at index '%d' because length of key array was only '%d'", tc.testIndx, len(keys))
+			}
+		})
 	}
 }
 
 func TestGetOneKeyById(t *testing.T) {
+	testCases := []struct {
+		id          int
+		expectedErr error
+		expectedKey private_keys.Key
+	}{
+		{22, sql.ErrNoRows, private_keys.Key{}},
+		{31, nil, key31},
+		{67, nil, key67},
+	}
+
 	// create testing service
 	storage, err := openStorageWithTestData(t, "getonekeybyid")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// tests
-	// doesnt exist
-	_, err = storage.GetOneKeyById(22)
-	if !errors.Is(err, sql.ErrNoRows) {
-		t.Errorf("expected error '%s' but got '%s'", sql.ErrNoRows, test_helpers.ErrorToVal(err))
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
+			key, err := storage.GetOneKeyById(tc.id)
+			if !errors.Is(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", tc.expectedErr, test_helpers.ErrorToVal(err))
+			}
+
+			KeyCompare(t, tc.expectedKey, key)
+		})
 	}
-
-	// a key
-	key, err := storage.GetOneKeyById(31)
-	if err != nil {
-		t.Errorf("expected key but received err '%s'", err)
-	}
-
-	KeyCompare(t, key, key31)
-
-	// another key
-	key, err = storage.GetOneKeyById(67)
-	if err != nil {
-		t.Errorf("expected key but received err '%s'", err)
-	}
-
-	KeyCompare(t, key, key67)
 }
 
 func TestGetOneKeyByName(t *testing.T) {
+	testCases := []struct {
+		name        string
+		expectedErr error
+		expectedKey private_keys.Key
+	}{
+		{"fake-bad-name", sql.ErrNoRows, private_keys.Key{}},
+		{"certwarden", nil, key31},
+		{"_Another_Test_Acct_LE_Staging", nil, key63},
+	}
+
 	// create testing service
 	storage, err := openStorageWithTestData(t, "getonekeybyname")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// tests
-	// doesnt exist
-	_, err = storage.GetOneKeyByName("fake-bad-name")
-	if !errors.Is(err, sql.ErrNoRows) {
-		t.Errorf("expected error '%s' but got '%s'", sql.ErrNoRows, test_helpers.ErrorToVal(err))
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("#%d (id: %s)", i, tc.name), func(t *testing.T) {
+			key, err := storage.GetOneKeyByName(tc.name)
+			if !errors.Is(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", tc.expectedErr, test_helpers.ErrorToVal(err))
+			}
+
+			KeyCompare(t, tc.expectedKey, key)
+		})
 	}
-
-	// a key
-	key, err := storage.GetOneKeyByName("certwarden")
-	if err != nil {
-		t.Errorf("expected key but received err '%s'", err)
-	}
-
-	KeyCompare(t, key, key31)
-
-	// another key
-	key, err = storage.GetOneKeyByName("_Another_Test_Acct_LE_Staging")
-	if err != nil {
-		t.Errorf("expected key but received err '%s'", err)
-	}
-
-	KeyCompare(t, key, key63)
 }
-
-// TODO: TestGetAvailableKeys
