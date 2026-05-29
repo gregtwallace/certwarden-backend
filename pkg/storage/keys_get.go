@@ -146,7 +146,8 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 }
 
 // GetAvailableKeys returns a slice of private keys that exist but are not already associated
-// with a known ACME account or certificate
+// with a known ACME account or certificate (NOTE: This does NOT check if the key is in use
+// by a most recent order.)
 func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()

@@ -121,6 +121,25 @@ red-67
 		CreatedAt:      time.Unix(1752418131, 0),
 		UpdatedAt:      time.Unix(1752418131, 0),
 	}
+
+	key69 = private_keys.Key{
+		ID:          69,
+		Name:        "STAGING_persist--test007.test.example2.com",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp256,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-69
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-69",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: false,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(1777555692, 0),
+		CreatedAt:      time.Unix(1775761592, 0),
+		// TODO: Research why this is 0 in the db. Might find while writing other tests. Also possible this is just junk data from a previous bug.
+		UpdatedAt: time.Unix(0, 0),
+	}
 )
 
 // TestGetAllKeys does spot checking of expected results
@@ -242,7 +261,7 @@ func TestGetAvailableKeys(t *testing.T) {
 		t.Errorf("get available keys returned incorrect keys length, expected '%d' but got '%d'", expectedResultLen, len(keys))
 	}
 
-	expectedKeys := []private_keys.Key{key64, key58, key62}
+	expectedKeys := []private_keys.Key{key58, key62, key69}
 	for i, expectedKey := range expectedKeys {
 		if i > len(keys)-1 {
 			t.Errorf("expected key id '%d' at index '%d' but result was too short", expectedKey.ID, i)
