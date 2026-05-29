@@ -69,10 +69,12 @@ func openStorageWithTestData(t *testing.T, testName string) (_ *storage.Storage,
 	if err != nil {
 		return nil, err
 	}
+	t.Cleanup(func() {
+		_ = os.RemoveAll(thisTestFolder)
+	})
 
 	testDataF, err := os.Open(testDataDbFile)
 	if err != nil {
-		t.Error(err)
 		return nil, err
 	}
 	defer testDataF.Close()
@@ -81,6 +83,7 @@ func openStorageWithTestData(t *testing.T, testName string) (_ *storage.Storage,
 	if err != nil {
 		return nil, err
 	}
+	defer testDataCopyF.Close()
 
 	_, err = io.Copy(testDataCopyF, testDataF)
 	if err != nil {
@@ -98,6 +101,9 @@ func openStorageWithTestData(t *testing.T, testName string) (_ *storage.Storage,
 	if err != nil {
 		return nil, err
 	}
+	t.Cleanup(func() {
+		_ = storage.Close()
+	})
 
 	return storage, nil
 }
