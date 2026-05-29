@@ -32,6 +32,42 @@ red-31
 		UpdatedAt:      time.Unix(1732748628, 0),
 	}
 
+	key58 = private_keys.Key{
+		ID:          58,
+		Name:        "_Buypass_Staging",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp256,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-58
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-58",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: true,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1743176647, 0),
+		UpdatedAt:      time.Unix(1751563349, 0),
+	}
+
+	key62 = private_keys.Key{
+		ID:          62,
+		Name:        "SomeKEy",
+		Description: "some desc",
+		Algorithm:   key_crypto.AlgorithmECDSAp256,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-62
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-62",
+		ApiKeyNew:      "key-api-new-key-62",
+		ApiKeyDisabled: false,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(1777555691, 0),
+		CreatedAt:      time.Unix(1751738296, 0),
+		UpdatedAt:      time.Unix(1751738296, 0),
+	}
+
 	key63 = private_keys.Key{
 		ID:          63,
 		Name:        "_Another_Test_Acct_LE_Staging",
@@ -48,6 +84,24 @@ red-63
 		LastAccess:     time.Unix(0, 0),
 		CreatedAt:      time.Unix(1752254918, 0),
 		UpdatedAt:      time.Unix(1752254918, 0),
+	}
+
+	key64 = private_keys.Key{
+		ID:          64,
+		Name:        "_Another_Test_Acct_LE_Staging_Roll",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp256,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-64
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-64",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: true,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1752258426, 0),
+		UpdatedAt:      time.Unix(1752258426, 0),
 	}
 
 	key67 = private_keys.Key{
@@ -80,7 +134,7 @@ func TestGetAllKeys(t *testing.T) {
 	}{
 		{pagination_sort.Query{}, 19, 19, 0, key63},
 		{QueryBuilderForTest(5, 15, "algorithm", true), 19, 4, 2, key67},
-		{QueryBuilderForTest(10, 0, "last_access", false), 19, 10, 1, key31},
+		{QueryBuilderForTest(10, 0, "last_access", false), 19, 10, 2, key31},
 	}
 
 	// create testing service
@@ -159,7 +213,7 @@ func TestGetOneKeyByName(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d (id: %s)", i, tc.name), func(t *testing.T) {
+		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
 			key, err := storage.GetOneKeyByName(tc.name)
 			if !errors.Is(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", tc.expectedErr, test_helpers.ErrorToVal(err))
@@ -167,5 +221,34 @@ func TestGetOneKeyByName(t *testing.T) {
 
 			KeyCompare(t, tc.expectedKey, key)
 		})
+	}
+}
+
+func TestGetAvailableKeys(t *testing.T) {
+	// create testing service
+	storage, err := openStorageWithTestData(t, "getavailablekeys")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	keys, err := storage.GetAvailableKeys()
+	if err != nil {
+		t.Errorf("get available keys failed")
+		return
+	}
+
+	expectedResultLen := 3
+	if len(keys) != expectedResultLen {
+		t.Errorf("get available keys returned incorrect keys length, expected '%d' but got '%d'", expectedResultLen, len(keys))
+	}
+
+	expectedKeys := []private_keys.Key{key64, key58, key62}
+	for i, expectedKey := range expectedKeys {
+		if i > len(keys)-1 {
+			t.Errorf("expected key id '%d' at index '%d' but result was too short", expectedKey.ID, i)
+			continue
+		}
+
+		KeyCompare(t, keys[i], expectedKey)
 	}
 }

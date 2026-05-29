@@ -16,11 +16,11 @@ func KeyCompare(t *testing.T, key, expectedKey private_keys.Key) {
 	}
 
 	if key.Description != expectedKey.Description {
-		t.Errorf("key: description expected '%s' but got '%s'", expectedKey.Name, key.Name)
+		t.Errorf("key: description expected '%s' but got '%s'", expectedKey.Description, key.Description)
 	}
 
 	if key.Algorithm != expectedKey.Algorithm {
-		t.Errorf("key: description expected '%s' but got '%s'", expectedKey.Algorithm.StorageValue(), key.Algorithm.StorageValue())
+		t.Errorf("key: algorithm expected '%s' but got '%s'", expectedKey.Algorithm.StorageValue(), key.Algorithm.StorageValue())
 	}
 
 	if key.Pem != expectedKey.Pem {
