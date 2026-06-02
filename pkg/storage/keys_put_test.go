@@ -155,6 +155,14 @@ func TestPutKeyApiKey(t *testing.T) {
 			sql.ErrNoRows,
 			sql.ErrNoRows,
 		},
+		{ // invalid key id
+			500,
+			"anotherfake",
+			10005000,
+			private_keys.Key{},
+			sql.ErrNoRows,
+			sql.ErrNoRows,
+		},
 		// do some updates
 		{
 			31,
@@ -243,6 +251,14 @@ func TestPutKeyNewApiKey(t *testing.T) {
 			-1,
 			"",
 			1099905,
+			private_keys.Key{},
+			sql.ErrNoRows,
+			sql.ErrNoRows,
+		},
+		{ // invalid key id
+			500,
+			"anotherfake",
+			10005000,
 			private_keys.Key{},
 			sql.ErrNoRows,
 			sql.ErrNoRows,
