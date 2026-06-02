@@ -3,6 +3,9 @@ package storage
 import (
 	"certwarden-backend/pkg/domain/private_keys"
 	"context"
+	"fmt"
+
+	"github.com/go-errors/errors"
 )
 
 // PutKeyUpdate updates an existing key in the db using any non-null
@@ -27,7 +30,7 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_
 		id = $8
 	`
 
-	_, err := store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.ApiKey,
@@ -42,6 +45,15 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_
 		return private_keys.Key{}, err
 	}
 
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return private_keys.Key{}, err
+	}
+	if rowsAffected != 1 {
+		return private_keys.Key{}, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+	}
+
 	// get updated key to return
 	updatedKey, err := store.GetOneKeyById(payload.ID)
 	if err != nil {
@@ -51,66 +63,34 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_
 	return updatedKey, nil
 }
 
-// PutKeyUpdate sets a key's new api key and updates the updated at time
-func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUnix int) (err error) {
-	// database action
-	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
-	defer cancel()
-
-	query := `
-	UPDATE
-		private_keys
-	SET
-		api_key_new = $1,
-		updated_at = $2
-	WHERE
-		id = $3
-	`
-
-	_, err = store.db.ExecContext(ctx, query,
-		newApiKey,
-		updateTimeUnix,
-		keyId,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // PutKeyApiKey sets a key's api key and updates the updated at time
 func (store *Storage) PutKeyApiKey(keyId int, apiKey string, updateTimeUnix int) (err error) {
-	// database action
-	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
-	defer cancel()
-
-	query := `
-	UPDATE
-		private_keys
-	SET
-		api_key = $1,
-		updated_at = $2
-	WHERE
-		id = $3
-	`
-
-	_, err = store.db.ExecContext(ctx, query,
-		apiKey,
-		updateTimeUnix,
-		keyId,
-	)
-
-	if err != nil {
-		return err
+	// leverage main Put function
+	payload := private_keys.UpdatePayload{
+		ID:        keyId,
+		ApiKey:    &apiKey,
+		UpdatedAt: updateTimeUnix,
 	}
 
-	return nil
+	_, err = store.PutKeyUpdate(payload)
+	return err
+}
+
+// PutKeyUpdate sets a key's new api key and updates the updated at time
+func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUnix int) (err error) {
+	// leverage main Put function
+	payload := private_keys.UpdatePayload{
+		ID:        keyId,
+		ApiKeyNew: &newApiKey,
+		UpdatedAt: updateTimeUnix,
+	}
+
+	_, err = store.PutKeyUpdate(payload)
+	return err
 }
 
 // PutKeyLastAccess sets a key's last access time
-func (store *Storage) PutKeyLastAccess(keyId int, unixLastAccessTime int64) (err error) {
+func (store *Storage) PutKeyLastAccess(keyId int, lastAccessTimeUnix int64) (err error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -124,13 +104,21 @@ func (store *Storage) PutKeyLastAccess(keyId int, unixLastAccessTime int64) (err
 		id = $2
 	`
 
-	_, err = store.db.ExecContext(ctx, query,
-		unixLastAccessTime,
+	res, err := store.db.ExecContext(ctx, query,
+		lastAccessTimeUnix,
 		keyId,
 	)
-
 	if err != nil {
 		return err
+	}
+
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
 	}
 
 	return nil

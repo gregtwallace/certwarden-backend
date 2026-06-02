@@ -296,10 +296,12 @@ replace certwarden-backend/pkg/output => /pkg/output
 
 replace certwarden-backend/pkg/pagination_sort => /pkg/pagination_sort
 
+replace certwarden-backend/pkg/randomness => /pkg/randomness
+
 replace certwarden-backend/pkg/storage => /pkg/storage
 
 replace certwarden-backend/pkg/storage/sqlite3 => /pkg/storage/sqlite3
 
-replace certwarden-backend/pkg/randomness => /pkg/randomness
+replace certwarden-backend/pkg/test_helpers => /pkg/test_helpers
 
 replace certwarden-backend/pkg/validation => /pkg/validation

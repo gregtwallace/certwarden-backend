@@ -15,11 +15,11 @@ type Algorithm int
 const (
 	UnknownAlgorithm Algorithm = iota
 
-	rsa2048
-	rsa3072
-	rsa4096
-	ecdsap256
-	ecdsap384
+	AlgorithmRSA2048
+	AlgorithmRSA3072
+	AlgorithmRSA4096
+	AlgorithmECDSAp256
+	AlgorithmECDSAp384
 )
 
 // Algorithm custom JSON Marshal (turns the Algorithm into exportable AlgorithmDetails

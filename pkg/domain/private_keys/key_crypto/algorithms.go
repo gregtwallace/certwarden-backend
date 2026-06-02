@@ -19,7 +19,7 @@ type algorithmDetails struct {
 
 var keyAlgorithmDetails = []algorithmDetails{
 	{
-		algorithm:             rsa2048,
+		algorithm:             AlgorithmRSA2048,
 		storageValue:          "rsa2048",
 		name:                  "RSA 2048-bit",
 		csrSignatureAlgorithm: x509.SHA256WithRSA,
@@ -27,7 +27,7 @@ var keyAlgorithmDetails = []algorithmDetails{
 		bitLen:                2048,
 	},
 	{
-		algorithm:             rsa3072,
+		algorithm:             AlgorithmRSA3072,
 		storageValue:          "rsa3072",
 		name:                  "RSA 3072-bit",
 		csrSignatureAlgorithm: x509.SHA256WithRSA,
@@ -35,7 +35,7 @@ var keyAlgorithmDetails = []algorithmDetails{
 		bitLen:                3072,
 	},
 	{
-		algorithm:             rsa4096,
+		algorithm:             AlgorithmRSA4096,
 		storageValue:          "rsa4096",
 		name:                  "RSA 4096-bit",
 		csrSignatureAlgorithm: x509.SHA256WithRSA,
@@ -43,7 +43,7 @@ var keyAlgorithmDetails = []algorithmDetails{
 		bitLen:                4096,
 	},
 	{
-		algorithm:             ecdsap256,
+		algorithm:             AlgorithmECDSAp256,
 		storageValue:          "ecdsap256",
 		name:                  "ECDSA P-256",
 		csrSignatureAlgorithm: x509.ECDSAWithSHA256,
@@ -52,7 +52,7 @@ var keyAlgorithmDetails = []algorithmDetails{
 		ellipticCurveFunc:     elliptic.P256,
 	},
 	{
-		algorithm:             ecdsap384,
+		algorithm:             AlgorithmECDSAp384,
 		storageValue:          "ecdsap384",
 		name:                  "ECDSA P-384",
 		csrSignatureAlgorithm: x509.ECDSAWithSHA384,
