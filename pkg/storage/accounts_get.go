@@ -121,9 +121,7 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 		}
 
 		// convert to Account
-		convertedAccount := oneAccount.toAccount()
-
-		allAccounts = append(allAccounts, convertedAccount)
+		allAccounts = append(allAccounts, oneAccount.toAccount())
 	}
 
 	return allAccounts, totalRows, nil
