@@ -3,6 +3,7 @@ package storage_test
 import (
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/domain/private_keys/key_crypto"
+	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
 	"errors"
@@ -23,7 +24,7 @@ func TestPutKeyUpdate(t *testing.T) {
 				ID: -1,
 			},
 			private_keys.Key{},
-			sql.ErrNoRows,
+			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
 		{ // invalid key
@@ -31,7 +32,7 @@ func TestPutKeyUpdate(t *testing.T) {
 				ID: 522,
 			},
 			private_keys.Key{},
-			sql.ErrNoRows,
+			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
 		{ // update all things
@@ -152,7 +153,7 @@ func TestPutKeyApiKey(t *testing.T) {
 			"fake",
 			100005,
 			private_keys.Key{},
-			sql.ErrNoRows,
+			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
 		{ // invalid key id
@@ -160,7 +161,7 @@ func TestPutKeyApiKey(t *testing.T) {
 			"anotherfake",
 			10005000,
 			private_keys.Key{},
-			sql.ErrNoRows,
+			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
 		// do some updates
@@ -252,7 +253,7 @@ func TestPutKeyNewApiKey(t *testing.T) {
 			"",
 			1099905,
 			private_keys.Key{},
-			sql.ErrNoRows,
+			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
 		{ // invalid key id
@@ -260,7 +261,7 @@ func TestPutKeyNewApiKey(t *testing.T) {
 			"anotherfake",
 			10005000,
 			private_keys.Key{},
-			sql.ErrNoRows,
+			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
 		// do some updates
@@ -323,6 +324,124 @@ red-67
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
 			err := storage.PutKeyNewApiKey(tc.keyId, tc.apiKeyNew, tc.updateTimeUnix)
+			if !errors.Is(err, tc.expectedPutErr) {
+				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
+			}
+
+			key, err := storage.GetOneKeyById(tc.keyId)
+			if !errors.Is(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			}
+
+			KeyCompare(t, key, tc.expectedKey)
+		})
+	}
+}
+
+func TestPutKeyLastAccess(t *testing.T) {
+	testCases := []struct {
+		keyId              int
+		lastAccessTimeUnix int64
+
+		expectedKey    private_keys.Key
+		expectedPutErr error
+		expectedGetErr error
+	}{
+		{ // invalid key id
+			-1,
+			88888888,
+			private_keys.Key{},
+			storage.ErrWrongUpdateRowCount,
+			sql.ErrNoRows,
+		},
+		{ // invalid key id
+			500,
+			88888888,
+			private_keys.Key{},
+			storage.ErrWrongUpdateRowCount,
+			sql.ErrNoRows,
+		},
+		// do some updates
+		{
+			64,
+			1022885,
+			private_keys.Key{
+				ID:          64,
+				Name:        "_Another_Test_Acct_LE_Staging_Roll",
+				Description: "",
+				Algorithm:   key_crypto.AlgorithmECDSAp256,
+				Pem: `-----BEGIN EC PRIVATE KEY-----
+red-64
+-----END EC PRIVATE KEY-----
+`,
+				ApiKey:         "key-api-key-64",
+				ApiKeyNew:      "",
+				ApiKeyDisabled: true,
+				ApiKeyViaUrl:   false,
+				LastAccess:     time.Unix(1022885, 0),
+				CreatedAt:      time.Unix(1752258426, 0),
+				UpdatedAt:      time.Unix(1752258426, 0),
+			},
+			nil,
+			nil,
+		},
+		{
+			63,
+			9999999,
+			private_keys.Key{
+				ID:          63,
+				Name:        "_Another_Test_Acct_LE_Staging",
+				Description: "",
+				Algorithm:   key_crypto.AlgorithmRSA2048,
+				Pem: `-----BEGIN RSA PRIVATE KEY-----
+red-63
+-----END RSA PRIVATE KEY-----
+`,
+				ApiKey:         "key-api-key-63",
+				ApiKeyNew:      "",
+				ApiKeyDisabled: true,
+				ApiKeyViaUrl:   false,
+				LastAccess:     time.Unix(9999999, 0),
+				CreatedAt:      time.Unix(1752254918, 0),
+				UpdatedAt:      time.Unix(1752254918, 0),
+			},
+			nil,
+			nil,
+		},
+		{
+			62,
+			0,
+			private_keys.Key{
+				ID:          62,
+				Name:        "SomeKEy",
+				Description: "some desc",
+				Algorithm:   key_crypto.AlgorithmECDSAp256,
+				Pem: `-----BEGIN EC PRIVATE KEY-----
+red-62
+-----END EC PRIVATE KEY-----
+`,
+				ApiKey:         "key-api-key-62",
+				ApiKeyNew:      "key-api-new-key-62",
+				ApiKeyDisabled: false,
+				ApiKeyViaUrl:   false,
+				LastAccess:     time.Unix(0, 0),
+				CreatedAt:      time.Unix(1751738296, 0),
+				UpdatedAt:      time.Unix(1751738296, 0),
+			},
+			nil,
+			nil,
+		},
+	}
+
+	// create testing service
+	storage, err := openStorageWithTestData(t, "putkeylastaccess")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
+			err := storage.PutKeyLastAccess(tc.keyId, tc.lastAccessTimeUnix)
 			if !errors.Is(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
 			}

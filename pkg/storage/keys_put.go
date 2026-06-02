@@ -3,6 +3,9 @@ package storage
 import (
 	"certwarden-backend/pkg/domain/private_keys"
 	"context"
+	"fmt"
+
+	"github.com/go-errors/errors"
 )
 
 // PutKeyUpdate updates an existing key in the db using any non-null
@@ -27,7 +30,7 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_
 		id = $8
 	`
 
-	_, err := store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.ApiKey,
@@ -40,6 +43,15 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_
 
 	if err != nil {
 		return private_keys.Key{}, err
+	}
+
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return private_keys.Key{}, err
+	}
+	if rowsAffected != 1 {
+		return private_keys.Key{}, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
 	}
 
 	// get updated key to return
@@ -79,12 +91,35 @@ func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUni
 
 // PutKeyLastAccess sets a key's last access time
 func (store *Storage) PutKeyLastAccess(keyId int, lastAccessTimeUnix int64) (err error) {
-	// leverage main Put function
-	payload := private_keys.UpdatePayload{
-		ID:        keyId,
-		UpdatedAt: int(lastAccessTimeUnix),
+	// database action
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
+	defer cancel()
+
+	query := `
+	UPDATE
+		private_keys
+	SET
+		last_access = $1
+	WHERE
+		id = $2
+	`
+
+	res, err := store.db.ExecContext(ctx, query,
+		lastAccessTimeUnix,
+		keyId,
+	)
+	if err != nil {
+		return err
 	}
 
-	_, err = store.PutKeyUpdate(payload)
-	return err
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+	}
+
+	return nil
 }
