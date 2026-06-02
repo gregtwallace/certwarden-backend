@@ -113,7 +113,7 @@ red-58
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getonekeybyid")
+	storage, err := openStorageWithTestData(t, "putkeyupdate")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,12 +122,104 @@ red-58
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
 			key, err := storage.PutKeyUpdate(tc.payload)
 			if !errors.Is(err, tc.expectedPutErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
+				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
 			}
 
 			KeyCompare(t, tc.expectedKey, key)
 
 			key, err = storage.GetOneKeyById(tc.payload.ID)
+			if !errors.Is(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			}
+
+			KeyCompare(t, key, tc.expectedKey)
+		})
+	}
+}
+
+func TestPutKeyApiKey(t *testing.T) {
+	testCases := []struct {
+		keyId          int
+		apiKey         string
+		updateTimeUnix int
+
+		expectedKey    private_keys.Key
+		expectedPutErr error
+		expectedGetErr error
+	}{
+		{ // invalid key id
+			-1,
+			"fake",
+			100005,
+			private_keys.Key{},
+			sql.ErrNoRows,
+			sql.ErrNoRows,
+		},
+		// do some updates
+		{
+			31,
+			"fake31",
+			1022005,
+			private_keys.Key{
+				ID:          31,
+				Name:        "certwarden",
+				Description: "localhost / dev work w/ real cert",
+				Algorithm:   key_crypto.AlgorithmECDSAp256,
+				Pem: `-----BEGIN EC PRIVATE KEY-----
+red-31
+-----END EC PRIVATE KEY-----
+`,
+				ApiKey:         "fake31",
+				ApiKeyNew:      "key-api-new-key-4",
+				ApiKeyDisabled: false,
+				ApiKeyViaUrl:   true,
+				LastAccess:     time.Unix(1745952074, 0),
+				CreatedAt:      time.Unix(1709327549, 0),
+				UpdatedAt:      time.Unix(1022005, 0),
+			},
+			nil,
+			nil,
+		},
+		{
+			62,
+			"62thing",
+			0,
+			private_keys.Key{
+				ID:          62,
+				Name:        "SomeKEy",
+				Description: "some desc",
+				Algorithm:   key_crypto.AlgorithmECDSAp256,
+				Pem: `-----BEGIN EC PRIVATE KEY-----
+red-62
+-----END EC PRIVATE KEY-----
+`,
+				ApiKey:         "62thing",
+				ApiKeyNew:      "key-api-new-key-62",
+				ApiKeyDisabled: false,
+				ApiKeyViaUrl:   false,
+				LastAccess:     time.Unix(1777555691, 0),
+				CreatedAt:      time.Unix(1751738296, 0),
+				UpdatedAt:      time.Unix(0, 0),
+			},
+			nil,
+			nil,
+		},
+	}
+
+	// create testing service
+	storage, err := openStorageWithTestData(t, "putkeyapikey")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
+			err := storage.PutKeyApiKey(tc.keyId, tc.apiKey, tc.updateTimeUnix)
+			if !errors.Is(err, tc.expectedPutErr) {
+				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
+			}
+
+			key, err := storage.GetOneKeyById(tc.keyId)
 			if !errors.Is(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
