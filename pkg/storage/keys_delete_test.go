@@ -1,6 +1,8 @@
 package storage_test
 
 import (
+	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
 	"errors"
@@ -35,12 +37,50 @@ func TestKeyInUse(t *testing.T) {
 		t.Run(fmt.Sprintf("key id: %d", tc.keyID), func(t *testing.T) {
 			inUse, err := storage.KeyInUse(tc.keyID)
 			if !errors.Is(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", tc.expectedErr, test_helpers.ErrorToVal(err))
+				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
 			}
 
 			if inUse != tc.expectedInUse {
 				t.Errorf("key id expected inuse '%t' but got '%t'", tc.expectedInUse, inUse)
 			}
+		})
+	}
+}
+
+func TestDeleteKey(t *testing.T) {
+	testCases := []struct {
+		keyID             int
+		expectedDelErr    error
+		expectedGetResult private_keys.Key
+		expectedGetErr    error
+	}{
+		{2, sql.ErrNoRows, private_keys.Key{}, sql.ErrNoRows}, // non-existent
+		{58, nil, private_keys.Key{}, sql.ErrNoRows},          // not in use, gets deleted
+		{62, nil, private_keys.Key{}, sql.ErrNoRows},          // not in use, gets deleted
+		{63, storage.ErrInUse, key63, nil},                    // in use by acct
+		{64, storage.ErrInUse, key64, nil},                    // in use by cert
+		{69, storage.ErrInUse, key69, nil},                    // in use by newest order (but isn't in use on a cert)
+	}
+
+	// create testing service
+	storage, err := openStorageWithTestData(t, "deletekey")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("key id: %d", tc.keyID), func(t *testing.T) {
+			err := storage.DeleteKey(tc.keyID)
+			if !errors.Is(err, tc.expectedDelErr) {
+				t.Errorf("expected delete error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedDelErr), test_helpers.ErrorToVal(err))
+			}
+
+			key, err := storage.GetOneKeyById(tc.keyID)
+			if !errors.Is(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			}
+
+			KeyCompare(t, key, tc.expectedGetResult)
 		})
 	}
 }

@@ -206,7 +206,7 @@ func TestGetOneKeyById(t *testing.T) {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
 			key, err := storage.GetOneKeyById(tc.id)
 			if !errors.Is(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", tc.expectedErr, test_helpers.ErrorToVal(err))
+				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
 			}
 
 			KeyCompare(t, tc.expectedKey, key)
@@ -235,7 +235,7 @@ func TestGetOneKeyByName(t *testing.T) {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
 			key, err := storage.GetOneKeyByName(tc.name)
 			if !errors.Is(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", tc.expectedErr, test_helpers.ErrorToVal(err))
+				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
 			}
 
 			KeyCompare(t, tc.expectedKey, key)
