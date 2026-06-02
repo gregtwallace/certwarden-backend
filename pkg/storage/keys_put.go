@@ -51,87 +51,40 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_
 	return updatedKey, nil
 }
 
-// PutKeyUpdate sets a key's new api key and updates the updated at time
-func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUnix int) (err error) {
-	// database action
-	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
-	defer cancel()
-
-	query := `
-	UPDATE
-		private_keys
-	SET
-		api_key_new = $1,
-		updated_at = $2
-	WHERE
-		id = $3
-	`
-
-	_, err = store.db.ExecContext(ctx, query,
-		newApiKey,
-		updateTimeUnix,
-		keyId,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // PutKeyApiKey sets a key's api key and updates the updated at time
 func (store *Storage) PutKeyApiKey(keyId int, apiKey string, updateTimeUnix int) (err error) {
-	// database action
-	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
-	defer cancel()
-
-	query := `
-	UPDATE
-		private_keys
-	SET
-		api_key = $1,
-		updated_at = $2
-	WHERE
-		id = $3
-	`
-
-	_, err = store.db.ExecContext(ctx, query,
-		apiKey,
-		updateTimeUnix,
-		keyId,
-	)
-
-	if err != nil {
-		return err
+	// leverage main Put function
+	payload := private_keys.UpdatePayload{
+		ID:        keyId,
+		ApiKey:    &apiKey,
+		UpdatedAt: updateTimeUnix,
 	}
 
-	return nil
+	_, err = store.PutKeyUpdate(payload)
+	return err
+}
+
+// PutKeyUpdate sets a key's new api key and updates the updated at time
+func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUnix int) (err error) {
+	// leverage main Put function
+	payload := private_keys.UpdatePayload{
+		ID:        keyId,
+		ApiKeyNew: &newApiKey,
+		UpdatedAt: updateTimeUnix,
+	}
+
+	_, err = store.PutKeyUpdate(payload)
+	return err
 }
 
 // PutKeyLastAccess sets a key's last access time
-func (store *Storage) PutKeyLastAccess(keyId int, unixLastAccessTime int64) (err error) {
-	// database action
-	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
-	defer cancel()
-
-	query := `
-	UPDATE
-		private_keys
-	SET
-		last_access = $1
-	WHERE
-		id = $2
-	`
-
-	_, err = store.db.ExecContext(ctx, query,
-		unixLastAccessTime,
-		keyId,
-	)
-
-	if err != nil {
-		return err
+func (store *Storage) PutKeyLastAccess(keyId int, lastAccessTimeUnix int64) (err error) {
+	// leverage main Put function
+	payload := private_keys.UpdatePayload{
+		ID:        keyId,
+		UpdatedAt: int(lastAccessTimeUnix),
 	}
 
-	return nil
+	_, err = store.PutKeyUpdate(payload)
+	return err
 }
