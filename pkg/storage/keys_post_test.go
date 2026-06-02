@@ -93,14 +93,14 @@ func TestPostNewKey(t *testing.T) {
 				t.Errorf("expected post error '%t' but got err '%s'", tc.expectPostErr, test_helpers.ErrorToVal(err))
 			}
 
-			KeyCompare(t, key, tc.expectedNewKey)
+			CompareKey(t, key, tc.expectedNewKey)
 
 			key, err = storage.GetOneKeyById(tc.expectedNewKey.ID)
 			if !errors.Is(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 
-			KeyCompare(t, key, tc.expectedNewKey)
+			CompareKey(t, key, tc.expectedNewKey)
 		})
 	}
 }
