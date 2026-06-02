@@ -228,3 +228,95 @@ red-62
 		})
 	}
 }
+
+func TestPutKeyNewApiKey(t *testing.T) {
+	testCases := []struct {
+		keyId          int
+		apiKeyNew      string
+		updateTimeUnix int
+
+		expectedKey    private_keys.Key
+		expectedPutErr error
+		expectedGetErr error
+	}{
+		{ // invalid key id
+			-1,
+			"",
+			1099905,
+			private_keys.Key{},
+			sql.ErrNoRows,
+			sql.ErrNoRows,
+		},
+		// do some updates
+		{
+			69,
+			"fakenew69",
+			1022005,
+			private_keys.Key{
+				ID:          69,
+				Name:        "STAGING_persist--test007.test.example2.com",
+				Description: "",
+				Algorithm:   key_crypto.AlgorithmECDSAp256,
+				Pem: `-----BEGIN EC PRIVATE KEY-----
+red-69
+-----END EC PRIVATE KEY-----
+`,
+				ApiKey:         "key-api-key-69",
+				ApiKeyNew:      "fakenew69",
+				ApiKeyDisabled: false,
+				ApiKeyViaUrl:   false,
+				LastAccess:     time.Unix(1777555692, 0),
+				CreatedAt:      time.Unix(1775761592, 0),
+				UpdatedAt:      time.Unix(1022005, 0),
+			},
+			nil,
+			nil,
+		},
+		{
+			67,
+			"otherfakenew67",
+			0,
+			private_keys.Key{
+				ID:          67,
+				Name:        "_GC3",
+				Description: "",
+				Algorithm:   key_crypto.AlgorithmRSA3072,
+				Pem: `-----BEGIN RSA PRIVATE KEY-----
+red-67
+-----END RSA PRIVATE KEY-----
+`,
+				ApiKey:         "key-api-key-67",
+				ApiKeyNew:      "otherfakenew67",
+				ApiKeyDisabled: true,
+				ApiKeyViaUrl:   false,
+				LastAccess:     time.Unix(0, 0),
+				CreatedAt:      time.Unix(1752418131, 0),
+				UpdatedAt:      time.Unix(0, 0),
+			},
+			nil,
+			nil,
+		},
+	}
+
+	// create testing service
+	storage, err := openStorageWithTestData(t, "putkeynewapikey")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
+			err := storage.PutKeyNewApiKey(tc.keyId, tc.apiKeyNew, tc.updateTimeUnix)
+			if !errors.Is(err, tc.expectedPutErr) {
+				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
+			}
+
+			key, err := storage.GetOneKeyById(tc.keyId)
+			if !errors.Is(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			}
+
+			KeyCompare(t, key, tc.expectedKey)
+		})
+	}
+}
