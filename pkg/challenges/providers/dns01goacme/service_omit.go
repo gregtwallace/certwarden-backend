@@ -33,6 +33,9 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
+	// shutdown context
+	service.shutdownContext = app.GetShutdownContext()
+
 	// make go acme provider
 	service.goacmeProvider = &fakeProvider{}
 
