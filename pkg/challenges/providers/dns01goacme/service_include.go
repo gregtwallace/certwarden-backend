@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 
-	goacme_dns01 "github.com/go-acme/lego/v4/challenge/dns01"
-	goacme_dns "github.com/go-acme/lego/v4/providers/dns"
+	goacme_dns01 "github.com/go-acme/lego/v5/challenge/dns01"
+	goacme_dns "github.com/go-acme/lego/v5/providers/dns"
 )
 
 // NewService creates a new service
@@ -25,6 +25,9 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	if service.logger == nil {
 		return nil, errServiceComponent
 	}
+
+	// shutdown context
+	service.shutdownContext = app.GetShutdownContext()
 
 	// set environment
 	envParams, invalidParams := environment.NewParams(cfg.Environment)
@@ -47,9 +50,10 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		for _, dnsServ := range dnsServers {
 			dnsServerStrings = append(dnsServerStrings, dnsServ.String())
 		}
-		// note: AddRecursiveNameservers returns a func that sets go-acme's 'global' dns servers;
-		// call this func (use nil since the func doesn't actually use the challenge) to set the dns servers
-		goacme_dns01.AddRecursiveNameservers(dnsServerStrings)(nil)
+
+		// set global dns01 client to use system name servers
+		opts := &goacme_dns01.Options{RecursiveNameservers: dnsServerStrings}
+		goacme_dns01.SetDefaultClient(goacme_dns01.NewClient(opts))
 	}
 
 	// make go acme provider

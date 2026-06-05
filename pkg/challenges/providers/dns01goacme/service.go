@@ -2,6 +2,7 @@ package dns01goacme
 
 import (
 	"certwarden-backend/pkg/acme"
+	"context"
 	"errors"
 
 	"go.uber.org/zap"
@@ -17,6 +18,7 @@ var (
 // App interface is for connecting to the main app
 type App interface {
 	GetLogger() *zap.SugaredLogger
+	GetShutdownContext() context.Context
 }
 
 // Configuration options; documentation about how to configure is located at:
@@ -28,16 +30,17 @@ type Config struct {
 	Environment []string `yaml:"environment" json:"environment"`
 }
 
-// clone of goacme_challenge.Provider (https://github.com/go-acme/lego/blob/v4.35.2/challenge/provider.go#L9)
-type provider interface {
-	Present(domain, token, keyAuth string) error
-	CleanUp(domain, token, keyAuth string) error
+// clone of goacme_challenge.Provider (https://github.com/go-acme/lego/blob/main/challenge/provider.go)
+type goAcmeProvider interface {
+	Present(ctx context.Context, domain, token, keyAuth string) error
+	CleanUp(ctx context.Context, domain, token, keyAuth string) error
 }
 
 // provider Service struct
 type Service struct {
-	logger         *zap.SugaredLogger
-	goacmeProvider provider
+	logger          *zap.SugaredLogger
+	shutdownContext context.Context
+	goacmeProvider  goAcmeProvider
 }
 
 // ChallengeType returns the ACME Challenge Type this provider uses, which is dns-01
