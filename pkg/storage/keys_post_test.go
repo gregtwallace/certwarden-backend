@@ -95,7 +95,7 @@ func TestPostNewKey(t *testing.T) {
 
 			CompareKey(t, key, tc.expectedNewKey)
 
-			key, err = storage.GetOneKeyById(tc.expectedNewKey.ID)
+			key, err = storage.GetOneKeyByName(key.Name)
 			if !errors.Is(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}

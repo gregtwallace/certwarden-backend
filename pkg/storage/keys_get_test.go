@@ -191,6 +191,7 @@ func TestGetOneKeyById(t *testing.T) {
 		expectedErr error
 		expectedKey private_keys.Key
 	}{
+		{-1, sql.ErrNoRows, private_keys.Key{}},
 		{22, sql.ErrNoRows, private_keys.Key{}},
 		{31, nil, key31},
 		{67, nil, key67},
@@ -220,6 +221,7 @@ func TestGetOneKeyByName(t *testing.T) {
 		expectedErr error
 		expectedKey private_keys.Key
 	}{
+		{"", sql.ErrNoRows, private_keys.Key{}},
 		{"fake-bad-name", sql.ErrNoRows, private_keys.Key{}},
 		{"certwarden", nil, key31},
 		{"_Another_Test_Acct_LE_Staging", nil, key63},

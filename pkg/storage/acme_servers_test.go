@@ -28,10 +28,10 @@ func CompareAcmeServer(t *testing.T, server, expectedServer acme_servers.Server)
 	}
 
 	if !server.CreatedAt.Equal(expectedServer.CreatedAt) {
-		t.Errorf("acme server: last access expected '%s' but got '%s'", expectedServer.CreatedAt.UTC(), server.CreatedAt.UTC())
+		t.Errorf("acme server: created at expected '%s' but got '%s'", expectedServer.CreatedAt.UTC(), server.CreatedAt.UTC())
 	}
 
 	if !server.UpdatedAt.Equal(expectedServer.UpdatedAt) {
-		t.Errorf("acme server: last access expected '%s' but got '%s'", expectedServer.UpdatedAt.UTC(), server.UpdatedAt.UTC())
+		t.Errorf("acme server: updated at expected '%s' but got '%s'", expectedServer.UpdatedAt.UTC(), server.UpdatedAt.UTC())
 	}
 }
