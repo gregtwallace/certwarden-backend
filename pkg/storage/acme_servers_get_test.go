@@ -41,6 +41,16 @@ var (
 		CreatedAt:    time.Unix(1699565933, 0),
 		UpdatedAt:    time.Unix(1699565933, 0),
 	}
+
+	acmeServer19 = acme_servers.Server{
+		ID:           19,
+		Name:         "Google_Cloud_Staging",
+		Description:  "Google Cloud PreProd",
+		DirectoryURL: "https://dv.acme-v02.test-api.pki.goog/directory",
+		IsStaging:    true,
+		CreatedAt:    time.Unix(1745080146, 0),
+		UpdatedAt:    time.Unix(1745080146, 0),
+	}
 )
 
 func TestGetAllAcmeServers(t *testing.T) {

@@ -28,9 +28,14 @@ func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) *ou
 	}
 
 	// do not allow delete if there are any accounts using the server
-	if service.storage.ServerHasAccounts(id) {
-		service.logger.Debug("cannot delete server (in use)")
-		return output.JsonErrDeleteInUse("server")
+	inUse, err := service.storage.ServerInUse(id)
+	if err != nil {
+		service.logger.Error(err)
+		return output.JsonErrStorageGeneric(err)
+	}
+	if inUse {
+		service.logger.Debug("cannot delete, in use")
+		return output.JsonErrDeleteInUse("acme server")
 	}
 	// end validation
 

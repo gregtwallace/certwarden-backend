@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 )
 
 // KeyInUse returns a bool if the specified key is in use, it returns
@@ -16,7 +17,6 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	defer cancel()
 
 	// check key exists
-	// if scan in succeeds, key exists
 	query := `
 	SELECT id
 	FROM private_keys
@@ -24,10 +24,11 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	`
 
 	row := store.db.QueryRowContext(ctx, query, id)
-	temp := -2
-	row.Scan(&temp)
-	if temp == -2 {
-		return false, sql.ErrNoRows
+	_discardVar := -2
+	err = row.Scan(&_discardVar)
+	if err != nil {
+		// sql.ErrNoRows included here
+		return false, err
 	}
 
 	// check not in use in accounts
@@ -39,10 +40,9 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	`
 
 	row = store.db.QueryRowContext(ctx, query, id)
-	temp = -2
-	row.Scan(&temp)
-	if temp != -2 {
-		return true, nil
+	err = row.Scan(&_discardVar)
+	if !errors.Is(err, sql.ErrNoRows) {
+		return true, err
 	}
 
 	// check not in use in certs
@@ -55,10 +55,9 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	`
 
 	row = store.db.QueryRowContext(ctx, query, id)
-	temp = -2
-	row.Scan(&temp)
-	if temp != -2 {
-		return true, nil
+	err = row.Scan(&_discardVar)
+	if !errors.Is(err, sql.ErrNoRows) {
+		return true, err
 	}
 
 	// Even if the key isnt in use on a certificate, it may be in use on the certificate's most recent
@@ -88,10 +87,9 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	`
 
 	row = store.db.QueryRowContext(ctx, query, id)
-	temp = -2
-	row.Scan(&temp)
-	if temp != -2 {
-		return true, nil
+	err = row.Scan(&_discardVar)
+	if !errors.Is(err, sql.ErrNoRows) {
+		return true, err
 	}
 
 	return false, nil
