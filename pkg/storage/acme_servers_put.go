@@ -3,6 +3,8 @@ package storage
 import (
 	"certwarden-backend/pkg/domain/acme_servers"
 	"context"
+	"errors"
+	"fmt"
 )
 
 // PutServerUpdate updates details about an acme Server
@@ -24,7 +26,7 @@ func (store *Storage) PutServerUpdate(payload acme_servers.UpdatePayload) (acme_
 		id = $6
 	`
 
-	_, err := store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.DirectoryURL,
@@ -32,9 +34,17 @@ func (store *Storage) PutServerUpdate(payload acme_servers.UpdatePayload) (acme_
 		payload.UpdatedAt,
 		payload.ID,
 	)
-
 	if err != nil {
 		return acme_servers.Server{}, err
+	}
+
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return acme_servers.Server{}, err
+	}
+	if rowsAffected != 1 {
+		return acme_servers.Server{}, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
 	}
 
 	// get updated server to return

@@ -126,7 +126,7 @@ red-58
 				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
 			}
 
-			CompareKey(t, tc.expectedKey, key)
+			CompareKey(t, key, tc.expectedKey)
 
 			key, err = storage.GetOneKeyById(tc.payload.ID)
 			if !errors.Is(err, tc.expectedGetErr) {
