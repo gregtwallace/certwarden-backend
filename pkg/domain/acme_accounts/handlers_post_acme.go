@@ -42,7 +42,7 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *
 
 	// validation (only need to confirm account exists and has a key)
 	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam)
+	account, err := service.storage.GetOneAcmeAccountById(idParam)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrValidationFailed(err)
@@ -70,19 +70,19 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *
 		return output.JsonErrInternal(err)
 	}
 
-	var acmeAccount AcmeAccount
-	acmeAccount.Account, err = acmeService.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey, payload.Email), key)
+	var acmeAccountUpdate AcmeAccountUpdate
+	acmeAccountUpdate.Account, err = acmeService.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey, payload.Email), key)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
 
 	// add additional details to the acmeAccount before saving
-	acmeAccount.ID = idParam
-	acmeAccount.UpdatedAt = int(time.Now().Unix())
+	acmeAccountUpdate.ID = idParam
+	acmeAccountUpdate.UpdatedAt = int(time.Now().Unix())
 
 	// save ACME response to account
-	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccount)
+	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccountUpdate)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
@@ -125,7 +125,7 @@ func (service *Service) RefreshAcmeAccount(w http.ResponseWriter, r *http.Reques
 
 	// validation - confirm account exists and has a kid / URL
 	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam)
+	account, err := service.storage.GetOneAcmeAccountById(idParam)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrValidationFailed(err)
@@ -152,19 +152,19 @@ func (service *Service) RefreshAcmeAccount(w http.ResponseWriter, r *http.Reques
 		return output.JsonErrInternal(err)
 	}
 
-	var acmeAccount AcmeAccount
-	acmeAccount.Account, err = acmeService.GetAccount(acmeAccountKey)
+	var acmeAccountUpdate AcmeAccountUpdate
+	acmeAccountUpdate.Account, err = acmeService.GetAccount(acmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
 
 	// add additional details to the acmeAccount before saving
-	acmeAccount.ID = idParam
-	acmeAccount.UpdatedAt = int(time.Now().Unix())
+	acmeAccountUpdate.ID = idParam
+	acmeAccountUpdate.UpdatedAt = int(time.Now().Unix())
 
 	// save ACME response to account
-	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccount)
+	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccountUpdate)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
@@ -208,7 +208,7 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) *outp
 
 	// validation
 	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam)
+	account, err := service.storage.GetOneAcmeAccountById(idParam)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
@@ -241,19 +241,19 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) *outp
 		return output.JsonErrInternal(err)
 	}
 
-	var acmeAccount AcmeAccount
-	acmeAccount.Account, err = acmeService.DeactivateAccount(acmeAccountKey)
+	var acmeAccountUpdate AcmeAccountUpdate
+	acmeAccountUpdate.Account, err = acmeService.DeactivateAccount(acmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
 
 	// add additional details to the acmeAccount before saving
-	acmeAccount.ID = idParam
-	acmeAccount.UpdatedAt = int(time.Now().Unix())
+	acmeAccountUpdate.ID = idParam
+	acmeAccountUpdate.UpdatedAt = int(time.Now().Unix())
 
 	// save ACME response to account
-	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccount)
+	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccountUpdate)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

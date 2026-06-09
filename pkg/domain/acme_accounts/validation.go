@@ -29,7 +29,7 @@ func (service *Service) getAccount(id int) (Account, *output.JsonError) {
 	}
 
 	// get from storage
-	account, err := service.storage.GetOneAccountById(id)
+	account, err := service.storage.GetOneAcmeAccountById(id)
 	if err != nil {
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
@@ -56,7 +56,7 @@ func (service *Service) nameValid(accountName string, accountId *int) bool {
 	}
 
 	// make sure the name isn't already in use in storage
-	account, err := service.storage.GetOneAccountByName(accountName)
+	account, err := service.storage.GetOneAcmeAccountByName(accountName)
 	if errors.Is(err, sql.ErrNoRows) {
 		// no rows means name is not in use (valid)
 		return true
@@ -76,7 +76,7 @@ func (service *Service) nameValid(accountName string, accountId *int) bool {
 // GetUsableAccounts returns a list of accounts that have status == valid
 // and have also accepted the ToS (which is probably redundant)
 func (service *Service) GetUsableAccounts() ([]Account, error) {
-	accounts, _, err := service.storage.GetAllAccounts(pagination_sort.Query{})
+	accounts, _, err := service.storage.GetAllAcmeAccounts(pagination_sort.Query{})
 	if err != nil {
 		return nil, err
 	}

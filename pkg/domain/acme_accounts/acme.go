@@ -2,9 +2,9 @@ package acme_accounts
 
 import "certwarden-backend/pkg/acme"
 
-// AcmeAccount is the ACME Account object plus some additional
+// AcmeAccountUpdate is the ACME Account object plus some additional
 // details for storage.
-type AcmeAccount struct {
+type AcmeAccountUpdate struct {
 	acme.Account
 	ID        int `json:"-"`
 	UpdatedAt int `json:"-"`

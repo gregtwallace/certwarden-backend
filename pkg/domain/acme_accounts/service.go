@@ -23,19 +23,19 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	GetAllAccounts(q pagination_sort.Query) ([]Account, int, error)
-	GetOneAccountById(id int) (Account, error)
-	GetOneAccountByName(name string) (Account, error)
+	GetAllAcmeAccounts(q pagination_sort.Query) ([]Account, int, error)
+	GetOneAcmeAccountById(id int) (Account, error)
+	GetOneAcmeAccountByName(name string) (Account, error)
 
-	PostNewAccount(NewPayload) (newAcct Account, err error)
+	PostNewAcmeAccount(NewPayload) (newAcct Account, err error)
 
-	PutNameDescAccount(NameDescPayload) (updatedAcct Account, err error)
-	PutAcmeAccountResponse(response AcmeAccount) (updatedAcct Account, err error)
-	PutNewAccountKey(payload RolloverKeyPayload) (updatedAcct Account, err error)
+	PutNameDescAcmeAccount(NameDescPayload) (updatedAcct Account, err error)
+	PutAcmeAccountResponse(response AcmeAccountUpdate) (updatedAcct Account, err error)
+	PutNewAcmeAccountKey(payload RolloverKeyPayload) (updatedAcct Account, err error)
 
-	DeleteAccount(int) error
+	DeleteAcmeAccount(int) error
 
-	AccountHasCerts(accountId int) (inUse bool)
+	AcmeAccountInUse(accountId int) (inUse bool, err error)
 
 	GetOneKeyById(id int) (private_keys.Key, error)
 }

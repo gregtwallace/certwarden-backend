@@ -3,33 +3,48 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 )
 
-// AccountHasCerts returns true if the specified accountId matches
+// AcmeAccountInUse returns true if the specified accountId matches
 // any of the certificates in the db
-func (store *Storage) AccountHasCerts(accountId int) bool {
+func (store *Storage) AcmeAccountInUse(accountId int) (inUse bool, err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
-	// don't check account exists, business logic in app should do this
+	// check server exists
+	query := `
+	SELECT id
+	FROM acme_accounts
+	WHERE id = $1
+	`
+
+	row := store.db.QueryRowContext(ctx, query, accountId)
+	_discardVar := -2
+	err = row.Scan(&_discardVar)
+	if err != nil {
+		// sql.ErrNoRows included here
+		return false, err
+	}
 
 	// check account id is not in use in certificates
-	query := `
+	query = `
 	SELECT id
 	FROM certificates
 	WHERE acme_account_id = $1
 	`
 
-	row := store.db.QueryRowContext(ctx, query, accountId)
-	temp := -2
+	row = store.db.QueryRowContext(ctx, query, accountId)
+	err = row.Scan(&_discardVar)
+	if !errors.Is(err, sql.ErrNoRows) {
+		return true, err
+	}
 
-	err := row.Scan(&temp)
-	// error means no certs for the account (includes error no rows)
-	return err == nil
+	return false, nil
 }
 
 // DeleteAccount deletes an account from the database
-func (store *Storage) DeleteAccount(id int) error {
+func (store *Storage) DeleteAcmeAccount(id int) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 

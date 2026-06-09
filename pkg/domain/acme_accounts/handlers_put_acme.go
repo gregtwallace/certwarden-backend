@@ -75,19 +75,19 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 		return output.JsonErrInternal(err)
 	}
 
-	var acmeAccount AcmeAccount
-	acmeAccount.Account, err = acmeService.UpdateAccount(acmePayload, acmeAccountKey)
+	var acmeAccountUpdate AcmeAccountUpdate
+	acmeAccountUpdate.Account, err = acmeService.UpdateAccount(acmePayload, acmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
 
 	// add additional details to the payload before saving
-	acmeAccount.ID = id
-	acmeAccount.UpdatedAt = int(time.Now().Unix())
+	acmeAccountUpdate.ID = id
+	acmeAccountUpdate.UpdatedAt = int(time.Now().Unix())
 
 	// save ACME response to account
-	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccount)
+	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccountUpdate)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
@@ -193,7 +193,7 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) *out
 	payload.UpdatedAt = int(time.Now().Unix())
 
 	// update private key id in db
-	updatedAcct, err := service.storage.PutNewAccountKey(payload)
+	updatedAcct, err := service.storage.PutNewAcmeAccountKey(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

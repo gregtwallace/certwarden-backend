@@ -121,7 +121,7 @@ func TestGetOneServerById(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
 			}
 
-			CompareAcmeServer(t, tc.expectedServer, serv)
+			CompareAcmeServer(t, serv, tc.expectedServer)
 		})
 	}
 }
@@ -152,7 +152,7 @@ func TestGetOneServerByName(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
 			}
 
-			CompareAcmeServer(t, tc.expectedServer, serv)
+			CompareAcmeServer(t, serv, tc.expectedServer)
 		})
 	}
 }

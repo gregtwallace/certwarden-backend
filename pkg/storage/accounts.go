@@ -2,6 +2,7 @@ package storage
 
 import (
 	"certwarden-backend/pkg/domain/acme_accounts"
+	"time"
 )
 
 // accountDb is a single acme account, as database table fields
@@ -15,8 +16,8 @@ type accountDb struct {
 	status          string
 	email           string
 	acceptedTos     bool
-	createdAt       int
-	updatedAt       int
+	createdAt       int64
+	updatedAt       int64
 	kid             string
 }
 
@@ -30,8 +31,8 @@ func (acct accountDb) toAccount() acme_accounts.Account {
 		Status:      acct.status,
 		Email:       acct.email,
 		AcceptedTos: acct.acceptedTos,
-		CreatedAt:   acct.createdAt,
-		UpdatedAt:   acct.updatedAt,
+		CreatedAt:   time.Unix(acct.createdAt, 0),
+		UpdatedAt:   time.Unix(acct.updatedAt, 0),
 		Kid:         acct.kid,
 	}
 }

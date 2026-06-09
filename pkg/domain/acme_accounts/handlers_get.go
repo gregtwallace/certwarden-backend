@@ -27,7 +27,7 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) *
 	query := pagination_sort.ParseRequestToQuery(r)
 
 	// get all from storage
-	accounts, totalRows, err := service.storage.GetAllAccounts(query)
+	accounts, totalRows, err := service.storage.GetAllAcmeAccounts(query)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

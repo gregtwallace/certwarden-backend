@@ -27,7 +27,7 @@ func (store *Storage) ServerInUse(serverId int) (inUse bool, err error) {
 		return false, err
 	}
 
-	// check server id is not in use in certificates
+	// check server id is not in use by any accounts
 	query = `
 	SELECT id
 	FROM acme_accounts

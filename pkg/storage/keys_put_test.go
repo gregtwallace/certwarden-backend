@@ -49,8 +49,8 @@ func TestPutKeyUpdate(t *testing.T) {
 red-31
 -----END EC PRIVATE KEY-----
 `,
-				ApiKey:         "key-api-key-4",
-				ApiKeyNew:      "key-api-new-key-4",
+				ApiKey:         "key-api-key-31",
+				ApiKeyNew:      "key-api-new-key-31",
 				ApiKeyDisabled: false,
 				ApiKeyViaUrl:   true,
 				LastAccess:     time.Unix(1745952074, 0),
@@ -179,7 +179,7 @@ red-31
 -----END EC PRIVATE KEY-----
 `,
 				ApiKey:         "fake31",
-				ApiKeyNew:      "key-api-new-key-4",
+				ApiKeyNew:      "key-api-new-key-31",
 				ApiKeyDisabled: false,
 				ApiKeyViaUrl:   true,
 				LastAccess:     time.Unix(1745952074, 0),
