@@ -3,9 +3,8 @@ package storage
 import (
 	"certwarden-backend/pkg/domain/private_keys"
 	"context"
+	"errors"
 	"fmt"
-
-	"github.com/go-errors/errors"
 )
 
 // PutKeyUpdate updates an existing key in the db using any non-null
