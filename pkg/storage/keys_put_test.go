@@ -14,10 +14,12 @@ import (
 
 func TestPutKeyUpdate(t *testing.T) {
 	testCases := []struct {
-		payload        private_keys.UpdatePayload
-		expectedKey    private_keys.Key
-		expectedPutErr error
-		expectedGetErr error
+		payload           private_keys.UpdatePayload
+		expectedPutResult private_keys.Key
+		expectedPutErr    error
+		getId             int
+		expectedGetResult private_keys.Key
+		expectedGetErr    error
 	}{
 		{ // invalid key
 			private_keys.UpdatePayload{
@@ -25,6 +27,8 @@ func TestPutKeyUpdate(t *testing.T) {
 			},
 			private_keys.Key{},
 			storage.ErrWrongUpdateRowCount,
+			-1,
+			private_keys.Key{},
 			sql.ErrNoRows,
 		},
 		{ // invalid key
@@ -33,6 +37,8 @@ func TestPutKeyUpdate(t *testing.T) {
 			},
 			private_keys.Key{},
 			storage.ErrWrongUpdateRowCount,
+			522,
+			private_keys.Key{},
 			sql.ErrNoRows,
 		},
 		{ // update all things
@@ -58,6 +64,24 @@ red-31
 				UpdatedAt:      time.Unix(100555, 0),
 			},
 			nil,
+			31,
+			private_keys.Key{
+				ID:          31,
+				Name:        "certwarden",
+				Description: "localhost / dev work w/ real cert",
+				Algorithm:   key_crypto.AlgorithmECDSAp256,
+				Pem: `-----BEGIN EC PRIVATE KEY-----
+red-31
+-----END EC PRIVATE KEY-----
+`,
+				ApiKey:         "key-api-key-31",
+				ApiKeyNew:      "key-api-new-key-31",
+				ApiKeyDisabled: false,
+				ApiKeyViaUrl:   true,
+				LastAccess:     time.Unix(1745952074, 0),
+				CreatedAt:      time.Unix(1709327549, 0),
+				UpdatedAt:      time.Unix(100555, 0),
+			},
 			nil,
 		},
 		{ // update none of the things (except last update)
@@ -83,6 +107,24 @@ red-62
 				UpdatedAt:      time.Unix(1001111, 0),
 			},
 			nil,
+			62,
+			private_keys.Key{
+				ID:          62,
+				Name:        "SomeKEy",
+				Description: "some desc",
+				Algorithm:   key_crypto.AlgorithmECDSAp256,
+				Pem: `-----BEGIN EC PRIVATE KEY-----
+red-62
+-----END EC PRIVATE KEY-----
+`,
+				ApiKey:         "key-api-key-62",
+				ApiKeyNew:      "key-api-new-key-62",
+				ApiKeyDisabled: false,
+				ApiKeyViaUrl:   false,
+				LastAccess:     time.Unix(1777555691, 0),
+				CreatedAt:      time.Unix(1751738296, 0),
+				UpdatedAt:      time.Unix(1001111, 0),
+			},
 			nil,
 		},
 		{ // update just key disabled
@@ -109,6 +151,24 @@ red-58
 				UpdatedAt:      time.Unix(1751730000, 0),
 			},
 			nil,
+			58,
+			private_keys.Key{
+				ID:          58,
+				Name:        "_Buypass_Staging",
+				Description: "",
+				Algorithm:   key_crypto.AlgorithmECDSAp256,
+				Pem: `-----BEGIN EC PRIVATE KEY-----
+red-58
+-----END EC PRIVATE KEY-----
+`,
+				ApiKey:         "key-api-key-58",
+				ApiKeyNew:      "",
+				ApiKeyDisabled: false,
+				ApiKeyViaUrl:   false,
+				LastAccess:     time.Unix(0, 0),
+				CreatedAt:      time.Unix(1743176647, 0),
+				UpdatedAt:      time.Unix(1751730000, 0),
+			},
 			nil,
 		},
 	}
@@ -126,14 +186,14 @@ red-58
 				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
 			}
 
-			CompareKey(t, key, tc.expectedKey)
+			CompareKey(t, key, tc.expectedPutResult)
 
-			key, err = storage.GetOneKeyById(tc.payload.ID)
+			key, err = storage.GetOneKeyById(tc.getId)
 			if !errors.Is(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 
-			CompareKey(t, key, tc.expectedKey)
+			CompareKey(t, key, tc.expectedGetResult)
 		})
 	}
 }

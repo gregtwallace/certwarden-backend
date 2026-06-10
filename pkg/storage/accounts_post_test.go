@@ -12,10 +12,10 @@ import (
 
 func TestPostNewAcmeAccount(t *testing.T) {
 	testCases := []struct {
-		newPayload     acme_accounts.NewPayload
-		expectPostErr  bool
-		expectedNew    acme_accounts.Account
-		expectedGetErr error
+		newPayload      acme_accounts.NewPayload
+		expectedPostErr error
+		expectedNew     acme_accounts.Account
+		expectedGetErr  error
 	}{
 		{ // valid insertion
 			acme_accounts.NewPayload{
@@ -30,7 +30,7 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:    1788838000,
 				Kid:          "https://fake.example.com/1234",
 			},
-			false,
+			nil,
 			acme_accounts.Account{
 				ID:          30,
 				Name:        "NewAcct",
@@ -59,7 +59,7 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:    1888838000,
 				Kid:          "https://fake.example.com/123456",
 			},
-			true,
+			test_helpers.ErrAnyType,
 			acme_accounts.Account{},
 			sql.ErrNoRows,
 		},
@@ -76,7 +76,7 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:   1888838000,
 				Kid:         "https://fake.example.com/123456",
 			},
-			true,
+			test_helpers.ErrAnyType,
 			acme_accounts.Account{},
 			sql.ErrNoRows,
 		},
@@ -93,7 +93,7 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:   1888838000,
 				Kid:         "https://fake.example.com/123456",
 			},
-			true,
+			test_helpers.ErrAnyType,
 			acme_accounts.Account{},
 			sql.ErrNoRows,
 		},
@@ -108,8 +108,8 @@ func TestPostNewAcmeAccount(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("post name: %s", test_helpers.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
 			acct, err := storage.PostNewAcmeAccount(tc.newPayload)
-			if (err != nil && !tc.expectPostErr) || (err == nil && tc.expectPostErr) {
-				t.Errorf("expected post error '%t' but got err '%s'", tc.expectPostErr, test_helpers.ErrorToVal(err))
+			if !test_helpers.ErrorsIs(err, tc.expectedPostErr) {
+				t.Errorf("expected post error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPostErr), test_helpers.ErrorToVal(err))
 			}
 
 			CompareAcmeAccount(t, acct, tc.expectedNew)

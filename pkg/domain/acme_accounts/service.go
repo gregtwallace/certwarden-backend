@@ -29,9 +29,9 @@ type Storage interface {
 
 	PostNewAcmeAccount(NewPayload) (newAcct Account, err error)
 
-	PutNameDescAcmeAccount(NameDescPayload) (updatedAcct Account, err error)
+	PutAcmeAccountNameDesc(NameDescPayload) (updatedAcct Account, err error)
 	PutAcmeAccountResponse(response AcmeAccountUpdate) (updatedAcct Account, err error)
-	PutNewAcmeAccountKey(payload RolloverKeyPayload) (updatedAcct Account, err error)
+	PutAcmeAccountNewKey(payload RolloverKeyPayload) (updatedAcct Account, err error)
 
 	DeleteAcmeAccount(int) error
 

@@ -193,7 +193,7 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) *out
 	payload.UpdatedAt = int(time.Now().Unix())
 
 	// update private key id in db
-	updatedAcct, err := service.storage.PutNewAcmeAccountKey(payload)
+	updatedAcct, err := service.storage.PutAcmeAccountNewKey(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

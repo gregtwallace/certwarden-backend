@@ -40,6 +40,20 @@ var (
 		Kid:         "https://acme-v02.api.letsencrypt.org/acme/acct/red-2",
 	}
 
+	acmeAcct16 = acme_accounts.Account{
+		ID:          16,
+		Name:        "Google_Cloud_Staging",
+		Description: "",
+		AcmeServer:  acmeServer19,
+		AccountKey:  key61,
+		Status:      "valid",
+		Email:       "fake@example.com",
+		AcceptedTos: true,
+		CreatedAt:   time.Unix(1751561598, 0),
+		UpdatedAt:   time.Unix(1752253957, 0),
+		Kid:         "https://dv.acme-v02.test-api.pki.goog/account/red-16",
+	}
+
 	acmeAcct20 = acme_accounts.Account{
 		ID:          20,
 		Name:        "_LE_Staging_Again",

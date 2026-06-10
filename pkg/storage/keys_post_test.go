@@ -13,10 +13,10 @@ import (
 
 func TestPostNewKey(t *testing.T) {
 	testCases := []struct {
-		newKeyPayload  private_keys.NewPayload
-		expectPostErr  bool
-		expectedNewKey private_keys.Key
-		expectedGetErr error
+		newKeyPayload   private_keys.NewPayload
+		expectedPostErr error
+		expectedNewKey  private_keys.Key
+		expectedGetErr  error
 	}{
 		{ // valid insertion
 			private_keys.NewPayload{
@@ -30,7 +30,7 @@ func TestPostNewKey(t *testing.T) {
 				CreatedAt:      1780336479,
 				UpdatedAt:      1780337000,
 			},
-			false,
+			nil,
 			private_keys.Key{
 				ID:             72,
 				Name:           "new_key_xyz",
@@ -59,7 +59,7 @@ func TestPostNewKey(t *testing.T) {
 				CreatedAt:      1780336477,
 				UpdatedAt:      1780337010,
 			},
-			true,
+			test_helpers.ErrAnyType,
 			private_keys.Key{},
 			sql.ErrNoRows,
 		},
@@ -74,7 +74,7 @@ func TestPostNewKey(t *testing.T) {
 				CreatedAt:      1780336480,
 				UpdatedAt:      1780337001,
 			},
-			true,
+			test_helpers.ErrAnyType,
 			private_keys.Key{},
 			sql.ErrNoRows,
 		},
@@ -89,8 +89,8 @@ func TestPostNewKey(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("post name: %s", test_helpers.StringPointerToVal(tc.newKeyPayload.Name)), func(t *testing.T) {
 			key, err := storage.PostNewKey(tc.newKeyPayload)
-			if (err != nil && !tc.expectPostErr) || (err == nil && tc.expectPostErr) {
-				t.Errorf("expected post error '%t' but got err '%s'", tc.expectPostErr, test_helpers.ErrorToVal(err))
+			if !test_helpers.ErrorsIs(err, tc.expectedPostErr) {
+				t.Errorf("expected post error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPostErr), test_helpers.ErrorToVal(err))
 			}
 
 			CompareKey(t, key, tc.expectedNewKey)
