@@ -86,6 +86,24 @@ red-58
 		UpdatedAt:      time.Unix(1751563349, 0),
 	}
 
+	key61 = private_keys.Key{
+		ID:          61,
+		Name:        "_Google_Cloud_Staging_Acct",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp384,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-61
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-61",
+		ApiKeyNew:      "key-api-new-key-61",
+		ApiKeyDisabled: true,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1751561584, 0),
+		UpdatedAt:      time.Unix(1751561584, 0),
+	}
+
 	key62 = private_keys.Key{
 		ID:          62,
 		Name:        "SomeKEy",

@@ -57,7 +57,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 
 	// save account name and desc to storage, which also returns the account id with new
 	// name and description
-	updatedAcct, err := service.storage.PutNameDescAcmeAccount(payload)
+	updatedAcct, err := service.storage.PutAcmeAccountNameDesc(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

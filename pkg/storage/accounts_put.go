@@ -3,11 +3,12 @@ package storage
 import (
 	"certwarden-backend/pkg/domain/acme_accounts"
 	"context"
+	"errors"
+	"fmt"
 )
 
-// PutNameDescAccount only updates the name and desc in the database
-// TODO: refactor to more generic for anything that can be updated??
-func (store *Storage) PutNameDescAcmeAccount(payload acme_accounts.NameDescPayload) (acme_accounts.Account, error) {
+// PutAcmeAccountNameDesc only updates the name and desc in the database
+func (store *Storage) PutAcmeAccountNameDesc(payload acme_accounts.NameDescPayload) (acme_accounts.Account, error) {
 	// database update
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -23,15 +24,23 @@ func (store *Storage) PutNameDescAcmeAccount(payload acme_accounts.NameDescPaylo
 		id = $4
 	`
 
-	_, err := store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.UpdatedAt,
 		payload.ID,
 	)
-
 	if err != nil {
 		return acme_accounts.Account{}, err
+	}
+
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return acme_accounts.Account{}, err
+	}
+	if rowsAffected != 1 {
+		return acme_accounts.Account{}, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
 	}
 
 	// get updated account to return
@@ -61,10 +70,10 @@ func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccountUp
 	WHERE
 		id = $6`
 
-	_, err := store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		payload.Status,
 		payload.Email(),
-		payload.CreatedAt.ToUnixTime(),
+		payload.CreatedAt.Unix(),
 		payload.UpdatedAt,
 		payload.Location,
 		payload.ID,
@@ -72,7 +81,15 @@ func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccountUp
 	if err != nil {
 		return acme_accounts.Account{}, err
 	}
-	// TODO: Handle 0 rows updated.
+
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return acme_accounts.Account{}, err
+	}
+	if rowsAffected != 1 {
+		return acme_accounts.Account{}, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+	}
 
 	// get updated account to return
 	updatedAccount, err := store.GetOneAcmeAccountById(payload.ID)
@@ -83,8 +100,8 @@ func (store *Storage) PutAcmeAccountResponse(payload acme_accounts.AcmeAccountUp
 	return updatedAccount, nil
 }
 
-// PutNewAccountKey updates the specified account to the new key id
-func (store *Storage) PutNewAcmeAccountKey(payload acme_accounts.RolloverKeyPayload) (acme_accounts.Account, error) {
+// PutAcmeAccountNewKey updates the specified account to the new key id
+func (store *Storage) PutAcmeAccountNewKey(payload acme_accounts.RolloverKeyPayload) (acme_accounts.Account, error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -98,7 +115,7 @@ func (store *Storage) PutNewAcmeAccountKey(payload acme_accounts.RolloverKeyPayl
 		id = $3
 	`
 
-	_, err := store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		payload.PrivateKeyID,
 		payload.UpdatedAt,
 		payload.ID,
@@ -106,7 +123,15 @@ func (store *Storage) PutNewAcmeAccountKey(payload acme_accounts.RolloverKeyPayl
 	if err != nil {
 		return acme_accounts.Account{}, err
 	}
-	// TODO: Handle 0 rows updated.
+
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return acme_accounts.Account{}, err
+	}
+	if rowsAffected != 1 {
+		return acme_accounts.Account{}, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+	}
 
 	// get updated account to return
 	updatedAccount, err := store.GetOneAcmeAccountById(payload.ID)

@@ -12,10 +12,10 @@ import (
 
 func TestPostNewServer(t *testing.T) {
 	testCases := []struct {
-		newPayload     acme_servers.NewPayload
-		expectPostErr  bool
-		expectedNew    acme_servers.Server
-		expectedGetErr error
+		newPayload      acme_servers.NewPayload
+		expectedPostErr error
+		expectedNew     acme_servers.Server
+		expectedGetErr  error
 	}{
 		{ // valid insertion
 			acme_servers.NewPayload{
@@ -26,7 +26,7 @@ func TestPostNewServer(t *testing.T) {
 				CreatedAt:    1780337479,
 				UpdatedAt:    1780338000,
 			},
-			false,
+			nil,
 			acme_servers.Server{
 				ID:           21,
 				Name:         "NewServer",
@@ -47,7 +47,7 @@ func TestPostNewServer(t *testing.T) {
 				CreatedAt:    1780337449,
 				UpdatedAt:    1780338040,
 			},
-			true,
+			test_helpers.ErrAnyType,
 			acme_servers.Server{},
 			sql.ErrNoRows,
 		},
@@ -60,7 +60,7 @@ func TestPostNewServer(t *testing.T) {
 				CreatedAt: 1880337449,
 				UpdatedAt: 1880338040,
 			},
-			true,
+			test_helpers.ErrAnyType,
 			acme_servers.Server{},
 			sql.ErrNoRows,
 		},
@@ -75,8 +75,8 @@ func TestPostNewServer(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("post name: %s", test_helpers.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
 			server, err := storage.PostNewServer(tc.newPayload)
-			if (err != nil && !tc.expectPostErr) || (err == nil && tc.expectPostErr) {
-				t.Errorf("expected post error '%t' but got err '%s'", tc.expectPostErr, test_helpers.ErrorToVal(err))
+			if !test_helpers.ErrorsIs(err, tc.expectedPostErr) {
+				t.Errorf("expected post error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPostErr), test_helpers.ErrorToVal(err))
 			}
 
 			CompareAcmeServer(t, server, tc.expectedNew)

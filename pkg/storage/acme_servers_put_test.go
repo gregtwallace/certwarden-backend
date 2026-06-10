@@ -13,10 +13,12 @@ import (
 
 func TestPutServerUpdate(t *testing.T) {
 	testCases := []struct {
-		payload        acme_servers.UpdatePayload
-		expectedResult acme_servers.Server
-		expectedPutErr error
-		expectedGetErr error
+		payload           acme_servers.UpdatePayload
+		expectedPutResult acme_servers.Server
+		expectedPutErr    error
+		getId             int
+		expectedGetResult acme_servers.Server
+		expectedGetErr    error
 	}{
 		{ // invalid server
 			acme_servers.UpdatePayload{
@@ -24,6 +26,8 @@ func TestPutServerUpdate(t *testing.T) {
 			},
 			acme_servers.Server{},
 			storage.ErrWrongUpdateRowCount,
+			-1,
+			acme_servers.Server{},
 			sql.ErrNoRows,
 		},
 		{ // invalid server
@@ -32,6 +36,8 @@ func TestPutServerUpdate(t *testing.T) {
 			},
 			acme_servers.Server{},
 			storage.ErrWrongUpdateRowCount,
+			-1,
+			acme_servers.Server{},
 			sql.ErrNoRows,
 		},
 		{ // update all things
@@ -53,6 +59,16 @@ func TestPutServerUpdate(t *testing.T) {
 				UpdatedAt:    time.Unix(1733265750, 0),
 			},
 			nil,
+			1,
+			acme_servers.Server{
+				ID:           1,
+				Name:         "Updated",
+				Description:  "new desc",
+				DirectoryURL: "https://example-new.com/directory",
+				IsStaging:    false,
+				CreatedAt:    time.Unix(1697139774, 0),
+				UpdatedAt:    time.Unix(1733265750, 0),
+			},
 			nil,
 		},
 		{ // update none of the things (except last update)
@@ -70,6 +86,16 @@ func TestPutServerUpdate(t *testing.T) {
 				UpdatedAt:    time.Unix(11121111, 0),
 			},
 			nil,
+			19,
+			acme_servers.Server{
+				ID:           19,
+				Name:         "Google_Cloud_Staging",
+				Description:  "Google Cloud PreProd",
+				DirectoryURL: "https://dv.acme-v02.test-api.pki.goog/directory",
+				IsStaging:    true,
+				CreatedAt:    time.Unix(1745080146, 0),
+				UpdatedAt:    time.Unix(11121111, 0),
+			},
 			nil,
 		},
 		{ // update just directory URL
@@ -88,6 +114,16 @@ func TestPutServerUpdate(t *testing.T) {
 				UpdatedAt:    time.Unix(100800111, 0),
 			},
 			nil,
+			4,
+			acme_servers.Server{
+				ID:           4,
+				Name:         "Google_Prod",
+				Description:  "",
+				DirectoryURL: "https://example-put.com/directory",
+				IsStaging:    false,
+				CreatedAt:    time.Unix(1699565933, 0),
+				UpdatedAt:    time.Unix(100800111, 0),
+			},
 			nil,
 		},
 	}
@@ -105,14 +141,14 @@ func TestPutServerUpdate(t *testing.T) {
 				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
 			}
 
-			CompareAcmeServer(t, server, tc.expectedResult)
+			CompareAcmeServer(t, server, tc.expectedPutResult)
 
-			server, err = storage.GetOneServerByName(server.Name)
+			server, err = storage.GetOneServerById(tc.getId)
 			if !errors.Is(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 
-			CompareAcmeServer(t, server, tc.expectedResult)
+			CompareAcmeServer(t, server, tc.expectedGetResult)
 		})
 	}
 }

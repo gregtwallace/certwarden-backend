@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // NewAccountPayload is the payload the caller populates to post a new
@@ -27,10 +28,10 @@ type acmeNewAccountPayload struct {
 
 // LE response to account data post/update
 type Account struct {
-	Status    string     `json:"status"`
-	Contact   []string   `json:"contact"`
-	CreatedAt timeString `json:"createdAt,omitempty"` // non-standard field
-	Location  *string    `json:"-"`                   // omit because it is in the header
+	Status    string    `json:"status"`
+	Contact   []string  `json:"contact"`
+	CreatedAt time.Time `json:"createdAt,omitempty"` // non-standard field
+	Location  *string   `json:"-"`                   // omit because it is in the header
 	// -- also available but not in use
 	// JsonWebKey jsonWebKey `json:"key"`
 	// Orders     string     `json:"orders"`
