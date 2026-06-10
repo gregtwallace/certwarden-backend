@@ -747,14 +747,14 @@ func (store *Storage) GetOneOrder(orderID int) (order orders.Order, err error) {
 
 // GetCertNewestValidOrderById returns the most recent valid order for the specified
 // cert id
-func (store *Storage) GetCertNewestValidOrderById(id int) (order orders.Order, err error) {
-	return store.getCertNewestValidOrder(id, "")
+func (store *Storage) GetCertNewestValidOrderById(certId int) (order orders.Order, err error) {
+	return store.getCertNewestValidOrder(certId, "")
 }
 
 // GetCertNewestValidOrderByName returns the most recent valid order for the specified
 // cert name
-func (store *Storage) GetCertNewestValidOrderByName(name string) (order orders.Order, err error) {
-	return store.getCertNewestValidOrder(-1, name)
+func (store *Storage) GetCertNewestValidOrderByName(certName string) (order orders.Order, err error) {
+	return store.getCertNewestValidOrder(-1, certName)
 }
 
 // getCertNewestValidOrder fetches the newest valid order for the specified cert

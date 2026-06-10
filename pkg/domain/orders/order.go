@@ -5,7 +5,6 @@ import (
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/domain/certificates"
 	"certwarden-backend/pkg/domain/private_keys"
-	"certwarden-backend/pkg/pagination_sort"
 	"crypto/x509"
 	"database/sql"
 	"encoding/pem"
@@ -260,8 +259,8 @@ func (service *Service) NewOrderPayload(cert certificates.Certificate) acme.NewO
 			return nil
 		}
 
-		// get all orders from storage
-		orders, _, err := service.storage.GetOrdersByCert(cert.ID, pagination_sort.Query{})
+		// get most recent valid order from storage
+		order, err := service.storage.GetCertNewestValidOrderById(cert.ID)
 		if err != nil {
 			// no records isn't an error worth logging
 			if !errors.Is(err, sql.ErrNoRows) {
@@ -270,27 +269,12 @@ func (service *Service) NewOrderPayload(cert certificates.Certificate) acme.NewO
 			return nil
 		}
 
-		// found orders
-		var mostRecentValidFrom time.Time
-		mostRecentPem := ""
-		for i := range orders {
-			if orders[i].Pem == nil {
-				continue
-			}
-
-			if orders[i].ValidFrom != nil && orders[i].ValidFrom.After(mostRecentValidFrom) {
-				mostRecentValidFrom = *orders[i].ValidFrom
-				mostRecentPem = *orders[i].Pem
-			}
-		}
-
-		// no order PEM to use for replaces
-		if mostRecentPem == "" {
+		// use the order's pem to create the unique ID for `replaces`
+		if order.Pem == nil || *order.Pem == "" {
+			service.logger.Error("orders: new order cant populated `replaces`, pem of newest valid order was empty somehow")
 			return nil
 		}
-
-		// use the order's pem to create the unique ID for `replaces`
-		certBlock, _ := pem.Decode([]byte(mostRecentPem))
+		certBlock, _ := pem.Decode([]byte(*order.Pem))
 		if certBlock == nil {
 			service.logger.Errorf("orders: new order cant populated `replaces`, cert pem block of latest order of cert %d is nil", cert.ID)
 			return nil
@@ -302,10 +286,7 @@ func (service *Service) NewOrderPayload(cert certificates.Certificate) acme.NewO
 			return nil
 		}
 
-		r := new(string)
-		*r = acme.ACMERenewalInfoIdentifier(x509Cert)
-
-		return r
+		return new(acme.ACMERenewalInfoIdentifier(x509Cert))
 	}()
 
 	return acme.NewOrderPayload{
