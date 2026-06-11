@@ -25,8 +25,8 @@ type changeEmailPayload struct {
 // email address and saves the updated address to storage
 func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get id from param
-	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
-	id, err := strconv.Atoi(idParam)
+	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	idParam, err := strconv.Atoi(idParamStr)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.JsonErrValidationFailed(err)
@@ -42,7 +42,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 
 	// validation
 	// id
-	account, outErr := service.getAccount(id)
+	account, outErr := service.getAccount(idParam)
 	if outErr != nil {
 		return outErr
 	}
@@ -75,25 +75,20 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 		return output.JsonErrInternal(err)
 	}
 
-	var acmeAccountUpdate AcmeAccountUpdate
-	acmeAccountUpdate.Account, err = acmeService.UpdateAccount(acmePayload, acmeAccountKey)
+	acmeAcct, err := acmeService.UpdateAccount(acmePayload, acmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
 
-	// add additional details to the payload before saving
-	acmeAccountUpdate.ID = id
-	acmeAccountUpdate.UpdatedAt = int(time.Now().Unix())
-
-	// save ACME response to account
-	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccountUpdate)
+	// save ACME response to storage
+	account, err = service.storage.PutAcmeAccountUpdate(acmeAcctToUpdatePayload(idParam, acmeAcct))
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
 	}
 
-	detailedResp, err := updatedAcct.detailedResponse(service)
+	detailedResp, err := account.detailedResponse(service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate account summary response (%s)", err)
 		service.logger.Error(err)

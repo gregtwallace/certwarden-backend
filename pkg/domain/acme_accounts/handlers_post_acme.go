@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -70,25 +69,20 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *
 		return output.JsonErrInternal(err)
 	}
 
-	var acmeAccountUpdate AcmeAccountUpdate
-	acmeAccountUpdate.Account, err = acmeService.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey, payload.Email), key)
+	acmeAcct, err := acmeService.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey, payload.Email), key)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
 
-	// add additional details to the acmeAccount before saving
-	acmeAccountUpdate.ID = idParam
-	acmeAccountUpdate.UpdatedAt = int(time.Now().Unix())
-
-	// save ACME response to account
-	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccountUpdate)
+	// save ACME response to storage
+	account, err = service.storage.PutAcmeAccountUpdate(acmeAcctToUpdatePayload(idParam, acmeAcct))
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
 	}
 
-	updatedAcctDetailedResp, err := updatedAcct.detailedResponse(service)
+	updatedAcctDetailedResp, err := account.detailedResponse(service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate account summary response (%s)", err)
 		service.logger.Error(err)
@@ -152,25 +146,20 @@ func (service *Service) RefreshAcmeAccount(w http.ResponseWriter, r *http.Reques
 		return output.JsonErrInternal(err)
 	}
 
-	var acmeAccountUpdate AcmeAccountUpdate
-	acmeAccountUpdate.Account, err = acmeService.GetAccount(acmeAccountKey)
+	acmeAcct, err := acmeService.GetAccount(acmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
 
-	// add additional details to the acmeAccount before saving
-	acmeAccountUpdate.ID = idParam
-	acmeAccountUpdate.UpdatedAt = int(time.Now().Unix())
-
-	// save ACME response to account
-	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccountUpdate)
+	// save ACME response to storage
+	account, err = service.storage.PutAcmeAccountUpdate(acmeAcctToUpdatePayload(idParam, acmeAcct))
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
 	}
 
-	updatedAcctDetailedResp, err := updatedAcct.detailedResponse(service)
+	updatedAcctDetailedResp, err := account.detailedResponse(service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate account summary response (%s)", err)
 		service.logger.Error(err)
@@ -241,25 +230,20 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) *outp
 		return output.JsonErrInternal(err)
 	}
 
-	var acmeAccountUpdate AcmeAccountUpdate
-	acmeAccountUpdate.Account, err = acmeService.DeactivateAccount(acmeAccountKey)
+	acmeAcct, err := acmeService.DeactivateAccount(acmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
 
-	// add additional details to the acmeAccount before saving
-	acmeAccountUpdate.ID = idParam
-	acmeAccountUpdate.UpdatedAt = int(time.Now().Unix())
-
-	// save ACME response to account
-	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccountUpdate)
+	// save ACME response to storage
+	account, err = service.storage.PutAcmeAccountUpdate(acmeAcctToUpdatePayload(idParam, acmeAcct))
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
 	}
 
-	updatedAcctDetailedResp, err := updatedAcct.detailedResponse(service)
+	updatedAcctDetailedResp, err := account.detailedResponse(service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate account summary response (%s)", err)
 		service.logger.Error(err)

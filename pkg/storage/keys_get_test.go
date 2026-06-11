@@ -158,6 +158,24 @@ red-64
 		UpdatedAt:      time.Unix(1752258426, 0),
 	}
 
+	key65 = private_keys.Key{
+		ID:          65,
+		Name:        "_Google_Cloud_Staging2",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmRSA4096,
+		Pem: `-----BEGIN RSA PRIVATE KEY-----
+red-65
+-----END RSA PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-65",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: false,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1752262145, 0),
+		UpdatedAt:      time.Unix(1752262145, 0),
+	}
+
 	key66 = private_keys.Key{
 		ID:          66,
 		Name:        "_Google_Cloud_Staging2b",
