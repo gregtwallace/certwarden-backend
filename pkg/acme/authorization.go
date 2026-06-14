@@ -2,13 +2,14 @@ package acme
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // ACME authorization response
 type Authorization struct {
 	Identifier Identifier  `json:"identifier"` // see orders
 	Status     string      `json:"status"`
-	Expires    timeString  `json:"expires"`
+	Expires    time.Time   `json:"expires"`
 	Challenges []Challenge `json:"challenges"`
 	Wildcard   bool        `json:"wildcard,omitempty"`
 }

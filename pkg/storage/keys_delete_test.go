@@ -41,7 +41,7 @@ func TestKeyInUse(t *testing.T) {
 			}
 
 			if inUse != tc.expectedInUse {
-				t.Errorf("key id expected inuse '%t' but got '%t'", tc.expectedInUse, inUse)
+				t.Errorf("expected inuse '%t' but got '%t'", tc.expectedInUse, inUse)
 			}
 		})
 	}

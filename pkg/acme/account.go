@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
+	"time"
 )
 
 // NewAccountPayload is the payload the caller populates to post a new
@@ -29,7 +29,7 @@ type acmeNewAccountPayload struct {
 type Account struct {
 	Status    string     `json:"status"`
 	Contact   []string   `json:"contact"`
-	CreatedAt timeString `json:"createdAt,omitempty"` // non-standard field
+	CreatedAt *time.Time `json:"createdAt,omitempty"` // non-standard field
 	Location  *string    `json:"-"`                   // omit because it is in the header
 	// -- also available but not in use
 	// JsonWebKey jsonWebKey `json:"key"`
@@ -55,17 +55,6 @@ func unmarshalAccount(jsonResp json.RawMessage, headers http.Header) (acct Accou
 	}
 
 	return acct, nil
-}
-
-// Email() returns an email address from the first string in the Contact slice.
-// Any other contacts are discarded.
-func (response *Account) Email() string {
-	// if contacts are empty, email is blank
-	if len(response.Contact) == 0 {
-		return ""
-	}
-
-	return strings.TrimPrefix(response.Contact[0], "mailto:")
 }
 
 // NewAccount posts a secure message to the NewAccount URL of the directory

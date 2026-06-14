@@ -14,6 +14,42 @@ import (
 
 // keys for comparisons
 var (
+	key1 = private_keys.Key{
+		ID:          1,
+		Name:        "LE_Staging",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp384,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-1
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-1",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: true,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1697142029, 0),
+		UpdatedAt:      time.Unix(1697142029, 0),
+	}
+
+	key4 = private_keys.Key{
+		ID:          4,
+		Name:        "LE_Production",
+		Description: "some desc goes here",
+		Algorithm:   key_crypto.AlgorithmECDSAp384,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-4
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-4",
+		ApiKeyNew:      "new-key-4-here",
+		ApiKeyDisabled: false,
+		ApiKeyViaUrl:   true,
+		LastAccess:     time.Unix(12345678, 0),
+		CreatedAt:      time.Unix(1697142945, 0),
+		UpdatedAt:      time.Unix(1700593381, 0),
+	}
+
 	key31 = private_keys.Key{
 		ID:          31,
 		Name:        "certwarden",
@@ -23,8 +59,8 @@ var (
 red-31
 -----END EC PRIVATE KEY-----
 `,
-		ApiKey:         "key-api-key-4",
-		ApiKeyNew:      "key-api-new-key-4",
+		ApiKey:         "key-api-key-31",
+		ApiKeyNew:      "key-api-new-key-31",
 		ApiKeyDisabled: false,
 		ApiKeyViaUrl:   true,
 		LastAccess:     time.Unix(1745952074, 0),
@@ -48,6 +84,24 @@ red-58
 		LastAccess:     time.Unix(0, 0),
 		CreatedAt:      time.Unix(1743176647, 0),
 		UpdatedAt:      time.Unix(1751563349, 0),
+	}
+
+	key61 = private_keys.Key{
+		ID:          61,
+		Name:        "_Google_Cloud_Staging_Acct",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp384,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-61
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-61",
+		ApiKeyNew:      "key-api-new-key-61",
+		ApiKeyDisabled: true,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1751561584, 0),
+		UpdatedAt:      time.Unix(1751561584, 0),
 	}
 
 	key62 = private_keys.Key{
@@ -102,6 +156,42 @@ red-64
 		LastAccess:     time.Unix(0, 0),
 		CreatedAt:      time.Unix(1752258426, 0),
 		UpdatedAt:      time.Unix(1752258426, 0),
+	}
+
+	key65 = private_keys.Key{
+		ID:          65,
+		Name:        "_Google_Cloud_Staging2",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmRSA4096,
+		Pem: `-----BEGIN RSA PRIVATE KEY-----
+red-65
+-----END RSA PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-65",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: false,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1752262145, 0),
+		UpdatedAt:      time.Unix(1752262145, 0),
+	}
+
+	key66 = private_keys.Key{
+		ID:          66,
+		Name:        "_Google_Cloud_Staging2b",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp256,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-66
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-66",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: true,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1752266414, 0),
+		UpdatedAt:      time.Unix(1752266418, 0),
 	}
 
 	key67 = private_keys.Key{
@@ -191,6 +281,7 @@ func TestGetOneKeyById(t *testing.T) {
 		expectedErr error
 		expectedKey private_keys.Key
 	}{
+		{-1, sql.ErrNoRows, private_keys.Key{}},
 		{22, sql.ErrNoRows, private_keys.Key{}},
 		{31, nil, key31},
 		{67, nil, key67},
@@ -209,7 +300,7 @@ func TestGetOneKeyById(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
 			}
 
-			CompareKey(t, tc.expectedKey, key)
+			CompareKey(t, key, tc.expectedKey)
 		})
 	}
 }
@@ -220,6 +311,7 @@ func TestGetOneKeyByName(t *testing.T) {
 		expectedErr error
 		expectedKey private_keys.Key
 	}{
+		{"", sql.ErrNoRows, private_keys.Key{}},
 		{"fake-bad-name", sql.ErrNoRows, private_keys.Key{}},
 		{"certwarden", nil, key31},
 		{"_Another_Test_Acct_LE_Staging", nil, key63},
@@ -238,7 +330,7 @@ func TestGetOneKeyByName(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
 			}
 
-			CompareKey(t, tc.expectedKey, key)
+			CompareKey(t, key, tc.expectedKey)
 		})
 	}
 }

@@ -1,13 +1,27 @@
 package acme_accounts
 
-import "certwarden-backend/pkg/acme"
+import (
+	"certwarden-backend/pkg/acme"
+	"strings"
+	"time"
+)
 
-// AcmeAccount is the ACME Account object plus some additional
-// details for storage.
-type AcmeAccount struct {
-	acme.Account
-	ID        int `json:"-"`
-	UpdatedAt int `json:"-"`
+func acmeAcctToUpdatePayload(acctId int, acmeAcct acme.Account) UpdatePayload {
+	// convert to email if the first contact is a valid `mailto:`,
+	// otherwise leave it blank but not null (i.e., update it to blank)
+	email := ""
+	if len(acmeAcct.Contact) > 0 && strings.HasPrefix(acmeAcct.Contact[0], "mailto:") {
+		email = strings.TrimPrefix(acmeAcct.Contact[0], "mailto:")
+	}
+
+	return UpdatePayload{
+		ID:        acctId,
+		Status:    &acmeAcct.Status,
+		Email:     &email,
+		CreatedAt: acmeAcct.CreatedAt,
+		UpdatedAt: time.Now(),
+		KID:       acmeAcct.Location,
+	}
 }
 
 // emailToContact generates a string slice in the format ACME
