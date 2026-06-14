@@ -84,7 +84,7 @@ func (store *Storage) PutAcmeAccountNewKey(payload acme_accounts.RolloverKeyPayl
 
 	res, err := store.db.ExecContext(ctx, query,
 		payload.PrivateKeyID,
-		payload.UpdatedAt,
+		payload.UpdatedAt.Unix(),
 		payload.ID,
 	)
 	if err != nil {

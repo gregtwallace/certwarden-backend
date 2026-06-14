@@ -112,9 +112,9 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 
 // RolloverKeyPayload is used to change an account's private key
 type RolloverKeyPayload struct {
-	ID           int  `json:"-"`
-	PrivateKeyID *int `json:"private_key_id"`
-	UpdatedAt    int  `json:"-"`
+	ID           int       `json:"-"`
+	PrivateKeyID *int      `json:"private_key_id"`
+	UpdatedAt    time.Time `json:"-"`
 }
 
 // RolloverKey changes the private key used for an account
@@ -185,7 +185,7 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) *out
 	}
 
 	// add additional details to the payload before saving
-	payload.UpdatedAt = int(time.Now().Unix())
+	payload.UpdatedAt = time.Now()
 
 	// update private key id in db
 	updatedAcct, err := service.storage.PutAcmeAccountNewKey(payload)
