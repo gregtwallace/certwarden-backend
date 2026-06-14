@@ -1,6 +1,6 @@
 module certwarden-backend
 
-go 1.26.2
+go 1.26.4
 
 require github.com/julienschmidt/httprouter v1.3.0
 
@@ -10,7 +10,6 @@ require (
 	github.com/cloudfoundry/jibber_jabber v0.0.0-20151120183258-bcc4c8345a21
 	github.com/coreos/go-oidc/v3 v3.16.0
 	github.com/go-acme/lego/v5 v5.2.2
-	github.com/go-errors/errors v1.5.1
 	github.com/google/uuid v1.6.0
 	github.com/google/webpackager v0.0.0-20221027220206-53a1486f4205
 	github.com/mattn/go-sqlite3 v1.14.32
@@ -83,6 +82,7 @@ require (
 	github.com/go-acme/jdcloud-sdk-go v1.64.0 // indirect
 	github.com/go-acme/tencentclouddnspod v1.3.24 // indirect
 	github.com/go-acme/tencentedgdeone v1.3.38 // indirect
+	github.com/go-errors/errors v1.5.1 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
