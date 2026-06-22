@@ -59,22 +59,22 @@ type orderSummaryResponse struct {
 }
 
 type orderCertificateSummaryResponse struct {
-	ID                 int                                    `json:"id"`
-	Name               string                                 `json:"name"`
-	CertificateAccount orderCertificateAccountSummaryResponse `json:"acme_account"`
-	Subject            string                                 `json:"subject"`
-	SubjectAltNames    []string                               `json:"subject_alts"`
-	ApiKeyViaUrl       bool                                   `json:"api_key_via_url"`
-	LastAccess         int64                                  `json:"last_access"`
+	ID              int                         `json:"id"`
+	Name            string                      `json:"name"`
+	Account         orderAccountSummaryResponse `json:"acme_account"`
+	Subject         string                      `json:"subject"`
+	SubjectAltNames []string                    `json:"subject_alts"`
+	ApiKeyViaUrl    bool                        `json:"api_key_via_url"`
+	LastAccess      int64                       `json:"last_access"`
 }
 
-type orderCertificateAccountSummaryResponse struct {
-	ID                     int                                          `json:"id"`
-	Name                   string                                       `json:"name"`
-	OrderCertAccountServer orderCertificateAccountServerSummaryResponse `json:"acme_server"`
+type orderAccountSummaryResponse struct {
+	ID                     int                               `json:"id"`
+	Name                   string                            `json:"name"`
+	OrderCertAccountServer orderAccountServerSummaryResponse `json:"acme_server"`
 }
 
-type orderCertificateAccountServerSummaryResponse struct {
+type orderAccountServerSummaryResponse struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	IsStaging bool   `json:"is_staging"`
@@ -118,13 +118,13 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 		Certificate: orderCertificateSummaryResponse{
 			ID:   order.Certificate.ID,
 			Name: order.Certificate.Name,
-			CertificateAccount: orderCertificateAccountSummaryResponse{
-				ID:   order.Certificate.CertificateAccount.ID,
-				Name: order.Certificate.CertificateAccount.Name,
-				OrderCertAccountServer: orderCertificateAccountServerSummaryResponse{
-					ID:        order.Certificate.CertificateAccount.AcmeServer.ID,
-					Name:      order.Certificate.CertificateAccount.AcmeServer.Name,
-					IsStaging: order.Certificate.CertificateAccount.AcmeServer.IsStaging,
+			Account: orderAccountSummaryResponse{
+				ID:   order.Certificate.Account.ID,
+				Name: order.Certificate.Account.Name,
+				OrderCertAccountServer: orderAccountServerSummaryResponse{
+					ID:        order.Certificate.Account.AcmeServer.ID,
+					Name:      order.Certificate.Account.AcmeServer.Name,
+					IsStaging: order.Certificate.Account.AcmeServer.IsStaging,
 				},
 			},
 			Subject:         order.Certificate.Subject,
@@ -248,7 +248,7 @@ func (service *Service) NewOrderPayload(cert certificates.Certificate) acme.NewO
 
 	// ACME ARI Extension: try to include the `replaces` field
 	replaces := func() *string {
-		acmeServ, err := service.acmeServerService.AcmeService(cert.CertificateAccount.AcmeServer.ID)
+		acmeServ, err := service.acmeServerService.AcmeService(cert.Account.AcmeServer.ID)
 		if err != nil {
 			service.logger.Errorf("orders: new order cant populated `replaces`, failed to get acme service for cert %d (%s)", cert.ID, err)
 			return nil

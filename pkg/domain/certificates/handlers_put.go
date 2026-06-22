@@ -92,7 +92,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	// profile Extension -- validate if specified
 	if payload.Profile != nil && *payload.Profile != "" {
 		// specified, validate against acme service
-		acmeService, err := service.acmeServerService.AcmeService(cert.CertificateAccount.AcmeServer.ID)
+		acmeService, err := service.acmeServerService.AcmeService(cert.Account.AcmeServer.ID)
 		if err != nil {
 			err = fmt.Errorf("failed to retrieve acme service (%s)", err)
 			service.logger.Error(err)

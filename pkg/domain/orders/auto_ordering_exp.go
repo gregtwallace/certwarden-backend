@@ -30,7 +30,7 @@ func (service *Service) orderExpiringCerts() {
 			defer wg.Done()
 
 			// Get relevant ACME Server service
-			acmeService, err := service.acmeServerService.AcmeService(orders[i].Certificate.CertificateAccount.AcmeServer.ID)
+			acmeService, err := service.acmeServerService.AcmeService(orders[i].Certificate.Account.AcmeServer.ID)
 			if err != nil {
 				service.logger.Errorf("orders: auto order failed to get acme service for order %d (%s)", orders[i].ID, err)
 				return // done, failed

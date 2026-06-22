@@ -12,8 +12,8 @@ type Certificate struct {
 	ID                          int
 	Name                        string
 	Description                 string
-	CertificateKey              private_keys.Key
-	CertificateAccount          acme_accounts.Account
+	Key                         private_keys.Key
+	Account                     acme_accounts.Account
 	Subject                     string
 	SubjectAltNames             []string
 	Organization                string
@@ -39,15 +39,15 @@ type Certificate struct {
 // certificateSummaryResponse is a JSON response containing only
 // fields desired for the summary
 type certificateSummaryResponse struct {
-	ID                 int                               `json:"id"`
-	Name               string                            `json:"name"`
-	Description        string                            `json:"description"`
-	CertificateKey     certificateKeySummaryResponse     `json:"private_key"`
-	CertificateAccount certificateAccountSummaryResponse `json:"acme_account"`
-	Subject            string                            `json:"subject"`
-	SubjectAltNames    []string                          `json:"subject_alts"`
-	ApiKeyViaUrl       bool                              `json:"api_key_via_url"`
-	LastAccess         int64                             `json:"last_access"`
+	ID              int                               `json:"id"`
+	Name            string                            `json:"name"`
+	Description     string                            `json:"description"`
+	Key             certificateKeySummaryResponse     `json:"private_key"`
+	Account         certificateAccountSummaryResponse `json:"acme_account"`
+	Subject         string                            `json:"subject"`
+	SubjectAltNames []string                          `json:"subject_alts"`
+	ApiKeyViaUrl    bool                              `json:"api_key_via_url"`
+	LastAccess      int64                             `json:"last_access"`
 }
 
 type certificateKeySummaryResponse struct {
@@ -73,18 +73,18 @@ func (cert Certificate) summaryResponse() certificateSummaryResponse {
 		ID:          cert.ID,
 		Name:        cert.Name,
 		Description: cert.Description,
-		CertificateKey: certificateKeySummaryResponse{
-			ID:        cert.CertificateKey.ID,
-			Name:      cert.CertificateKey.Name,
-			Algorithm: cert.CertificateKey.Algorithm,
+		Key: certificateKeySummaryResponse{
+			ID:        cert.Key.ID,
+			Name:      cert.Key.Name,
+			Algorithm: cert.Key.Algorithm,
 		},
-		CertificateAccount: certificateAccountSummaryResponse{
-			ID:   cert.CertificateAccount.ID,
-			Name: cert.CertificateAccount.Name,
+		Account: certificateAccountSummaryResponse{
+			ID:   cert.Account.ID,
+			Name: cert.Account.Name,
 			CertAccountServer: certificateAccountServerSummaryResponse{
-				ID:        cert.CertificateAccount.AcmeServer.ID,
-				Name:      cert.CertificateAccount.AcmeServer.Name,
-				IsStaging: cert.CertificateAccount.AcmeServer.IsStaging,
+				ID:        cert.Account.AcmeServer.ID,
+				Name:      cert.Account.AcmeServer.Name,
+				IsStaging: cert.Account.AcmeServer.IsStaging,
 			},
 		},
 		Subject:         cert.Subject,

@@ -21,14 +21,14 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		}
 
 		// get account key
-		key, err := cert.CertificateAccount.AcmeAccountKey()
+		key, err := cert.Account.AcmeAccountKey()
 		if err != nil {
 			service.logger.Error(err)
 			return Order{}, output.JsonErrInternal(err)
 		}
 
 		// send the new-order to ACME
-		acmeService, err := service.acmeServerService.AcmeService(cert.CertificateAccount.AcmeServer.ID)
+		acmeService, err := service.acmeServerService.AcmeService(cert.Account.AcmeServer.ID)
 		if err != nil {
 			service.logger.Error(err)
 			return Order{}, output.JsonErrInternal(err)

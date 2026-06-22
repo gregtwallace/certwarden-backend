@@ -5,6 +5,7 @@ import (
 	"encoding/asn1"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -19,6 +20,11 @@ var (
 type CertExtension struct {
 	pkix.Extension
 	Description string
+}
+
+// String prints a log friendly version of the Certificate Extension (useful for testing)
+func (ce CertExtension) String() string {
+	return fmt.Sprintf("CertExtension{Description: %s, Id: %s, Critical: %t, Value: %x}", ce.Description, ce.Id.String(), ce.Critical, ce.Value)
 }
 
 // CertExtensionJSON is the object to use in the API (both input and output)

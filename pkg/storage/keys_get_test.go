@@ -67,6 +67,42 @@ red-31
 		UpdatedAt:      time.Unix(1732748628, 0),
 	}
 
+	key55 = private_keys.Key{
+		ID:          55,
+		Name:        "test008.test.example.com",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp256,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-55
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-55",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: false,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1743170701, 0),
+		UpdatedAt:      time.Unix(0, 0),
+	}
+
+	key56 = private_keys.Key{
+		ID:          56,
+		Name:        "test008.test.example.com-p",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp256,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-56
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-56",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: false,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1743171060, 0),
+		UpdatedAt:      time.Unix(0, 0),
+	}
+
 	key58 = private_keys.Key{
 		ID:          58,
 		Name:        "_Buypass_Staging",

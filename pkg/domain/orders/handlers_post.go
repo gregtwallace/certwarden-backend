@@ -160,14 +160,14 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	// end validation
 
 	// get account key
-	key, err := order.Certificate.CertificateAccount.AcmeAccountKey()
+	key, err := order.Certificate.Account.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
 
 	// revoke the certificate with ACME
-	acmeService, err := service.acmeServerService.AcmeService(order.Certificate.CertificateAccount.AcmeServer.ID)
+	acmeService, err := service.acmeServerService.AcmeService(order.Certificate.Account.AcmeServer.ID)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
