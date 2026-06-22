@@ -5,7 +5,6 @@ import (
 	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -137,14 +136,14 @@ func TestPutServerUpdate(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
 			server, err := storage.PutServerUpdate(tc.payload)
-			if !errors.Is(err, tc.expectedPutErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
 			}
 
 			CompareAcmeServer(t, server, tc.expectedPutResult)
 
 			server, err = storage.GetOneServerById(tc.getId)
-			if !errors.Is(err, tc.expectedGetErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 

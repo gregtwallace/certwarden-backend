@@ -5,7 +5,6 @@ import (
 	"certwarden-backend/pkg/domain/private_keys/key_crypto"
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -59,7 +58,7 @@ func TestPostNewKey(t *testing.T) {
 				CreatedAt:      1780336477,
 				UpdatedAt:      1780337010,
 			},
-			test_helpers.ErrAnyType,
+			test_helpers.MakeTestErrorStringComp("UNIQUE constraint failed"),
 			private_keys.Key{},
 			sql.ErrNoRows,
 		},
@@ -74,7 +73,7 @@ func TestPostNewKey(t *testing.T) {
 				CreatedAt:      1780336480,
 				UpdatedAt:      1780337001,
 			},
-			test_helpers.ErrAnyType,
+			test_helpers.MakeTestErrorStringComp("NOT NULL constraint failed"),
 			private_keys.Key{},
 			sql.ErrNoRows,
 		},
@@ -96,7 +95,7 @@ func TestPostNewKey(t *testing.T) {
 			CompareKey(t, key, tc.expectedNewKey)
 
 			key, err = storage.GetOneKeyByName(key.Name)
-			if !errors.Is(err, tc.expectedGetErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 

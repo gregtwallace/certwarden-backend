@@ -4,7 +4,6 @@ import (
 	"certwarden-backend/pkg/domain/acme_servers"
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -47,7 +46,7 @@ func TestPostNewServer(t *testing.T) {
 				CreatedAt:    1780337449,
 				UpdatedAt:    1780338040,
 			},
-			test_helpers.ErrAnyType,
+			test_helpers.MakeTestErrorStringComp("UNIQUE constraint failed"),
 			acme_servers.Server{},
 			sql.ErrNoRows,
 		},
@@ -60,7 +59,7 @@ func TestPostNewServer(t *testing.T) {
 				CreatedAt: 1880337449,
 				UpdatedAt: 1880338040,
 			},
-			test_helpers.ErrAnyType,
+			test_helpers.MakeTestErrorStringComp("NOT NULL constraint failed"),
 			acme_servers.Server{},
 			sql.ErrNoRows,
 		},
@@ -82,7 +81,7 @@ func TestPostNewServer(t *testing.T) {
 			CompareAcmeServer(t, server, tc.expectedNew)
 
 			server, err = storage.GetOneServerByName(server.Name)
-			if !errors.Is(err, tc.expectedGetErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 

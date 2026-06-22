@@ -4,7 +4,6 @@ import (
 	"certwarden-backend/pkg/domain/acme_accounts"
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -59,7 +58,7 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:    1888838000,
 				Kid:          "https://fake.example.com/123456",
 			},
-			test_helpers.ErrAnyType,
+			test_helpers.MakeTestErrorStringComp("UNIQUE constraint failed"),
 			acme_accounts.Account{},
 			sql.ErrNoRows,
 		},
@@ -76,7 +75,7 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:   1888838000,
 				Kid:         "https://fake.example.com/123456",
 			},
-			test_helpers.ErrAnyType,
+			test_helpers.MakeTestErrorStringComp("NOT NULL constraint failed"),
 			acme_accounts.Account{},
 			sql.ErrNoRows,
 		},
@@ -93,7 +92,7 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:   1888838000,
 				Kid:         "https://fake.example.com/123456",
 			},
-			test_helpers.ErrAnyType,
+			test_helpers.MakeTestErrorStringComp("NOT NULL constraint failed"),
 			acme_accounts.Account{},
 			sql.ErrNoRows,
 		},
@@ -115,7 +114,7 @@ func TestPostNewAcmeAccount(t *testing.T) {
 			CompareAcmeAccount(t, acct, tc.expectedNew)
 
 			acct, err = storage.GetOneAcmeAccountByName(acct.Name)
-			if !errors.Is(err, tc.expectedGetErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 

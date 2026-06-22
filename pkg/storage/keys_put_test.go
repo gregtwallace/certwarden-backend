@@ -6,7 +6,6 @@ import (
 	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -182,14 +181,14 @@ red-58
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
 			key, err := storage.PutKeyUpdate(tc.payload)
-			if !errors.Is(err, tc.expectedPutErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
 			}
 
 			CompareKey(t, key, tc.expectedPutResult)
 
 			key, err = storage.GetOneKeyById(tc.getId)
-			if !errors.Is(err, tc.expectedGetErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 
@@ -284,12 +283,12 @@ red-62
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
 			err := storage.PutKeyApiKey(tc.keyId, tc.apiKey, tc.updateTimeUnix)
-			if !errors.Is(err, tc.expectedPutErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
 			}
 
 			key, err := storage.GetOneKeyById(tc.keyId)
-			if !errors.Is(err, tc.expectedGetErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 
@@ -384,12 +383,12 @@ red-67
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
 			err := storage.PutKeyNewApiKey(tc.keyId, tc.apiKeyNew, tc.updateTimeUnix)
-			if !errors.Is(err, tc.expectedPutErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
 			}
 
 			key, err := storage.GetOneKeyById(tc.keyId)
-			if !errors.Is(err, tc.expectedGetErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 
@@ -502,12 +501,12 @@ red-62
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
 			err := storage.PutKeyLastAccess(tc.keyId, tc.lastAccessTimeUnix)
-			if !errors.Is(err, tc.expectedPutErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
 			}
 
 			key, err := storage.GetOneKeyById(tc.keyId)
-			if !errors.Is(err, tc.expectedGetErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 

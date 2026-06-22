@@ -5,7 +5,6 @@ import (
 	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 )
@@ -34,7 +33,7 @@ func TestServerInUse(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("server id: %d", tc.serverID), func(t *testing.T) {
 			inUse, err := storage.ServerInUse(tc.serverID)
-			if !errors.Is(err, tc.expectedErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
 			}
 
@@ -70,12 +69,12 @@ func TestDeleteServer(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("server id: %d", tc.serverID), func(t *testing.T) {
 			err := storage.DeleteServer(tc.serverID)
-			if !errors.Is(err, tc.expectedDelErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedDelErr) {
 				t.Errorf("expected delete error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedDelErr), test_helpers.ErrorToVal(err))
 			}
 
 			server, err := storage.GetOneServerById(tc.serverID)
-			if !errors.Is(err, tc.expectedGetErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 

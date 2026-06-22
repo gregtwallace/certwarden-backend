@@ -5,7 +5,6 @@ import (
 	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -155,7 +154,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 				UpdatedAt: time.Unix(107800777, 0),
 			},
 			acme_accounts.Account{},
-			test_helpers.ErrAnyType,
+			test_helpers.MakeTestErrorStringComp("UNIQUE constraint failed"),
 			16,
 			acmeAcct16,
 			nil,
@@ -254,7 +253,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 			CompareAcmeAccount(t, acct, tc.expectedPutResult)
 
 			acct, err = storage.GetOneAcmeAccountById(tc.getId)
-			if !errors.Is(err, tc.expectedGetErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 
@@ -337,7 +336,7 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 				UpdatedAt:    time.Unix(1088000751, 0),
 			},
 			acme_accounts.Account{},
-			test_helpers.ErrAnyType,
+			test_helpers.MakeTestErrorStringComp("FOREIGN KEY constraint failed"),
 			1,
 			acmeAcct1,
 			nil,
@@ -349,7 +348,7 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 				UpdatedAt:    time.Unix(1088000752, 0),
 			},
 			acme_accounts.Account{},
-			test_helpers.ErrAnyType,
+			test_helpers.MakeTestErrorStringComp("FOREIGN KEY constraint failed"),
 			1,
 			acmeAcct1,
 			nil,
@@ -361,7 +360,7 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 				UpdatedAt:    time.Unix(1088000753, 0),
 			},
 			acme_accounts.Account{},
-			test_helpers.ErrAnyType,
+			test_helpers.MakeTestErrorStringComp("UNIQUE constraint failed"),
 			23,
 			acmeAcct23,
 			nil,
@@ -384,7 +383,7 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 			CompareAcmeAccount(t, acct, tc.expectedPutResult)
 
 			acct, err = storage.GetOneAcmeAccountById(tc.getId)
-			if !errors.Is(err, tc.expectedGetErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 

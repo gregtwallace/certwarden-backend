@@ -5,7 +5,6 @@ import (
 	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 )
@@ -38,7 +37,7 @@ func TestAcmeAccountInUse(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.acctID), func(t *testing.T) {
 			inUse, err := storage.AcmeAccountInUse(tc.acctID)
-			if !errors.Is(err, tc.expectedErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
 			}
 
@@ -74,12 +73,12 @@ func TestDeleteAcmeAccount(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.acctID), func(t *testing.T) {
 			err := storage.DeleteAcmeAccount(tc.acctID)
-			if !errors.Is(err, tc.expectedDelErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedDelErr) {
 				t.Errorf("expected delete error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedDelErr), test_helpers.ErrorToVal(err))
 			}
 
 			acct, err := storage.GetOneAcmeAccountById(tc.acctID)
-			if !errors.Is(err, tc.expectedGetErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
 			}
 

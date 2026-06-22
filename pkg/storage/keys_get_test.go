@@ -6,7 +6,6 @@ import (
 	"certwarden-backend/pkg/pagination_sort"
 	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -296,7 +295,7 @@ func TestGetOneKeyById(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
 			key, err := storage.GetOneKeyById(tc.id)
-			if !errors.Is(err, tc.expectedErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
 			}
 
@@ -326,7 +325,7 @@ func TestGetOneKeyByName(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
 			key, err := storage.GetOneKeyByName(tc.name)
-			if !errors.Is(err, tc.expectedErr) {
+			if !test_helpers.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
 			}
 
