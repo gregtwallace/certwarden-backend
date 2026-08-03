@@ -12,7 +12,10 @@ import (
 	"time"
 )
 
-var ErrUnsupportedARI = errors.New("acme: server does not support ARI (directory missing 'renewalInfo' key)")
+var (
+	ErrARIUnsupported      = errors.New("acme: server does not support ARI (directory missing 'renewalInfo' key)")
+	ErrARIIdentifierFailed = errors.New("acme: failed to generate ari unique identifier")
+)
 
 // ACMERenewalInfo contains the ACME Renewal Info (ARI) response
 type ACMERenewalInfo struct {
@@ -73,12 +76,38 @@ func (service *Service) SupportsARIExtension() bool {
 
 // ACMERenewalInfoIdentifier returns the unique identifer for the passed in cert
 // as specified in the ACME ARI Draft v8 s 4.1
-func ACMERenewalInfoIdentifier(cert *x509.Certificate) string {
-	// assemble the unique id
+func ACMERenewalInfoIdentifier(cert *x509.Certificate) (string, error) {
+	// aki (1st portion)
+	if len(cert.AuthorityKeyId) == 0 {
+		return "", errors.Join(errors.New("cert has no authority key id"), ErrARIIdentifierFailed)
+	}
 	akiStr := base64.RawURLEncoding.EncodeToString(cert.AuthorityKeyId)
-	serialStr := base64.RawURLEncoding.EncodeToString(cert.SerialNumber.Bytes())
 
-	return akiStr + "." + serialStr
+	// serial (2nd portion)
+	// This field is required, and therefore should never be nil, but check just in case
+	if cert.SerialNumber == nil {
+		return "", errors.Join(errors.New("cert has no serial number (malformed)"), ErrARIIdentifierFailed)
+	}
+	serialBytes := cert.SerialNumber.Bytes()
+
+	// serial should always be non-negative (https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.2)
+	if cert.SerialNumber.Sign() < 0 {
+		// invalid (negative) serial number
+		return "", errors.Join(errors.New("cert serial number is invalid (negative)"), ErrARIIdentifierFailed)
+
+	} else if cert.SerialNumber.Sign() > 0 && len(serialBytes) > 0 && serialBytes[0]&0x80 != 0 {
+		// serial is positive but looks negative since the first bit is high, so prepend a 0x00 byte
+		serialBytes = append([]byte{0x00}, serialBytes...)
+
+		// serial is (confusingly, but still valid) 0
+	} else if cert.SerialNumber.Sign() == 0 {
+		serialBytes = []byte{0x00}
+	}
+
+	serialStr := base64.RawURLEncoding.EncodeToString(serialBytes)
+
+	// assemble the unique id
+	return akiStr + "." + serialStr, nil
 }
 
 // GetACMERenewalInfo sends an unauthenticated GET request to retrieve the ARI information
@@ -86,7 +115,7 @@ func ACMERenewalInfoIdentifier(cert *x509.Certificate) string {
 func (service *Service) GetACMERenewalInfo(certPem string) (*ACMERenewalInfo, error) {
 	// only some servers support this
 	if !service.SupportsARIExtension() {
-		return nil, ErrUnsupportedARI
+		return nil, ErrARIUnsupported
 	}
 
 	// decode and parse the pem to a Certificate
@@ -106,7 +135,12 @@ func (service *Service) GetACMERenewalInfo(certPem string) (*ACMERenewalInfo, er
 	}
 
 	// create link and do GET
-	url := *service.dir.RenewalInfo + "/" + ACMERenewalInfoIdentifier(cert)
+	id, err := ACMERenewalInfoIdentifier(cert)
+	if err != nil {
+		return nil, err
+	}
+
+	url := *service.dir.RenewalInfo + "/" + id
 	resp, headers, err := service.get(url)
 	if err != nil {
 		return nil, fmt.Errorf("acme: ari get failed (%v)", err)
