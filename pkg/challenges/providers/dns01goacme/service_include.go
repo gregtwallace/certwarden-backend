@@ -5,9 +5,11 @@ package dns01goacme
 import (
 	"certwarden-backend/pkg/datatypes/environment"
 	"fmt"
+	"log/slog"
 	"os"
 
 	goacme_dns01 "github.com/go-acme/lego/v5/challenge/dns01"
+	goacme_log "github.com/go-acme/lego/v5/log"
 	goacme_dns "github.com/go-acme/lego/v5/providers/dns"
 )
 
@@ -55,6 +57,9 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		opts := &goacme_dns01.Options{RecursiveNameservers: dnsServerStrings}
 		goacme_dns01.SetDefaultClient(goacme_dns01.NewClient(opts))
 	}
+
+	// set go-acme to not log anything
+	goacme_log.SetDefault(slog.New(slog.DiscardHandler))
 
 	// make go acme provider
 	var err error
