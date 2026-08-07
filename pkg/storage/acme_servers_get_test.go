@@ -75,7 +75,7 @@ func TestGetAllAcmeServers(t *testing.T) {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedServerAtIndx.Name), func(t *testing.T) {
 			servers, totalCt, err := storage.GetAllAcmeServers(tc.q)
 			if err != nil {
-				t.Errorf("get all keys failed")
+				t.Errorf("get all failed")
 				return
 			}
 
@@ -83,12 +83,12 @@ func TestGetAllAcmeServers(t *testing.T) {
 				t.Errorf("incorrect total count, expected '%d' but got '%d'", tc.expectedTotalCt, totalCt)
 			}
 			if len(servers) != tc.expectedResultLen {
-				t.Errorf("incorrect servers length, expected '%d' but got '%d'", tc.expectedResultLen, len(servers))
+				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(servers))
 			}
 			if tc.testIndx <= len(servers)-1 {
 				CompareAcmeServer(t, servers[tc.testIndx], tc.expectedServerAtIndx)
 			} else {
-				t.Errorf("couldnt test server at index '%d' because length of server array was only '%d'", tc.testIndx, len(servers))
+				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(servers))
 			}
 		})
 	}

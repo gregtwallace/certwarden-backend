@@ -108,7 +108,7 @@ func TestGetAllAcmeAccounts(t *testing.T) {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedAcctAtIndx.Name), func(t *testing.T) {
 			accts, totalCt, err := storage.GetAllAcmeAccounts(tc.q)
 			if err != nil {
-				t.Errorf("get all keys failed")
+				t.Errorf("get all failed")
 				return
 			}
 

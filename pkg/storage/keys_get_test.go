@@ -291,20 +291,20 @@ func TestGetAllKeys(t *testing.T) {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedKeyAtIndx.Name), func(t *testing.T) {
 			keys, totalCt, err := storage.GetAllKeys(tc.q)
 			if err != nil {
-				t.Errorf("get all keys failed")
+				t.Errorf("get all failed")
 				return
 			}
 
 			if totalCt != tc.expectedTotalCt {
-				t.Errorf("get all keys returned incorrect total count, expected '%d' but got '%d'", tc.expectedTotalCt, totalCt)
+				t.Errorf("incorrect total count, expected '%d' but got '%d'", tc.expectedTotalCt, totalCt)
 			}
 			if len(keys) != tc.expectedResultLen {
-				t.Errorf("get all keys returned incorrect keys length, expected '%d' but got '%d'", tc.expectedResultLen, len(keys))
+				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(keys))
 			}
 			if tc.testIndx <= len(keys)-1 {
 				CompareKey(t, keys[tc.testIndx], tc.expectedKeyAtIndx)
 			} else {
-				t.Errorf("couldnt test key at index '%d' because length of key array was only '%d'", tc.testIndx, len(keys))
+				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(keys))
 			}
 		})
 	}
@@ -379,19 +379,19 @@ func TestGetAvailableKeys(t *testing.T) {
 
 	keys, err := storage.GetAvailableKeys()
 	if err != nil {
-		t.Errorf("get available keys failed")
+		t.Errorf("get all failed")
 		return
 	}
 
 	expectedResultLen := 3
 	if len(keys) != expectedResultLen {
-		t.Errorf("get available keys returned incorrect keys length, expected '%d' but got '%d'", expectedResultLen, len(keys))
+		t.Errorf("returned incorrect result length, expected '%d' but got '%d'", expectedResultLen, len(keys))
 	}
 
 	expectedKeys := []private_keys.Key{key58, key62, key69}
 	for i, expectedKey := range expectedKeys {
 		if i > len(keys)-1 {
-			t.Errorf("expected key id '%d' at index '%d' but result was too short", expectedKey.ID, i)
+			t.Errorf("expected id '%d' at index '%d' but result was too short", expectedKey.ID, i)
 			continue
 		}
 
