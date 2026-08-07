@@ -2,7 +2,7 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/certificates"
-	"certwarden-backend/pkg/test_helpers"
+	"certwarden-backend/pkg/helpers_test"
 	"crypto/x509/pkix"
 	"database/sql"
 	"encoding/asn1"
@@ -120,7 +120,7 @@ func TestPostNewCert(t *testing.T) {
 				CreatedAt:                   770337479,
 				UpdatedAt:                   770338000,
 			},
-			test_helpers.MakeTestErrorStringComp("UNIQUE constraint failed: certificates.name"),
+			helpers_test.MakeTestErrorStringComp("UNIQUE constraint failed: certificates.name"),
 			certificates.Certificate{},
 			sql.ErrNoRows,
 		},
@@ -157,7 +157,7 @@ func TestPostNewCert(t *testing.T) {
 				CreatedAt:                   770337479,
 				UpdatedAt:                   770338000,
 			},
-			test_helpers.MakeTestErrorStringComp("NOT NULL constraint failed: certificates.acme_account_id"),
+			helpers_test.MakeTestErrorStringComp("NOT NULL constraint failed: certificates.acme_account_id"),
 			certificates.Certificate{},
 			sql.ErrNoRows,
 		},
@@ -194,7 +194,7 @@ func TestPostNewCert(t *testing.T) {
 				CreatedAt:                   770337479,
 				UpdatedAt:                   770338000,
 			},
-			test_helpers.MakeTestErrorStringComp("NOT NULL constraint failed: certificates.subject"),
+			helpers_test.MakeTestErrorStringComp("NOT NULL constraint failed: certificates.subject"),
 			certificates.Certificate{},
 			sql.ErrNoRows,
 		},
@@ -207,17 +207,17 @@ func TestPostNewCert(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("post name: %s", test_helpers.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
+		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
 			record, err := storage.PostNewCert(tc.newPayload)
-			if !test_helpers.ErrorsIs(err, tc.expectedPostErr) {
-				t.Errorf("expected post error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPostErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
+				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareCertificate(t, record, tc.expectedNew)
 
 			record, err = storage.GetOneCertByName(record.Name)
-			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
-				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareCertificate(t, record, tc.expectedNew)

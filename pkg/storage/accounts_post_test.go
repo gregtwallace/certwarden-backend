@@ -2,7 +2,7 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/acme_accounts"
-	"certwarden-backend/pkg/test_helpers"
+	"certwarden-backend/pkg/helpers_test"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -58,7 +58,7 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:    1888838000,
 				Kid:          "https://fake.example.com/123456",
 			},
-			test_helpers.MakeTestErrorStringComp("UNIQUE constraint failed"),
+			helpers_test.MakeTestErrorStringComp("UNIQUE constraint failed"),
 			acme_accounts.Account{},
 			sql.ErrNoRows,
 		},
@@ -75,7 +75,7 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:   1888838000,
 				Kid:         "https://fake.example.com/123456",
 			},
-			test_helpers.MakeTestErrorStringComp("NOT NULL constraint failed"),
+			helpers_test.MakeTestErrorStringComp("NOT NULL constraint failed"),
 			acme_accounts.Account{},
 			sql.ErrNoRows,
 		},
@@ -92,7 +92,7 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:   1888838000,
 				Kid:         "https://fake.example.com/123456",
 			},
-			test_helpers.MakeTestErrorStringComp("NOT NULL constraint failed"),
+			helpers_test.MakeTestErrorStringComp("NOT NULL constraint failed"),
 			acme_accounts.Account{},
 			sql.ErrNoRows,
 		},
@@ -105,17 +105,17 @@ func TestPostNewAcmeAccount(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("post name: %s", test_helpers.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
+		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
 			acct, err := storage.PostNewAcmeAccount(tc.newPayload)
-			if !test_helpers.ErrorsIs(err, tc.expectedPostErr) {
-				t.Errorf("expected post error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPostErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
+				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeAccount(t, acct, tc.expectedNew)
 
 			acct, err = storage.GetOneAcmeAccountByName(acct.Name)
-			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
-				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeAccount(t, acct, tc.expectedNew)

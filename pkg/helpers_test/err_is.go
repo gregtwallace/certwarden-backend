@@ -1,4 +1,4 @@
-package test_helpers
+package helpers_test
 
 import (
 	"errors"

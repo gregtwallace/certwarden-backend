@@ -2,8 +2,8 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/acme_accounts"
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/pagination_sort"
-	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -149,8 +149,8 @@ func TestGetOneAccountById(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
 			acct, err := storage.GetOneAcmeAccountById(tc.id)
-			if !test_helpers.ErrorsIs(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeAccount(t, acct, tc.expectedAcct)
@@ -180,8 +180,8 @@ func TestGetOneAccountByName(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
 			acct, err := storage.GetOneAcmeAccountByName(tc.name)
-			if !test_helpers.ErrorsIs(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeAccount(t, acct, tc.expectedAcct)

@@ -5,8 +5,8 @@ import (
 	"certwarden-backend/pkg/domain/download"
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/test_helpers"
 	"context"
 	"database/sql"
 	"errors"
@@ -490,13 +490,13 @@ func oneTest(t *testing.T, handler func(w http.ResponseWriter, r *http.Request) 
 	jsonErr := handler(w, r)
 
 	if !errors.Is(jsonErr, expectedJsonErr) {
-		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned error '%s' but expected '%s'", test_helpers.GetFunctionName(handler),
-			certName, test_helpers.StringPointerToVal(apiKeyHeader), test_helpers.StringPointerToVal(apiKeyURL), jsonErr, expectedJsonErr)
+		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned error '%s' but expected '%s'", helpers_test.GetFunctionName(handler),
+			certName, helpers_test.StringPointerToVal(apiKeyHeader), helpers_test.StringPointerToVal(apiKeyURL), jsonErr, expectedJsonErr)
 	}
 
 	body := w.Body.String()
 	if body != expectedBody {
-		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned body '%s' but expected body '%s'", test_helpers.GetFunctionName(handler),
-			certName, test_helpers.StringPointerToVal(apiKeyHeader), test_helpers.StringPointerToVal(apiKeyURL), body, expectedBody)
+		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned body '%s' but expected body '%s'", helpers_test.GetFunctionName(handler),
+			certName, helpers_test.StringPointerToVal(apiKeyHeader), helpers_test.StringPointerToVal(apiKeyURL), body, expectedBody)
 	}
 }

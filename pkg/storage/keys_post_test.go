@@ -3,7 +3,7 @@ package storage_test
 import (
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/domain/private_keys/key_crypto"
-	"certwarden-backend/pkg/test_helpers"
+	"certwarden-backend/pkg/helpers_test"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -58,7 +58,7 @@ func TestPostNewKey(t *testing.T) {
 				CreatedAt:      1780336477,
 				UpdatedAt:      1780337010,
 			},
-			test_helpers.MakeTestErrorStringComp("UNIQUE constraint failed"),
+			helpers_test.MakeTestErrorStringComp("UNIQUE constraint failed"),
 			private_keys.Key{},
 			sql.ErrNoRows,
 		},
@@ -73,7 +73,7 @@ func TestPostNewKey(t *testing.T) {
 				CreatedAt:      1780336480,
 				UpdatedAt:      1780337001,
 			},
-			test_helpers.MakeTestErrorStringComp("NOT NULL constraint failed"),
+			helpers_test.MakeTestErrorStringComp("NOT NULL constraint failed"),
 			private_keys.Key{},
 			sql.ErrNoRows,
 		},
@@ -86,17 +86,17 @@ func TestPostNewKey(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("post name: %s", test_helpers.StringPointerToVal(tc.newKeyPayload.Name)), func(t *testing.T) {
+		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newKeyPayload.Name)), func(t *testing.T) {
 			key, err := storage.PostNewKey(tc.newKeyPayload)
-			if !test_helpers.ErrorsIs(err, tc.expectedPostErr) {
-				t.Errorf("expected post error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPostErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
+				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareKey(t, key, tc.expectedNewKey)
 
 			key, err = storage.GetOneKeyByName(key.Name)
-			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
-				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareKey(t, key, tc.expectedNewKey)

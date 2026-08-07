@@ -1,9 +1,9 @@
 package storage_test
 
 import (
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/pagination_sort"
 	"certwarden-backend/pkg/storage"
-	"certwarden-backend/pkg/test_helpers"
 	"context"
 	"errors"
 	"io"
@@ -62,7 +62,7 @@ func openStorageWithTestData(t *testing.T, testName string) (_ *storage.Storage,
 	_, err := os.Stat(thisTestFolder)
 	if err == nil {
 		os.RemoveAll(thisTestFolder)
-	} else if !test_helpers.ErrorsIs(err, os.ErrNotExist) {
+	} else if !helpers_test.ErrorsIs(err, os.ErrNotExist) {
 		return nil, err
 	}
 

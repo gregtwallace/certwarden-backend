@@ -2,8 +2,8 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/storage"
-	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -35,8 +35,8 @@ func TestKeyInUse(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.keyID), func(t *testing.T) {
 			inUse, err := storage.KeyInUse(tc.keyID)
-			if !test_helpers.ErrorsIs(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
 			if inUse != tc.expectedInUse {
@@ -70,13 +70,13 @@ func TestDeleteKey(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.keyID), func(t *testing.T) {
 			err := storage.DeleteKey(tc.keyID)
-			if !test_helpers.ErrorsIs(err, tc.expectedDelErr) {
-				t.Errorf("expected delete error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedDelErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedDelErr) {
+				t.Errorf("expected delete error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedDelErr), helpers_test.ErrorToVal(err))
 			}
 
 			key, err := storage.GetOneKeyById(tc.keyID)
-			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
-				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareKey(t, key, tc.expectedGetResult)

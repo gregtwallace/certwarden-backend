@@ -2,8 +2,8 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/certificates"
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/pagination_sort"
-	"certwarden-backend/pkg/test_helpers"
 	"crypto/x509/pkix"
 	"database/sql"
 	"encoding/asn1"
@@ -172,8 +172,8 @@ func TestGetOneCertById(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
 			serv, err := storage.GetOneCertById(tc.id)
-			if !test_helpers.ErrorsIs(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareCertificate(t, serv, tc.expectedCert)
@@ -203,8 +203,8 @@ func TestGetOneCertByName(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
 			serv, err := storage.GetOneCertByName(tc.name)
-			if !test_helpers.ErrorsIs(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareCertificate(t, serv, tc.expectedCert)

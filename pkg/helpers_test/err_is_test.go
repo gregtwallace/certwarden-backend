@@ -1,8 +1,8 @@
-package test_helpers_test
+package helpers_test_test
 
 import (
 	"certwarden-backend/pkg/acme"
-	"certwarden-backend/pkg/test_helpers"
+	"certwarden-backend/pkg/helpers_test"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -22,11 +22,11 @@ func TestErrorsIs(t *testing.T) {
 		},
 		{
 			err:       nil,
-			target:    test_helpers.MakeTestErrorStringComp("an error"),
+			target:    helpers_test.MakeTestErrorStringComp("an error"),
 			isTheSame: false,
 		},
 		{
-			err:       test_helpers.MakeTestErrorStringComp("an error"),
+			err:       helpers_test.MakeTestErrorStringComp("an error"),
 			target:    nil,
 			isTheSame: false,
 		},
@@ -42,61 +42,61 @@ func TestErrorsIs(t *testing.T) {
 		},
 		{
 			err:       sql.ErrNoRows,
-			target:    test_helpers.MakeTestErrorStringComp("an error"),
+			target:    helpers_test.MakeTestErrorStringComp("an error"),
 			isTheSame: false,
 		},
 		{
 			err:       acme.ErrChallengeMalformed,
-			target:    test_helpers.MakeTestErrorStringComp("an error"),
+			target:    helpers_test.MakeTestErrorStringComp("an error"),
 			isTheSame: false,
 		},
 		{
 			err:       errors.New("some error"),
-			target:    test_helpers.MakeTestErrorStringComp("uh oh, some error"),
+			target:    helpers_test.MakeTestErrorStringComp("uh oh, some error"),
 			isTheSame: false,
 		},
 		{
 			err:       errors.New("some error"),
-			target:    test_helpers.MakeTestErrorStringComp("some error, uh oh"),
+			target:    helpers_test.MakeTestErrorStringComp("some error, uh oh"),
 			isTheSame: false,
 		},
 		{
-			err:       test_helpers.MakeTestErrorStringComp("uh oh, some error"),
+			err:       helpers_test.MakeTestErrorStringComp("uh oh, some error"),
 			target:    errors.New("some error"),
 			isTheSame: false,
 		},
 		{
-			err:       test_helpers.MakeTestErrorStringComp("some error, uh oh"),
+			err:       helpers_test.MakeTestErrorStringComp("some error, uh oh"),
 			target:    errors.New("some error"),
 			isTheSame: false,
 		},
 		{
 			err:       errors.New("uh oh, some error"),
-			target:    test_helpers.MakeTestErrorStringComp("some error"),
+			target:    helpers_test.MakeTestErrorStringComp("some error"),
 			isTheSame: true,
 		},
 		{
 			err:       errors.New("some error, uh oh"),
-			target:    test_helpers.MakeTestErrorStringComp("some error"),
+			target:    helpers_test.MakeTestErrorStringComp("some error"),
 			isTheSame: true,
 		},
 		{
 			err:       errors.New("uh oh, some error"),
-			target:    test_helpers.MakeTestErrorStringComp("SOME errOR"),
+			target:    helpers_test.MakeTestErrorStringComp("SOME errOR"),
 			isTheSame: true,
 		},
 		{
 			err:       errors.New("some error, uh oh"),
-			target:    test_helpers.MakeTestErrorStringComp("SOME errOR"),
+			target:    helpers_test.MakeTestErrorStringComp("SOME errOR"),
 			isTheSame: true,
 		},
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d:", i), func(t *testing.T) {
-			res := test_helpers.ErrorsIs(tc.err, tc.target)
+			res := helpers_test.ErrorsIs(tc.err, tc.target)
 			if res != tc.isTheSame {
-				t.Errorf("err '%s' with target '%s' expected '%t' but got '%t'", test_helpers.ErrorToVal(tc.err), test_helpers.ErrorToVal(tc.target), tc.isTheSame, res)
+				t.Errorf("err '%s' with target '%s' expected '%t' but got '%t'", helpers_test.ErrorToVal(tc.err), helpers_test.ErrorToVal(tc.target), tc.isTheSame, res)
 			}
 		})
 	}

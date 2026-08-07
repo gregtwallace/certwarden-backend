@@ -2,8 +2,8 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/acme_servers"
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/pagination_sort"
-	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -116,8 +116,8 @@ func TestGetOneServerById(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
 			serv, err := storage.GetOneServerById(tc.id)
-			if !test_helpers.ErrorsIs(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeServer(t, serv, tc.expectedServer)
@@ -147,8 +147,8 @@ func TestGetOneServerByName(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
 			serv, err := storage.GetOneServerByName(tc.name)
-			if !test_helpers.ErrorsIs(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeServer(t, serv, tc.expectedServer)

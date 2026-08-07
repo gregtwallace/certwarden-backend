@@ -2,7 +2,7 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/certificates"
-	"certwarden-backend/pkg/test_helpers"
+	"certwarden-backend/pkg/helpers_test"
 	"database/sql"
 	"fmt"
 	"testing"
@@ -32,13 +32,13 @@ func TestDeleteCert(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.id), func(t *testing.T) {
 			err := storage.DeleteCert(tc.id)
-			if !test_helpers.ErrorsIs(err, tc.expectedDelErr) {
-				t.Errorf("expected delete error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedDelErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedDelErr) {
+				t.Errorf("expected delete error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedDelErr), helpers_test.ErrorToVal(err))
 			}
 
 			cert, err := storage.GetOneCertById(tc.id)
-			if !test_helpers.ErrorsIs(err, tc.expectedGetErr) {
-				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareCertificate(t, cert, tc.expectedGetResult)
