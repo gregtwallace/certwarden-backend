@@ -348,8 +348,8 @@ func TestGetOneKeyByName(t *testing.T) {
 	}{
 		{"", sql.ErrNoRows, private_keys.Key{}},
 		{"fake-bad-name", sql.ErrNoRows, private_keys.Key{}},
-		{"certwarden", nil, key31},
-		{"_Another_Test_Acct_LE_Staging", nil, key63},
+		{"cerTWarden", nil, key31},
+		{"_Another_TEST_Acct_le_Staging", nil, key63}, // case is wrong
 	}
 
 	// create testing service

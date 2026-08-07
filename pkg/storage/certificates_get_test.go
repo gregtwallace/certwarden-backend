@@ -189,7 +189,7 @@ func TestGetOneCertByName(t *testing.T) {
 	}{
 		{"fake-bad-name", sql.ErrNoRows, certificates.Certificate{}},
 		{"", sql.ErrNoRows, certificates.Certificate{}},
-		{"serverdefault", nil, cert18},
+		{"serverDEFault", nil, cert18}, // case is wrong
 		{"test008.test.example.com", nil, cert26},
 		{"test008.test.example.com-p", nil, cert27},
 	}

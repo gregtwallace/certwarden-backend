@@ -166,7 +166,7 @@ func TestGetOneAccountByName(t *testing.T) {
 	}{
 		{"", sql.ErrNoRows, acme_accounts.Account{}},
 		{"fake-name", sql.ErrNoRows, acme_accounts.Account{}},
-		{"LE_Staging_Account", nil, acmeAcct1},
+		{"le_staging_account", nil, acmeAcct1}, // case is wrong
 		{"LE_Production_Account", nil, acmeAcct2},
 		{"Google_Cloud_Staging2", nil, acmeAcct23},
 	}

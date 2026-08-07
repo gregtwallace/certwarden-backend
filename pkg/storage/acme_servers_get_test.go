@@ -133,7 +133,7 @@ func TestGetOneServerByName(t *testing.T) {
 	}{
 		{"fake-bad-name", sql.ErrNoRows, acme_servers.Server{}},
 		{"", sql.ErrNoRows, acme_servers.Server{}},
-		{"Lets_Encrypt", nil, acmeServer0},
+		{"lets_encrypt", nil, acmeServer0}, // case is wrong
 		{"Lets_Encrypt_Staging", nil, acmeServer1},
 		{"Google_Prod", nil, acmeServer4},
 	}
