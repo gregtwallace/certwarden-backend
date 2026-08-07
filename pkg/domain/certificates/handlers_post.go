@@ -35,7 +35,7 @@ type NewPayload struct {
 	PostProcessingCommand       *string         `json:"post_processing_command"`
 	PostProcessingEnvironment   []string        `json:"post_processing_environment"`
 	PostProcessingClientAddress *string         `json:"post_processing_client_address"`
-	PostProcessingClientKeyB64  string          `json:"-"`
+	PostProcessingClientKeyB64  *string         `json:"post_processing_client_key"`
 	Profile                     *string         `json:"profile"`
 	ApiKey                      string          `json:"-"`
 	ApiKeyViaUrl                bool            `json:"-"`
@@ -188,6 +188,14 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 			return output.JsonErrValidationFailed(ErrClientAddressBad)
 		}
 	}
+	// post processing aes key (if specified)
+	if payload.PostProcessingClientKeyB64 != nil {
+		valid := clientKeyB64Valid(*payload.PostProcessingClientKeyB64)
+		if !valid {
+			service.logger.Debug(ErrPostProcessingClientKeyB64Bad)
+			return output.JsonErrValidationFailed(ErrPostProcessingClientKeyB64Bad)
+		}
+	}
 	// end validation
 
 	// if new private key was generated, save it to storage
@@ -229,14 +237,16 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	payload.ApiKeyViaUrl = false
 	payload.CreatedAt = int(time.Now().Unix())
 	payload.UpdatedAt = payload.CreatedAt
-	// if client address specified, generate key to save (b64 raw url encoded)
-	if payload.PostProcessingClientAddress != nil && *payload.PostProcessingClientAddress != "" {
-		payload.PostProcessingClientKeyB64, err = randomness.GenerateAES256KeyAsBase64RawUrl()
+
+	// if client address specified but no aes key, generate key to save (b64 raw url encoded)
+	if payload.PostProcessingClientAddress != nil && *payload.PostProcessingClientAddress != "" && payload.PostProcessingClientKeyB64 == nil {
+		key, err := randomness.GenerateAES256KeyAsBase64RawUrl()
 		if err != nil {
 			err = fmt.Errorf("failed to generate client key for certificate (%s)", err)
 			service.logger.Error(err)
 			return output.JsonErrInternal(err)
 		}
+		payload.PostProcessingClientKeyB64 = &key
 	}
 
 	// save new cert

@@ -25,7 +25,7 @@ func (j *orderFulfillJob) Do(workerID int) {
 
 	// update certificate timestamp after fulfiller is done
 	defer func() {
-		err = j.service.storage.UpdateCertUpdatedTime(order.Certificate.ID)
+		err = j.service.storage.PutCertUpdatedAt(order.Certificate.ID, time.Now())
 		if err != nil {
 			j.service.logger.Errorf("orders: fulfilling worker %d: update cert time error: %s", workerID, err)
 		}

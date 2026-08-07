@@ -30,11 +30,12 @@ type UpdatePayload struct {
 	PostProcessingCommand       *string         `json:"post_processing_command"`
 	PostProcessingEnvironment   []string        `json:"post_processing_environment"`
 	PostProcessingClientAddress *string         `json:"post_processing_client_address"`
+	PostProcessingClientKeyB64  *string         `json:"post_processing_client_key"`
 	Profile                     *string         `json:"profile"`
 	ApiKey                      *string         `json:"api_key"`
 	ApiKeyNew                   *string         `json:"api_key_new"`
 	ApiKeyViaUrl                *bool           `json:"api_key_via_url"`
-	UpdatedAt                   int             `json:"-"`
+	UpdatedAt                   time.Time       `json:"-"`
 }
 
 // PutDetailsCert is a handler that sets various details about a cert and saves
@@ -120,9 +121,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	// post processing command & env are optional but nothing to validate
 
 	// post processing address
-	if payload.PostProcessingClientAddress == nil {
-		payload.PostProcessingClientAddress = new(string)
-	} else if *payload.PostProcessingClientAddress != "" {
+	if payload.PostProcessingClientAddress != nil && *payload.PostProcessingClientAddress != "" {
 		valid := validation.DomainAndPortValid(*payload.PostProcessingClientAddress)
 		if !valid {
 			service.logger.Debug(ErrClientAddressBad)
@@ -130,10 +129,19 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 		}
 	}
 
+	// post processing aes key (if specified)
+	if payload.PostProcessingClientKeyB64 != nil {
+		valid := clientKeyB64Valid(*payload.PostProcessingClientKeyB64)
+		if !valid {
+			service.logger.Debug(ErrPostProcessingClientKeyB64Bad)
+			return output.JsonErrValidationFailed(ErrPostProcessingClientKeyB64Bad)
+		}
+	}
+
 	// end validation
 
 	// add additional details to the payload before saving
-	payload.UpdatedAt = int(time.Now().Unix())
+	payload.UpdatedAt = time.Now()
 
 	// save account name and desc to storage, which also returns the account id with new
 	// name and description

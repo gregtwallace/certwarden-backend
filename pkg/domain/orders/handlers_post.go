@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -191,7 +192,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	}
 
 	// update certificate timestamp
-	err = service.storage.UpdateCertUpdatedTime(certId)
+	err = service.storage.PutCertUpdatedAt(certId, time.Now())
 	if err != nil {
 		service.logger.Error(err)
 		// no return

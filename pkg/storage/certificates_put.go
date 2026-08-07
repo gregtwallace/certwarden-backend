@@ -36,10 +36,11 @@ func (store *Storage) PutCertUpdate(payload certificates.UpdatePayload) (certifi
 			post_processing_command = case when $15 is null then post_processing_command else $15 end,
 			post_processing_environment = case when $16 is null then post_processing_environment else $16 end,
 			post_processing_client_address = case when $17 is null then post_processing_client_address else $17 end,
-			profile = case when $18 is null then profile else $18 end,
-			updated_at = $19
+			post_processing_client_key = case when $18 is null then post_processing_client_key else $18 end,
+			profile = case when $19 is null then profile else $19 end,
+			updated_at = $20
 		WHERE
-			id = $20
+			id = $21
 		`
 
 	res, err := store.db.ExecContext(ctx, query,
@@ -60,8 +61,9 @@ func (store *Storage) PutCertUpdate(payload certificates.UpdatePayload) (certifi
 		payload.PostProcessingCommand,
 		makeJsonStringSlice(payload.PostProcessingEnvironment, true),
 		payload.PostProcessingClientAddress,
+		payload.PostProcessingClientKeyB64,
 		payload.Profile,
-		payload.UpdatedAt,
+		payload.UpdatedAt.Unix(),
 		payload.ID,
 	)
 	if err != nil {
@@ -86,31 +88,16 @@ func (store *Storage) PutCertUpdate(payload certificates.UpdatePayload) (certifi
 	return updatedCert, nil
 }
 
-// UpdateCertUpdatedTime sets the specified order's updated_at to now
-func (store *Storage) UpdateCertUpdatedTime(certId int) (err error) {
-	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
-	defer cancel()
-
-	query := `
-	UPDATE
-		certificates
-	SET
-		updated_at = $1
-	WHERE
-		id = $2
-	`
-
-	_, err = store.db.ExecContext(ctx, query,
-		time.Now().Unix(),
-		certId,
-	)
-	if err != nil {
-		return err
+// PutCertUpdatedAt sets the specified cert's updated_at
+func (store *Storage) PutCertUpdatedAt(certId int, updatedAt time.Time) (err error) {
+	// leverage main Put function
+	payload := certificates.UpdatePayload{
+		ID:        certId,
+		UpdatedAt: updatedAt,
 	}
 
-	// TODO: Handle 0 rows updated.
-
-	return nil
+	_, err = store.PutCertUpdate(payload)
+	return err
 }
 
 // PutCertNewApiKey sets a cert's new api key and updates the updated at time
@@ -173,39 +160,15 @@ func (store *Storage) PutCertApiKey(certId int, apiKey string, updateTimeUnix in
 
 // PutCertClientKey sets a cert's client key and updates the updated at time
 func (store *Storage) PutCertClientKey(certId int, clientKeyB64 string, updatedAt time.Time) (err error) {
-	// database action
-	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
-	defer cancel()
-
-	query := `
-	UPDATE
-		certificates
-	SET
-		post_processing_client_key = $1,
-		updated_at = $2
-	WHERE
-		id = $3
-	`
-
-	res, err := store.db.ExecContext(ctx, query,
-		clientKeyB64,
-		updatedAt.Unix(),
-		certId,
-	)
-	if err != nil {
-		return err
+	// leverage main Put function
+	payload := certificates.UpdatePayload{
+		ID:                         certId,
+		PostProcessingClientKeyB64: &clientKeyB64,
+		UpdatedAt:                  updatedAt,
 	}
 
-	// verify update actually happened
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rowsAffected != 1 {
-		return errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
-	}
-
-	return nil
+	_, err = store.PutCertUpdate(payload)
+	return err
 }
 
 // PutCertLastAccess sets a cert's last access time

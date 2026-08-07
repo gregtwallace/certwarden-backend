@@ -4,6 +4,7 @@ import (
 	"certwarden-backend/pkg/output"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 // placeNewOrderAndFulfill creates a new ACME order for the specified Certificate ID,
@@ -59,7 +60,7 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		}
 
 		// update certificate timestamp
-		err = service.storage.UpdateCertUpdatedTime(cert.ID)
+		err = service.storage.PutCertUpdatedAt(cert.ID, time.Now())
 		if err != nil {
 			service.logger.Error(err)
 			// no return
