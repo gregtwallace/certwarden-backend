@@ -17,7 +17,7 @@ func TestDeleteCert(t *testing.T) {
 	}{
 		{-12, sql.ErrNoRows, certificates.Certificate{}, sql.ErrNoRows}, // non-existent
 		{2, sql.ErrNoRows, certificates.Certificate{}, sql.ErrNoRows},   // non-existent
-		{18, nil, certificates.Certificate{}, sql.ErrNoRows},            // not in use, gets deleted (Maybe TODO: Prevent delete from app to server's ssl cert)
+		{18, nil, certificates.Certificate{}, sql.ErrNoRows},            // not in use, gets deleted
 		{30, nil, certificates.Certificate{}, sql.ErrNoRows},            // not in use, gets deleted
 		{32, nil, certificates.Certificate{}, sql.ErrNoRows},            // not in use, gets deleted
 		{35, nil, certificates.Certificate{}, sql.ErrNoRows},            // not in use, gets deleted

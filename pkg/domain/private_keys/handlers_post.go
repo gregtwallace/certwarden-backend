@@ -154,7 +154,7 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	}
 
 	// update storage
-	err = service.storage.PutKeyNewApiKey(keyId, newApiKey, int(time.Now().Unix()))
+	err = service.storage.PutKeyApiKeyNew(keyId, newApiKey, time.Now())
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

@@ -100,62 +100,30 @@ func (store *Storage) PutCertUpdatedAt(certId int, updatedAt time.Time) (err err
 	return err
 }
 
-// PutCertNewApiKey sets a cert's new api key and updates the updated at time
-func (store *Storage) PutCertNewApiKey(certId int, newApiKey string, updateTimeUnix int) (err error) {
-	// database action
-	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
-	defer cancel()
-
-	query := `
-	UPDATE
-		certificates
-	SET
-		api_key_new = $1,
-		updated_at = $2
-	WHERE
-		id = $3
-	`
-
-	_, err = store.db.ExecContext(ctx, query,
-		newApiKey,
-		updateTimeUnix,
-		certId,
-	)
-
-	if err != nil {
-		return err
+// PutCertApiKey sets a cert's api key and updates the updated at time
+func (store *Storage) PutCertApiKey(certId int, apiKey string, updatedAt time.Time) (err error) {
+	// leverage main Put function
+	payload := certificates.UpdatePayload{
+		ID:        certId,
+		ApiKey:    &apiKey,
+		UpdatedAt: updatedAt,
 	}
 
-	return nil
+	_, err = store.PutCertUpdate(payload)
+	return err
 }
 
-// PutCertApiKey sets a cert's api key and updates the updated at time
-func (store *Storage) PutCertApiKey(certId int, apiKey string, updateTimeUnix int) (err error) {
-	// database action
-	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
-	defer cancel()
-
-	query := `
-	UPDATE
-		certificates
-	SET
-		api_key = $1,
-		updated_at = $2
-	WHERE
-		id = $3
-	`
-
-	_, err = store.db.ExecContext(ctx, query,
-		apiKey,
-		updateTimeUnix,
-		certId,
-	)
-
-	if err != nil {
-		return err
+// PutCertApiKeyNew sets a cert's new api key and updates the updated at time
+func (store *Storage) PutCertApiKeyNew(certId int, apiKeyNew string, updatedAt time.Time) (err error) {
+	// leverage main Put function
+	payload := certificates.UpdatePayload{
+		ID:        certId,
+		ApiKeyNew: &apiKeyNew,
+		UpdatedAt: updatedAt,
 	}
 
-	return nil
+	_, err = store.PutCertUpdate(payload)
+	return err
 }
 
 // PutCertClientKey sets a cert's client key and updates the updated at time

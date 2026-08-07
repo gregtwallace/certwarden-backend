@@ -304,7 +304,7 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	}
 
 	// update storage
-	err = service.storage.PutCertNewApiKey(certId, newApiKey, int(time.Now().Unix()))
+	err = service.storage.PutCertApiKeyNew(certId, newApiKey, time.Now())
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

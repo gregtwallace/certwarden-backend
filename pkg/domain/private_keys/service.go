@@ -4,6 +4,7 @@ import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
 	"errors"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -26,8 +27,8 @@ type Storage interface {
 	PostNewKey(NewPayload) (Key, error)
 
 	PutKeyUpdate(UpdatePayload) (Key, error)
-	PutKeyApiKey(keyId int, apiKey string, updateTimeUnix int) (err error)
-	PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUnix int) error
+	PutKeyApiKey(keyId int, apiKey string, updatedAt time.Time) error
+	PutKeyApiKeyNew(keyId int, apiKeyNew string, updatedAt time.Time) error
 
 	DeleteKey(int) error
 

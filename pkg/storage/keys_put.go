@@ -37,7 +37,7 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_
 		payload.ApiKeyNew,
 		payload.ApiKeyDisabled,
 		payload.ApiKeyViaUrl,
-		payload.UpdatedAt,
+		payload.UpdatedAt.Unix(),
 		payload.ID,
 	)
 	if err != nil {
@@ -63,25 +63,25 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_
 }
 
 // PutKeyApiKey sets a key's api key and updates the updated at time
-func (store *Storage) PutKeyApiKey(keyId int, apiKey string, updateTimeUnix int) (err error) {
+func (store *Storage) PutKeyApiKey(keyId int, apiKey string, updatedAt time.Time) (err error) {
 	// leverage main Put function
 	payload := private_keys.UpdatePayload{
 		ID:        keyId,
 		ApiKey:    &apiKey,
-		UpdatedAt: updateTimeUnix,
+		UpdatedAt: updatedAt,
 	}
 
 	_, err = store.PutKeyUpdate(payload)
 	return err
 }
 
-// PutKeyUpdate sets a key's new api key and updates the updated at time
-func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUnix int) (err error) {
+// PutKeyApiKeyNew sets a key's new api key and updates the updated at time
+func (store *Storage) PutKeyApiKeyNew(keyId int, apiKeyNew string, updatedAt time.Time) (err error) {
 	// leverage main Put function
 	payload := private_keys.UpdatePayload{
 		ID:        keyId,
-		ApiKeyNew: &newApiKey,
-		UpdatedAt: updateTimeUnix,
+		ApiKeyNew: &apiKeyNew,
+		UpdatedAt: updatedAt,
 	}
 
 	_, err = store.PutKeyUpdate(payload)

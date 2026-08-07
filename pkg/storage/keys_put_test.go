@@ -49,7 +49,7 @@ func TestPutKeyUpdate(t *testing.T) {
 				ApiKeyNew:      new("2222"),
 				ApiKeyDisabled: new(true),
 				ApiKeyViaUrl:   new(false),
-				UpdatedAt:      1001111,
+				UpdatedAt:      time.Unix(1001111, 0),
 			},
 			private_keys.Key{
 				ID:          31,
@@ -92,7 +92,7 @@ red-31
 		{ // update none of the things (except last update)
 			private_keys.UpdatePayload{
 				ID:        62,
-				UpdatedAt: 1001111,
+				UpdatedAt: time.Unix(1001111, 0),
 			},
 			private_keys.Key{
 				ID:          62,
@@ -136,7 +136,7 @@ red-62
 			private_keys.UpdatePayload{
 				ID:             58,
 				ApiKeyDisabled: new(false),
-				UpdatedAt:      1751730000,
+				UpdatedAt:      time.Unix(1751730000, 0),
 			},
 			private_keys.Key{
 				ID:          58,
@@ -205,9 +205,9 @@ red-58
 
 func TestPutKeyApiKey(t *testing.T) {
 	testCases := []struct {
-		keyId          int
-		apiKey         string
-		updateTimeUnix int
+		keyId     int
+		apiKey    string
+		updatedAt time.Time
 
 		expectedKey    private_keys.Key
 		expectedPutErr error
@@ -216,7 +216,7 @@ func TestPutKeyApiKey(t *testing.T) {
 		{ // invalid key id
 			-1,
 			"fake",
-			100005,
+			time.Unix(100005, 0),
 			private_keys.Key{},
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
@@ -224,7 +224,7 @@ func TestPutKeyApiKey(t *testing.T) {
 		{ // invalid key id
 			500,
 			"anotherfake",
-			10005000,
+			time.Unix(10005000, 0),
 			private_keys.Key{},
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
@@ -233,7 +233,7 @@ func TestPutKeyApiKey(t *testing.T) {
 		{
 			31,
 			"fake31",
-			1022005,
+			time.Unix(1022005, 0),
 			private_keys.Key{
 				ID:          31,
 				Name:        "certwarden",
@@ -256,8 +256,8 @@ red-31
 		},
 		{
 			62,
-			"62thing",
-			0,
+			"",
+			time.Unix(0, 0),
 			private_keys.Key{
 				ID:          62,
 				Name:        "SomeKEy",
@@ -267,7 +267,7 @@ red-31
 red-62
 -----END EC PRIVATE KEY-----
 `,
-				ApiKey:         "62thing",
+				ApiKey:         "",
 				ApiKeyNew:      "key-api-new-key-62",
 				ApiKeyDisabled: false,
 				ApiKeyViaUrl:   false,
@@ -288,7 +288,7 @@ red-62
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
-			err := storage.PutKeyApiKey(tc.keyId, tc.apiKey, tc.updateTimeUnix)
+			err := storage.PutKeyApiKey(tc.keyId, tc.apiKey, tc.updatedAt)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
@@ -303,11 +303,11 @@ red-62
 	}
 }
 
-func TestPutKeyNewApiKey(t *testing.T) {
+func TestPutKeyApiKeyNew(t *testing.T) {
 	testCases := []struct {
-		keyId          int
-		apiKeyNew      string
-		updateTimeUnix int
+		keyId     int
+		apiKeyNew string
+		updatedAt time.Time
 
 		expectedKey    private_keys.Key
 		expectedPutErr error
@@ -316,7 +316,7 @@ func TestPutKeyNewApiKey(t *testing.T) {
 		{ // invalid key id
 			-1,
 			"",
-			1099905,
+			time.Unix(1099905, 0),
 			private_keys.Key{},
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
@@ -324,7 +324,7 @@ func TestPutKeyNewApiKey(t *testing.T) {
 		{ // invalid key id
 			500,
 			"anotherfake",
-			10005000,
+			time.Unix(10005000, 0),
 			private_keys.Key{},
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
@@ -333,7 +333,7 @@ func TestPutKeyNewApiKey(t *testing.T) {
 		{
 			69,
 			"fakenew69",
-			1022005,
+			time.Unix(1022005, 0),
 			private_keys.Key{
 				ID:          69,
 				Name:        "STAGING_persist--test007.test.example2.com",
@@ -357,7 +357,7 @@ red-69
 		{
 			67,
 			"otherfakenew67",
-			0,
+			time.Unix(0, 0),
 			private_keys.Key{
 				ID:          67,
 				Name:        "_GC3",
@@ -381,14 +381,14 @@ red-67
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putkeynewapikey")
+	storage, err := openStorageWithTestData(t, "putkeyapikeynew")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
-			err := storage.PutKeyNewApiKey(tc.keyId, tc.apiKeyNew, tc.updateTimeUnix)
+			err := storage.PutKeyApiKeyNew(tc.keyId, tc.apiKeyNew, tc.updatedAt)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}

@@ -12,10 +12,6 @@ import (
 	"time"
 )
 
-// TODO:
-// PutCertNewApiKey
-// PutCertApiKey
-
 func TestPutDetailsCert(t *testing.T) {
 	testCases := []struct {
 		payload certificates.UpdatePayload
@@ -311,6 +307,265 @@ func TestPutDetailsCert(t *testing.T) {
 			CompareCertificate(t, c, tc.expectedGetResult)
 		})
 	}
+}
+
+func TestPutCertApiKey(t *testing.T) {
+	testCases := []struct {
+		certId     int
+		apiKey     string
+		updateTime time.Time
+
+		expectedCert   certificates.Certificate
+		expectedPutErr error
+		expectedGetErr error
+	}{
+		{ // invalid id
+			-1,
+			"fake",
+			time.Unix(100005, 0),
+			certificates.Certificate{},
+			storage.ErrWrongUpdateRowCount,
+			sql.ErrNoRows,
+		},
+		{ // invalid id
+			500,
+			"anotherfake",
+			time.Unix(10005000, 0),
+			certificates.Certificate{},
+			storage.ErrWrongUpdateRowCount,
+			sql.ErrNoRows,
+		},
+		// do some updates
+		{
+			18,
+			"somekey31cert",
+			time.Unix(101300522, 0),
+			certificates.Certificate{
+				ID:                 18,
+				Name:               "serverdefault",
+				Description:        "its a decript",
+				Key:                key31,
+				Account:            acmeAcct2,
+				Subject:            "desk.dude.example.com",
+				SubjectAltNames:    []string{"test011.test.example.com"},
+				Organization:       "my org",
+				OrganizationalUnit: "my ou",
+				Country:            "your country",
+				State:              "a state",
+				City:               "springfield",
+				CSRExtraExtensions: []certificates.CertExtension{
+					{
+						Extension: pkix.Extension{
+							Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 5, 5, 7, 1, 24},
+							Critical: false,
+							Value:    []byte{0x30, 0x03, 0x02, 0x01, 0x05},
+						},
+						Description: "OCSP Must Staple",
+					},
+				},
+				PreferredRootCN:             "ISRG Root X1",
+				LastAccess:                  time.Unix(1745952074, 0),
+				CreatedAt:                   time.Unix(1709327717, 0),
+				UpdatedAt:                   time.Unix(101300522, 0),
+				ApiKey:                      "somekey31cert",
+				ApiKeyNew:                   "api-new-secret-18",
+				ApiKeyViaUrl:                true,
+				PostProcessingCommand:       "./scripts/windows/post-processing.example.ps1",
+				PostProcessingEnvironment:   []string{"asdasdasdsd=asasd"},
+				PostProcessingClientAddress: "dude.greg.example.com",
+				PostProcessingClientKeyB64:  "aaaaaaaaaaaaaaaaaaaaaaaaaaa-ccccccccccccccc",
+				Profile:                     "tlsserver",
+			},
+			nil,
+			nil,
+		},
+		{
+			26,
+			"",
+			time.Unix(0, 0),
+			certificates.Certificate{
+				ID:                          26,
+				Name:                        "test008.test.example.com",
+				Description:                 "",
+				Key:                         key55,
+				Account:                     acmeAcct1,
+				Subject:                     "test008.test.example.com",
+				SubjectAltNames:             []string{},
+				Organization:                "",
+				OrganizationalUnit:          "",
+				Country:                     "",
+				State:                       "",
+				City:                        "",
+				CSRExtraExtensions:          []certificates.CertExtension{},
+				PreferredRootCN:             "",
+				LastAccess:                  time.Unix(0, 0),
+				CreatedAt:                   time.Unix(1743170701, 0),
+				UpdatedAt:                   time.Unix(0, 0),
+				ApiKey:                      "",
+				ApiKeyNew:                   "",
+				ApiKeyViaUrl:                false,
+				PostProcessingCommand:       "./scripts/windows/post-processing.example.ps1",
+				PostProcessingEnvironment:   []string{},
+				PostProcessingClientAddress: "test008.test.example.com",
+				PostProcessingClientKeyB64:  "",
+				Profile:                     "",
+			},
+			nil,
+			nil,
+		},
+	}
+
+	// create testing service
+	storage, err := openStorageWithTestData(t, "putcertapikey")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("id: %d)", tc.certId), func(t *testing.T) {
+			err := storage.PutCertApiKey(tc.certId, tc.apiKey, tc.updateTime)
+			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
+				t.Errorf("expected put cert api key error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
+			}
+
+			cert, err := storage.GetOneCertById(tc.certId)
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get cert error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
+			}
+
+			CompareCertificate(t, cert, tc.expectedCert)
+		})
+	}
+}
+
+func TestCertApiKeyNew(t *testing.T) {
+	testCases := []struct {
+		certId    int
+		apiKeyNew string
+		updatedAt time.Time
+
+		expectedCert   certificates.Certificate
+		expectedPutErr error
+		expectedGetErr error
+	}{
+		{ // invalid id
+			-1,
+			"",
+			time.Unix(10999051, 0),
+			certificates.Certificate{},
+			storage.ErrWrongUpdateRowCount,
+			sql.ErrNoRows,
+		},
+		{ // invalid id
+			500,
+			"anotherfake",
+			time.Unix(10445000, 0),
+			certificates.Certificate{},
+			storage.ErrWrongUpdateRowCount,
+			sql.ErrNoRows,
+		},
+		// do some updates
+		{
+			27,
+			"certkey27",
+			time.Unix(102202305, 0),
+			certificates.Certificate{
+				ID:                          27,
+				Name:                        "test008.test.example.com-p",
+				Description:                 "",
+				Key:                         key56,
+				Account:                     acmeAcct2,
+				Subject:                     "test008.test.example.com",
+				SubjectAltNames:             []string{"test011.test.example.com", "*.test011.test.example.com"},
+				Organization:                "",
+				OrganizationalUnit:          "",
+				Country:                     "",
+				State:                       "",
+				City:                        "",
+				CSRExtraExtensions:          []certificates.CertExtension{},
+				PreferredRootCN:             "",
+				LastAccess:                  time.Unix(0, 0),
+				CreatedAt:                   time.Unix(1743171060, 0),
+				UpdatedAt:                   time.Unix(102202305, 0),
+				ApiKey:                      "api-secret-27",
+				ApiKeyNew:                   "certkey27",
+				ApiKeyViaUrl:                false,
+				PostProcessingCommand:       "",
+				PostProcessingEnvironment:   []string{},
+				PostProcessingClientAddress: "",
+				PostProcessingClientKeyB64:  "",
+				Profile:                     "",
+			},
+			nil,
+			nil,
+		},
+		{
+			18,
+			"",
+			time.Unix(0, 0),
+			certificates.Certificate{
+				ID:                 18,
+				Name:               "serverdefault",
+				Description:        "its a decript",
+				Key:                key31,
+				Account:            acmeAcct2,
+				Subject:            "desk.dude.example.com",
+				SubjectAltNames:    []string{"test011.test.example.com"},
+				Organization:       "my org",
+				OrganizationalUnit: "my ou",
+				Country:            "your country",
+				State:              "a state",
+				City:               "springfield",
+				CSRExtraExtensions: []certificates.CertExtension{
+					{
+						Extension: pkix.Extension{
+							Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 5, 5, 7, 1, 24},
+							Critical: false,
+							Value:    []byte{0x30, 0x03, 0x02, 0x01, 0x05},
+						},
+						Description: "OCSP Must Staple",
+					},
+				},
+				PreferredRootCN:             "ISRG Root X1",
+				LastAccess:                  time.Unix(1745952074, 0),
+				CreatedAt:                   time.Unix(1709327717, 0),
+				UpdatedAt:                   time.Unix(0, 0),
+				ApiKey:                      "api-secret-18",
+				ApiKeyNew:                   "",
+				ApiKeyViaUrl:                true,
+				PostProcessingCommand:       "./scripts/windows/post-processing.example.ps1",
+				PostProcessingEnvironment:   []string{"asdasdasdsd=asasd"},
+				PostProcessingClientAddress: "dude.greg.example.com",
+				PostProcessingClientKeyB64:  "aaaaaaaaaaaaaaaaaaaaaaaaaaa-ccccccccccccccc",
+				Profile:                     "tlsserver",
+			},
+			nil,
+			nil,
+		},
+	}
+
+	// create testing service
+	storage, err := openStorageWithTestData(t, "putkeyapikeynew")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("id: %d)", tc.certId), func(t *testing.T) {
+			err := storage.PutCertApiKeyNew(tc.certId, tc.apiKeyNew, tc.updatedAt)
+			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
+				t.Errorf("expected apikeynew put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
+			}
+
+			cert, err := storage.GetOneCertById(tc.certId)
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected cert get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
+			}
+
+			CompareCertificate(t, cert, tc.expectedCert)
+		})
+	}
+
 }
 
 func TestPutCertUpdatedAt(t *testing.T) {

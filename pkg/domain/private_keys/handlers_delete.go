@@ -89,7 +89,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 
 	// update storage
 	// set current api key from new key
-	err = service.storage.PutKeyApiKey(keyId, key.ApiKeyNew, int(time.Now().Unix()))
+	err = service.storage.PutKeyApiKey(keyId, key.ApiKeyNew, time.Now())
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
@@ -97,7 +97,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	key.ApiKey = key.ApiKeyNew
 
 	// set new key to blank
-	err = service.storage.PutKeyNewApiKey(keyId, "", int(time.Now().Unix()))
+	err = service.storage.PutKeyApiKeyNew(keyId, "", time.Now())
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
