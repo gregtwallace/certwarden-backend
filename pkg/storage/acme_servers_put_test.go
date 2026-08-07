@@ -46,7 +46,7 @@ func TestPutServerUpdate(t *testing.T) {
 				Description:  new("new desc"),
 				DirectoryURL: new("https://example-new.com/directory"),
 				IsStaging:    new(false),
-				UpdatedAt:    1733265750,
+				UpdatedAt:    time.Unix(1733265750, 0),
 			},
 			acme_servers.Server{
 				ID:           1,
@@ -73,7 +73,7 @@ func TestPutServerUpdate(t *testing.T) {
 		{ // update none of the things (except last update)
 			acme_servers.UpdatePayload{
 				ID:        19,
-				UpdatedAt: 11121111,
+				UpdatedAt: time.Unix(11121111, 0),
 			},
 			acme_servers.Server{
 				ID:           19,
@@ -101,7 +101,7 @@ func TestPutServerUpdate(t *testing.T) {
 			acme_servers.UpdatePayload{
 				ID:           4,
 				DirectoryURL: new("https://example-put.com/directory"),
-				UpdatedAt:    100800111,
+				UpdatedAt:    time.Unix(100800111, 0),
 			},
 			acme_servers.Server{
 				ID:           4,

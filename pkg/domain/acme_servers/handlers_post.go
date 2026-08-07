@@ -12,12 +12,12 @@ import (
 
 // NewPayload is used to post a new Server
 type NewPayload struct {
-	Name         *string `json:"name"`
-	Description  *string `json:"description"`
-	DirectoryURL *string `json:"directory_url"`
-	IsStaging    *bool   `json:"is_staging"`
-	CreatedAt    int     `json:"-"`
-	UpdatedAt    int     `json:"-"`
+	Name         *string   `json:"name"`
+	Description  *string   `json:"description"`
+	DirectoryURL *string   `json:"directory_url"`
+	IsStaging    *bool     `json:"is_staging"`
+	CreatedAt    time.Time `json:"-"`
+	UpdatedAt    time.Time `json:"-"`
 }
 
 // PostNewServer creates a new server, saves it to storage, and starts an *acme.Service
@@ -62,8 +62,9 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) *o
 	// end validation
 
 	// add additional details to the payload before saving
-	payload.CreatedAt = int(time.Now().Unix())
-	payload.UpdatedAt = payload.CreatedAt
+	t := time.Now()
+	payload.CreatedAt = t
+	payload.UpdatedAt = t
 
 	// save new key to storage, which also returns the new server
 	newServer, err := service.storage.PostNewServer(payload)

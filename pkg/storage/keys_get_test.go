@@ -262,8 +262,7 @@ red-69
 		ApiKeyViaUrl:   false,
 		LastAccess:     time.Unix(1777555692, 0),
 		CreatedAt:      time.Unix(1775761592, 0),
-		// TODO: Research why this is 0 in the db. Might find while writing other tests. Also possible this is just junk data from a previous bug.
-		UpdatedAt: time.Unix(0, 0),
+		UpdatedAt:      time.Unix(0, 0),
 	}
 )
 

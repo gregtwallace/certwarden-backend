@@ -39,8 +39,8 @@ type NewPayload struct {
 	Profile                     *string         `json:"profile"`
 	ApiKey                      string          `json:"-"`
 	ApiKeyViaUrl                bool            `json:"-"`
-	CreatedAt                   int             `json:"-"`
-	UpdatedAt                   int             `json:"-"`
+	CreatedAt                   time.Time       `json:"-"`
+	UpdatedAt                   time.Time       `json:"-"`
 }
 
 // PostNewCert creates a new certificate object in storage. No actual encryption certificate
@@ -199,6 +199,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	// end validation
 
 	// if new private key was generated, save it to storage
+	createdAtAndUpdatedAt := time.Now()
 	if generatedKeyPem != "" {
 		apiKey, err := randomness.GenerateApiKey()
 		if err != nil {
@@ -215,8 +216,8 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 			ApiKeyDisabled: new(false),
 			ApiKeyViaUrl:   payload.ApiKeyViaUrl,
 			ApiKey:         apiKey,
-			CreatedAt:      int(time.Now().Unix()),
-			UpdatedAt:      int(time.Now().Unix()),
+			CreatedAt:      createdAtAndUpdatedAt,
+			UpdatedAt:      createdAtAndUpdatedAt,
 		}
 
 		// save new key to storage, and set the cert key id based on returned key's id
@@ -235,8 +236,8 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 		return output.JsonErrInternal(err)
 	}
 	payload.ApiKeyViaUrl = false
-	payload.CreatedAt = int(time.Now().Unix())
-	payload.UpdatedAt = payload.CreatedAt
+	payload.CreatedAt = createdAtAndUpdatedAt
+	payload.UpdatedAt = createdAtAndUpdatedAt
 
 	// if client address specified but no aes key, generate key to save (b64 raw url encoded)
 	if payload.PostProcessingClientKeyB64 == nil {

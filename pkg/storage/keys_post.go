@@ -27,8 +27,8 @@ func (store *Storage) PostNewKey(payload private_keys.NewPayload) (private_keys.
 		payload.ApiKey,
 		payload.ApiKeyDisabled,
 		payload.ApiKeyViaUrl,
-		payload.CreatedAt,
-		payload.UpdatedAt,
+		payload.CreatedAt.Unix(),
+		payload.UpdatedAt.Unix(),
 	).Scan(&id)
 
 	if err != nil {

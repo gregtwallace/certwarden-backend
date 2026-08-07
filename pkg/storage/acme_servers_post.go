@@ -24,8 +24,8 @@ func (store *Storage) PostNewServer(payload acme_servers.NewPayload) (acme_serve
 		payload.Description,
 		payload.DirectoryURL,
 		payload.IsStaging,
-		payload.CreatedAt,
-		payload.UpdatedAt,
+		payload.CreatedAt.Unix(),
+		payload.UpdatedAt.Unix(),
 	).Scan(&acmeServerId)
 
 	if err != nil {

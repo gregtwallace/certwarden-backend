@@ -20,16 +20,16 @@ import (
 
 // NewPayload is the payload struct for creating a new account
 type NewPayload struct {
-	Name         *string `json:"name"`
-	Description  *string `json:"description"`
-	AcmeServerID *int    `json:"acme_server_id"`
-	PrivateKeyID *int    `json:"private_key_id"`
-	Status       string  `json:"-"`
-	Email        *string `json:"email"`
-	AcceptedTos  *bool   `json:"accepted_tos"`
-	CreatedAt    int     `json:"-"`
-	UpdatedAt    int     `json:"-"`
-	Kid          string  `json:"-"`
+	Name         *string   `json:"name"`
+	Description  *string   `json:"description"`
+	AcmeServerID *int      `json:"acme_server_id"`
+	PrivateKeyID *int      `json:"private_key_id"`
+	Status       string    `json:"-"`
+	Email        *string   `json:"email"`
+	AcceptedTos  *bool     `json:"accepted_tos"`
+	CreatedAt    time.Time `json:"-"`
+	UpdatedAt    time.Time `json:"-"`
+	Kid          string    `json:"-"`
 }
 
 // PostNewAccount is the handler to save a new account to storage. No ACME
@@ -89,8 +89,9 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 
 	// add additional details to the payload before saving
 	payload.Status = "unknown"
-	payload.CreatedAt = int(time.Now().Unix())
-	payload.UpdatedAt = payload.CreatedAt
+	t := time.Now()
+	payload.CreatedAt = t
+	payload.UpdatedAt = t
 	payload.Kid = ""
 
 	// Save new account details to storage.

@@ -11,10 +11,6 @@ import (
 	"time"
 )
 
-// ApiKeyViaUrl                bool                `json:"-"`
-// CreatedAt                   int                 `json:"-"`
-// UpdatedAt                   int                 `json:"-"`
-
 func TestPostNewCert(t *testing.T) {
 	testCases := []struct {
 		newPayload      certificates.NewPayload
@@ -54,8 +50,8 @@ func TestPostNewCert(t *testing.T) {
 				Profile:                     new("test-prof"),
 				ApiKey:                      "12345fffff",
 				ApiKeyViaUrl:                true,
-				CreatedAt:                   770337479,
-				UpdatedAt:                   770338000,
+				CreatedAt:                   time.Unix(770337479, 0),
+				UpdatedAt:                   time.Unix(770338000, 0),
 			},
 			nil,
 			certificates.Certificate{
@@ -119,8 +115,8 @@ func TestPostNewCert(t *testing.T) {
 				Profile:                     new("test-prof"),
 				ApiKey:                      "12345fffff",
 				ApiKeyViaUrl:                true,
-				CreatedAt:                   770337479,
-				UpdatedAt:                   770338000,
+				CreatedAt:                   time.Unix(770337479, 0),
+				UpdatedAt:                   time.Unix(770338000, 0),
 			},
 			helpers_test.MakeTestErrorStringComp("UNIQUE constraint failed: certificates.name"),
 			certificates.Certificate{},
@@ -158,8 +154,8 @@ func TestPostNewCert(t *testing.T) {
 				Profile:                     new("test-prof"),
 				ApiKey:                      "12345fffff",
 				ApiKeyViaUrl:                true,
-				CreatedAt:                   770337479,
-				UpdatedAt:                   770338000,
+				CreatedAt:                   time.Unix(770337479, 0),
+				UpdatedAt:                   time.Unix(770338000, 0),
 			},
 			helpers_test.MakeTestErrorStringComp("NOT NULL constraint failed: certificates.acme_account_id"),
 			certificates.Certificate{},
@@ -197,8 +193,8 @@ func TestPostNewCert(t *testing.T) {
 				Profile:                     new("test-prof"),
 				ApiKey:                      "12345fffff",
 				ApiKeyViaUrl:                true,
-				CreatedAt:                   770337479,
-				UpdatedAt:                   770338000,
+				CreatedAt:                   time.Unix(770337479, 0),
+				UpdatedAt:                   time.Unix(770338000, 0),
 			},
 			helpers_test.MakeTestErrorStringComp("NOT NULL constraint failed: certificates.subject"),
 			certificates.Certificate{},
