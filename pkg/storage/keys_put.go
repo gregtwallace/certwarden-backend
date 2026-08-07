@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 )
 
 // PutKeyUpdate updates an existing key in the db using any non-null
@@ -89,7 +90,7 @@ func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUni
 }
 
 // PutKeyLastAccess sets a key's last access time
-func (store *Storage) PutKeyLastAccess(keyId int, lastAccessTimeUnix int64) (err error) {
+func (store *Storage) PutKeyLastAccess(keyId int, lastAccess time.Time) (err error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -104,7 +105,7 @@ func (store *Storage) PutKeyLastAccess(keyId int, lastAccessTimeUnix int64) (err
 	`
 
 	res, err := store.db.ExecContext(ctx, query,
-		lastAccessTimeUnix,
+		lastAccess.Unix(),
 		keyId,
 	)
 	if err != nil {

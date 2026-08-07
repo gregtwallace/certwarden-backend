@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"go.uber.org/zap"
@@ -421,10 +422,10 @@ j1f1P6e7Khe0uXD3N+r34piMQT0WX0po2rf16x0i
 
 	return orders.Order{}, sql.ErrNoRows
 }
-func (fs *fakeStorage) PutKeyLastAccess(keyId int, unixLastAccessTime int64) (err error) {
+func (fs *fakeStorage) PutKeyLastAccess(keyId int, lastAccess time.Time) (err error) {
 	return errors.New("not implemented")
 }
-func (fs *fakeStorage) PutCertLastAccess(certId int, unixLastAccessTime int64) (err error) {
+func (fs *fakeStorage) PutCertLastAccess(certId int, lastAccess time.Time) (err error) {
 	return errors.New("not implemented")
 }
 

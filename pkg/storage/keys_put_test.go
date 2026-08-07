@@ -399,8 +399,8 @@ red-67
 
 func TestPutKeyLastAccess(t *testing.T) {
 	testCases := []struct {
-		keyId              int
-		lastAccessTimeUnix int64
+		keyId      int
+		lastAccess time.Time
 
 		expectedKey    private_keys.Key
 		expectedPutErr error
@@ -408,14 +408,14 @@ func TestPutKeyLastAccess(t *testing.T) {
 	}{
 		{ // invalid key id
 			-1,
-			88888888,
+			time.Unix(88888888, 0),
 			private_keys.Key{},
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
 		{ // invalid key id
 			500,
-			88888888,
+			time.Unix(88888888, 0),
 			private_keys.Key{},
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
@@ -423,7 +423,7 @@ func TestPutKeyLastAccess(t *testing.T) {
 		// do some updates
 		{
 			64,
-			1022885,
+			time.Unix(1022885, 0),
 			private_keys.Key{
 				ID:          64,
 				Name:        "_Another_Test_Acct_LE_Staging_Roll",
@@ -446,7 +446,7 @@ red-64
 		},
 		{
 			63,
-			9999999,
+			time.Unix(9999999, 0),
 			private_keys.Key{
 				ID:          63,
 				Name:        "_Another_Test_Acct_LE_Staging",
@@ -469,7 +469,7 @@ red-63
 		},
 		{
 			62,
-			0,
+			time.Unix(0, 0),
 			private_keys.Key{
 				ID:          62,
 				Name:        "SomeKEy",
@@ -500,7 +500,7 @@ red-62
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
-			err := storage.PutKeyLastAccess(tc.keyId, tc.lastAccessTimeUnix)
+			err := storage.PutKeyLastAccess(tc.keyId, tc.lastAccess)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}

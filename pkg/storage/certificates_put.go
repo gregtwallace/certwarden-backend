@@ -3,6 +3,8 @@ package storage
 import (
 	"certwarden-backend/pkg/domain/certificates"
 	"context"
+	"errors"
+	"fmt"
 	"time"
 )
 
@@ -191,7 +193,7 @@ func (store *Storage) PutCertClientKey(certId int, newClientKeyB64 string, updat
 }
 
 // PutCertLastAccess sets a cert's last access time
-func (store *Storage) PutCertLastAccess(certId int, unixLastAccessTime int64) (err error) {
+func (store *Storage) PutCertLastAccess(certId int, lastAccess time.Time) (err error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -205,13 +207,21 @@ func (store *Storage) PutCertLastAccess(certId int, unixLastAccessTime int64) (e
 		id = $2
 	`
 
-	_, err = store.db.ExecContext(ctx, query,
-		unixLastAccessTime,
+	res, err := store.db.ExecContext(ctx, query,
+		lastAccess.Unix(),
 		certId,
 	)
-
 	if err != nil {
 		return err
+	}
+
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
 	}
 
 	return nil
