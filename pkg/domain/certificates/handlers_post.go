@@ -18,29 +18,29 @@ import (
 
 // NewPayload is the struct for creating a new certificate
 type NewPayload struct {
-	Name                        *string             `json:"name"`
-	Description                 *string             `json:"description"`
-	PrivateKeyID                *int                `json:"private_key_id"`
-	NewKeyAlgorithmValue        *string             `json:"algorithm_value"`
-	AcmeAccountID               *int                `json:"acme_account_id"`
-	Subject                     *string             `json:"subject"`
-	SubjectAltNames             []string            `json:"subject_alts"`
-	Organization                *string             `json:"organization"`
-	OrganizationalUnit          *string             `json:"organizational_unit"`
-	Country                     *string             `json:"country"`
-	State                       *string             `json:"state"`
-	City                        *string             `json:"city"`
-	CSRExtraExtensions          []CertExtensionJSON `json:"csr_extra_extensions"`
-	PreferredRootCN             *string             `json:"preferred_root_cn"`
-	PostProcessingCommand       *string             `json:"post_processing_command"`
-	PostProcessingEnvironment   []string            `json:"post_processing_environment"`
-	PostProcessingClientAddress *string             `json:"post_processing_client_address"`
-	PostProcessingClientKeyB64  string              `json:"-"`
-	Profile                     *string             `json:"profile"`
-	ApiKey                      string              `json:"-"`
-	ApiKeyViaUrl                bool                `json:"-"`
-	CreatedAt                   int                 `json:"-"`
-	UpdatedAt                   int                 `json:"-"`
+	Name                        *string         `json:"name"`
+	Description                 *string         `json:"description"`
+	PrivateKeyID                *int            `json:"private_key_id"`
+	NewKeyAlgorithmValue        *string         `json:"algorithm_value"`
+	AcmeAccountID               *int            `json:"acme_account_id"`
+	Subject                     *string         `json:"subject"`
+	SubjectAltNames             []string        `json:"subject_alts"`
+	Organization                *string         `json:"organization"`
+	OrganizationalUnit          *string         `json:"organizational_unit"`
+	Country                     *string         `json:"country"`
+	State                       *string         `json:"state"`
+	City                        *string         `json:"city"`
+	CSRExtraExtensions          []CertExtension `json:"csr_extra_extensions"`
+	PreferredRootCN             *string         `json:"preferred_root_cn"`
+	PostProcessingCommand       *string         `json:"post_processing_command"`
+	PostProcessingEnvironment   []string        `json:"post_processing_environment"`
+	PostProcessingClientAddress *string         `json:"post_processing_client_address"`
+	PostProcessingClientKeyB64  string          `json:"-"`
+	Profile                     *string         `json:"profile"`
+	ApiKey                      string          `json:"-"`
+	ApiKeyViaUrl                bool            `json:"-"`
+	CreatedAt                   int             `json:"-"`
+	UpdatedAt                   int             `json:"-"`
 }
 
 // PostNewCert creates a new certificate object in storage. No actual encryption certificate
@@ -165,14 +165,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 		payload.City = new(string)
 	}
 
-	// CSR Extra Extensions - check each extra extension for proper formatting
-	for i := range payload.CSRExtraExtensions {
-		_, err = payload.CSRExtraExtensions[i].ToCertExtension()
-		if err != nil {
-			service.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
-		}
-	}
+	// CSR Extra Extensions - error checking is now in the custom unmarshal function
 
 	if payload.PreferredRootCN == nil {
 		payload.PreferredRootCN = new(string)
@@ -351,7 +344,7 @@ func (service *Service) MakeNewClientKey(w http.ResponseWriter, r *http.Request)
 	}
 
 	// update storage
-	err = service.storage.PutCertClientKey(certId, clientKey, int(time.Now().Unix()))
+	err = service.storage.PutCertClientKey(certId, clientKey, time.Now())
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

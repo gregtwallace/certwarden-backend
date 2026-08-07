@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-// PutDetailsCert saves details about the cert that can be updated at any time. It only updates
+// PutCertUpdate saves details about the cert that can be updated at any time. It only updates
 // the details which are provided
-func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) (certificates.Certificate, error) {
+func (store *Storage) PutCertUpdate(payload certificates.UpdatePayload) (certificates.Certificate, error) {
 	// database update
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -42,7 +42,7 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 			id = $20
 		`
 
-	_, err := store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.PrivateKeyId,
@@ -64,9 +64,17 @@ func (store *Storage) PutDetailsCert(payload certificates.DetailsUpdatePayload) 
 		payload.UpdatedAt,
 		payload.ID,
 	)
-
 	if err != nil {
 		return certificates.Certificate{}, err
+	}
+
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return certificates.Certificate{}, err
+	}
+	if rowsAffected != 1 {
+		return certificates.Certificate{}, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
 	}
 
 	// get updated to return
@@ -164,7 +172,7 @@ func (store *Storage) PutCertApiKey(certId int, apiKey string, updateTimeUnix in
 }
 
 // PutCertClientKey sets a cert's client key and updates the updated at time
-func (store *Storage) PutCertClientKey(certId int, newClientKeyB64 string, updateTimeUnix int) (err error) {
+func (store *Storage) PutCertClientKey(certId int, clientKeyB64 string, updatedAt time.Time) (err error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -179,14 +187,22 @@ func (store *Storage) PutCertClientKey(certId int, newClientKeyB64 string, updat
 		id = $3
 	`
 
-	_, err = store.db.ExecContext(ctx, query,
-		newClientKeyB64,
-		updateTimeUnix,
+	res, err := store.db.ExecContext(ctx, query,
+		clientKeyB64,
+		updatedAt.Unix(),
 		certId,
 	)
-
 	if err != nil {
 		return err
+	}
+
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
 	}
 
 	return nil

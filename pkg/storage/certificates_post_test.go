@@ -36,12 +36,14 @@ func TestPostNewCert(t *testing.T) {
 				Country:              new("usa"),
 				State:                new("Ca"),
 				City:                 new("los santos"),
-				CSRExtraExtensions: []certificates.CertExtensionJSON{
+				CSRExtraExtensions: []certificates.CertExtension{
 					{
-						Description:    "OCSP Must Staple",
-						OID:            "1.3.6.1.5.5.7.1.24",
-						Critical:       false,
-						ValueHexString: "3003020105",
+						Extension: pkix.Extension{
+							Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 5, 5, 7, 1, 24},
+							Critical: false,
+							Value:    []byte{0x30, 0x03, 0x02, 0x01, 0x05},
+						},
+						Description: "OCSP Must Staple",
 					},
 				},
 				PreferredRootCN:             new("Root xyz"),
@@ -108,7 +110,7 @@ func TestPostNewCert(t *testing.T) {
 				Country:                     new("usa"),
 				State:                       new("Ca"),
 				City:                        new("los santos"),
-				CSRExtraExtensions:          []certificates.CertExtensionJSON{},
+				CSRExtraExtensions:          []certificates.CertExtension{},
 				PreferredRootCN:             new("Root xyz"),
 				PostProcessingCommand:       new("./run-me.py"),
 				PostProcessingEnvironment:   []string{},
@@ -138,12 +140,14 @@ func TestPostNewCert(t *testing.T) {
 				Country:            new("usa"),
 				State:              new("Ca"),
 				City:               new("los santos"),
-				CSRExtraExtensions: []certificates.CertExtensionJSON{
+				CSRExtraExtensions: []certificates.CertExtension{
 					{
-						Description:    "OCSP Must Staple",
-						OID:            "1.3.6.1.5.5.7.1.24",
-						Critical:       false,
-						ValueHexString: "3003020105",
+						Extension: pkix.Extension{
+							Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 5, 5, 7, 1, 24},
+							Critical: false,
+							Value:    []byte{0x30, 0x03, 0x02, 0x01, 0x05},
+						},
+						Description: "OCSP Must Staple",
 					},
 				},
 				PreferredRootCN:             new("Root xyz"),
@@ -175,12 +179,14 @@ func TestPostNewCert(t *testing.T) {
 				Country:            new("usa"),
 				State:              new("Ca"),
 				City:               new("los santos"),
-				CSRExtraExtensions: []certificates.CertExtensionJSON{
+				CSRExtraExtensions: []certificates.CertExtension{
 					{
-						Description:    "OCSP Must Staple",
-						OID:            "1.3.6.1.5.5.7.1.24",
-						Critical:       false,
-						ValueHexString: "3003020105",
+						Extension: pkix.Extension{
+							Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 5, 5, 7, 1, 24},
+							Critical: false,
+							Value:    []byte{0x30, 0x03, 0x02, 0x01, 0x05},
+						},
+						Description: "OCSP Must Staple",
 					},
 				},
 				PreferredRootCN:             new("Root xyz"),

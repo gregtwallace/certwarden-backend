@@ -126,7 +126,7 @@ func (service *Service) DisableClientKey(w http.ResponseWriter, r *http.Request)
 	// validation -- end
 
 	// update storage
-	err = service.storage.PutCertClientKey(certId, "", int(time.Now().Unix()))
+	err = service.storage.PutCertClientKey(certId, "", time.Now())
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

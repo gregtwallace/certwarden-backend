@@ -40,7 +40,6 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_
 		payload.UpdatedAt,
 		payload.ID,
 	)
-
 	if err != nil {
 		return private_keys.Key{}, err
 	}

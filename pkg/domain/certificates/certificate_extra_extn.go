@@ -4,15 +4,11 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
-)
-
-var (
-	errCertExtOIDBadFormat = errors.New("certificates extension: OID string invalid (must be in dot notation)")
-	errCertExtValueBad     = errors.New("certificates extension: Value invalid (must be hex string, hex string with colons, or hex string with spaces)")
 )
 
 // CertExtension us a pkix.Extension with an additional field for
@@ -23,88 +19,141 @@ type CertExtension struct {
 }
 
 // String prints a log friendly version of the Certificate Extension (useful for testing)
-func (ce CertExtension) String() string {
-	return fmt.Sprintf("CertExtension{Description: %s, Id: %s, Critical: %t, Value: %x}", ce.Description, ce.Id.String(), ce.Critical, ce.Value)
+func (cext CertExtension) String() string {
+	return fmt.Sprintf("CertExtension{Description: %s, Id: %s, Critical: %t, Value: %x}", cext.Description, cext.Id.String(), cext.Critical, cext.Value)
 }
 
-// CertExtensionJSON is the object to use in the API (both input and output)
-// to represent the custom CertificateExtension
-type CertExtensionJSON struct {
-	Description    string `json:"description"`
-	OID            string `json:"oid"`
-	Critical       bool   `json:"critical"`
-	ValueHexString string `json:"value_hex"`
-}
-
-// toJSONObj returns the JSON object of the custom CertExtension
-func (ce CertExtension) toJSONObj() CertExtensionJSON {
-	return CertExtensionJSON{
-		Description:    ce.Description,
-		OID:            ce.Id.String(),
-		Critical:       ce.Critical,
-		ValueHexString: hex.EncodeToString(ce.Value),
+// UnmarshalJSON implements the unmarshalling interface for CertExtension
+// json should be in the shape:
+//
+//	{
+//		Description    string `json:"description"`
+//		OID            string `json:"oid"`
+//		Critical       bool   `json:"critical"`
+//		ValueHexString string `json:"value_hex"`
+//	}
+func (cext *CertExtension) UnmarshalJSON(b []byte) error {
+	// generic unmarshal
+	m := map[string]interface{}{}
+	err := json.Unmarshal(b, &m)
+	if err != nil {
+		return err
 	}
-}
 
-// toCertExtension validates the CertExtensionJSON and then returns
-// the CertExtension object; if any fields fail to validate, an error
-// is returned instead
-func (cej CertExtensionJSON) ToCertExtension() (CertExtension, error) {
-	ce := CertExtension{}
+	result := CertExtension{}
 
-	// Description - no validation needed
-	ce.Description = cej.Description
+	// description
+	desc, ok := m["description"]
+	if !ok {
+		return errors.New("'description' missing")
+	}
+	result.Description, ok = desc.(string)
+	if !ok {
+		return errors.New("'description' is not string type")
+	}
 
-	// OID - must convert into asn1.ObjectIdentifier (must be in dot notation)
-	var err error
-	oidParts := strings.Split(cej.OID, ".")
+	// oid - must convert into asn1.ObjectIdentifier (must be in dot notation)
+	desc, ok = m["oid"]
+	if !ok {
+		return errors.New("'oid' missing")
+	}
+	oidStr, ok := desc.(string)
+	if !ok {
+		return errors.New("'oid' is not string type")
+	}
+
+	oidParts := strings.Split(oidStr, ".")
 	id := make(asn1.ObjectIdentifier, len(oidParts))
 	for i := range oidParts {
 		id[i], err = strconv.Atoi(oidParts[i])
 		if err != nil {
-			return CertExtension{}, errCertExtOIDBadFormat
+			return errors.New("invalid oid format")
 		}
 	}
-	ce.Id = id
+	result.Id = id
 
-	// Cricial - no validation needed
-	ce.Critical = cej.Critical
+	// critical
+	desc, ok = m["critical"]
+	if !ok {
+		return errors.New("'critical' missing")
+	}
+	result.Critical, ok = desc.(bool)
+	if !ok {
+		return errors.New("'critical' is not bool type")
+	}
 
-	// ValueByteString - must be a valid hex byte string; will try a couple of parsing
-	// options (allow bytes to be separated by colons or spaces)
-	valueParts := []string{}
-	if strings.Contains(cej.ValueHexString, ":") {
+	// value - must convert from hex string to []byte
+	// allow no delimiter, ':' (colon), or ' ' (space) as delimiter
+	desc, ok = m["value_hex"]
+	if !ok {
+		return errors.New("'value_hex' missing")
+	}
+	valueHex, ok := desc.(string)
+	if !ok {
+		return errors.New("'value_hex' is not string type")
+	}
+
+	valueHexParts := []string{}
+	// check for and deal with ':' or ' ' separation
+	if strings.Contains(valueHex, ":") {
 		// has colons
-		valueParts = strings.Split(cej.ValueHexString, ":")
-	} else if strings.Contains(cej.ValueHexString, " ") {
+		valueHexParts = strings.Split(valueHex, ":")
+	} else if strings.Contains(valueHex, " ") {
 		// has spaces
-		valueParts = strings.Split(cej.ValueHexString, " ")
+		valueHexParts = strings.Split(valueHex, " ")
 	}
 
 	// if we made value parts, build hex without separator string from them, if we did
 	// not, use original hex value
 	valueHexNoSep := ""
-	if len(valueParts) > 0 {
-		for i := range valueParts {
+	if len(valueHexParts) > 0 {
+		for i := range valueHexParts {
 			// each byte must be explicityly two chars long
-			if len(valueParts[i]) != 2 {
+			if len(valueHexParts[i]) != 2 {
 				// fail if not
-				return CertExtension{}, errCertExtValueBad
+				return fmt.Errorf("invalid value byte '%s' (not 2 chars)", valueHexParts[i])
 			}
 
 			// add byte to the no seperation string
-			valueHexNoSep += valueParts[i]
+			valueHexNoSep += valueHexParts[i]
 		}
 	} else {
 		// no separator was found, use as-is
-		valueHexNoSep = cej.ValueHexString
+		valueHexNoSep = valueHex
 	}
 
 	// decode hex string
-	ce.Value, err = hex.DecodeString(valueHexNoSep)
+	result.Value, err = hex.DecodeString(valueHexNoSep)
 	if err != nil {
-		return CertExtension{}, errCertExtValueBad
+		return fmt.Errorf("failed to decode hex '%s'", valueHexNoSep)
 	}
 
-	return ce, nil
+	// good to go
+	*cext = result
+	return nil
+}
+
+// MarshalJSON implements the marshalling interface for CertExtension
+// and the output json will be in the shape:
+//
+//	{
+//		Description    string `json:"description"`
+//		OID            string `json:"oid"`
+//		Critical       bool   `json:"critical"`
+//		ValueHexString string `json:"value_hex"`
+//	}
+func (cext *CertExtension) MarshalJSON() ([]byte, error) {
+	out := struct {
+		Description    string `json:"description"`
+		OID            string `json:"oid"`
+		Critical       bool   `json:"critical"`
+		ValueHexString string `json:"value_hex"`
+	}{
+		Description:    cext.Description,
+		OID:            cext.Id.String(),
+		Critical:       cext.Critical,
+		ValueHexString: hex.EncodeToString(cext.Value),
+	}
+
+	return json.Marshal(out)
 }
