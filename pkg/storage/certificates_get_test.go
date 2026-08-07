@@ -116,9 +116,9 @@ func TestGetAllCerts(t *testing.T) {
 		expectedAtIndx    certificates.Certificate
 	}{
 		{pagination_sort.Query{}, 9, 9, 2, cert18},
-		{QueryBuilderForTest(1, 1, "id", true), 9, 1, 0, cert26},
-		{QueryBuilderForTest(3, 6, "servername", false), 9, 3, 1, cert27},
-		{QueryBuilderForTest(4, 1, "accountname", true), 9, 4, 0, cert18},
+		{queryBuilderForTest(1, 1, "id", true), 9, 1, 0, cert26},
+		{queryBuilderForTest(3, 6, "servername", false), 9, 3, 1, cert27},
+		{queryBuilderForTest(4, 1, "accountname", true), 9, 4, 0, cert18},
 	}
 
 	// create testing service

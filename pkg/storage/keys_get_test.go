@@ -277,8 +277,8 @@ func TestGetAllKeys(t *testing.T) {
 		expectedKeyAtIndx private_keys.Key
 	}{
 		{pagination_sort.Query{}, 19, 19, 0, key63},
-		{QueryBuilderForTest(5, 15, "algorithm", true), 19, 4, 2, key67},
-		{QueryBuilderForTest(10, 0, "last_access", false), 19, 10, 2, key31},
+		{queryBuilderForTest(5, 15, "algorithm", true), 19, 4, 2, key67},
+		{queryBuilderForTest(10, 0, "last_access", false), 19, 10, 2, key31},
 	}
 
 	// create testing service

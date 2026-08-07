@@ -61,8 +61,8 @@ func TestGetAllAcmeServers(t *testing.T) {
 		expectedServerAtIndx acme_servers.Server
 	}{
 		{pagination_sort.Query{}, 5, 5, 3, acmeServer0},
-		{QueryBuilderForTest(1, 1, "id", true), 5, 1, 0, acmeServer1},
-		{QueryBuilderForTest(2, 1, "updated_at", false), 5, 2, 1, acmeServer4},
+		{queryBuilderForTest(1, 1, "id", true), 5, 1, 0, acmeServer1},
+		{queryBuilderForTest(2, 1, "updated_at", false), 5, 2, 1, acmeServer4},
 	}
 
 	// create testing service

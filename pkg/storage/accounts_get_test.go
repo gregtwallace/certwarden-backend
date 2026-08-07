@@ -92,10 +92,10 @@ func TestGetAllAcmeAccounts(t *testing.T) {
 		expectedAcctAtIndx acme_accounts.Account
 	}{
 		{pagination_sort.Query{}, 7, 7, 3, acmeAcct23},
-		{QueryBuilderForTest(1, 1, "id", true), 7, 1, 0, acmeAcct2},
-		{QueryBuilderForTest(2, 1, "servername", false), 7, 2, 1, acmeAcct2},
-		{QueryBuilderForTest(2, 4, "servername", false), 7, 2, 0, acmeAcct23},
-		{QueryBuilderForTest(6, 1, "keyname", true), 7, 6, 5, acmeAcct1},
+		{queryBuilderForTest(1, 1, "id", true), 7, 1, 0, acmeAcct2},
+		{queryBuilderForTest(2, 1, "servername", false), 7, 2, 1, acmeAcct2},
+		{queryBuilderForTest(2, 4, "servername", false), 7, 2, 0, acmeAcct23},
+		{queryBuilderForTest(6, 1, "keyname", true), 7, 6, 5, acmeAcct1},
 	}
 
 	// create testing service
