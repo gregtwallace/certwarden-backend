@@ -33,7 +33,7 @@ func TestKeyInUse(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("key id: %d", tc.keyID), func(t *testing.T) {
+		t.Run(fmt.Sprintf("id: %d", tc.keyID), func(t *testing.T) {
 			inUse, err := storage.KeyInUse(tc.keyID)
 			if !test_helpers.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
@@ -68,7 +68,7 @@ func TestDeleteKey(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("key id: %d", tc.keyID), func(t *testing.T) {
+		t.Run(fmt.Sprintf("id: %d", tc.keyID), func(t *testing.T) {
 			err := storage.DeleteKey(tc.keyID)
 			if !test_helpers.ErrorsIs(err, tc.expectedDelErr) {
 				t.Errorf("expected delete error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedDelErr), test_helpers.ErrorToVal(err))

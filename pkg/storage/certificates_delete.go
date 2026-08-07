@@ -2,11 +2,14 @@ package storage
 
 import (
 	"context"
-	"database/sql"
+	"errors"
+	"fmt"
 )
 
 // DeleteCert deletes a cert from the database
 func (store *Storage) DeleteCert(id int) (err error) {
+	// Note: There is no CertInUse func, so this transaction lives here instead
+
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -25,10 +28,11 @@ func (store *Storage) DeleteCert(id int) (err error) {
 	`
 
 	row := tx.QueryRowContext(ctx, query, id)
-	temp := -2
-	row.Scan(&temp)
-	if temp == -2 {
-		return sql.ErrNoRows
+	_discardVar := -2
+	err = row.Scan(&_discardVar)
+	if err != nil {
+		// sql.ErrNoRows included here
+		return err
 	}
 
 	// delete
@@ -39,9 +43,18 @@ func (store *Storage) DeleteCert(id int) (err error) {
 		id = $1
 	`
 
-	_, err = tx.ExecContext(ctx, query, id)
+	res, err := tx.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
+	}
+
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
 	}
 
 	err = tx.Commit()
