@@ -22,11 +22,11 @@ func TestErrorsIs(t *testing.T) {
 		},
 		{
 			err:       nil,
-			target:    helpers_test.MakeTestErrorStringComp("an error"),
+			target:    helpers_test.NewTestErrorStringComp("an error"),
 			isTheSame: false,
 		},
 		{
-			err:       helpers_test.MakeTestErrorStringComp("an error"),
+			err:       helpers_test.NewTestErrorStringComp("an error"),
 			target:    nil,
 			isTheSame: false,
 		},
@@ -42,52 +42,52 @@ func TestErrorsIs(t *testing.T) {
 		},
 		{
 			err:       sql.ErrNoRows,
-			target:    helpers_test.MakeTestErrorStringComp("an error"),
+			target:    helpers_test.NewTestErrorStringComp("an error"),
 			isTheSame: false,
 		},
 		{
 			err:       acme.ErrChallengeMalformed,
-			target:    helpers_test.MakeTestErrorStringComp("an error"),
+			target:    helpers_test.NewTestErrorStringComp("an error"),
 			isTheSame: false,
 		},
 		{
 			err:       errors.New("some error"),
-			target:    helpers_test.MakeTestErrorStringComp("uh oh, some error"),
+			target:    helpers_test.NewTestErrorStringComp("uh oh, some error"),
 			isTheSame: false,
 		},
 		{
 			err:       errors.New("some error"),
-			target:    helpers_test.MakeTestErrorStringComp("some error, uh oh"),
+			target:    helpers_test.NewTestErrorStringComp("some error, uh oh"),
 			isTheSame: false,
 		},
 		{
-			err:       helpers_test.MakeTestErrorStringComp("uh oh, some error"),
+			err:       helpers_test.NewTestErrorStringComp("uh oh, some error"),
 			target:    errors.New("some error"),
 			isTheSame: false,
 		},
 		{
-			err:       helpers_test.MakeTestErrorStringComp("some error, uh oh"),
+			err:       helpers_test.NewTestErrorStringComp("some error, uh oh"),
 			target:    errors.New("some error"),
 			isTheSame: false,
 		},
 		{
 			err:       errors.New("uh oh, some error"),
-			target:    helpers_test.MakeTestErrorStringComp("some error"),
+			target:    helpers_test.NewTestErrorStringComp("some error"),
 			isTheSame: true,
 		},
 		{
 			err:       errors.New("some error, uh oh"),
-			target:    helpers_test.MakeTestErrorStringComp("some error"),
+			target:    helpers_test.NewTestErrorStringComp("some error"),
 			isTheSame: true,
 		},
 		{
 			err:       errors.New("uh oh, some error"),
-			target:    helpers_test.MakeTestErrorStringComp("SOME errOR"),
+			target:    helpers_test.NewTestErrorStringComp("SOME errOR"),
 			isTheSame: true,
 		},
 		{
 			err:       errors.New("some error, uh oh"),
-			target:    helpers_test.MakeTestErrorStringComp("SOME errOR"),
+			target:    helpers_test.NewTestErrorStringComp("SOME errOR"),
 			isTheSame: true,
 		},
 	}

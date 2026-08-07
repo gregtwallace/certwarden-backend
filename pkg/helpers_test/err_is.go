@@ -20,9 +20,9 @@ func (e testErrorStringComp) Unwrap() error {
 	return e.Inner
 }
 
-// MakeTestErrorStringComp wraps the provided error text in a special error type that
+// NewTestErrorStringComp wraps the provided error text in a special error type that
 // will be parsed and compared when the custom ErrorsIs is called
-func MakeTestErrorStringComp(errText string) testErrorStringComp {
+func NewTestErrorStringComp(errText string) testErrorStringComp {
 	return testErrorStringComp{Inner: errors.New(errText)}
 }
 
