@@ -2,10 +2,9 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/acme_accounts"
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/storage"
-	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -155,7 +154,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 				UpdatedAt: time.Unix(107800777, 0),
 			},
 			acme_accounts.Account{},
-			test_helpers.ErrAnyType,
+			helpers_test.NewTestErrorStringComp("UNIQUE constraint failed"),
 			16,
 			acmeAcct16,
 			nil,
@@ -247,15 +246,15 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
 			acct, err := storage.PutAcmeAccountUpdate(tc.payload)
-			if !test_helpers.ErrorsIs(err, tc.expectedPutErr) {
-				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
+				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeAccount(t, acct, tc.expectedPutResult)
 
 			acct, err = storage.GetOneAcmeAccountById(tc.getId)
-			if !errors.Is(err, tc.expectedGetErr) {
-				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeAccount(t, acct, tc.expectedGetResult)
@@ -337,7 +336,7 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 				UpdatedAt:    time.Unix(1088000751, 0),
 			},
 			acme_accounts.Account{},
-			test_helpers.ErrAnyType,
+			helpers_test.NewTestErrorStringComp("FOREIGN KEY constraint failed"),
 			1,
 			acmeAcct1,
 			nil,
@@ -349,7 +348,7 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 				UpdatedAt:    time.Unix(1088000752, 0),
 			},
 			acme_accounts.Account{},
-			test_helpers.ErrAnyType,
+			helpers_test.NewTestErrorStringComp("FOREIGN KEY constraint failed"),
 			1,
 			acmeAcct1,
 			nil,
@@ -361,7 +360,7 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 				UpdatedAt:    time.Unix(1088000753, 0),
 			},
 			acme_accounts.Account{},
-			test_helpers.ErrAnyType,
+			helpers_test.NewTestErrorStringComp("UNIQUE constraint failed"),
 			23,
 			acmeAcct23,
 			nil,
@@ -377,15 +376,15 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
 			acct, err := storage.PutAcmeAccountNewKey(tc.payload)
-			if !test_helpers.ErrorsIs(err, tc.expectedPutErr) {
-				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
+				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeAccount(t, acct, tc.expectedPutResult)
 
 			acct, err = storage.GetOneAcmeAccountById(tc.getId)
-			if !errors.Is(err, tc.expectedGetErr) {
-				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeAccount(t, acct, tc.expectedGetResult)

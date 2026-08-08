@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os/exec"
 	"sync"
+	"time"
 
 	"github.com/scaleway/scaleway-sdk-go/logger"
 	"go.uber.org/zap"
@@ -60,7 +61,7 @@ type Storage interface {
 	GetNewestIncompleteCertOrderId(certId int) (orderId int, err error)
 
 	// certs
-	UpdateCertUpdatedTime(certId int) (err error)
+	PutCertUpdatedAt(certId int, updatedAt time.Time) (err error)
 }
 
 // service struct

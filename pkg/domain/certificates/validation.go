@@ -3,7 +3,9 @@ package certificates
 import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/validation"
+	"crypto/aes"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 )
@@ -28,6 +30,9 @@ var (
 	// domain
 	ErrDomainBad        = errors.New("domain or subject name not valid")
 	ErrClientAddressBad = errors.New("client address is not valid")
+
+	// aes key
+	ErrPostProcessingClientKeyB64Bad = errors.New("post processing aes key not valid")
 )
 
 // GetCertificate returns the Certificate for the specified id.
@@ -98,7 +103,7 @@ func (service *Service) privateKeyIdValid(keyId int, certId *int) bool {
 		}
 
 		// if certificate's key id matches keyId, valid
-		if cert.CertificateKey.ID == keyId {
+		if cert.Key.ID == keyId {
 			return true
 		}
 
@@ -120,6 +125,23 @@ func subjectAltsValid(alts []string) bool {
 		if !subjectValid(altName) {
 			return false
 		}
+	}
+
+	return true
+}
+
+// clientKeyB64Valid ensures the string is a base64 RawURL encoded AES key
+func clientKeyB64Valid(b64Key string) bool {
+	// decode AES key
+	aesKey, err := base64.RawURLEncoding.DecodeString(b64Key)
+	if err != nil {
+		return false
+	}
+
+	// ensure key is a proper size and can create a cipher
+	_, err = aes.NewCipher(aesKey)
+	if err != nil {
+		return false
 	}
 
 	return true

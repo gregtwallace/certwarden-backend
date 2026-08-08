@@ -30,8 +30,8 @@ func (store *Storage) PostNewAcmeAccount(payload acme_accounts.NewPayload) (acme
 		payload.Status,
 		payload.Email,
 		payload.AcceptedTos,
-		payload.CreatedAt,
-		payload.UpdatedAt,
+		payload.CreatedAt.Unix(),
+		payload.UpdatedAt.Unix(),
 		payload.Kid,
 	).Scan(&id)
 

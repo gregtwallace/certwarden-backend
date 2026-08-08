@@ -12,36 +12,37 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// DetailsUpdatePayload is the struct for editing an existing cert. A number of
+// UpdatePayload is the struct for editing an existing cert. A number of
 // fields can be updated by the client on the fly (without ACME interaction).
-type DetailsUpdatePayload struct {
-	ID                          int                 `json:"-"`
-	Name                        *string             `json:"name"`
-	Description                 *string             `json:"description"`
-	PrivateKeyId                *int                `json:"private_key_id"`
-	SubjectAltNames             []string            `json:"subject_alts"`
-	Organization                *string             `json:"organization"`
-	OrganizationalUnit          *string             `json:"organizational_unit"`
-	Country                     *string             `json:"country"`
-	State                       *string             `json:"state"`
-	City                        *string             `json:"city"`
-	CSRExtraExtensions          []CertExtensionJSON `json:"csr_extra_extensions"`
-	PreferredRootCN             *string             `json:"preferred_root_cn"`
-	PostProcessingCommand       *string             `json:"post_processing_command"`
-	PostProcessingEnvironment   []string            `json:"post_processing_environment"`
-	PostProcessingClientAddress *string             `json:"post_processing_client_address"`
-	Profile                     *string             `json:"profile"`
-	ApiKey                      *string             `json:"api_key"`
-	ApiKeyNew                   *string             `json:"api_key_new"`
-	ApiKeyViaUrl                *bool               `json:"api_key_via_url"`
-	UpdatedAt                   int                 `json:"-"`
+type UpdatePayload struct {
+	ID                          int             `json:"-"`
+	Name                        *string         `json:"name"`
+	Description                 *string         `json:"description"`
+	PrivateKeyId                *int            `json:"private_key_id"`
+	SubjectAltNames             []string        `json:"subject_alts"`
+	Organization                *string         `json:"organization"`
+	OrganizationalUnit          *string         `json:"organizational_unit"`
+	Country                     *string         `json:"country"`
+	State                       *string         `json:"state"`
+	City                        *string         `json:"city"`
+	CSRExtraExtensions          []CertExtension `json:"csr_extra_extensions"`
+	PreferredRootCN             *string         `json:"preferred_root_cn"`
+	PostProcessingCommand       *string         `json:"post_processing_command"`
+	PostProcessingEnvironment   []string        `json:"post_processing_environment"`
+	PostProcessingClientAddress *string         `json:"post_processing_client_address"`
+	PostProcessingClientKeyB64  *string         `json:"post_processing_client_key"`
+	Profile                     *string         `json:"profile"`
+	ApiKey                      *string         `json:"api_key"`
+	ApiKeyNew                   *string         `json:"api_key_new"`
+	ApiKeyViaUrl                *bool           `json:"api_key_via_url"`
+	UpdatedAt                   time.Time       `json:"-"`
 }
 
 // PutDetailsCert is a handler that sets various details about a cert and saves
 // them to storage. These are all details that should be editable any time.
 func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// payload decoding
-	var payload DetailsUpdatePayload
+	var payload UpdatePayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
@@ -92,7 +93,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	// profile Extension -- validate if specified
 	if payload.Profile != nil && *payload.Profile != "" {
 		// specified, validate against acme service
-		acmeService, err := service.acmeServerService.AcmeService(cert.CertificateAccount.AcmeServer.ID)
+		acmeService, err := service.acmeServerService.AcmeService(cert.Account.AcmeServer.ID)
 		if err != nil {
 			err = fmt.Errorf("failed to retrieve acme service (%s)", err)
 			service.logger.Error(err)
@@ -114,23 +115,13 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 		service.logger.Debug(ErrApiKeyNewBad)
 		return output.JsonErrValidationFailed(ErrApiKeyNewBad)
 	}
-	// TODO: Do any validation of CSR components?
 
-	// CSR Extra Extensions - check each extra extension for proper formatting
-	for i := range payload.CSRExtraExtensions {
-		_, err = payload.CSRExtraExtensions[i].ToCertExtension()
-		if err != nil {
-			service.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
-		}
-	}
+	// CSR Extra Extensions - error checking is now in the custom unmarshal function
 
 	// post processing command & env are optional but nothing to validate
 
 	// post processing address
-	if payload.PostProcessingClientAddress == nil {
-		payload.PostProcessingClientAddress = new(string)
-	} else if *payload.PostProcessingClientAddress != "" {
+	if payload.PostProcessingClientAddress != nil && *payload.PostProcessingClientAddress != "" {
 		valid := validation.DomainAndPortValid(*payload.PostProcessingClientAddress)
 		if !valid {
 			service.logger.Debug(ErrClientAddressBad)
@@ -138,14 +129,23 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 		}
 	}
 
+	// post processing aes key (if specified)
+	if payload.PostProcessingClientKeyB64 != nil {
+		valid := clientKeyB64Valid(*payload.PostProcessingClientKeyB64)
+		if !valid {
+			service.logger.Debug(ErrPostProcessingClientKeyB64Bad)
+			return output.JsonErrValidationFailed(ErrPostProcessingClientKeyB64Bad)
+		}
+	}
+
 	// end validation
 
 	// add additional details to the payload before saving
-	payload.UpdatedAt = int(time.Now().Unix())
+	payload.UpdatedAt = time.Now()
 
 	// save account name and desc to storage, which also returns the account id with new
 	// name and description
-	updatedCert, err := service.storage.PutDetailsCert(payload)
+	updatedCert, err := service.storage.PutCertUpdate(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

@@ -23,9 +23,9 @@ func (store *Storage) LockDBForBackup() (unlockFunc func(), err error) {
 		return nil, err
 	}
 
-	// make function to rollback the tx (remove the lock)
+	// make function to remove lock
 	unlockFunc = func() {
-		_ = tx.Rollback()
+		_ = tx.Commit()
 	}
 
 	return unlockFunc, nil

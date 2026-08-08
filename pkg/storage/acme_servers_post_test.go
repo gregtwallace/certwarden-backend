@@ -2,9 +2,8 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/acme_servers"
-	"certwarden-backend/pkg/test_helpers"
+	"certwarden-backend/pkg/helpers_test"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -23,8 +22,8 @@ func TestPostNewServer(t *testing.T) {
 				Description:  new("some service"),
 				DirectoryURL: new("https://example.com/directory"),
 				IsStaging:    new(true),
-				CreatedAt:    1780337479,
-				UpdatedAt:    1780338000,
+				CreatedAt:    time.Unix(1780337479, 0),
+				UpdatedAt:    time.Unix(1780338000, 0),
 			},
 			nil,
 			acme_servers.Server{
@@ -44,10 +43,10 @@ func TestPostNewServer(t *testing.T) {
 				Description:  new("some service wont work"),
 				DirectoryURL: new("https://example2.com/directory"),
 				IsStaging:    new(true),
-				CreatedAt:    1780337449,
-				UpdatedAt:    1780338040,
+				CreatedAt:    time.Unix(1780337449, 0),
+				UpdatedAt:    time.Unix(1780338040, 0),
 			},
-			test_helpers.ErrAnyType,
+			helpers_test.NewTestErrorStringComp("UNIQUE constraint failed"),
 			acme_servers.Server{},
 			sql.ErrNoRows,
 		},
@@ -57,10 +56,10 @@ func TestPostNewServer(t *testing.T) {
 				Description: new("wont work"),
 				// DirectoryURL
 				IsStaging: new(false),
-				CreatedAt: 1880337449,
-				UpdatedAt: 1880338040,
+				CreatedAt: time.Unix(1880337449, 0),
+				UpdatedAt: time.Unix(1880338040, 0),
 			},
-			test_helpers.ErrAnyType,
+			helpers_test.NewTestErrorStringComp("NOT NULL constraint failed"),
 			acme_servers.Server{},
 			sql.ErrNoRows,
 		},
@@ -73,17 +72,17 @@ func TestPostNewServer(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("post name: %s", test_helpers.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
+		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
 			server, err := storage.PostNewServer(tc.newPayload)
-			if !test_helpers.ErrorsIs(err, tc.expectedPostErr) {
-				t.Errorf("expected post error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPostErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
+				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeServer(t, server, tc.expectedNew)
 
 			server, err = storage.GetOneServerByName(server.Name)
-			if !errors.Is(err, tc.expectedGetErr) {
-				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeServer(t, server, tc.expectedNew)

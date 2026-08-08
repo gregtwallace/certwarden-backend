@@ -76,7 +76,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 
 	// update storage
 	// set current api key from new key
-	err = service.storage.PutCertApiKey(certId, cert.ApiKeyNew, int(time.Now().Unix()))
+	err = service.storage.PutCertApiKey(certId, cert.ApiKeyNew, time.Now())
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
@@ -84,7 +84,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	cert.ApiKey = cert.ApiKeyNew
 
 	// set new key to blank
-	err = service.storage.PutCertNewApiKey(certId, "", int(time.Now().Unix()))
+	err = service.storage.PutCertApiKeyNew(certId, "", time.Now())
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
@@ -126,7 +126,7 @@ func (service *Service) DisableClientKey(w http.ResponseWriter, r *http.Request)
 	// validation -- end
 
 	// update storage
-	err = service.storage.PutCertClientKey(certId, "", int(time.Now().Unix()))
+	err = service.storage.PutCertClientKey(certId, "", time.Now())
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

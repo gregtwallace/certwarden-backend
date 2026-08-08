@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 )
 
 // KeyInUse returns a bool if the specified key is in use, it returns
@@ -16,6 +17,12 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
+	tx, err := store.db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+
 	// check key exists
 	query := `
 	SELECT id
@@ -23,7 +30,7 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	WHERE id = $1
 	`
 
-	row := store.db.QueryRowContext(ctx, query, id)
+	row := tx.QueryRowContext(ctx, query, id)
 	_discardVar := -2
 	err = row.Scan(&_discardVar)
 	if err != nil {
@@ -39,7 +46,7 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	WHERE private_key_id = $1
 	`
 
-	row = store.db.QueryRowContext(ctx, query, id)
+	row = tx.QueryRowContext(ctx, query, id)
 	err = row.Scan(&_discardVar)
 	if !errors.Is(err, sql.ErrNoRows) {
 		return true, err
@@ -54,7 +61,7 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	WHERE private_key_id = $1
 	`
 
-	row = store.db.QueryRowContext(ctx, query, id)
+	row = tx.QueryRowContext(ctx, query, id)
 	err = row.Scan(&_discardVar)
 	if !errors.Is(err, sql.ErrNoRows) {
 		return true, err
@@ -86,10 +93,15 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 		finalized_key_id = $1
 	`
 
-	row = store.db.QueryRowContext(ctx, query, id)
+	row = tx.QueryRowContext(ctx, query, id)
 	err = row.Scan(&_discardVar)
 	if !errors.Is(err, sql.ErrNoRows) {
 		return true, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return false, err
 	}
 
 	return false, nil
@@ -97,9 +109,6 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 
 // DeleteKey deletes a private key from the database
 func (store *Storage) DeleteKey(id int) error {
-	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
-	defer cancel()
-
 	// check that delete is safe
 	inUse, err := store.KeyInUse(id)
 	if err != nil {
@@ -109,6 +118,9 @@ func (store *Storage) DeleteKey(id int) error {
 		return ErrInUse
 	}
 
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
+	defer cancel()
+
 	// delete
 	query := `
 	DELETE FROM
@@ -117,9 +129,18 @@ func (store *Storage) DeleteKey(id int) error {
 		id = $1
 	`
 
-	_, err = store.db.ExecContext(ctx, query, id)
+	res, err := store.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
+	}
+
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
 	}
 
 	return nil

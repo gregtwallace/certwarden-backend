@@ -31,7 +31,7 @@ func (store *Storage) PutServerUpdate(payload acme_servers.UpdatePayload) (acme_
 		payload.Description,
 		payload.DirectoryURL,
 		payload.IsStaging,
-		payload.UpdatedAt,
+		payload.UpdatedAt.Unix(),
 		payload.ID,
 	)
 	if err != nil {
