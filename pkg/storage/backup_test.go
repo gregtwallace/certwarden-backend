@@ -48,6 +48,8 @@ func backupTestBattery(t *testing.T, storage *storage.Storage, expectLocked bool
 		wg.Done()
 	})
 
+	wg.Wait()
+
 	// trying to write
 	wg.Add(1)
 	go t.Run(fmt.Sprintf("%s: put key api key", lockedStateTxt), func(t *testing.T) {
