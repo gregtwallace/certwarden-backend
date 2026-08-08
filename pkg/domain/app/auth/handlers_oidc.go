@@ -25,6 +25,12 @@ func (service *Service) OIDCGetLogin(w http.ResponseWriter, r *http.Request) *ou
 		return output.JsonErrNotFound(errors.New("auth: OIDC is not configured"))
 	}
 
+	// Check if OIDC provider is Microsoft Entra ID and app_uri is not set
+	if strings.Contains(service.oidc.oauth2Config.Endpoint.AuthURL, "login.microsoftonline.com") && 
+		oidcCertWardenScope == "certwarden:superadmin" {
+		service.logger.Warn("'app_uri' is not set in configuration. This is required for Microsoft Entra ID OIDC authentication to work properly.")
+	}
+
 	// Option 1: Finish login with state/code
 	stateVal := r.URL.Query().Get("state")
 	if stateVal != "" {
@@ -178,29 +184,50 @@ func (service *Service) OIDCGetCallback(w http.ResponseWriter, r *http.Request) 
 		return nil
 	}
 
-	// Validate the required scopes were granted - https://datatracker.ietf.org/doc/html/rfc6749#section-3.3
-	// if the scope is omitted, spec requires scope to exactly match the request (i.e., scope was accepted and
-	// validation here isn't needed)
-	// i.e., this is the AUTHORIZATION step
-	responseScopeString, hasScope := oidcStateObj.oauth2Token.Extra("scope").(string)
-	if hasScope {
-		responseScopes := strings.Split(responseScopeString, " ")
-		for _, requiredScope := range oidcRequiredScopes {
-			found := false
-			for _, responseScope := range responseScopes {
-				if requiredScope == responseScope {
-					found = true
-					break
-				}
-			}
+	// Validate the required scopes were granted
+	// For Microsoft Entra ID:
+	// - OpenID Connect scopes (openid, profile, offline_access) are validated by token presence
+	// - Custom API scopes are in the scope claim
 
-			if !found {
-				service.logger.Infof("client %s: oidc user '%s' required scope '%s' was not granted", r.RemoteAddr, oidcStateObj.oidcIDToken.Subject, requiredScope)
-				// redirect to frontend to try again
-				http.Redirect(w, r, oidcUnauthorizedErrorURL(oidcStateObj.callerRedirectUrl).String(), http.StatusFound)
-				return nil
-			}
+	// Validate offline_access by checking for refresh token
+	if oidcStateObj.oauth2Token.RefreshToken == "" {
+		service.logger.Infof("client %s: oidc user '%s' required scope 'offline_access' was not granted (no refresh token)", r.RemoteAddr, oidcStateObj.oidcIDToken.Subject)
+		http.Redirect(w, r, oidcUnauthorizedErrorURL(oidcStateObj.callerRedirectUrl).String(), http.StatusFound)
+		return nil
+	}
+
+	// Validate profile scope by checking for standard profile claims
+	var profileClaims struct {
+		Name    string `json:"name"`
+		Subject string `json:"sub"`
+	}
+	if err := oidcStateObj.oidcIDToken.Claims(&profileClaims); err != nil || profileClaims.Name == "" || profileClaims.Subject == "" {
+		service.logger.Infof("client %s: oidc user '%s' required scope 'profile' was not granted (missing profile claims)", r.RemoteAddr, oidcStateObj.oidcIDToken.Subject)
+		http.Redirect(w, r, oidcUnauthorizedErrorURL(oidcStateObj.callerRedirectUrl).String(), http.StatusFound)
+		return nil
+	}
+
+	// Validate custom API scope (certwarden:superadmin)
+	responseScopeString, hasScope := oidcStateObj.oauth2Token.Extra("scope").(string)
+	if !hasScope {
+		service.logger.Infof("client %s: oidc token response missing scope claim", r.RemoteAddr)
+		http.Redirect(w, r, oidcUnauthorizedErrorURL(oidcStateObj.callerRedirectUrl).String(), http.StatusFound)
+		return nil
+	}
+
+	responseScopes := strings.Split(responseScopeString, " ")
+	found = false
+	for _, scope := range responseScopes {
+		if scope == oidcCertWardenScope {
+			found = true
+			break
 		}
+	}
+	if !found {
+		service.logger.Infof("client %s: oidc user '%s' required scope '%s' was not granted", r.RemoteAddr, oidcStateObj.oidcIDToken.Subject, oidcCertWardenScope)
+		// redirect to frontend to try again
+		http.Redirect(w, r, oidcUnauthorizedErrorURL(oidcStateObj.callerRedirectUrl).String(), http.StatusFound)
+		return nil
 	}
 
 	// update redirect uri to contain the state and code

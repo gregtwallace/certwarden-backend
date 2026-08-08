@@ -57,6 +57,7 @@ type Config struct {
 		ClientID       string `yaml:"client_id"`
 		ClientSecret   string `yaml:"client_secret"`
 		APIRedirectURI string `yaml:"api_redirect_uri"`
+		AppURI         string `yaml:"app_uri"`
 	} `yaml:"oidc"`
 }
 
@@ -117,6 +118,9 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	if cfg.OIDC.IssuerURL != "" {
 		// context to use CW's http Client
 		oidcCtxWithHttpClient := oidc.ClientContext(app.GetShutdownContext(), app.GetHttpClient())
+
+		// Set up OIDC scopes based on the provider
+		setOIDCScopes(cfg.OIDC.IssuerURL, cfg.OIDC.AppURI)
 
 		// oidc provider
 		var err error
