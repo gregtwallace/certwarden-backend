@@ -4,6 +4,7 @@ import (
 	"certwarden-backend/pkg/output"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 // placeNewOrderAndFulfill creates a new ACME order for the specified Certificate ID,
@@ -21,14 +22,14 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		}
 
 		// get account key
-		key, err := cert.CertificateAccount.AcmeAccountKey()
+		key, err := cert.Account.AcmeAccountKey()
 		if err != nil {
 			service.logger.Error(err)
 			return Order{}, output.JsonErrInternal(err)
 		}
 
 		// send the new-order to ACME
-		acmeService, err := service.acmeServerService.AcmeService(cert.CertificateAccount.AcmeServer.ID)
+		acmeService, err := service.acmeServerService.AcmeService(cert.Account.AcmeServer.ID)
 		if err != nil {
 			service.logger.Error(err)
 			return Order{}, output.JsonErrInternal(err)
@@ -59,7 +60,7 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		}
 
 		// update certificate timestamp
-		err = service.storage.UpdateCertUpdatedTime(cert.ID)
+		err = service.storage.PutCertUpdatedAt(cert.ID, time.Now())
 		if err != nil {
 			service.logger.Error(err)
 			// no return

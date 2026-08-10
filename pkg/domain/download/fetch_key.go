@@ -54,7 +54,7 @@ func (service *Service) getKey(keyName string, apiKey string, apiKeyViaUrl bool)
 	}
 
 	// before return, update key last access, dont fail our though if this step fails, just log error
-	err = service.storage.PutKeyLastAccess(key.ID, time.Now().Unix())
+	err = service.storage.PutKeyLastAccess(key.ID, time.Now())
 	if err != nil {
 		service.logger.Errorf("download: failed to update key (id: %d) last access time (%s)", key.ID, err)
 	}

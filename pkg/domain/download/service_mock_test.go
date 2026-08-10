@@ -5,14 +5,15 @@ import (
 	"certwarden-backend/pkg/domain/download"
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/test_helpers"
 	"context"
 	"database/sql"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"go.uber.org/zap"
@@ -421,10 +422,10 @@ j1f1P6e7Khe0uXD3N+r34piMQT0WX0po2rf16x0i
 
 	return orders.Order{}, sql.ErrNoRows
 }
-func (fs *fakeStorage) PutKeyLastAccess(keyId int, unixLastAccessTime int64) (err error) {
+func (fs *fakeStorage) PutKeyLastAccess(keyId int, lastAccess time.Time) (err error) {
 	return errors.New("not implemented")
 }
-func (fs *fakeStorage) PutCertLastAccess(certId int, unixLastAccessTime int64) (err error) {
+func (fs *fakeStorage) PutCertLastAccess(certId int, lastAccess time.Time) (err error) {
 	return errors.New("not implemented")
 }
 
@@ -490,13 +491,13 @@ func oneTest(t *testing.T, handler func(w http.ResponseWriter, r *http.Request) 
 	jsonErr := handler(w, r)
 
 	if !errors.Is(jsonErr, expectedJsonErr) {
-		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned error '%s' but expected '%s'", test_helpers.GetFunctionName(handler),
-			certName, test_helpers.StringPointerToVal(apiKeyHeader), test_helpers.StringPointerToVal(apiKeyURL), jsonErr, expectedJsonErr)
+		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned error '%s' but expected '%s'", helpers_test.GetFunctionName(handler),
+			certName, helpers_test.StringPointerToVal(apiKeyHeader), helpers_test.StringPointerToVal(apiKeyURL), jsonErr, expectedJsonErr)
 	}
 
 	body := w.Body.String()
 	if body != expectedBody {
-		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned body '%s' but expected body '%s'", test_helpers.GetFunctionName(handler),
-			certName, test_helpers.StringPointerToVal(apiKeyHeader), test_helpers.StringPointerToVal(apiKeyURL), body, expectedBody)
+		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned body '%s' but expected body '%s'", helpers_test.GetFunctionName(handler),
+			certName, helpers_test.StringPointerToVal(apiKeyHeader), helpers_test.StringPointerToVal(apiKeyURL), body, expectedBody)
 	}
 }

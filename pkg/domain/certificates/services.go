@@ -7,6 +7,7 @@ import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
 	"errors"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -26,17 +27,17 @@ type App interface {
 // Storage interface for storage functions
 type Storage interface {
 	GetAllCerts(q pagination_sort.Query) (certs []Certificate, totalRowCount int, err error)
-	GetOneCertById(id int) (cert Certificate, err error)
-	GetOneCertByName(name string) (cert Certificate, err error)
+	GetOneCertById(id int) (Certificate, error)
+	GetOneCertByName(name string) (Certificate, error)
 
 	PostNewCert(payload NewPayload) (Certificate, error)
 
-	PutDetailsCert(payload DetailsUpdatePayload) (Certificate, error)
-	PutCertApiKey(certId int, apiKey string, updateTimeUnix int) (err error)
-	PutCertNewApiKey(certId int, newApiKey string, updateTimeUnix int) (err error)
-	PutCertClientKey(certId int, newClientKeyB64 string, updateTimeUnix int) (err error)
+	PutCertUpdate(payload UpdatePayload) (Certificate, error)
+	PutCertApiKey(certId int, apiKey string, updatedAt time.Time) error
+	PutCertApiKeyNew(certId int, apiKeyNew string, updatedAt time.Time) error
+	PutCertClientKey(certId int, newClientKeyB64 string, updatedAt time.Time) error
 
-	DeleteCert(id int) (err error)
+	DeleteCert(id int) error
 
 	PostNewKey(private_keys.NewPayload) (private_keys.Key, error)
 }

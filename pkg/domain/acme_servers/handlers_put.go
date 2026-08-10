@@ -15,12 +15,12 @@ import (
 // UpdatePayload is the struct for editing an existing Server's
 // information (only certain fields are editable)
 type UpdatePayload struct {
-	ID           int     `json:"-"`
-	Name         *string `json:"name"`
-	Description  *string `json:"description"`
-	DirectoryURL *string `json:"directory_url"`
-	IsStaging    *bool   `json:"is_staging"`
-	UpdatedAt    int     `json:"-"`
+	ID           int       `json:"-"`
+	Name         *string   `json:"name"`
+	Description  *string   `json:"description"`
+	DirectoryURL *string   `json:"directory_url"`
+	IsStaging    *bool     `json:"is_staging"`
+	UpdatedAt    time.Time `json:"-"`
 }
 
 // PutServerUpdate updates a Server that already exists in storage.
@@ -66,7 +66,7 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	// end validation
 
 	// add additional details to the payload before saving
-	payload.UpdatedAt = int(time.Now().Unix())
+	payload.UpdatedAt = time.Now()
 
 	// save updated key info to storage
 	updatedServer, err := service.storage.PutServerUpdate(payload)

@@ -2,9 +2,8 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/acme_accounts"
-	"certwarden-backend/pkg/test_helpers"
+	"certwarden-backend/pkg/helpers_test"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -26,8 +25,8 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				Status:       "a status",
 				Email:        new("anemail@example.com"),
 				AcceptedTos:  new(false),
-				CreatedAt:    1788837479,
-				UpdatedAt:    1788838000,
+				CreatedAt:    time.Unix(1788837479, 0),
+				UpdatedAt:    time.Unix(1788838000, 0),
 				Kid:          "https://fake.example.com/1234",
 			},
 			nil,
@@ -55,11 +54,11 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				Status:       "status",
 				Email:        new("email@example.com"),
 				AcceptedTos:  new(true),
-				CreatedAt:    1888837479,
-				UpdatedAt:    1888838000,
+				CreatedAt:    time.Unix(1888837479, 0),
+				UpdatedAt:    time.Unix(1888838000, 0),
 				Kid:          "https://fake.example.com/123456",
 			},
-			test_helpers.ErrAnyType,
+			helpers_test.NewTestErrorStringComp("UNIQUE constraint failed"),
 			acme_accounts.Account{},
 			sql.ErrNoRows,
 		},
@@ -72,11 +71,11 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				Status:      "status",
 				Email:       new("fake2@example.com"),
 				AcceptedTos: new(true),
-				CreatedAt:   1888837479,
-				UpdatedAt:   1888838000,
+				CreatedAt:   time.Unix(1888837479, 0),
+				UpdatedAt:   time.Unix(1888838000, 0),
 				Kid:         "https://fake.example.com/123456",
 			},
-			test_helpers.ErrAnyType,
+			helpers_test.NewTestErrorStringComp("NOT NULL constraint failed"),
 			acme_accounts.Account{},
 			sql.ErrNoRows,
 		},
@@ -89,11 +88,11 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				Status:       "status",
 				// Email:
 				AcceptedTos: new(true),
-				CreatedAt:   1888837479,
-				UpdatedAt:   1888838000,
+				CreatedAt:   time.Unix(1888837479, 0),
+				UpdatedAt:   time.Unix(1888838000, 0),
 				Kid:         "https://fake.example.com/123456",
 			},
-			test_helpers.ErrAnyType,
+			helpers_test.NewTestErrorStringComp("NOT NULL constraint failed"),
 			acme_accounts.Account{},
 			sql.ErrNoRows,
 		},
@@ -106,17 +105,17 @@ func TestPostNewAcmeAccount(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("post name: %s", test_helpers.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
+		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
 			acct, err := storage.PostNewAcmeAccount(tc.newPayload)
-			if !test_helpers.ErrorsIs(err, tc.expectedPostErr) {
-				t.Errorf("expected post error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPostErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
+				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeAccount(t, acct, tc.expectedNew)
 
 			acct, err = storage.GetOneAcmeAccountByName(acct.Name)
-			if !errors.Is(err, tc.expectedGetErr) {
-				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareAcmeAccount(t, acct, tc.expectedNew)

@@ -3,9 +3,8 @@ package storage_test
 import (
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/domain/private_keys/key_crypto"
-	"certwarden-backend/pkg/test_helpers"
+	"certwarden-backend/pkg/helpers_test"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -27,8 +26,8 @@ func TestPostNewKey(t *testing.T) {
 				ApiKey:         "apikeyxyz",
 				ApiKeyDisabled: new(true),
 				ApiKeyViaUrl:   true,
-				CreatedAt:      1780336479,
-				UpdatedAt:      1780337000,
+				CreatedAt:      time.Unix(1780336479, 0),
+				UpdatedAt:      time.Unix(1780337000, 0),
 			},
 			nil,
 			private_keys.Key{
@@ -56,10 +55,10 @@ func TestPostNewKey(t *testing.T) {
 				ApiKey:         "irrelevant",
 				ApiKeyDisabled: new(false),
 				ApiKeyViaUrl:   false,
-				CreatedAt:      1780336477,
-				UpdatedAt:      1780337010,
+				CreatedAt:      time.Unix(1780336477, 0),
+				UpdatedAt:      time.Unix(1780337010, 0),
 			},
-			test_helpers.ErrAnyType,
+			helpers_test.NewTestErrorStringComp("UNIQUE constraint failed"),
 			private_keys.Key{},
 			sql.ErrNoRows,
 		},
@@ -71,10 +70,10 @@ func TestPostNewKey(t *testing.T) {
 				ApiKey:         "irrelevant2",
 				ApiKeyDisabled: new(false),
 				ApiKeyViaUrl:   false,
-				CreatedAt:      1780336480,
-				UpdatedAt:      1780337001,
+				CreatedAt:      time.Unix(1780336480, 0),
+				UpdatedAt:      time.Unix(1780337001, 0),
 			},
-			test_helpers.ErrAnyType,
+			helpers_test.NewTestErrorStringComp("NOT NULL constraint failed"),
 			private_keys.Key{},
 			sql.ErrNoRows,
 		},
@@ -87,17 +86,17 @@ func TestPostNewKey(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("post name: %s", test_helpers.StringPointerToVal(tc.newKeyPayload.Name)), func(t *testing.T) {
+		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newKeyPayload.Name)), func(t *testing.T) {
 			key, err := storage.PostNewKey(tc.newKeyPayload)
-			if !test_helpers.ErrorsIs(err, tc.expectedPostErr) {
-				t.Errorf("expected post error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPostErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
+				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareKey(t, key, tc.expectedNewKey)
 
 			key, err = storage.GetOneKeyByName(key.Name)
-			if !errors.Is(err, tc.expectedGetErr) {
-				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareKey(t, key, tc.expectedNewKey)

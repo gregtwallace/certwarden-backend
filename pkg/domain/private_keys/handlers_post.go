@@ -15,15 +15,15 @@ import (
 
 // PostPayload is a struct for posting a new key
 type NewPayload struct {
-	Name           *string `json:"name"`
-	Description    *string `json:"description"`
-	AlgorithmValue *string `json:"algorithm_value"`
-	PemContent     *string `json:"pem"`
-	ApiKey         string  `json:"-"`
-	ApiKeyDisabled *bool   `json:"api_key_disabled"`
-	ApiKeyViaUrl   bool    `json:"-"`
-	CreatedAt      int     `json:"-"`
-	UpdatedAt      int     `json:"-"`
+	Name           *string   `json:"name"`
+	Description    *string   `json:"description"`
+	AlgorithmValue *string   `json:"algorithm_value"`
+	PemContent     *string   `json:"pem"`
+	ApiKey         string    `json:"-"`
+	ApiKeyDisabled *bool     `json:"api_key_disabled"`
+	ApiKeyViaUrl   bool      `json:"-"`
+	CreatedAt      time.Time `json:"-"`
+	UpdatedAt      time.Time `json:"-"`
 }
 
 // PostNewKey creates a new private key and saves it to storage
@@ -95,8 +95,9 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) *outp
 		return output.JsonErrInternal(err)
 	}
 	payload.ApiKeyViaUrl = false
-	payload.CreatedAt = int(time.Now().Unix())
-	payload.UpdatedAt = payload.CreatedAt
+	t := time.Now()
+	payload.CreatedAt = t
+	payload.UpdatedAt = t
 
 	// save new key to storage, which also returns the new key id
 	newKey, err := service.storage.PostNewKey(payload)
@@ -154,7 +155,7 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	}
 
 	// update storage
-	err = service.storage.PutKeyNewApiKey(keyId, newApiKey, int(time.Now().Unix()))
+	err = service.storage.PutKeyApiKeyNew(keyId, newApiKey, time.Now())
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

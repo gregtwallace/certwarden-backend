@@ -48,10 +48,10 @@ func CompareKey(t *testing.T, key, expectedKey private_keys.Key) {
 	}
 
 	if !key.CreatedAt.Equal(expectedKey.CreatedAt) {
-		t.Errorf("key: last access expected '%s' but got '%s'", expectedKey.CreatedAt.UTC(), key.CreatedAt.UTC())
+		t.Errorf("key: created at expected '%s' but got '%s'", expectedKey.CreatedAt.UTC(), key.CreatedAt.UTC())
 	}
 
 	if !key.UpdatedAt.Equal(expectedKey.UpdatedAt) {
-		t.Errorf("key: last access expected '%s' but got '%s'", expectedKey.UpdatedAt.UTC(), key.UpdatedAt.UTC())
+		t.Errorf("key: updated at expected '%s' but got '%s'", expectedKey.UpdatedAt.UTC(), key.UpdatedAt.UTC())
 	}
 }

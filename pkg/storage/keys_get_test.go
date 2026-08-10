@@ -3,10 +3,9 @@ package storage_test
 import (
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/domain/private_keys/key_crypto"
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/pagination_sort"
-	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -66,6 +65,42 @@ red-31
 		LastAccess:     time.Unix(1745952074, 0),
 		CreatedAt:      time.Unix(1709327549, 0),
 		UpdatedAt:      time.Unix(1732748628, 0),
+	}
+
+	key55 = private_keys.Key{
+		ID:          55,
+		Name:        "test008.test.example.com",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp256,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-55
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-55",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: false,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1743170701, 0),
+		UpdatedAt:      time.Unix(0, 0),
+	}
+
+	key56 = private_keys.Key{
+		ID:          56,
+		Name:        "test008.test.example.com-p",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp256,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-56
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-56",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: false,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1743171060, 0),
+		UpdatedAt:      time.Unix(0, 0),
 	}
 
 	key58 = private_keys.Key{
@@ -227,8 +262,7 @@ red-69
 		ApiKeyViaUrl:   false,
 		LastAccess:     time.Unix(1777555692, 0),
 		CreatedAt:      time.Unix(1775761592, 0),
-		// TODO: Research why this is 0 in the db. Might find while writing other tests. Also possible this is just junk data from a previous bug.
-		UpdatedAt: time.Unix(0, 0),
+		UpdatedAt:      time.Unix(0, 0),
 	}
 )
 
@@ -242,8 +276,8 @@ func TestGetAllKeys(t *testing.T) {
 		expectedKeyAtIndx private_keys.Key
 	}{
 		{pagination_sort.Query{}, 19, 19, 0, key63},
-		{QueryBuilderForTest(5, 15, "algorithm", true), 19, 4, 2, key67},
-		{QueryBuilderForTest(10, 0, "last_access", false), 19, 10, 2, key31},
+		{queryBuilderForTest(5, 15, "algorithm", true), 19, 4, 2, key67},
+		{queryBuilderForTest(10, 0, "last_access", false), 19, 10, 2, key31},
 	}
 
 	// create testing service
@@ -256,20 +290,20 @@ func TestGetAllKeys(t *testing.T) {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedKeyAtIndx.Name), func(t *testing.T) {
 			keys, totalCt, err := storage.GetAllKeys(tc.q)
 			if err != nil {
-				t.Errorf("get all keys failed")
+				t.Errorf("get all failed")
 				return
 			}
 
 			if totalCt != tc.expectedTotalCt {
-				t.Errorf("get all keys returned incorrect total count, expected '%d' but got '%d'", tc.expectedTotalCt, totalCt)
+				t.Errorf("incorrect total count, expected '%d' but got '%d'", tc.expectedTotalCt, totalCt)
 			}
 			if len(keys) != tc.expectedResultLen {
-				t.Errorf("get all keys returned incorrect keys length, expected '%d' but got '%d'", tc.expectedResultLen, len(keys))
+				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(keys))
 			}
 			if tc.testIndx <= len(keys)-1 {
 				CompareKey(t, keys[tc.testIndx], tc.expectedKeyAtIndx)
 			} else {
-				t.Errorf("couldnt test key at index '%d' because length of key array was only '%d'", tc.testIndx, len(keys))
+				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(keys))
 			}
 		})
 	}
@@ -296,8 +330,8 @@ func TestGetOneKeyById(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
 			key, err := storage.GetOneKeyById(tc.id)
-			if !errors.Is(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareKey(t, key, tc.expectedKey)
@@ -313,8 +347,8 @@ func TestGetOneKeyByName(t *testing.T) {
 	}{
 		{"", sql.ErrNoRows, private_keys.Key{}},
 		{"fake-bad-name", sql.ErrNoRows, private_keys.Key{}},
-		{"certwarden", nil, key31},
-		{"_Another_Test_Acct_LE_Staging", nil, key63},
+		{"cerTWarden", nil, key31},
+		{"_Another_TEST_Acct_le_Staging", nil, key63}, // case is wrong
 	}
 
 	// create testing service
@@ -326,8 +360,8 @@ func TestGetOneKeyByName(t *testing.T) {
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
 			key, err := storage.GetOneKeyByName(tc.name)
-			if !errors.Is(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
 			CompareKey(t, key, tc.expectedKey)
@@ -344,19 +378,19 @@ func TestGetAvailableKeys(t *testing.T) {
 
 	keys, err := storage.GetAvailableKeys()
 	if err != nil {
-		t.Errorf("get available keys failed")
+		t.Errorf("get all failed")
 		return
 	}
 
 	expectedResultLen := 3
 	if len(keys) != expectedResultLen {
-		t.Errorf("get available keys returned incorrect keys length, expected '%d' but got '%d'", expectedResultLen, len(keys))
+		t.Errorf("returned incorrect result length, expected '%d' but got '%d'", expectedResultLen, len(keys))
 	}
 
 	expectedKeys := []private_keys.Key{key58, key62, key69}
 	for i, expectedKey := range expectedKeys {
 		if i > len(keys)-1 {
-			t.Errorf("expected key id '%d' at index '%d' but result was too short", expectedKey.ID, i)
+			t.Errorf("expected id '%d' at index '%d' but result was too short", expectedKey.ID, i)
 			continue
 		}
 

@@ -52,35 +52,24 @@ func makeJsonStringSlice(stringSlice []string, nullOk bool) *jsonStringSlice {
 // jsonCertExtensionSlice is a json formatted string that is a slice of CertExtension
 type jsonCertExtensionSlice string
 
-// transform JCES into a slice of proper CertExtension
+// transform JCES into as slice of proper CertExtension
 func (jces jsonCertExtensionSlice) toCertExtensionSlice() ([]certificates.CertExtension, error) {
 	if jces == "" {
 		return []certificates.CertExtension{}, nil
 	}
 
 	// unmarshal the json to the json object
-	extSlice := []certificates.CertExtensionJSON{}
-	err := json.Unmarshal([]byte(jces), &extSlice)
+	cextSlice := []certificates.CertExtension{}
+	err := json.Unmarshal([]byte(jces), &cextSlice)
 	if err != nil {
 		return nil, err
 	}
 
-	// convert json objs to real objs
-	certExtSlice := []certificates.CertExtension{}
-	for i := range extSlice {
-		certExt, err := extSlice[i].ToCertExtension()
-		if err != nil {
-			// if invalid data stored, return err
-			return nil, err
-		}
-		certExtSlice = append(certExtSlice, certExt)
-	}
-
-	return certExtSlice, nil
+	return cextSlice, nil
 }
 
 // makeJsonCertExtensionSlice creates a JCES from a slice of CertExtensionJSON
-func makeJsonCertExtensionSlice(extensionSlice []certificates.CertExtensionJSON, nullOk bool) *jsonCertExtensionSlice {
+func makeJsonCertExtensionSlice(extensionSlice []certificates.CertExtension, nullOk bool) *jsonCertExtensionSlice {
 	if extensionSlice == nil {
 		if !nullOk {
 			empty := jsonCertExtensionSlice("[]")

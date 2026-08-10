@@ -13,14 +13,14 @@ import (
 // UpdatePayload is the struct for editing an existing Key's
 // information (only certain fields are editable)
 type UpdatePayload struct {
-	ID             int     `json:"-"`
-	Name           *string `json:"name"`
-	Description    *string `json:"description"`
-	ApiKey         *string `json:"api_key"`
-	ApiKeyNew      *string `json:"api_key_new"`
-	ApiKeyDisabled *bool   `json:"api_key_disabled"`
-	ApiKeyViaUrl   *bool   `json:"api_key_via_url"`
-	UpdatedAt      int     `json:"-"`
+	ID             int       `json:"-"`
+	Name           *string   `json:"name"`
+	Description    *string   `json:"description"`
+	ApiKey         *string   `json:"api_key"`
+	ApiKeyNew      *string   `json:"api_key_new"`
+	ApiKeyDisabled *bool     `json:"api_key_disabled"`
+	ApiKeyViaUrl   *bool     `json:"api_key_via_url"`
+	UpdatedAt      time.Time `json:"-"`
 }
 
 // PutKeyUpdate updates a Key that already exists in storage.
@@ -67,7 +67,7 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) *ou
 	// end validation
 
 	// add additional details to the payload before saving
-	payload.UpdatedAt = int(time.Now().Unix())
+	payload.UpdatedAt = time.Now()
 
 	// save updated key info to storage
 	updatedKey, err := service.storage.PutKeyUpdate(payload)

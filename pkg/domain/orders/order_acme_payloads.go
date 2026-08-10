@@ -37,7 +37,7 @@ func makeNewOrderAcmePayload(cert certificates.Certificate, acmeResponse acme.Or
 
 	payload := NewOrderAcmePayload{
 		CertId:         cert.ID,
-		AccountId:      cert.CertificateAccount.ID,
+		AccountId:      cert.Account.ID,
 		Status:         acmeResponse.Status,
 		KnownRevoked:   false,
 		Expires:        acmeResponse.Expires,
