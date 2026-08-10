@@ -3,7 +3,7 @@ package acme_test
 
 import (
 	"certwarden-backend/pkg/acme"
-	"certwarden-backend/pkg/test_helpers"
+	"certwarden-backend/pkg/helpers_test"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
@@ -298,8 +298,8 @@ KwPvdQLZ5ziTXL297bkcmIfubfG1pGw=
 			}
 
 			// check error
-			if !test_helpers.ErrorsIs(actualErr, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(actualErr))
+			if !helpers_test.ErrorsIs(actualErr, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(actualErr))
 			}
 		})
 	}
