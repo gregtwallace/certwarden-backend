@@ -5,9 +5,13 @@ package dns01goacme
 import (
 	"certwarden-backend/pkg/datatypes/environment"
 	"fmt"
+	"log/slog"
 	"os"
 
+	"go.uber.org/zap/exp/zapslog"
+
 	goacme_dns01 "github.com/go-acme/lego/v5/challenge/dns01"
+	goacme_log "github.com/go-acme/lego/v5/log"
 	goacme_dns "github.com/go-acme/lego/v5/providers/dns"
 )
 
@@ -25,6 +29,14 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	if service.logger == nil {
 		return nil, errServiceComponent
 	}
+
+	// set go-acme log to main zap logger
+	goacme_log.SetDefault(slog.New(zapslog.NewHandler(
+		service.logger.Desugar().Core(),
+		zapslog.WithName("go-acme log"),
+		// WithCaller doesn't work as expected (it always returns `log/logger.go`)
+		// AddStacktraceAt is unnecessary - already covered by base zap.Logger configuration in main app
+	)))
 
 	// shutdown context
 	service.shutdownContext = app.GetShutdownContext()

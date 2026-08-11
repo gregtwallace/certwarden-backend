@@ -4,7 +4,6 @@ import (
 	"certwarden-backend/pkg/output"
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	"sync"
 
@@ -50,8 +49,6 @@ func MakeManager(app application, cfg Config) (mgr *Manager, err error) {
 
 	// add each provider to manager
 	for i := range allCfgs {
-		log.Println(allCfgs[i].providerCfg)
-
 		_, err = mgr.unsafeAddProvider(allCfgs[i].internalCfg, allCfgs[i].providerCfg)
 		if err != nil {
 			return nil, err
