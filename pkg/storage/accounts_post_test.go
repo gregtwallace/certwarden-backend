@@ -111,14 +111,14 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedNew)
+			compareAcmeAccount(t, acct, tc.expectedNew)
 
 			acct, err = storage.GetOneAcmeAccountByName(acct.Name)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedNew)
+			compareAcmeAccount(t, acct, tc.expectedNew)
 		})
 	}
 }

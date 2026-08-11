@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-// CompareCertificateCSRExtensions is for comparing the special csr extra extensions
-func CompareCertificateCSRExtensions(t *testing.T, extns, expectedExtns []certificates.CertExtension) {
+// compareCertificateCSRExtensions is for comparing the special csr extra extensions
+func compareCertificateCSRExtensions(t *testing.T, extns, expectedExtns []certificates.CertExtension) {
 	if len(extns) != len(expectedExtns) {
 		t.Errorf("certificate: csr extra extensions expected length '%d' but got '%d'", len(expectedExtns), len(extns))
 	}
@@ -46,8 +46,8 @@ func CompareCertificateCSRExtensions(t *testing.T, extns, expectedExtns []certif
 	}
 }
 
-// CompareCertificate compares cert to expectedCert and throws appropriate errors for any differences
-func CompareCertificate(t *testing.T, cert, expectedCert certificates.Certificate) {
+// compareCertificate compares cert to expectedCert and throws appropriate errors for any differences
+func compareCertificate(t *testing.T, cert, expectedCert certificates.Certificate) {
 	if cert.ID != expectedCert.ID {
 		t.Errorf("certificate: id expected '%d' but got '%d'", expectedCert.ID, cert.ID)
 	}
@@ -60,9 +60,9 @@ func CompareCertificate(t *testing.T, cert, expectedCert certificates.Certificat
 		t.Errorf("certificate: description expected '%s' but got '%s'", expectedCert.Description, cert.Description)
 	}
 
-	CompareKey(t, cert.Key, expectedCert.Key)
+	compareKey(t, cert.Key, expectedCert.Key)
 
-	CompareAcmeAccount(t, cert.Account, expectedCert.Account)
+	compareAcmeAccount(t, cert.Account, expectedCert.Account)
 
 	if cert.Subject != expectedCert.Subject {
 		t.Errorf("certificate: subject expected '%s' but got '%s'", expectedCert.Subject, cert.Subject)
@@ -92,7 +92,7 @@ func CompareCertificate(t *testing.T, cert, expectedCert certificates.Certificat
 		t.Errorf("certificate: city expected '%s' but got '%s'", expectedCert.City, cert.City)
 	}
 
-	CompareCertificateCSRExtensions(t, cert.CSRExtraExtensions, expectedCert.CSRExtraExtensions)
+	compareCertificateCSRExtensions(t, cert.CSRExtraExtensions, expectedCert.CSRExtraExtensions)
 
 	if cert.PreferredRootCN != expectedCert.PreferredRootCN {
 		t.Errorf("certificate: preferred root cn expected '%s' but got '%s'", expectedCert.PreferredRootCN, cert.PreferredRootCN)

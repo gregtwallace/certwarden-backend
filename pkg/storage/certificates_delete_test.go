@@ -41,7 +41,7 @@ func TestDeleteCert(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareCertificate(t, cert, tc.expectedGetResult)
+			compareCertificate(t, cert, tc.expectedGetResult)
 		})
 	}
 }

@@ -82,7 +82,7 @@ func TestDeleteAcmeAccount(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedGetResult)
+			compareAcmeAccount(t, acct, tc.expectedGetResult)
 		})
 	}
 }

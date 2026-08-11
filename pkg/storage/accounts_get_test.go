@@ -118,7 +118,7 @@ func TestGetAllAcmeAccounts(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(accts))
 			}
 			if tc.testIndx <= len(accts)-1 {
-				CompareAcmeAccount(t, accts[tc.testIndx], tc.expectedAcctAtIndx)
+				compareAcmeAccount(t, accts[tc.testIndx], tc.expectedAcctAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(accts))
 			}
@@ -152,7 +152,7 @@ func TestGetOneAccountById(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedAcct)
+			compareAcmeAccount(t, acct, tc.expectedAcct)
 		})
 	}
 }
@@ -183,7 +183,7 @@ func TestGetOneAccountByName(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedAcct)
+			compareAcmeAccount(t, acct, tc.expectedAcct)
 		})
 	}
 }

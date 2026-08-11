@@ -250,14 +250,14 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedPutResult)
+			compareAcmeAccount(t, acct, tc.expectedPutResult)
 
 			acct, err = storage.GetOneAcmeAccountById(tc.getId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedGetResult)
+			compareAcmeAccount(t, acct, tc.expectedGetResult)
 		})
 	}
 }
@@ -380,14 +380,14 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedPutResult)
+			compareAcmeAccount(t, acct, tc.expectedPutResult)
 
 			acct, err = storage.GetOneAcmeAccountById(tc.getId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedGetResult)
+			compareAcmeAccount(t, acct, tc.expectedGetResult)
 		})
 	}
 }

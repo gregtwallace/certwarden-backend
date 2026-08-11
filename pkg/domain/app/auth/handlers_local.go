@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -40,7 +41,7 @@ func (service *Service) LocalPostLogin(w http.ResponseWriter, r *http.Request) *
 		}
 
 		// fetch the password hash from storage
-		user, err := service.local.storage.GetOneUserByName(payload.Username)
+		user, err := service.local.storage.GetOneUserByUsername(payload.Username)
 		if err != nil {
 			service.logger.Infof("client %s: login failed (bad username: %s)", r.RemoteAddr, err)
 			return output.JsonErrUnauthorized
@@ -138,7 +139,7 @@ func (service *Service) LocalChangePassword(w http.ResponseWriter, r *http.Reque
 	}
 
 	// fetch the password hash from storage
-	user, err := service.local.storage.GetOneUserByName(auth.Username)
+	user, err := service.local.storage.GetOneUserByUsername(auth.Username)
 	if err != nil {
 		// shouldn't be possible since header was valid
 		err = fmt.Errorf("client %s: password change for user '%s' failed (bad username: %s)", r.RemoteAddr, auth.UserTypeAndName(), err)
@@ -179,7 +180,7 @@ func (service *Service) LocalChangePassword(w http.ResponseWriter, r *http.Reque
 	}
 
 	// update password in storage
-	userId, err := service.local.storage.UpdateUserPassword(auth.Username, string(newPasswordHash))
+	userId, err := service.local.storage.PutUserPasswordHash(auth.Username, string(newPasswordHash), time.Now())
 	if err != nil {
 		err = fmt.Errorf("client %s: password change for user '%s' failed (storage error: %s)", r.RemoteAddr, auth.UserTypeAndName(), err)
 		service.logger.Error(err)

@@ -5,20 +5,8 @@ import (
 	"context"
 )
 
-// dbToUser converts the user db object to app object
-func (userDb *userDb) dbToUser() (user auth.User) {
-	return auth.User{
-		ID:           userDb.id,
-		Username:     userDb.username,
-		PasswordHash: userDb.passwordHash,
-		CreatedAt:    userDb.createdAt,
-		UpdatedAt:    userDb.updatedAt,
-	}
-}
-
-// GetOneUserByName returns a user from the db based on
-// username
-func (store Storage) GetOneUserByName(username string) (auth.User, error) {
+// GetOneUserByUsername returns a user from the db with the specified username
+func (store Storage) GetOneUserByUsername(username string) (auth.User, error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 

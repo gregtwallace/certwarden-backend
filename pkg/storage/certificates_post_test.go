@@ -215,14 +215,14 @@ func TestPostNewCert(t *testing.T) {
 				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareCertificate(t, record, tc.expectedNew)
+			compareCertificate(t, record, tc.expectedNew)
 
 			record, err = storage.GetOneCertByName(record.Name)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareCertificate(t, record, tc.expectedNew)
+			compareCertificate(t, record, tc.expectedNew)
 		})
 	}
 }

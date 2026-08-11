@@ -79,7 +79,7 @@ func TestDeleteKey(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareKey(t, key, tc.expectedGetResult)
+			compareKey(t, key, tc.expectedGetResult)
 		})
 	}
 }

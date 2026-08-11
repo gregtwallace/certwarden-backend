@@ -297,14 +297,14 @@ func TestPutDetailsCert(t *testing.T) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareCertificate(t, c, tc.expectedPutResult)
+			compareCertificate(t, c, tc.expectedPutResult)
 
 			c, err = storage.GetOneCertById(tc.getId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareCertificate(t, c, tc.expectedGetResult)
+			compareCertificate(t, c, tc.expectedGetResult)
 		})
 	}
 }
@@ -433,7 +433,7 @@ func TestPutCertApiKey(t *testing.T) {
 				t.Errorf("expected get cert error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareCertificate(t, cert, tc.expectedCert)
+			compareCertificate(t, cert, tc.expectedCert)
 		})
 	}
 }
@@ -562,7 +562,7 @@ func TestCertApiKeyNew(t *testing.T) {
 				t.Errorf("expected cert get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareCertificate(t, cert, tc.expectedCert)
+			compareCertificate(t, cert, tc.expectedCert)
 		})
 	}
 
@@ -696,7 +696,7 @@ func TestPutCertUpdatedAt(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareCertificate(t, record, tc.expectedCert)
+			compareCertificate(t, record, tc.expectedCert)
 		})
 	}
 
@@ -791,7 +791,7 @@ func TestPutCertClientKey(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareCertificate(t, record, tc.expectedCert)
+			compareCertificate(t, record, tc.expectedCert)
 		})
 	}
 }
@@ -924,7 +924,7 @@ func TestPutCertLastAccess(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareCertificate(t, record, tc.expectedCert)
+			compareCertificate(t, record, tc.expectedCert)
 		})
 	}
 }
