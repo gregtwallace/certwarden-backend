@@ -301,7 +301,7 @@ func TestGetAllKeys(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(keys))
 			}
 			if tc.testIndx <= len(keys)-1 {
-				CompareKey(t, keys[tc.testIndx], tc.expectedKeyAtIndx)
+				compareKey(t, keys[tc.testIndx], tc.expectedKeyAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(keys))
 			}
@@ -334,7 +334,7 @@ func TestGetOneKeyById(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareKey(t, key, tc.expectedKey)
+			compareKey(t, key, tc.expectedKey)
 		})
 	}
 }
@@ -364,7 +364,7 @@ func TestGetOneKeyByName(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareKey(t, key, tc.expectedKey)
+			compareKey(t, key, tc.expectedKey)
 		})
 	}
 }
@@ -394,6 +394,6 @@ func TestGetAvailableKeys(t *testing.T) {
 			continue
 		}
 
-		CompareKey(t, keys[i], expectedKey)
+		compareKey(t, keys[i], expectedKey)
 	}
 }

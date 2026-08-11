@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"go.uber.org/zap"
@@ -39,13 +40,13 @@ type User struct {
 	ID           int
 	Username     string
 	PasswordHash string
-	CreatedAt    int
-	UpdatedAt    int
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 type Storage interface {
-	GetOneUserByName(username string) (User, error)
-	UpdateUserPassword(username string, newPasswordHash string) (userId int, err error)
+	GetOneUserByUsername(username string) (User, error)
+	PutUserPasswordHash(username string, passwordHash string, updatedAt time.Time) (userId int, err error)
 }
 
 type Config struct {

@@ -191,14 +191,14 @@ red-58
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareKey(t, key, tc.expectedPutResult)
+			compareKey(t, key, tc.expectedPutResult)
 
 			key, err = storage.GetOneKeyById(tc.getId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareKey(t, key, tc.expectedGetResult)
+			compareKey(t, key, tc.expectedGetResult)
 		})
 	}
 }
@@ -298,7 +298,7 @@ red-62
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareKey(t, key, tc.expectedKey)
+			compareKey(t, key, tc.expectedKey)
 		})
 	}
 }
@@ -398,7 +398,7 @@ red-67
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareKey(t, key, tc.expectedKey)
+			compareKey(t, key, tc.expectedKey)
 		})
 	}
 }
@@ -516,7 +516,7 @@ red-62
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareKey(t, key, tc.expectedKey)
+			compareKey(t, key, tc.expectedKey)
 		})
 	}
 }

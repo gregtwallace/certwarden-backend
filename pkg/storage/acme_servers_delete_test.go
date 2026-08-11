@@ -78,7 +78,7 @@ func TestDeleteServer(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeServer(t, server, tc.expectedGetResult)
+			compareAcmeServer(t, server, tc.expectedGetResult)
 		})
 	}
 }

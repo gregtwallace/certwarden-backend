@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-// CompareAcmeAccount compares acct to expectedAcct and throws appropriate errors for any differences
-func CompareAcmeAccount(t *testing.T, acct, expectedAcct acme_accounts.Account) {
+// compareAcmeAccount compares acct to expectedAcct and throws appropriate errors for any differences
+func compareAcmeAccount(t *testing.T, acct, expectedAcct acme_accounts.Account) {
 	if acct.ID != expectedAcct.ID {
 		t.Errorf("acme account: id expected '%d' but got '%d'", expectedAcct.ID, acct.ID)
 	}
@@ -19,9 +19,9 @@ func CompareAcmeAccount(t *testing.T, acct, expectedAcct acme_accounts.Account) 
 		t.Errorf("acme account: description expected '%s' but got '%s'", expectedAcct.Description, acct.Description)
 	}
 
-	CompareAcmeServer(t, acct.AcmeServer, expectedAcct.AcmeServer)
+	compareAcmeServer(t, acct.AcmeServer, expectedAcct.AcmeServer)
 
-	CompareKey(t, acct.AccountKey, expectedAcct.AccountKey)
+	compareKey(t, acct.AccountKey, expectedAcct.AccountKey)
 
 	if acct.Status != expectedAcct.Status {
 		t.Errorf("acme account: status expected '%s' but got '%s'", expectedAcct.Status, acct.Status)

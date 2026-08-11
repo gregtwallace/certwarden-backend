@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-// CompareAcmeServers compares server to expectedServer and throws appropriate errors for any differences
-func CompareAcmeServer(t *testing.T, server, expectedServer acme_servers.Server) {
+// compareAcmeServer compares server to expectedServer and throws appropriate errors for any differences
+func compareAcmeServer(t *testing.T, server, expectedServer acme_servers.Server) {
 	if server.ID != expectedServer.ID {
 		t.Errorf("acme server: id expected '%d' but got '%d'", expectedServer.ID, server.ID)
 	}

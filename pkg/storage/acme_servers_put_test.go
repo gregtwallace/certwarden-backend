@@ -140,14 +140,14 @@ func TestPutServerUpdate(t *testing.T) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeServer(t, server, tc.expectedPutResult)
+			compareAcmeServer(t, server, tc.expectedPutResult)
 
 			server, err = storage.GetOneServerById(tc.getId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeServer(t, server, tc.expectedGetResult)
+			compareAcmeServer(t, server, tc.expectedGetResult)
 		})
 	}
 }

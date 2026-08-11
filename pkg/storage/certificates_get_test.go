@@ -142,7 +142,7 @@ func TestGetAllCerts(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(certs))
 			}
 			if tc.testIndx <= len(certs)-1 {
-				CompareCertificate(t, certs[tc.testIndx], tc.expectedAtIndx)
+				compareCertificate(t, certs[tc.testIndx], tc.expectedAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(certs))
 			}
@@ -176,7 +176,7 @@ func TestGetOneCertById(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareCertificate(t, serv, tc.expectedCert)
+			compareCertificate(t, serv, tc.expectedCert)
 		})
 	}
 }
@@ -207,7 +207,7 @@ func TestGetOneCertByName(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareCertificate(t, serv, tc.expectedCert)
+			compareCertificate(t, serv, tc.expectedCert)
 		})
 	}
 }

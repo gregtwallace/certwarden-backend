@@ -86,7 +86,7 @@ func TestGetAllAcmeServers(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(servers))
 			}
 			if tc.testIndx <= len(servers)-1 {
-				CompareAcmeServer(t, servers[tc.testIndx], tc.expectedServerAtIndx)
+				compareAcmeServer(t, servers[tc.testIndx], tc.expectedServerAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(servers))
 			}
@@ -120,7 +120,7 @@ func TestGetOneServerById(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeServer(t, serv, tc.expectedServer)
+			compareAcmeServer(t, serv, tc.expectedServer)
 		})
 	}
 }
@@ -151,7 +151,7 @@ func TestGetOneServerByName(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeServer(t, serv, tc.expectedServer)
+			compareAcmeServer(t, serv, tc.expectedServer)
 		})
 	}
 }
