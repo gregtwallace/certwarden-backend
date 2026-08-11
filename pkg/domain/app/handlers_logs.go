@@ -21,7 +21,8 @@ const logEntriesForView = 500
 type logEntry struct {
 	Level      string `json:"level"`
 	TimeStamp  string `json:"ts"`
-	Caller     string `json:"caller"`
+	Logger     string `json:"logger,omitempty"`
+	Caller     string `json:"caller,omitempty"`
 	Message    string `json:"msg"`
 	StackTrace string `json:"stacktrace,omitempty"`
 }
