@@ -61,7 +61,10 @@ func openStorageWithTestData(t *testing.T, testName string) (_ *storage.Storage,
 	// copy test data to temp appDataPath for tests to run
 	_, err := os.Stat(thisTestFolder)
 	if err == nil {
-		os.RemoveAll(thisTestFolder)
+		err := os.RemoveAll(thisTestFolder)
+		if err != nil {
+			t.Errorf("failed to delete '%s'", thisTestFolder)
+		}
 	} else if !helpers_test.ErrorsIs(err, os.ErrNotExist) {
 		return nil, err
 	}
@@ -71,20 +74,33 @@ func openStorageWithTestData(t *testing.T, testName string) (_ *storage.Storage,
 		return nil, err
 	}
 	t.Cleanup(func() {
-		_ = os.RemoveAll(thisTestFolder)
+		err := os.RemoveAll(thisTestFolder)
+		if err != nil {
+			t.Errorf("failed to delete '%s'", thisTestFolder)
+		}
 	})
 
 	testDataF, err := os.Open(testDataDbFile)
 	if err != nil {
 		return nil, err
 	}
-	defer testDataF.Close()
+	t.Cleanup(func() {
+		err := testDataF.Close()
+		if err != nil {
+			t.Errorf("failed to close testDataF (%s)", err)
+		}
+	})
 
 	testDataCopyF, err := os.Create(thisTestFolder + "/appdata.db")
 	if err != nil {
 		return nil, err
 	}
-	defer testDataCopyF.Close()
+	t.Cleanup(func() {
+		err := testDataCopyF.Close()
+		if err != nil {
+			t.Errorf("failed to close testDataCopyF (%s)", err)
+		}
+	})
 
 	_, err = io.Copy(testDataCopyF, testDataF)
 	if err != nil {
@@ -103,7 +119,10 @@ func openStorageWithTestData(t *testing.T, testName string) (_ *storage.Storage,
 		return nil, err
 	}
 	t.Cleanup(func() {
-		_ = storage.Close()
+		err := storage.Close()
+		if err != nil {
+			t.Errorf("failed to close storage (%s)", err)
+		}
 	})
 
 	return storage, nil
@@ -124,7 +143,10 @@ func queryBuilderForTest(limit int, offset int, sortField string, sortAsc bool) 
 
 	// make fake request just for query parsing
 	r := &http.Request{}
-	u, _ := url.Parse("https://example.com/")
+	u, err := url.Parse("https://example.com/")
+	if err != nil {
+		panic("url must parse failed")
+	}
 	r.URL = u
 	r.URL.RawQuery = p.Encode()
 

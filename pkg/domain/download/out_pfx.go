@@ -163,20 +163,20 @@ func (service *Service) DownloadPfxViaHeader(w http.ResponseWriter, r *http.Requ
 	apiKeysCombined := getApiKeyFromHeader(w, r)
 
 	// fetch the private cert
-	order, err := service.getCertNewestValidOrder(certName, apiKeysCombined, false, true)
-	if err != nil {
-		return err
+	order, outErr := service.getCertNewestValidOrder(certName, apiKeysCombined, false, true)
+	if outErr != nil {
+		return outErr
 	}
 
 	// legacy 3DES specified?
-	legacy3DES := false
-	if r.URL.Query().Has("3des") {
-		legacy3DES = true
-	}
+	legacy3DES := r.URL.Query().Has("3des")
 
 	// return pfx file to client
 	pfxPrivCert := pfxPrivateCertificateChain(order)
-	service.output.WritePfx(w, r, pfxPrivCert, legacy3DES)
+	err := service.output.WritePfx(w, r, pfxPrivCert, legacy3DES)
+	if err != nil {
+		return output.JsonErrInternal(err)
+	}
 
 	return nil
 }
@@ -196,10 +196,7 @@ func (service *Service) DownloadPfxViaUrl(w http.ResponseWriter, r *http.Request
 	}
 
 	// legacy 3DES specified?
-	legacy3DES := false
-	if r.URL.Query().Has("3des") {
-		legacy3DES = true
-	}
+	legacy3DES := r.URL.Query().Has("3des")
 
 	// return pfx file to client
 	pfxPrivCert := pfxPrivateCertificateChain(order)

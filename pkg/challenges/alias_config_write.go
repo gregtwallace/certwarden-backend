@@ -92,7 +92,10 @@ func (service *Service) writeAliasConfig() error {
 	service.dnsIDtoDomain.CopyToMap(m)
 
 	newNode := &yaml.Node{}
-	newNode.Encode(m)
+	err = newNode.Encode(m)
+	if err != nil {
+		return err
+	}
 	fullCfgFile.Content[0].Content[challValIndex].Content[aliasValIndex] = newNode
 
 	// Marshall new completed config

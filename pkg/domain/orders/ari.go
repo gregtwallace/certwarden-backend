@@ -62,10 +62,7 @@ func UnmarshalRenewalInfo(data []byte) *renewalInfo {
 func MakeRenewalInfo(validFrom, validTo time.Time) *renewalInfo {
 	// determine if the cert is "short lived"
 	validDuration := validTo.Sub(validFrom)
-	shortLived := false
-	if validTo.Sub(validFrom) < shortLivedValidityThreshold {
-		shortLived = true
-	}
+	shortLived := validTo.Sub(validFrom) < shortLivedValidityThreshold
 
 	// calculate validity threshold (for the approx. midpoint of the renewal window)
 	var validityThreshold time.Time

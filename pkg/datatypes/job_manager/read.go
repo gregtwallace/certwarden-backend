@@ -71,7 +71,7 @@ func (mgr *Manager[V]) AllCurrentJobs() *AllManagerJobs[V] {
 
 	// waiting (queue) jobs
 	waitingJobs := make([]V, len(mgr.waitingJobs))
-	_ = copy(waitingJobs, mgr.waitingJobs)
+	copy(waitingJobs, mgr.waitingJobs)
 
 	// return result
 	return &AllManagerJobs[V]{

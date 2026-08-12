@@ -11,7 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var errInvalidSessionID = errors.New("invalid session id")
 var errAddExisting = errors.New("cannot add session (duplicate id)")
 
 type extraFuncs interface {

@@ -9,9 +9,8 @@ import (
 )
 
 var (
-	ErrIdBad           = errors.New("server id is invalid")
-	ErrNameBad         = errors.New("server name is not valid")
-	errBadDirectoryURL = errors.New("specified acme directory url is not https or did not return a valid directory json response")
+	ErrIdBad   = errors.New("server id is invalid")
+	ErrNameBad = errors.New("server name is not valid")
 )
 
 // getAcmeServer returns the Server for the specified id or an error.

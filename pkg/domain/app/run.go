@@ -147,7 +147,8 @@ func run() (restart bool) {
 			app.shutdownWaitgroup.Add(1)
 			go func() {
 				defer app.shutdownWaitgroup.Done()
-				defer func() { _ = ln1.Close }()
+				//nolint:errcheck // shutting down, who cares
+				defer ln1.Close()
 
 				err := redirectSrv.Serve(ln1)
 				if err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -171,7 +172,8 @@ func run() (restart bool) {
 		app.shutdownWaitgroup.Add(1)
 		go func() {
 			defer app.shutdownWaitgroup.Done()
-			defer func() { _ = ln2.Close }()
+			//nolint:errcheck // shutting down, who cares
+			defer ln2.Close()
 
 			err := srv.ServeTLS(ln2, "", "")
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -196,7 +198,8 @@ func run() (restart bool) {
 		app.shutdownWaitgroup.Add(1)
 		go func() {
 			defer app.shutdownWaitgroup.Done()
-			defer func() { _ = ln3.Close }()
+			//nolint:errcheck // shutting down, who cares
+			defer ln3.Close()
 
 			err := srv.Serve(ln3)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {

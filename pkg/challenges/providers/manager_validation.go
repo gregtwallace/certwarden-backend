@@ -23,7 +23,7 @@ func (mgr *Manager) unsafeValidateDomains(domains []string, p *provider) error {
 	// validate domain names
 	for _, domain := range domains {
 		// check validity -or- wildcard
-		if !validation.DomainValid(domain, false) && !(len(domains) == 1 && domains[0] == "*") {
+		if !validation.DomainValid(domain, false) && (len(domains) != 1 || domain != "*") {
 			if domain == "*" {
 				return errors.New("when using wildcard domain * it must be the only specified domain on the provider")
 			}

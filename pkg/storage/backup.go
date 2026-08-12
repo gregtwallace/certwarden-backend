@@ -25,7 +25,8 @@ func (store *Storage) LockDBForBackup() (unlockFunc func(), err error) {
 
 	// make function to remove lock
 	unlockFunc = func() {
-		_ = tx.Commit()
+		//nolint:errcheck // no need to check this commit (not changing anything)
+		tx.Commit()
 	}
 
 	return unlockFunc, nil

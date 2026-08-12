@@ -185,7 +185,8 @@ func redirectToFrontendHandler(w http.ResponseWriter, r *http.Request) *output.J
 // to set variables at server run time
 func setFrontendEnv() error {
 	// remove any old environment
-	_ = os.Remove(frontendEnvFile)
+	//nolint:errcheck // don't care, only care later if Create fails
+	os.Remove(frontendEnvFile)
 
 	// content of new environment file
 	// api and & app on same server, so use path for api url
@@ -199,7 +200,7 @@ func setFrontendEnv() error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = file.Close() }()
+	defer file.Close()
 
 	_, err = file.Write([]byte(envFileContent))
 	if err != nil {

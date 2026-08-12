@@ -147,7 +147,8 @@ func (service *Service) backgroundDirManager(shutdownCtx context.Context, wg *sy
 			// try update (and retry if failed - use exponential backoff)
 			// will only return err if CTX is done (shutdown), otherwise never err because MaxElapsedTime is 0
 			// thus, ignore err here and let shutdown below handle it
-			_ = backoff.RetryNotify(service.updateAcmeServiceDirectory, boWithContext, notifyFunc)
+			//nolint:errcheck // see above comment ^
+			backoff.RetryNotify(service.updateAcmeServiceDirectory, boWithContext, notifyFunc)
 
 			// update has now succeeded, schedule next regular update (omit minute and second for now)
 			nextRunTime := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(),

@@ -88,8 +88,16 @@ func (service *Service) getOrderForRevocation(certId, orderId int) (Order, *outp
 	}
 
 	// confirm order is valid, not already revoked, and not expired (time)
-	if !(order.Status == "valid" && !order.KnownRevoked && time.Now().Before(*order.ValidTo)) {
-		return Order{}, output.JsonErrValidationFailed(errors.New("order is either: not valid, already revoked, or expired"))
+	if order.Status != "valid" {
+		return Order{}, output.JsonErrValidationFailed(errors.New("order is not valid"))
+	}
+
+	if order.KnownRevoked {
+		return Order{}, output.JsonErrValidationFailed(errors.New("order is already revoked"))
+	}
+
+	if !time.Now().Before(*order.ValidTo) {
+		return Order{}, output.JsonErrValidationFailed(errors.New("order is already past validto (i.e., it is expired)"))
 	}
 
 	return order, nil

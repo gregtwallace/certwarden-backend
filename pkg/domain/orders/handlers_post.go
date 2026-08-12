@@ -141,9 +141,8 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	// parse payload
 	var payload revokePayload
 	// decode body into payload
-	_ = json.NewDecoder(r.Body).Decode(&payload)
-	// no need to error check, default int val is 0, which is the
-	// desired value if not specified
+	// nolint:errcheck // no need; default int val is 0, which is the desired value if not specified
+	json.NewDecoder(r.Body).Decode(&payload)
 
 	// validation / get order
 	// revocation reason (see: rfc5280 section-5.3.1)

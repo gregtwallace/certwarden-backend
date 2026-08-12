@@ -56,7 +56,8 @@ func (manager *Manager) fetchNonce() (string, error) {
 		// read entire body (to keep single tls connection open and avoid redundant cert
 		// log messages) see: https://stackoverflow.com/questions/17948827/reusing-http-connections-in-go
 		// for explanation
-		_, _ = io.Copy(io.Discard, response.Body)
+		//nolint:errcheck // don't care about errors since we're discarding
+		io.Copy(io.Discard, response.Body)
 
 		// verify we got a nonce and break if so
 		nonce = response.Header.Get("Replay-Nonce")

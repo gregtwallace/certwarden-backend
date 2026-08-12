@@ -39,9 +39,18 @@ func OpenStorage(app App) (*Storage, error) {
 
 	// get shutdown context
 	store.shutdownContext = app.GetShutdownContext()
+	if store.shutdownContext == nil {
+		return nil, errServiceComponent
+	}
 
 	// set timeout
 	store.timeout = dbTimeout
+
+	// logger just for setup
+	logger := app.GetLogger()
+	if logger == nil {
+		return nil, errServiceComponent
+	}
 
 	db, isNewDb, cleanUpOnErr, err := sqlite3.OpenSqlite3Database(app)
 	store.db = db
@@ -59,7 +68,7 @@ func OpenStorage(app App) (*Storage, error) {
 	}
 
 	if isNewDb {
-		app.GetLogger().Info("storage: populating new database")
+		logger.Info("storage: populating new database")
 		err = store.populateNewDb()
 		if err != nil {
 			cleanUpOnErr()
@@ -87,7 +96,7 @@ func OpenStorage(app App) (*Storage, error) {
 			cleanUpOnErr()
 			return nil, fmt.Errorf("storage: failed to backup data before attempting db migration (%w)", err)
 		}
-		app.GetLogger().Infof("storage: updating database user_version from %d to %d", fileOriginalUserVersion, DbCurrentUserVersion)
+		logger.Infof("storage: updating database user_version from %d to %d", fileOriginalUserVersion, DbCurrentUserVersion)
 	}
 
 	// upgrade if schema 0
@@ -196,7 +205,7 @@ func OpenStorage(app App) (*Storage, error) {
 		return nil, fmt.Errorf("storage: db schema user_version is %d (expected %d) and automatic migration failed", fileUserVersion, DbCurrentUserVersion)
 	}
 	if fileOriginalUserVersion != DbCurrentUserVersion {
-		app.GetLogger().Infof("storage: database user_version successfully upgraded from %d to %d", fileOriginalUserVersion, fileUserVersion)
+		logger.Infof("storage: database user_version successfully upgraded from %d to %d", fileOriginalUserVersion, fileUserVersion)
 	}
 
 	return store, nil

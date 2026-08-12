@@ -48,7 +48,13 @@ func (service *Service) OIDCGetLogin(w http.ResponseWriter, r *http.Request) *ou
 
 	// Validate Redirect is a permitted frontend
 	// check if the redirect is to a frontend on the user specified RedirectURL (no err check as parse checked on startup)
-	cfgApiRedirectURLParsed, _ := url.Parse(service.oidc.oauth2Config.RedirectURL)
+	cfgApiRedirectURLParsed, err := url.Parse(service.oidc.oauth2Config.RedirectURL)
+	if err != nil {
+		err = fmt.Errorf("client %s: oidc config redirecturl failed to parse (%s), fix the config", r.RemoteAddr, err)
+		service.logger.Error(err)
+		return output.JsonErrInternal(err)
+	}
+
 	apiRedirectSchemeHostFrontend := fmt.Sprintf("%s://%s", cfgApiRedirectURLParsed.Scheme, cfgApiRedirectURLParsed.Host) + service.frontendURLPath
 	// ok if redirect matches API URL + frontend path
 	if !strings.HasPrefix(redirectUri, apiRedirectSchemeHostFrontend) {
@@ -250,8 +256,17 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 	}
 
 	// validation done
-	idTokenStr, _ := oidcStateObj.oauth2Token.Extra("id_token").(string)
-	scopeStr, _ := oidcStateObj.oauth2Token.Extra("scope").(string)
+	idTokenStr, ok := oidcStateObj.oauth2Token.Extra("id_token").(string)
+	if !ok {
+		service.logger.Errorf("client %s: login failed oidc state's id_token did not assert to string", r.RemoteAddr)
+		return output.JsonErrUnauthorized
+	}
+	scopeStr, ok := oidcStateObj.oauth2Token.Extra("scope").(string)
+	if !ok {
+		service.logger.Errorf("client %s: login failed oidc state's scope did not assert to string", r.RemoteAddr)
+		return output.JsonErrUnauthorized
+	}
+
 	// make extra func obj
 	extraFuncs := &oidcExtraFuncs{
 		ctxWithHttpClient: service.oidc.ctxWithHttpClient,

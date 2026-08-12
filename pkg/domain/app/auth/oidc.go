@@ -36,8 +36,7 @@ type oidcPendingSession struct {
 // returned copy and then sets the OIDC error param on the returned copy
 // instead
 func oidcErrorURL(u *url.URL, err error) *url.URL {
-	newU, _ := url.Parse(u.String())
-
+	newU := *u
 	queryValues := newU.Query()
 
 	queryValues.Del("redirect_uri")
@@ -48,7 +47,7 @@ func oidcErrorURL(u *url.URL, err error) *url.URL {
 
 	newU.RawQuery = queryValues.Encode()
 
-	return newU
+	return &newU
 }
 
 // oidcUnauthorizedErrorURL copies a URL and removes the OIDC param values from the
@@ -192,7 +191,7 @@ func (service *Service) startOidcCleanerService(ctx context.Context, wg *sync.Wa
 			}
 
 			// run delete func against sessions map
-			_ = service.oidc.pendingSessions.DeleteFunc(deleteFunc)
+			service.oidc.pendingSessions.DeleteFunc(deleteFunc)
 		}
 	}()
 }

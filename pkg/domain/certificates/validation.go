@@ -140,9 +140,5 @@ func clientKeyB64Valid(b64Key string) bool {
 
 	// ensure key is a proper size and can create a cipher
 	_, err = aes.NewCipher(aesKey)
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }

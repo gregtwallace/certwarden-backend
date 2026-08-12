@@ -186,7 +186,10 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 
 	// set providers to the mgr Config
 	newNode := &yaml.Node{}
-	newNode.Encode(mgrCfg)
+	err = newNode.Encode(mgrCfg)
+	if err != nil {
+		return err
+	}
 	fullCfgFile.Content[0].Content[challValIndex].Content[providersValIndex] = newNode
 
 	// Marshall new completed config

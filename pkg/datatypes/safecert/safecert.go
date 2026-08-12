@@ -101,14 +101,14 @@ func (sc *SafeCert) Update(tlsCert *tls.Certificate) {
 		startIndex := rand.IntN(len(sc.leafCert.IssuingCertificateURL))
 		issuerOk := false
 		for i := 0; i < len(sc.leafCert.IssuingCertificateURL); i++ {
-			issuerCertResp, err := sc.httpClient.Get(sc.leafCert.IssuingCertificateURL[(startIndex+i)%len(sc.leafCert.IssuingCertificateURL)])
+			response, err := sc.httpClient.Get(sc.leafCert.IssuingCertificateURL[(startIndex+i)%len(sc.leafCert.IssuingCertificateURL)])
 			if err != nil {
 				// this one failed
 				continue
 			}
-			defer issuerCertResp.Body.Close()
+			defer response.Body.Close()
 
-			issuerCertBytes, err := io.ReadAll(issuerCertResp.Body)
+			issuerCertBytes, err := io.ReadAll(response.Body)
 			if err != nil {
 				// this one failed
 				continue

@@ -108,7 +108,11 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 				// BANDAID - END
 
 				// update msg & try again
-				msg.setNonceAndSign(nextNonce, accountKey)
+				err = msg.setNonceAndSign(nextNonce, accountKey)
+				if err != nil {
+					return nil, nil, fmt.Errorf("acme: failed to re-sign post message after badNonce error (%s)", err)
+				}
+
 				continue
 			}
 		}

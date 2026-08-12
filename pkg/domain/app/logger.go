@@ -125,8 +125,10 @@ func (app *Application) initZapLogger() {
 	}
 
 	app.logger.syncAndClose = func() {
-		_ = app.logger.Sync()
-		_ = closeFileFunc()
+		//nolint: errcheck // nowhere to log an error here (logger shutting down)
+		app.logger.Sync()
+		//nolint: errcheck // nowhere to log an error here (logger shutting down)
+		closeFileFunc()
 	}
 
 	// log if parsing log level failed earlier
@@ -179,8 +181,8 @@ func listLogFiles() ([]string, error) {
 
 		filename := files[i].Name()
 
-		// confirm prefix and suffix then add to the list (also include active log file)
-		if !(strings.HasPrefix(filename, logFileBaseName+"-") && strings.HasSuffix(filename, logFileSuffix)) &&
+		// skip file if it doesnt have prefix or suffix && isnt the main (active) log file
+		if (!strings.HasPrefix(filename, logFileBaseName+"-") || !strings.HasSuffix(filename, logFileSuffix)) &&
 			filename != logFileName {
 			continue
 		}

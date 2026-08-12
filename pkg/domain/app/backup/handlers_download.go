@@ -22,10 +22,7 @@ func (service *Service) DownloadBackupNowHandler(w http.ResponseWriter, r *http.
 	withOnDiskBackupsParam := query.Get("withondiskbackups")
 
 	// set bools (use default if not explicitly opposite)
-	withOnDiskBackups := false
-	if strings.EqualFold(withOnDiskBackupsParam, "true") {
-		withOnDiskBackups = true
-	}
+	withOnDiskBackups := strings.EqualFold(withOnDiskBackupsParam, "true")
 
 	// make zip file
 	zipBytes, err := service.createDataBackup(withOnDiskBackups)

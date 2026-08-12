@@ -96,8 +96,9 @@ func (app *Application) startPprof() error {
 	// start server
 	app.shutdownWaitgroup.Add(1)
 	go func() {
-		defer func() { _ = ln.Close }()
 		defer app.shutdownWaitgroup.Done()
+		//nolint:errcheck // shutting down, who cares
+		defer ln.Close()
 
 		// start server as https or http
 		var err error

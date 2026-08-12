@@ -54,18 +54,19 @@ func (service *Service) postUpdate(adr *acmeDnsResource, dnsRecordValue string) 
 	req.Header.Set("X-Api-Key", adr.Password)
 
 	// post to acme dns
-	resp, err := service.httpClient.Do(req)
+	response, err := service.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
 
 	// read body & close
-	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, resp.Body)
+	defer response.Body.Close()
+	//nolint:errcheck // don't care about errors since we're discarding
+	io.Copy(io.Discard, response.Body)
 
 	// if not status 200, error
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("acme-dns failed to update %s (%d)", adr.FullDomain, resp.StatusCode)
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("acme-dns failed to update %s (%d)", adr.FullDomain, response.StatusCode)
 	}
 
 	return nil

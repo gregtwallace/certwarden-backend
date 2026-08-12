@@ -22,8 +22,7 @@ func TestGetFunctionName(t *testing.T) {
 	}
 
 	// nil input
-	var f *func() error
-	f = nil
+	var f *func() error = nil
 	fName = helpers_test.GetFunctionName(f)
 	if fName != "<nil>" {
 		t.Errorf("getfunctionname expected '<nil>', but got '%s'", fName)
