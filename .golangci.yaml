@@ -1,7 +1,24 @@
 version: "2"
 
 linters:
+  default: standard
+  enable:
+    - depguard
+    - forbidigo
+
   settings:
+    depguard:
+      rules:
+        main:
+          list-mode: original
+          deny:
+            - pkg: "math/rand$"
+              desc: use math/rand/v2
+            - pkg: "log$"
+              desc: use app struct logger instead
+            - pkg: "log/slog$"
+              desc: use app struct logger instead
+
     errcheck:
       check-type-assertions: true
       check-blank: true
@@ -12,3 +29,7 @@ linters:
         - (io.Closer).Close
         - (*os.File).Close
       verbose: true
+
+    forbidigo:
+      exclude-godoc-examples: false
+      analyze-types: true

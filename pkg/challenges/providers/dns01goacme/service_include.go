@@ -5,6 +5,8 @@ package dns01goacme
 import (
 	"certwarden-backend/pkg/datatypes/environment"
 	"fmt"
+
+	//nolint:depguard // only using this to fold this external logger into the main logger
 	"log/slog"
 	"os"
 
