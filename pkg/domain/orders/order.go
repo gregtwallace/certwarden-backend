@@ -97,6 +97,7 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 
 	// check if job is in queue (priority is irrelevant for checking if exists, so just use false)
 	// should never error, so ignore err
+	//nolint:errcheck // TODO: in the future, refactor the job_manager package (and add tests)
 	fulfillJob, _ := service.makeFulfillingJob(order.ID, false)
 	fulfillingWorker := service.orderFulfilling.JobExists(fulfillJob)
 
