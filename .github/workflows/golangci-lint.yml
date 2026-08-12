@@ -3,7 +3,6 @@ name: golangci-lint
 on:
   workflow_dispatch:
   push:
-  pull_request:
 
 env:
   GITHUB_REF: ${{ github.ref }}
