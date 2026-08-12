@@ -1,17 +1,19 @@
-name: Run Tests
+name: golangci-lint
 
 on:
   workflow_dispatch:
   push:
+  pull_request:
 
 env:
   GITHUB_REF: ${{ github.ref }}
+  GOLANGCI_LINT_VERSION: v2.12
 
 permissions:
   contents: read
 
 jobs:
-  run-all-tests:
+  golangci:
     runs-on: ubuntu-24.04
 
     steps:
@@ -27,5 +29,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
-      - name: Test it
-        run: go test ./...
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
