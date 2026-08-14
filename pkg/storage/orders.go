@@ -61,7 +61,7 @@ func (order *orderDb) toOrder() (orders.Order, error) {
 
 	return orders.Order{
 		ID:             order.id,
-		Certificate:    cert,
+		Certificate:    *cert,
 		Location:       order.location,
 		Status:         order.status,
 		KnownRevoked:   order.knownRevoked,

@@ -13,9 +13,12 @@ import (
 
 func TestPostNewCert(t *testing.T) {
 	testCases := []struct {
-		newPayload      certificates.NewPayload
-		expectedPostErr error
-		expectedNew     certificates.Certificate
+		newPayload       certificates.NewPayload
+		expectedPostCert *certificates.Certificate
+		expectedPostErr  error
+
+		getName         string
+		expectedGetCert *certificates.Certificate
 		expectedGetErr  error
 	}{
 		{ // valid insertion
@@ -53,8 +56,45 @@ func TestPostNewCert(t *testing.T) {
 				CreatedAt:                   time.Unix(770337479, 0),
 				UpdatedAt:                   time.Unix(770338000, 0),
 			},
+			&certificates.Certificate{
+				ID:                 36,
+				Name:               "NewCertHere",
+				Description:        "some cert ins",
+				Key:                key58,
+				Account:            acmeAcct1,
+				Subject:            "some.example.com",
+				SubjectAltNames:    []string{"some1.example.com", "some2.example.com"},
+				Organization:       "an org",
+				OrganizationalUnit: "an ou",
+				Country:            "usa",
+				State:              "Ca",
+				City:               "los santos",
+				CSRExtraExtensions: []certificates.CertExtension{
+					{
+						Extension: pkix.Extension{
+							Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 5, 5, 7, 1, 24},
+							Critical: false,
+							Value:    []byte{0x30, 0x03, 0x02, 0x01, 0x05},
+						},
+						Description: "OCSP Must Staple",
+					},
+				},
+				PreferredRootCN:             "Root xyz",
+				LastAccess:                  time.Unix(0, 0),
+				CreatedAt:                   time.Unix(770337479, 0),
+				UpdatedAt:                   time.Unix(770338000, 0),
+				ApiKey:                      "12345fffff",
+				ApiKeyNew:                   "",
+				ApiKeyViaUrl:                true,
+				PostProcessingCommand:       "./run-me.py",
+				PostProcessingEnvironment:   []string{"a=123", "b=456"},
+				PostProcessingClientAddress: "endpoint.example.com",
+				PostProcessingClientKeyB64:  "an aes key",
+				Profile:                     "test-prof",
+			},
 			nil,
-			certificates.Certificate{
+			"NewCertHere",
+			&certificates.Certificate{
 				ID:                 36,
 				Name:               "NewCertHere",
 				Description:        "some cert ins",
@@ -118,9 +158,11 @@ func TestPostNewCert(t *testing.T) {
 				CreatedAt:                   time.Unix(770337479, 0),
 				UpdatedAt:                   time.Unix(770338000, 0),
 			},
+			nil,
 			helpers_test.NewTestErrorStringComp("UNIQUE constraint failed: certificates.name"),
-			certificates.Certificate{},
-			sql.ErrNoRows,
+			"test008.TEST.example.com",
+			&cert26,
+			nil,
 		},
 		{ // incomplete payload 1
 			certificates.NewPayload{
@@ -157,13 +199,15 @@ func TestPostNewCert(t *testing.T) {
 				CreatedAt:                   time.Unix(770337479, 0),
 				UpdatedAt:                   time.Unix(770338000, 0),
 			},
+			nil,
 			helpers_test.NewTestErrorStringComp("NOT NULL constraint failed: certificates.acme_account_id"),
-			certificates.Certificate{},
+			"NewCertHerexxxxy",
+			nil,
 			sql.ErrNoRows,
 		},
 		{ // incomplete payload 2
 			certificates.NewPayload{
-				Name:                 new("NewCertHerexxxxyyy"),
+				Name:                 new("NewCertHerexxxxyyyzzzz"),
 				Description:          new("some cert ins"),
 				PrivateKeyID:         new(58),
 				NewKeyAlgorithmValue: new("some-alg"), // should be ignored
@@ -196,8 +240,10 @@ func TestPostNewCert(t *testing.T) {
 				CreatedAt:                   time.Unix(770337479, 0),
 				UpdatedAt:                   time.Unix(770338000, 0),
 			},
+			nil,
 			helpers_test.NewTestErrorStringComp("NOT NULL constraint failed: certificates.subject"),
-			certificates.Certificate{},
+			"NewCertHerexxxxyyyzzzz",
+			nil,
 			sql.ErrNoRows,
 		},
 	}
@@ -210,19 +256,19 @@ func TestPostNewCert(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
-			record, err := store.PostNewCert(&tc.newPayload)
+			cert, err := store.PostNewCert(&tc.newPayload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
 				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, &record, &tc.expectedNew)
+			compareCertificate(t, cert, tc.expectedPostCert)
 
-			record, err = store.GetOneCertByName(record.Name)
+			cert, err = store.GetOneCertByName(tc.getName)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, &record, &tc.expectedNew)
+			compareCertificate(t, cert, tc.expectedGetCert)
 		})
 	}
 }

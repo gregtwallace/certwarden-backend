@@ -8,7 +8,7 @@ import (
 
 // PutCertUpdate saves details about the cert that can be updated at any time. It only updates
 // the details which are provided
-func (store *Storage) PutCertUpdate(payload *certificates.UpdatePayload) (certificates.Certificate, error) {
+func (store *Storage) PutCertUpdate(payload *certificates.UpdatePayload) (*certificates.Certificate, error) {
 	// database update
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -65,22 +65,22 @@ func (store *Storage) PutCertUpdate(payload *certificates.UpdatePayload) (certif
 		payload.ID,
 	)
 	if err != nil {
-		return certificates.Certificate{}, err
+		return nil, err
 	}
 
 	// verify update actually happened
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return certificates.Certificate{}, err
+		return nil, err
 	}
 	if rowsAffected != 1 {
-		return certificates.Certificate{}, errorWrongUpdateRowCount(1, rowsAffected)
+		return nil, errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	// get updated to return
 	updatedCert, err := store.GetOneCertById(payload.ID)
 	if err != nil {
-		return certificates.Certificate{}, err
+		return nil, err
 	}
 
 	return updatedCert, nil
