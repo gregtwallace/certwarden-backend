@@ -18,7 +18,7 @@ func middlewareApplyAuthJWT(next handlerFunc, auth *auth.Service) handlerFunc {
 		err := auth.ValidateAuthHeader(r, w, fmt.Sprintf("%s %s", r.Method, trimmedURI))
 		if err != nil {
 			// Note: Do NOT send detailed error since unauthorized
-			return output.JsonErrUnauthorized
+			return output.ErrJsonUnauthorized
 		}
 
 		// if valid, do next

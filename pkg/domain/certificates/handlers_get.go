@@ -32,7 +32,7 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) *out
 	certs, totalRows, err := service.storage.GetAllCerts(query)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// populate cert summaries for output
@@ -51,7 +51,7 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) *out
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -71,7 +71,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) *outp
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// if id is new, provide some info
@@ -94,7 +94,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) *outp
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -130,7 +130,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	keys, err := service.keys.AvailableKeys()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	outputKeys := []private_keys.KeySummaryResponse{}
@@ -142,7 +142,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	accounts, err := service.accounts.GetUsableAccounts()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	outputAccounts := []usableAccount{}
@@ -155,7 +155,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 		if err != nil {
 			err = fmt.Errorf("failed to retrieve acme service to list profiles (%s)", err)
 			service.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		// redo AcmeServer
@@ -179,7 +179,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

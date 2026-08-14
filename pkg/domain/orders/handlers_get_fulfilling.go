@@ -44,7 +44,7 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		err = fmt.Errorf("orders: failed to convert fulfilling jobs to order objects (%s)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// build working part of response
@@ -96,7 +96,7 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 	err = service.output.WriteJSON(w, jobsResp)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 	return nil
 }

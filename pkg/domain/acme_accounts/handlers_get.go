@@ -31,7 +31,7 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) *
 	accounts, totalRows, err := service.storage.GetAllAcmeAccounts(query)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// populate account summaries for output
@@ -50,7 +50,7 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) *
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -70,7 +70,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) *o
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// if id is new, provide some info
@@ -88,7 +88,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) *o
 	if err != nil {
 		err = fmt.Errorf("failed to generate account summary response (%s)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -101,7 +101,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) *o
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -125,14 +125,14 @@ func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Requ
 	acmeServers, err := service.acmeServerService.ListAllServersSummaries()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// available private keys
 	rawKeys, err := service.keys.AvailableKeys()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	keys := []private_keys.KeySummaryResponse{}
@@ -150,7 +150,7 @@ func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Requ
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

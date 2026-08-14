@@ -22,7 +22,7 @@ import (
 func (service *Service) OIDCGetLogin(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// return an error if OIDC is not in use
 	if !service.methodOIDCEnabled() {
-		return output.JsonErrNotFound(errors.New("auth: OIDC is not configured"))
+		return output.ErrorJsonErrNotFound(errors.New("auth: OIDC is not configured"))
 	}
 
 	// Option 1: Finish login with state/code
@@ -38,7 +38,7 @@ func (service *Service) OIDCGetLogin(w http.ResponseWriter, r *http.Request) *ou
 	if err != nil {
 		err = fmt.Errorf("client %s: oidc redirect_uri '%s' failed to parse (%s)", r.RemoteAddr, redirectUri, err)
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// remove any previous error param
@@ -52,7 +52,7 @@ func (service *Service) OIDCGetLogin(w http.ResponseWriter, r *http.Request) *ou
 	if err != nil {
 		err = fmt.Errorf("client %s: oidc config redirecturl failed to parse (%s), fix the config", r.RemoteAddr, err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	apiRedirectSchemeHostFrontend := fmt.Sprintf("%s://%s", cfgApiRedirectURLParsed.Scheme, cfgApiRedirectURLParsed.Host) + service.frontendURLPath
@@ -70,7 +70,7 @@ func (service *Service) OIDCGetLogin(w http.ResponseWriter, r *http.Request) *ou
 			// log error here as this shouldn't ever happen unless someone is deliberately misbehaving or there is a bug
 			err = fmt.Errorf("auth: oidc redirect_uri '%s' not permitted", redirectUri)
 			service.logger.Errorf("client %s: %s", r.RemoteAddr, err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 	}
 
@@ -129,7 +129,7 @@ func (service *Service) OIDCGetCallback(w http.ResponseWriter, r *http.Request) 
 	oidcStateObj, found := service.oidc.pendingSessions.Pop(qStateString)
 	if !found {
 		service.logger.Errorf("client %s: oidc state not found", r.RemoteAddr)
-		return output.JsonErrUnauthorized
+		return output.ErrJsonUnauthorized
 	}
 
 	// if Idp sent an error
@@ -246,25 +246,25 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 	oidcStateObj, found := service.oidc.pendingSessions.Pop(qStateString)
 	if !found {
 		service.logger.Errorf("client %s: oidc state not found", r.RemoteAddr)
-		return output.JsonErrUnauthorized
+		return output.ErrJsonUnauthorized
 	}
 
 	// validate code matches
 	if qCode == "" || qCode != oidcStateObj.idpCode {
 		service.logger.Infof("client %s: login failed oidc state's code did not match", r.RemoteAddr)
-		return output.JsonErrUnauthorized
+		return output.ErrJsonUnauthorized
 	}
 
 	// validation done
 	idTokenStr, ok := oidcStateObj.oauth2Token.Extra("id_token").(string)
 	if !ok {
 		service.logger.Errorf("client %s: login failed oidc state's id_token did not assert to string", r.RemoteAddr)
-		return output.JsonErrUnauthorized
+		return output.ErrJsonUnauthorized
 	}
 	scopeStr, ok := oidcStateObj.oauth2Token.Extra("scope").(string)
 	if !ok {
 		service.logger.Errorf("client %s: login failed oidc state's scope did not assert to string", r.RemoteAddr)
-		return output.JsonErrUnauthorized
+		return output.ErrJsonUnauthorized
 	}
 
 	// make extra func obj
@@ -284,7 +284,7 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 	auth, err := service.sessionManager.NewSession(oidcStateObj.oidcIDToken.Subject, session_manager.UserTypeOIDC, extraFuncs)
 	if err != nil {
 		service.logger.Errorf("client %s: login failed (internal error: %s)", r.RemoteAddr, err)
-		return output.JsonErrInternal(nil)
+		return output.ErrorJsonErrInternal(nil)
 	}
 
 	// return response to client
@@ -299,7 +299,7 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
 		// detailed error is OK here because the user passed auth checks
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	// log success

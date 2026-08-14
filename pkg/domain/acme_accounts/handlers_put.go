@@ -34,7 +34,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// get id from param
@@ -42,7 +42,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -55,7 +55,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	// name (optional)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
 		service.logger.Debug(ErrNameBad)
-		return output.JsonErrValidationFailed(ErrNameBad)
+		return output.ErrorJsonErrValidationFailed(ErrNameBad)
 	}
 	// end validation
 
@@ -67,14 +67,14 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	updatedAcct, err := service.storage.PutAcmeAccountUpdate(payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	detailedResp, err := updatedAcct.detailedResponse(service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate account summary response (%s)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -86,7 +86,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

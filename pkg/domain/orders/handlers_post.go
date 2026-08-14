@@ -28,7 +28,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) *output
 	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// get certificate (validate exists)
@@ -52,7 +52,7 @@ func (service *Service) NewOrder(w http.ResponseWriter, r *http.Request) *output
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -68,14 +68,14 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	orderIdParam := params.ByName("orderid")
 	orderId, err := strconv.Atoi(orderIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validate order is acceptable
@@ -89,7 +89,7 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 	err = service.fulfillOrder(orderId, true)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// get order from db to return
@@ -107,7 +107,7 @@ func (service *Service) FulfillExistingOrder(w http.ResponseWriter, r *http.Requ
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -129,14 +129,14 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	orderIdParam := params.ByName("orderid")
 	orderId, err := strconv.Atoi(orderIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// parse payload
@@ -150,7 +150,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	err = service.validRevocationReason(payload.ReasonCode)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// order
@@ -164,14 +164,14 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	key, err := order.Certificate.Account.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// revoke the certificate with ACME
 	acmeService, err := service.acmeServerService.AcmeService(order.Certificate.Account.AcmeServer.ID)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	err = acmeService.RevokeCertificate(*order.Pem, payload.ReasonCode, key)
@@ -180,7 +180,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 		acmeErr := new(acme.Error)
 		if !errors.As(err, &acmeErr) || acmeErr.Type != "urn:ietf:params:acme:error:alreadyRevoked" {
 			service.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 	}
 
@@ -188,7 +188,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	err = service.storage.RevokeOrder(orderId)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// update certificate timestamp
@@ -213,7 +213,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

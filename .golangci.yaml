@@ -8,6 +8,8 @@ linters:
     - depguard
     - embeddedstructfieldcheck
     # - err113 #TODO
+    - errchkjson
+    - errname
     - forbidigo
 
   settings:
@@ -37,6 +39,10 @@ linters:
         - (io.Closer).Close
         - (*os.File).Close
       verbose: true
+
+    errchkjson:
+      check-error-free-encoding: false
+      report-no-exported: true
 
     forbidigo:
       exclude-godoc-examples: false

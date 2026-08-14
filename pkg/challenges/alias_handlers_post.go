@@ -21,7 +21,7 @@ func (service *Service) PostDomainAliases(w http.ResponseWriter, r *http.Request
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validate all values passed (only non-wildcard domains are acceptable)
@@ -31,14 +31,14 @@ func (service *Service) PostDomainAliases(w http.ResponseWriter, r *http.Request
 		if !validation.DomainValid(alias.ChallengeDomain, false) {
 			err = fmt.Errorf("identifier `%s` is not a valid domain name", alias.ChallengeDomain)
 			service.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 
 		// check dns alias (provisioning domain)
 		if !validation.DomainValid(alias.ProvisionDomain, false) {
 			err = fmt.Errorf("alias `%s` is not a valid domain name", alias.ProvisionDomain)
 			service.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 
 		// error if duplicate identifier / challenge domain
@@ -46,7 +46,7 @@ func (service *Service) PostDomainAliases(w http.ResponseWriter, r *http.Request
 		if exists {
 			err = fmt.Errorf("identifier `%s` specified more than once", alias.ChallengeDomain)
 			service.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 
 		// add alias to map
@@ -59,7 +59,7 @@ func (service *Service) PostDomainAliases(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		err = fmt.Errorf("failed to write challenge domain alias config to disk (%s)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -71,7 +71,7 @@ func (service *Service) PostDomainAliases(w http.ResponseWriter, r *http.Request
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

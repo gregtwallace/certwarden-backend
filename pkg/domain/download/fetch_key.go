@@ -15,7 +15,7 @@ func (service *Service) getKey(keyName string, apiKey string, apiKeyViaUrl bool)
 	// if apiKey is blank, definitely unauthorized
 	if apiKey == "" {
 		service.logger.Debug(errBlankApiKey)
-		return private_keys.Key{}, output.JsonErrUnauthorized
+		return private_keys.Key{}, output.ErrJsonUnauthorized
 	}
 
 	// get the key from storage
@@ -25,24 +25,24 @@ func (service *Service) getKey(keyName string, apiKey string, apiKeyViaUrl bool)
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
 			// exclude specific error since not authenticated
-			return private_keys.Key{}, output.JsonErrNotFound(nil)
+			return private_keys.Key{}, output.ErrorJsonErrNotFound(nil)
 		} else {
 			service.logger.Error(err)
 			// exclude specific error since not authenticated
-			return private_keys.Key{}, output.JsonErrStorageGeneric(nil)
+			return private_keys.Key{}, output.ErrorJsonErrStorageGeneric(nil)
 		}
 	}
 
 	// if key is disabled via API, error
 	if key.ApiKeyDisabled {
 		service.logger.Debug(errApiDisabled)
-		return private_keys.Key{}, output.JsonErrUnauthorized
+		return private_keys.Key{}, output.ErrJsonUnauthorized
 	}
 
 	// if apiKey came from URL, and key does not support this, error
 	if apiKeyViaUrl && !key.ApiKeyViaUrl {
 		service.logger.Debug(errApiKeyFromUrlDisallowed)
-		return private_keys.Key{}, output.JsonErrUnauthorized
+		return private_keys.Key{}, output.ErrJsonUnauthorized
 	}
 
 	// verify apikey matches private key's apiKey (new or old)
@@ -50,7 +50,7 @@ func (service *Service) getKey(keyName string, apiKey string, apiKeyViaUrl bool)
 	if (key.ApiKey == "" || apiKey != key.ApiKey) &&
 		(key.ApiKeyNew == "" || apiKey != key.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
-		return private_keys.Key{}, output.JsonErrUnauthorized
+		return private_keys.Key{}, output.ErrJsonUnauthorized
 	}
 
 	// before return, update key last access, dont fail our though if this step fails, just log error

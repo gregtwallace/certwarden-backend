@@ -175,7 +175,7 @@ func (service *Service) DownloadPfxViaHeader(w http.ResponseWriter, r *http.Requ
 	pfxPrivCert := pfxPrivateCertificateChain(order)
 	err := service.output.WritePfx(w, r, pfxPrivCert, legacy3DES)
 	if err != nil {
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	return nil
@@ -202,7 +202,7 @@ func (service *Service) DownloadPfxViaUrl(w http.ResponseWriter, r *http.Request
 	pfxPrivCert := pfxPrivateCertificateChain(order)
 	err := service.output.WritePfx(w, r, pfxPrivCert, legacy3DES)
 	if err != nil {
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	return nil

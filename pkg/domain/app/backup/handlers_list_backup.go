@@ -18,7 +18,7 @@ func (service *Service) ListDiskBackupsHandler(w http.ResponseWriter, r *http.Re
 	// get file list
 	filesInfo, err := service.listBackupFiles()
 	if err != nil {
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -31,7 +31,7 @@ func (service *Service) ListDiskBackupsHandler(w http.ResponseWriter, r *http.Re
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

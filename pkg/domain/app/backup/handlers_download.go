@@ -28,7 +28,7 @@ func (service *Service) DownloadBackupNowHandler(w http.ResponseWriter, r *http.
 	zipBytes, err := service.createDataBackup(withOnDiskBackups)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// filename & remove extension
@@ -50,7 +50,7 @@ func (service *Service) DownloadDiskBackupHandler(w http.ResponseWriter, r *http
 
 	// validate filename is in the form of a backup file (prevent unauthorized file download)
 	if !isBackupFileName(filenameParam) {
-		return output.JsonErrValidationFailed(errors.New("invalid filename"))
+		return output.ErrorJsonErrValidationFailed(errors.New("invalid filename"))
 	}
 
 	// open file for reading
@@ -58,12 +58,12 @@ func (service *Service) DownloadDiskBackupHandler(w http.ResponseWriter, r *http
 	if err != nil {
 		// 404 for file doesn't exist
 		if errors.Is(err, os.ErrNotExist) {
-			return output.JsonErrNotFound(errors.New(service.cleanDataStorageBackupPath + string(filepath.Separator) + filenameParam))
+			return output.ErrorJsonErrNotFound(errors.New(service.cleanDataStorageBackupPath + string(filepath.Separator) + filenameParam))
 		}
 		// internal for any other issue
 		err = fmt.Errorf("failed to open disk backup for download (%s)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 	defer f.Close()
 
@@ -73,7 +73,7 @@ func (service *Service) DownloadDiskBackupHandler(w http.ResponseWriter, r *http
 	if err != nil {
 		err = fmt.Errorf("failed to copy disk backup to buffer for download (%s)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// remove extension

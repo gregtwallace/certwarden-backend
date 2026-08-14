@@ -40,7 +40,7 @@ func (service *Service) GetCertificate(id int) (Certificate, *output.JsonError) 
 	// if id is not in valid range, it is definitely not valid
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)
-		return Certificate{}, output.JsonErrValidationFailed(ErrIdBad)
+		return Certificate{}, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get from storage
@@ -49,10 +49,10 @@ func (service *Service) GetCertificate(id int) (Certificate, *output.JsonError) 
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return Certificate{}, output.JsonErrNotFound(fmt.Errorf("certificate id %d not found", id))
+			return Certificate{}, output.ErrorJsonErrNotFound(fmt.Errorf("certificate id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Certificate{}, output.JsonErrStorageGeneric(err)
+			return Certificate{}, output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 

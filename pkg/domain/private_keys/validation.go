@@ -25,7 +25,7 @@ func (service *Service) getKey(id int) (Key, *output.JsonError) {
 	// basic check
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)
-		return Key{}, output.JsonErrValidationFailed(ErrIdBad)
+		return Key{}, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get the key from storage
@@ -34,10 +34,10 @@ func (service *Service) getKey(id int) (Key, *output.JsonError) {
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return Key{}, output.JsonErrNotFound(fmt.Errorf("key id %d not found", id))
+			return Key{}, output.ErrorJsonErrNotFound(fmt.Errorf("key id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Key{}, output.JsonErrStorageGeneric(err)
+			return Key{}, output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 

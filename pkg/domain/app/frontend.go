@@ -76,20 +76,20 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		err = fmt.Errorf("frontend: failed to get absolute path for request (%s)", err)
 		app.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	pathFrontendAbs, err := filepath.Abs(frontendBuildDir)
 	if err != nil {
 		err = fmt.Errorf("frontend: failed to get absolute path for frontend root (%s)", err)
 		app.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// DO NOT REMOVE THIS CHECK -- security against path traversal
 	if !strings.HasPrefix(fPathAbs, pathFrontendAbs) {
 		app.logger.Errorf("frontend: failed to serve frontend file (malicious request url path? %s)", r.URL.Path)
-		return output.JsonErrNotFound(errors.New(r.URL.Path))
+		return output.ErrorJsonErrNotFound(errors.New(r.URL.Path))
 	}
 
 	// open requested file
@@ -97,7 +97,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		err = fmt.Errorf("frontend: failed to open frontend file %s (%s)", fPathRel, err)
 		app.logger.Debug(err)
-		return output.JsonErrNotFound(err)
+		return output.ErrorJsonErrNotFound(err)
 	}
 	defer f.Close()
 
@@ -106,7 +106,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		err = fmt.Errorf("frontend: failed to stat frontend file %s (%s)", fPathRel, err)
 		app.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// TODO: Remove when Vite/Emotion can properly handle this.
@@ -119,7 +119,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		if err != nil {
 			err = fmt.Errorf("frontend: could not read frontend file %s into buffer for nonce injection (%s)", fPathRel, err)
 			app.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		// replace offending line of code to make it get the nonce from meta nonce
@@ -147,7 +147,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		if err != nil {
 			err = fmt.Errorf("frontend: failed to generate nonce for frontend (%s)", err)
 			app.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		// set CSP
@@ -159,7 +159,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		if err != nil {
 			err = fmt.Errorf("frontend: failed to read frontend file %s into buffer for nonce injection (%s)", fPathRel, err)
 			app.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		// set nonce placeholders to the actual nonce value

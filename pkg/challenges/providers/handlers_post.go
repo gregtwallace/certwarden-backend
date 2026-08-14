@@ -42,7 +42,7 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// verify correct number of configs received
@@ -71,7 +71,7 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 	if configCount != 1 {
 		err = fmt.Errorf("new provider expects 1 config, received %d", configCount)
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// make internal config
@@ -115,7 +115,7 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 	if err != nil {
 		err = fmt.Errorf("failed to add new provider (%s)", err)
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// update config file
@@ -123,7 +123,7 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 	if err != nil {
 		err = fmt.Errorf("failed to save config file after providers update (%s)", err)
 		mgr.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -135,7 +135,7 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 	err = mgr.output.WriteJSON(w, response)
 	if err != nil {
 		mgr.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

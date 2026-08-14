@@ -15,83 +15,83 @@ func TestOutKeyViaHeader(t *testing.T) {
 	}
 
 	// Test: No header provided
-	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, nil, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: blank/empty apikey provided
 	apiKey := ""
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: incorrect apikey provided
 	apiKey = "something"
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: cert apikey provided instead of key apikey
 	apiKey = "c-abc"
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: cert apikey variants
 	apiKey = ".c-abc"
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 	apiKey = "c-abc."
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 	apiKey = "123.c-abc"
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 	apiKey = "c-abc.123"
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: correct apikey provided but via url
 	apiKey = "k-123"
-	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
 	// `b` doesn't have a non-new apikey
-	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
 	// `d` doesnt have a any correct apikey
-	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
 
 	// Test: correct new apikey provided but via url
 	apiKey = "k-123-new"
-	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: correct apikey provided
 	apiKey = "k-123"
@@ -157,7 +157,7 @@ N/VC8wvORy4lKBkAeRy0oK+9o6R5mdzP3Fjpz9I4
 
 	// Test: correct apikey but api is disabled
 	apiKey = "k-123"
-	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-f", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaHeader, &apiKey, nil, "test-f", "", output.ErrJsonUnauthorized)
 }
 
 func TestOutKeyViaURL(t *testing.T) {
@@ -169,75 +169,75 @@ func TestOutKeyViaURL(t *testing.T) {
 	}
 
 	// Test: No url value provided
-	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, nil, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: blank/empty apikey provided
 	apiKey := ""
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: incorrect apikey provided
 	apiKey = "something"
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: cert apikey provided instead of key apikey
 	apiKey = "c-abc"
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: cert apikey variants
 	apiKey = ".c-abc"
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 	apiKey = "c-abc."
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 	apiKey = "123.c-abc"
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 	apiKey = "c-abc.123"
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: correct apikey provided
 	apiKey = "k-123"
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
 	// `b` doesn't have a non-new apikey
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
 	// `d` doesnt have a any correct apikey
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", `-----BEGIN RSA PRIVATE KEY-----
 MIIBOgIBAAJBAL8nKLmviCA2UqLqEwTJ8mPnuN5k1iKw4W1RlxYYtTpvyDDkz5v6
@@ -260,7 +260,7 @@ j1f1P6e7Khe0uXD3N+r34piMQT0WX0po2rf16x0i
 
 	// Test: correct new key provided
 	apiKey = "k-123-new"
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
 	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-e", `-----BEGIN RSA PRIVATE KEY-----
 MIIBOgIBAAJBAL8nKLmviCA2UqLqEwTJ8mPnuN5k1iKw4W1RlxYYtTpvyDDkz5v6
 C25MeHrbJqj0tzsBwXNZI2OHrBcSl3qWum0CAwEAAQJAKE4uu2Z8dsRVjNX74CLf
@@ -273,5 +273,5 @@ N/VC8wvORy4lKBkAeRy0oK+9o6R5mdzP3Fjpz9I4
 
 	// Test: correct apikey but api is disabled
 	apiKey = "k-123"
-	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-f", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-f", "", output.ErrJsonUnauthorized)
 }

@@ -25,20 +25,20 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		key, err := cert.Account.AcmeAccountKey()
 		if err != nil {
 			service.logger.Error(err)
-			return Order{}, output.JsonErrInternal(err)
+			return Order{}, output.ErrorJsonErrInternal(err)
 		}
 
 		// send the new-order to ACME
 		acmeService, err := service.acmeServerService.AcmeService(cert.Account.AcmeServer.ID)
 		if err != nil {
 			service.logger.Error(err)
-			return Order{}, output.JsonErrInternal(err)
+			return Order{}, output.ErrorJsonErrInternal(err)
 		}
 
 		acmeResponse, err := acmeService.NewOrder(service.NewOrderPayload(cert), key)
 		if err != nil {
 			service.logger.Error(err)
-			return Order{}, output.JsonErrInternal(err)
+			return Order{}, output.ErrorJsonErrInternal(err)
 		}
 		service.logger.Debugf("orders: new order location: %s", acmeResponse.Location)
 
@@ -52,11 +52,11 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 			err = service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(orderId, acmeResponse))
 			if err != nil {
 				service.logger.Error(err)
-				return Order{}, output.JsonErrStorageGeneric(err)
+				return Order{}, output.ErrorJsonErrStorageGeneric(err)
 			}
 		} else if err != nil {
 			service.logger.Error(err)
-			return Order{}, output.JsonErrStorageGeneric(err)
+			return Order{}, output.ErrorJsonErrStorageGeneric(err)
 		}
 
 		// update certificate timestamp
@@ -68,7 +68,7 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 	} else if err != nil {
 		// some other unexpected storage error
 		service.logger.Error(err)
-		return Order{}, output.JsonErrStorageGeneric(err)
+		return Order{}, output.ErrorJsonErrStorageGeneric(err)
 	} else {
 		// continue with existing order
 		service.logger.Debugf("orders: create new order is retrying existing pending order instead of creating new")

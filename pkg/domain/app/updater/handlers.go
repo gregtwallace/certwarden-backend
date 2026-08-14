@@ -52,7 +52,7 @@ func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request
 	err := service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -65,7 +65,7 @@ func (service *Service) CheckForNewVersion(w http.ResponseWriter, r *http.Reques
 	err := service.fetchNewVersion()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// return new version info (same as GET new version)

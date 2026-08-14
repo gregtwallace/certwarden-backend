@@ -24,7 +24,7 @@ func (service *Service) GetDomainAliases(w http.ResponseWriter, r *http.Request)
 	err := service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

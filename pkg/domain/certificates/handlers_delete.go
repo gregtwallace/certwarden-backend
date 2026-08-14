@@ -18,7 +18,7 @@ func (service *Service) DeleteCert(w http.ResponseWriter, r *http.Request) *outp
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// verify cert id exists
@@ -31,7 +31,7 @@ func (service *Service) DeleteCert(w http.ResponseWriter, r *http.Request) *outp
 	err = service.storage.DeleteCert(id)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// write response
@@ -42,7 +42,7 @@ func (service *Service) DeleteCert(w http.ResponseWriter, r *http.Request) *outp
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -56,7 +56,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	certId, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -70,7 +70,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	if cert.ApiKeyNew == "" {
 		err = errors.New("new api key does not exist")
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 	// validation -- end
 
@@ -79,7 +79,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	err = service.storage.PutCertApiKey(certId, cert.ApiKeyNew, time.Now())
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 	cert.ApiKey = cert.ApiKeyNew
 
@@ -87,7 +87,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	err = service.storage.PutCertApiKeyNew(certId, "", time.Now())
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 	cert.ApiKeyNew = ""
 
@@ -100,7 +100,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -114,7 +114,7 @@ func (service *Service) DisableClientKey(w http.ResponseWriter, r *http.Request)
 	certId, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -129,7 +129,7 @@ func (service *Service) DisableClientKey(w http.ResponseWriter, r *http.Request)
 	err = service.storage.PutCertClientKey(certId, "", time.Now())
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 	cert.PostProcessingClientKeyB64 = ""
 
@@ -142,7 +142,7 @@ func (service *Service) DisableClientKey(w http.ResponseWriter, r *http.Request)
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

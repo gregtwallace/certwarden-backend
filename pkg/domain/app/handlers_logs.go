@@ -77,7 +77,7 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 	logEntries, err := readAndParseLogFile(dataStorageLogPath + "/" + logFileName)
 	if err != nil {
 		app.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// if size is too small, read more from next file
@@ -138,7 +138,7 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 	err = app.output.WriteJSON(w, response)
 	if err != nil {
 		app.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -155,7 +155,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	logFiles, err := listLogFiles()
 	if err != nil {
 		app.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// range through all log files
@@ -164,7 +164,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 		logFile, err := os.Open(dataStorageLogPath + "/" + logFilename)
 		if err != nil {
 			app.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 		defer logFile.Close()
 
@@ -172,14 +172,14 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 		zipFile, err := zipWriter.Create(logFilename)
 		if err != nil {
 			app.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		// copy log file to zip file
 		_, err = io.Copy(zipFile, logFile)
 		if err != nil {
 			app.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 	}
 
@@ -187,7 +187,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	err = zipWriter.Close()
 	if err != nil {
 		app.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// make zip filename with timestamp

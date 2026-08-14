@@ -23,7 +23,7 @@ type localLoginPayload struct {
 // token is sent in a cookie.
 func (service *Service) LocalPostLogin(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	if !service.methodLocalEnabled() {
-		return output.JsonErrNotFound(errors.New("auth: local login is not configured"))
+		return output.ErrorJsonErrNotFound(errors.New("auth: local login is not configured"))
 	}
 
 	// wrap handler to easily check err and delete cookies
@@ -37,21 +37,21 @@ func (service *Service) LocalPostLogin(w http.ResponseWriter, r *http.Request) *
 		err := json.NewDecoder(r.Body).Decode(&payload)
 		if err != nil {
 			service.logger.Infof("client %s: login failed (payload error: %s)", r.RemoteAddr, err)
-			return output.JsonErrUnauthorized
+			return output.ErrJsonUnauthorized
 		}
 
 		// fetch the password hash from storage
 		user, err := service.local.storage.GetOneUserByUsername(payload.Username)
 		if err != nil {
 			service.logger.Infof("client %s: login failed (bad username: %s)", r.RemoteAddr, err)
-			return output.JsonErrUnauthorized
+			return output.ErrJsonUnauthorized
 		}
 
 		// compare
 		err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(payload.Password))
 		if err != nil {
 			service.logger.Infof("client %s: login failed (bad password: %s)", r.RemoteAddr, err)
-			return output.JsonErrUnauthorized
+			return output.ErrJsonUnauthorized
 		}
 
 		// user and password now verified
@@ -65,7 +65,7 @@ func (service *Service) LocalPostLogin(w http.ResponseWriter, r *http.Request) *
 		auth, err := service.sessionManager.NewSession(user.Username, session_manager.UserTypeLocal, extraFuncs)
 		if err != nil {
 			service.logger.Errorf("client %s: login failed (internal error: %s)", r.RemoteAddr, err)
-			return output.JsonErrInternal(nil)
+			return output.ErrorJsonErrInternal(nil)
 		}
 
 		// return response to client
@@ -80,7 +80,7 @@ func (service *Service) LocalPostLogin(w http.ResponseWriter, r *http.Request) *
 		if err != nil {
 			service.logger.Errorf("failed to write json (%s)", err)
 			// detailed error is OK here because the user passed auth checks
-			return output.JsonErrWriteJsonError(err)
+			return output.ErrorJsonErrWriteJsonError(err)
 		}
 
 		// log success
@@ -109,7 +109,7 @@ type passwordChangePayload struct {
 // ChangePassword allows a user to change their password
 func (service *Service) LocalChangePassword(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	if !service.methodLocalEnabled() {
-		return output.JsonErrNotFound(errors.New("auth: change password if for local logins, which are not configured"))
+		return output.ErrorJsonErrNotFound(errors.New("auth: change password if for local logins, which are not configured"))
 	}
 
 	// log attempt
@@ -119,14 +119,14 @@ func (service *Service) LocalChangePassword(w http.ResponseWriter, r *http.Reque
 	auth, err := service.sessionManager.ValidateAuthHeader(r, w, "password change")
 	if err != nil {
 		service.logger.Infof("client %s: password change failed (bad auth header: %s)", r.RemoteAddr, err)
-		return output.JsonErrUnauthorized
+		return output.ErrJsonUnauthorized
 	}
 
 	// if not a local user, error
 	if auth.UserType != session_manager.UserTypeLocal {
 		err = fmt.Errorf("client %s: password change failed (user '%s' is not a local user)", r.RemoteAddr, auth.UserTypeAndName())
 		service.logger.Info(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// decode body into payload
@@ -135,7 +135,7 @@ func (service *Service) LocalChangePassword(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		err = fmt.Errorf("client %s: password change for user '%s' failed (payload error: %s)", r.RemoteAddr, auth.UserTypeAndName(), err)
 		service.logger.Info(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// fetch the password hash from storage
@@ -144,7 +144,7 @@ func (service *Service) LocalChangePassword(w http.ResponseWriter, r *http.Reque
 		// shouldn't be possible since header was valid
 		err = fmt.Errorf("client %s: password change for user '%s' failed (bad username: %s)", r.RemoteAddr, auth.UserTypeAndName(), err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// confirm current password is correct
@@ -152,7 +152,7 @@ func (service *Service) LocalChangePassword(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		err = fmt.Errorf("client %s: password change for user '%s' failed (bad password: %s)", r.RemoteAddr, auth.UserTypeAndName(), err)
 		service.logger.Info(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// Auth confirmed OK
@@ -161,14 +161,14 @@ func (service *Service) LocalChangePassword(w http.ResponseWriter, r *http.Reque
 	if payload.NewPassword != payload.ConfirmNewPassword {
 		err = fmt.Errorf("client %s: password change for user '%s' failed (new password did not match confirmation)", r.RemoteAddr, auth.UserTypeAndName())
 		service.logger.Info(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// don't enforce any password requirements other than it needs to exist
 	if len(payload.NewPassword) < 1 {
 		err = fmt.Errorf("client %s: password change for user '%s' failed (new password not specified)", r.RemoteAddr, auth.UserTypeAndName())
 		service.logger.Info(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// generate new password hash
@@ -176,7 +176,7 @@ func (service *Service) LocalChangePassword(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		err = fmt.Errorf("client %s: password change for user '%s' failed (internal error: %s)", r.RemoteAddr, auth.UserTypeAndName(), err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// update password in storage
@@ -184,7 +184,7 @@ func (service *Service) LocalChangePassword(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		err = fmt.Errorf("client %s: password change for user '%s' failed (storage error: %s)", r.RemoteAddr, auth.UserTypeAndName(), err)
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// log success (before response since new pw already saved)
@@ -199,7 +199,7 @@ func (service *Service) LocalChangePassword(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
 		// detailed error is OK here because the user passed auth checks
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

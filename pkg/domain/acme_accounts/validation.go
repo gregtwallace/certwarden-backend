@@ -25,7 +25,7 @@ func (service *Service) getAccount(id int) (Account, *output.JsonError) {
 	// if id is not in valid range, it is definitely not valid
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)
-		return Account{}, output.JsonErrValidationFailed(ErrIdBad)
+		return Account{}, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get from storage
@@ -34,10 +34,10 @@ func (service *Service) getAccount(id int) (Account, *output.JsonError) {
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return Account{}, output.JsonErrNotFound(fmt.Errorf("account id %d not found", id))
+			return Account{}, output.ErrorJsonErrNotFound(fmt.Errorf("account id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Account{}, output.JsonErrStorageGeneric(err)
+			return Account{}, output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 

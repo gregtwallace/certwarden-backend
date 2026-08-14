@@ -18,7 +18,7 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) *outpu
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validate key exists
@@ -31,11 +31,11 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) *outpu
 	inUse, err := service.storage.KeyInUse(id)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 	if inUse {
 		service.logger.Debug("cannot delete, in use")
-		return output.JsonErrDeleteInUse("private key")
+		return output.ErrorJsonErrDeleteInUse("private key")
 	}
 	// end validation
 
@@ -43,7 +43,7 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) *outpu
 	err = service.storage.DeleteKey(id)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// write response
@@ -55,7 +55,7 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) *outpu
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -69,7 +69,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	keyId, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -83,7 +83,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	if key.ApiKeyNew == "" {
 		err = errors.New("new api key does not exist")
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 	// validation -- end
 
@@ -92,7 +92,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	err = service.storage.PutKeyApiKey(keyId, key.ApiKeyNew, time.Now())
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 	key.ApiKey = key.ApiKeyNew
 
@@ -100,7 +100,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	err = service.storage.PutKeyApiKeyNew(keyId, "", time.Now())
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 	key.ApiKeyNew = ""
 
@@ -113,7 +113,7 @@ func (service *Service) RemoveOldApiKey(w http.ResponseWriter, r *http.Request) 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

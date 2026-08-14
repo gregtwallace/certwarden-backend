@@ -29,7 +29,7 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) *outp
 	keys, totalRows, err := service.storage.GetAllKeys(query)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// populate keysSummaries for output
@@ -48,7 +48,7 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) *outp
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -67,7 +67,7 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) *outpu
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// if id is new, provide some info
@@ -91,7 +91,7 @@ func (service *Service) GetOneKey(w http.ResponseWriter, r *http.Request) *outpu
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -104,7 +104,7 @@ func (service *Service) DownloadOneKey(w http.ResponseWriter, r *http.Request) *
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// get the key from storage (and validate id)
@@ -141,7 +141,7 @@ func (service *Service) GetNewKeyOptions(w http.ResponseWriter, r *http.Request)
 	err := service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

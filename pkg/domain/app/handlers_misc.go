@@ -34,7 +34,7 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) *o
 	err := app.output.WriteJSON(w, response)
 	if err != nil {
 		app.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

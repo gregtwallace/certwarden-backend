@@ -28,7 +28,7 @@ func (service *Service) GetPostProcessWorkStatus(w http.ResponseWriter, r *http.
 	if err != nil {
 		err = fmt.Errorf("orders: failed to convert post process jobs to order objects (%s)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// build working part of response
@@ -80,7 +80,7 @@ func (service *Service) GetPostProcessWorkStatus(w http.ResponseWriter, r *http.
 	err = service.output.WriteJSON(w, jobsResp)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 	return nil
 }
