@@ -18,7 +18,7 @@ func TestPutUserPasswordHash(t *testing.T) {
 
 		expectedPutId   int
 		expectedPutErr  error
-		expectedGetUser auth.User
+		expectedGetUser *auth.User
 		expectedGetErr  error
 	}{
 		{
@@ -27,7 +27,7 @@ func TestPutUserPasswordHash(t *testing.T) {
 			time.Unix(12222222, 0),
 			-2,
 			storage.ErrWrongUpdateRowCount,
-			auth.User{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{
@@ -36,7 +36,7 @@ func TestPutUserPasswordHash(t *testing.T) {
 			time.Unix(12222223, 0),
 			-2,
 			storage.ErrWrongUpdateRowCount,
-			auth.User{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{
@@ -45,7 +45,7 @@ func TestPutUserPasswordHash(t *testing.T) {
 			time.Unix(12244224, 0),
 			-2,
 			storage.ErrWrongUpdateRowCount,
-			auth.User{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{
@@ -54,7 +54,7 @@ func TestPutUserPasswordHash(t *testing.T) {
 			time.Unix(22422224, 0),
 			4,
 			nil,
-			auth.User{
+			&auth.User{
 				ID:           4,
 				Username:     "user4",
 				PasswordHash: "anewhash",
@@ -87,7 +87,7 @@ func TestPutUserPasswordHash(t *testing.T) {
 				t.Errorf("expected get username error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareUser(t, &user, &tc.expectedGetUser)
+			compareUser(t, user, tc.expectedGetUser)
 		})
 	}
 }

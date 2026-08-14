@@ -6,7 +6,7 @@ import (
 )
 
 // GetOneUserByUsername returns a user from the db with the specified username
-func (store Storage) GetOneUserByUsername(username string) (auth.User, error) {
+func (store Storage) GetOneUserByUsername(username string) (*auth.User, error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -31,7 +31,7 @@ func (store Storage) GetOneUserByUsername(username string) (auth.User, error) {
 	)
 
 	if err != nil {
-		return auth.User{}, err
+		return nil, err
 	}
 
 	convertedUser := user.dbToUser()

@@ -45,7 +45,7 @@ type User struct {
 }
 
 type Storage interface {
-	GetOneUserByUsername(username string) (User, error)
+	GetOneUserByUsername(username string) (*User, error)
 	PutUserPasswordHash(username string, passwordHash string, updatedAt time.Time) (userId int, err error)
 }
 
