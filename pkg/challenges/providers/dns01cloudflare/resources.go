@@ -81,7 +81,7 @@ func (service *Service) Deprovision(domain string, _ string, keyAuth acme.KeyAut
 	// delete all records with the name and content (should only ever be one)
 	anyDeleteErr := false
 	for _, recordID := range dnsRecordIDs {
-		ctx, cancel = context.WithTimeout(service.shutdownContext, apiCallTimeout)
+		ctx, cancel := context.WithTimeout(service.shutdownContext, apiCallTimeout)
 		defer cancel()
 
 		_, err = service.cloudflareClient.DNS.Records.Delete(

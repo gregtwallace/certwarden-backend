@@ -18,7 +18,7 @@ const frontendBuildDir = "./frontend_build"
 const frontendEnvFile = frontendBuildDir + "/env.js"
 
 // noncePlaceholder is the text to use in frontend to show server where to inject nonce
-var noncePlaceholder = []byte("{SERVER-CSP-NONCE}")
+const noncePlaceholder = "{SERVER-CSP-NONCE}"
 
 // setContentSecurityPolicy sets w's CSP to allow a very limited subset of content that the
 // react app loads.
@@ -163,7 +163,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		}
 
 		// set nonce placeholders to the actual nonce value
-		fBytes = bytes.ReplaceAll(fBytes, noncePlaceholder, nonce)
+		fBytes = bytes.ReplaceAll(fBytes, []byte(noncePlaceholder), nonce)
 
 		// serve modified file, and return (modtime is now since nonce is always modified)
 		http.ServeContent(w, r, fInfo.Name(), time.Now(), bytes.NewReader(fBytes))

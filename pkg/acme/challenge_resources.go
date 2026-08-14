@@ -79,6 +79,8 @@ func DNSChallengeCNAMEInfo(dnsIdValue, provisionDomain string, challengeType Cha
 		from = dnsIdValue
 		to = provisionDomain
 
+	case ChallengeTypeUnknown:
+		fallthrough
 	default:
 		return "", "", ErrChallengeTypeDoesntSupportCNAME
 	}

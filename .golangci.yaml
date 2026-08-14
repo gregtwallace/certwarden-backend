@@ -1,17 +1,28 @@
-version: "2"
+version: '2'
 
 linters:
   default: standard
+
+
   enable:
     - bodyclose
     - copyloopvar
     - depguard
     - embeddedstructfieldcheck
-    # - err113 #TODO
+    # - err113 #TODO: enable
     - errchkjson
     - errname
     - errorlint
+    - exhaustive
+    - exptostd
+    - fatcontext
     - forbidigo
+    - forcetypeassert
+    - gocheckcompilerdirectives
+    # - gochecknoglobals #TODO: enable
+    - gochecknoinits
+    - gochecksumtype
+
 
   settings:
     depguard:
@@ -19,11 +30,11 @@ linters:
         main:
           list-mode: original
           deny:
-            - pkg: "math/rand$"
+            - pkg: 'math/rand$'
               desc: use math/rand/v2
-            - pkg: "log$"
+            - pkg: 'log$'
               desc: use app struct logger instead
-            - pkg: "log/slog$"
+            - pkg: 'log/slog$'
               desc: use app struct logger instead
 
     embeddedstructfieldcheck:
@@ -51,6 +62,21 @@ linters:
       asserts: true
       comparison: true
 
+    fatcontext:
+      check-struct-pointers: false #TODO: enable
+
     forbidigo:
       exclude-godoc-examples: false
       analyze-types: true
+
+    gochecksumtype:
+      default-signifies-exhaustive: false
+      include-shared-interfaces: true
+
+
+  exclusions:
+    rules:
+      # Allow global vars in test files
+      - path: '(.+)_test\.go'
+        linters:
+          - gochecknoglobals
