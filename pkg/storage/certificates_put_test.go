@@ -16,31 +16,31 @@ func TestPutDetailsCert(t *testing.T) {
 	testCases := []struct {
 		payload certificates.UpdatePayload
 
-		expectedPutResult certificates.Certificate
+		expectedPutResult *certificates.Certificate
 		expectedPutErr    error
 
 		getId             int
-		expectedGetResult certificates.Certificate
+		expectedGetResult *certificates.Certificate
 		expectedGetErr    error
 	}{
 		{ // invalid cert
 			certificates.UpdatePayload{
 				ID: -1,
 			},
-			certificates.Certificate{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			-1,
-			certificates.Certificate{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{ // invalid key
 			certificates.UpdatePayload{
 				ID: 522,
 			},
-			certificates.Certificate{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			522,
-			certificates.Certificate{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{ // update all things
@@ -76,7 +76,7 @@ func TestPutDetailsCert(t *testing.T) {
 				ApiKeyViaUrl:                new(false),
 				UpdatedAt:                   time.Unix(222223333, 0),
 			},
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                 18,
 				Name:               "somenewNameHere",
 				Description:        "some new desc goes here",
@@ -114,7 +114,7 @@ func TestPutDetailsCert(t *testing.T) {
 			},
 			nil,
 			18,
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                 18,
 				Name:               "somenewNameHere",
 				Description:        "some new desc goes here",
@@ -158,7 +158,7 @@ func TestPutDetailsCert(t *testing.T) {
 				ID:        27,
 				UpdatedAt: time.Unix(15151515, 0),
 			},
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                          27,
 				Name:                        "test008.test.example.com-p",
 				Description:                 "",
@@ -187,7 +187,7 @@ func TestPutDetailsCert(t *testing.T) {
 			},
 			nil,
 			27,
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                          27,
 				Name:                        "test008.test.example.com-p",
 				Description:                 "",
@@ -224,7 +224,7 @@ func TestPutDetailsCert(t *testing.T) {
 				PostProcessingClientAddress: new("someaddr.example.com"),
 				UpdatedAt:                   time.Unix(151222215, 0),
 			},
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                          27,
 				Name:                        "test008.test.example.com-p",
 				Description:                 "",
@@ -253,7 +253,7 @@ func TestPutDetailsCert(t *testing.T) {
 			},
 			nil,
 			27,
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                          27,
 				Name:                        "test008.test.example.com-p",
 				Description:                 "",
@@ -297,14 +297,14 @@ func TestPutDetailsCert(t *testing.T) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, &c, &tc.expectedPutResult)
+			compareCertificate(t, c, tc.expectedPutResult)
 
 			c, err = store.GetOneCertById(tc.getId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, &c, &tc.expectedGetResult)
+			compareCertificate(t, c, tc.expectedGetResult)
 		})
 	}
 }
@@ -315,7 +315,7 @@ func TestPutCertApiKey(t *testing.T) {
 		apiKey     string
 		updateTime time.Time
 
-		expectedCert   certificates.Certificate
+		expectedCert   *certificates.Certificate
 		expectedPutErr error
 		expectedGetErr error
 	}{
@@ -323,7 +323,7 @@ func TestPutCertApiKey(t *testing.T) {
 			-1,
 			"fake",
 			time.Unix(100005, 0),
-			certificates.Certificate{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -331,7 +331,7 @@ func TestPutCertApiKey(t *testing.T) {
 			500,
 			"anotherfake",
 			time.Unix(10005000, 0),
-			certificates.Certificate{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -340,7 +340,7 @@ func TestPutCertApiKey(t *testing.T) {
 			18,
 			"somekey31cert",
 			time.Unix(101300522, 0),
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                 18,
 				Name:               "serverdefault",
 				Description:        "its a decript",
@@ -383,7 +383,7 @@ func TestPutCertApiKey(t *testing.T) {
 			26,
 			"",
 			time.Unix(0, 0),
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                          26,
 				Name:                        "test008.test.example.com",
 				Description:                 "",
@@ -433,7 +433,7 @@ func TestPutCertApiKey(t *testing.T) {
 				t.Errorf("expected get cert error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, &cert, &tc.expectedCert)
+			compareCertificate(t, cert, tc.expectedCert)
 		})
 	}
 }
@@ -444,7 +444,7 @@ func TestCertApiKeyNew(t *testing.T) {
 		apiKeyNew string
 		updatedAt time.Time
 
-		expectedCert   certificates.Certificate
+		expectedCert   *certificates.Certificate
 		expectedPutErr error
 		expectedGetErr error
 	}{
@@ -452,7 +452,7 @@ func TestCertApiKeyNew(t *testing.T) {
 			-1,
 			"",
 			time.Unix(10999051, 0),
-			certificates.Certificate{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -460,7 +460,7 @@ func TestCertApiKeyNew(t *testing.T) {
 			500,
 			"anotherfake",
 			time.Unix(10445000, 0),
-			certificates.Certificate{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -469,7 +469,7 @@ func TestCertApiKeyNew(t *testing.T) {
 			27,
 			"certkey27",
 			time.Unix(102202305, 0),
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                          27,
 				Name:                        "test008.test.example.com-p",
 				Description:                 "",
@@ -503,7 +503,7 @@ func TestCertApiKeyNew(t *testing.T) {
 			18,
 			"",
 			time.Unix(0, 0),
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                 18,
 				Name:               "serverdefault",
 				Description:        "its a decript",
@@ -562,7 +562,7 @@ func TestCertApiKeyNew(t *testing.T) {
 				t.Errorf("expected cert get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, &cert, &tc.expectedCert)
+			compareCertificate(t, cert, tc.expectedCert)
 		})
 	}
 
@@ -573,21 +573,21 @@ func TestPutCertUpdatedAt(t *testing.T) {
 		certId    int
 		updatedAt time.Time
 
-		expectedCert   certificates.Certificate
+		expectedCert   *certificates.Certificate
 		expectedPutErr error
 		expectedGetErr error
 	}{
 		{ // invalid key id
 			-1,
 			time.Unix(28888111, 0),
-			certificates.Certificate{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
 		{ // invalid key id
 			500,
 			time.Unix(28888222, 0),
-			certificates.Certificate{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -595,7 +595,7 @@ func TestPutCertUpdatedAt(t *testing.T) {
 		{
 			18,
 			time.Unix(0, 0),
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                 18,
 				Name:               "serverdefault",
 				Description:        "its a decript",
@@ -637,7 +637,7 @@ func TestPutCertUpdatedAt(t *testing.T) {
 		{
 			18,
 			time.Unix(333444442, 0),
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                 18,
 				Name:               "serverdefault",
 				Description:        "its a decript",
@@ -696,7 +696,7 @@ func TestPutCertUpdatedAt(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, &record, &tc.expectedCert)
+			compareCertificate(t, record, tc.expectedCert)
 		})
 	}
 
@@ -708,7 +708,7 @@ func TestPutCertClientKey(t *testing.T) {
 		newKey    string
 		updatedAt time.Time
 
-		expectedCert   certificates.Certificate
+		expectedCert   *certificates.Certificate
 		expectedPutErr error
 		expectedGetErr error
 	}{
@@ -716,7 +716,7 @@ func TestPutCertClientKey(t *testing.T) {
 			-1,
 			"new-b64-key",
 			time.Unix(8883333, 0),
-			certificates.Certificate{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -724,7 +724,7 @@ func TestPutCertClientKey(t *testing.T) {
 			8888,
 			"new-b64-key",
 			time.Unix(88833331, 0),
-			certificates.Certificate{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -732,7 +732,7 @@ func TestPutCertClientKey(t *testing.T) {
 			18,
 			"new-b64-key-xxx111yyyy",
 			time.Unix(88832231, 0),
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                 18,
 				Name:               "serverdefault",
 				Description:        "its a decript",
@@ -791,7 +791,7 @@ func TestPutCertClientKey(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, &record, &tc.expectedCert)
+			compareCertificate(t, record, tc.expectedCert)
 		})
 	}
 }
@@ -801,21 +801,21 @@ func TestPutCertLastAccess(t *testing.T) {
 		certId     int
 		lastAccess time.Time
 
-		expectedCert   certificates.Certificate
+		expectedCert   *certificates.Certificate
 		expectedPutErr error
 		expectedGetErr error
 	}{
 		{ // invalid key id
 			-1,
 			time.Unix(88888111, 0),
-			certificates.Certificate{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
 		{ // invalid key id
 			500,
 			time.Unix(88888222, 0),
-			certificates.Certificate{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -823,7 +823,7 @@ func TestPutCertLastAccess(t *testing.T) {
 		{
 			18,
 			time.Unix(0, 0),
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                 18,
 				Name:               "serverdefault",
 				Description:        "its a decript",
@@ -865,7 +865,7 @@ func TestPutCertLastAccess(t *testing.T) {
 		{
 			18,
 			time.Unix(1122885, 0),
-			certificates.Certificate{
+			&certificates.Certificate{
 				ID:                 18,
 				Name:               "serverdefault",
 				Description:        "its a decript",
@@ -924,7 +924,7 @@ func TestPutCertLastAccess(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, &record, &tc.expectedCert)
+			compareCertificate(t, record, tc.expectedCert)
 		})
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"certwarden-backend/pkg/domain/certificates"
 )
 
-func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates.Certificate, totalRowCount int, err error) {
+func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []*certificates.Certificate, totalRowCount int, err error) {
 	// validate and set sort
 	sortField := q.SortField()
 
@@ -179,17 +179,17 @@ func (store *Storage) GetAllCerts(q pagination_sort.Query) (certs []certificates
 }
 
 // GetOneCertById returns a Cert based on its unique id
-func (store *Storage) GetOneCertById(id int) (cert certificates.Certificate, err error) {
+func (store *Storage) GetOneCertById(id int) (cert *certificates.Certificate, err error) {
 	return store.getOneCert(id, "")
 }
 
 // GetOneCertByName returns a Cert based on its unique name
-func (store *Storage) GetOneCertByName(name string) (cert certificates.Certificate, err error) {
+func (store *Storage) GetOneCertByName(name string) (cert *certificates.Certificate, err error) {
 	return store.getOneCert(-1, name)
 }
 
 // getOneCert returns a Cert based on either its unique id or its unique name
-func (store *Storage) getOneCert(id int, name string) (cert certificates.Certificate, err error) {
+func (store *Storage) getOneCert(id int, name string) (cert *certificates.Certificate, err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -298,13 +298,13 @@ func (store *Storage) getOneCert(id int, name string) (cert certificates.Certifi
 	)
 
 	if err != nil {
-		return certificates.Certificate{}, err
+		return nil, err
 	}
 
 	// convert and return
 	oneCertConverted, err := oneCert.toCertificate()
 	if err != nil {
-		return certificates.Certificate{}, err
+		return nil, err
 	}
 
 	return oneCertConverted, nil

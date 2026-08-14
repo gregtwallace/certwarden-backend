@@ -36,11 +36,11 @@ var (
 )
 
 // GetCertificate returns the Certificate for the specified id.
-func (service *Service) GetCertificate(id int) (Certificate, *output.JsonError) {
+func (service *Service) GetCertificate(id int) (*Certificate, *output.JsonError) {
 	// if id is not in valid range, it is definitely not valid
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)
-		return Certificate{}, output.ErrorJsonErrValidationFailed(ErrIdBad)
+		return nil, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get from storage
@@ -49,10 +49,10 @@ func (service *Service) GetCertificate(id int) (Certificate, *output.JsonError) 
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return Certificate{}, output.ErrorJsonErrNotFound(fmt.Errorf("certificate id %d not found", id))
+			return nil, output.ErrorJsonErrNotFound(fmt.Errorf("certificate id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Certificate{}, output.ErrorJsonErrStorageGeneric(err)
+			return nil, output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 

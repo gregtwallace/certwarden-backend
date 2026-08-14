@@ -53,22 +53,22 @@ type config struct {
 }
 
 // httpAddress() returns formatted http server address string
-func (c config) httpServAddress() string {
+func (c *config) httpServAddress() string {
 	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.HttpPort)
 }
 
 // httpsAddress() returns formatted https server address string
-func (c config) httpsServAddress() string {
+func (c *config) httpsServAddress() string {
 	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.HttpsPort)
 }
 
 // pprofHttpServAddress() returns formatted pprof http server address string
-func (c config) pprofHttpServAddress() string {
+func (c *config) pprofHttpServAddress() string {
 	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.PprofHttpPort)
 }
 
 // pprofHttpsServAddress() returns formatted pprof https server address string
-func (c config) pprofHttpsServAddress() string {
+func (c *config) pprofHttpsServAddress() string {
 	return fmt.Sprintf("%s:%d", *c.BindAddress, *c.PprofHttpsPort)
 }
 
