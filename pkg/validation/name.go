@@ -6,14 +6,14 @@ import (
 
 // NameValidRegex is the regex to confirm a name is in the proper
 // form. (Note: if match is found, name is INVALID)
-const NameValidRegex = `[^-_.~A-z0-9]|[\^]`
+const NameValidRegex = `[^-_.~A-Za-z0-9]`
 
 // NameValid true if the specified name is acceptable. To be valid
 // the name must only contain symbols - _ . ~ letters and numbers,
-// and name cannot be blank (len <= 0)
+// and name cannot be blank (i.e., empty string "")
 func NameValid(name string) bool {
-	// length
-	if len(name) <= 0 {
+	// empty
+	if name == "" {
 		return false
 	}
 
