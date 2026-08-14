@@ -22,6 +22,7 @@ linters:
     # - gochecknoglobals #TODO: enable
     - gochecknoinits
     - gochecksumtype
+    # - gocognit #TODO: enable
 
 
   settings:
@@ -73,10 +74,13 @@ linters:
       default-signifies-exhaustive: false
       include-shared-interfaces: true
 
+    # gocognit:
+    #   min-complexity: 15 #TODO: set to 15
 
   exclusions:
     rules:
-      # Allow global vars in test files
+      # Allow global vars & extra cognitive complexity in test files
       - path: '(.+)_test\.go'
         linters:
           - gochecknoglobals
+          - gocognit
