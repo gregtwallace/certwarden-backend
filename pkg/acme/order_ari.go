@@ -49,7 +49,7 @@ func unmarshalACMERenewalInfo(jsonResp json.RawMessage, headers http.Header) (ar
 	// parse and validate Retry-After
 	ari.RetryAfter, err = validation.ParseRetryAfter(retryAfterHeaderStr)
 	if err != nil {
-		return nil, fmt.Errorf("acme: ari response Retry-After header value '%s' could not be parsed (%s)", retryAfterHeaderStr, err)
+		return nil, fmt.Errorf("acme: ari response Retry-After header value '%s' could not be parsed (%w)", retryAfterHeaderStr, err)
 	}
 
 	// s 4.3.2 - impose limits on Retry-After
@@ -121,7 +121,7 @@ func (service *Service) GetACMERenewalInfo(certPem string) (*ACMERenewalInfo, er
 
 	cert, err := x509.ParseCertificate(certBlock.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("acme: cert pem block failed to parse (%v)", err)
+		return nil, fmt.Errorf("acme: cert pem block failed to parse (%w)", err)
 	}
 
 	// s 4.3 forbids checking renewal info after cert expiration
@@ -138,7 +138,7 @@ func (service *Service) GetACMERenewalInfo(certPem string) (*ACMERenewalInfo, er
 	url := *service.dir.RenewalInfo + "/" + id
 	resp, headers, err := service.get(url)
 	if err != nil {
-		return nil, fmt.Errorf("acme: ari get failed (%v)", err)
+		return nil, fmt.Errorf("acme: ari get failed (%w)", err)
 	}
 
 	// unmarshal response

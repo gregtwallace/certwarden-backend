@@ -51,7 +51,7 @@ func (app *Application) LoadHttpsCertificate() error {
 	// make tls certificate
 	tlsCert, err := tls.X509KeyPair([]byte(*order.Pem), []byte(order.FinalizedKey.Pem))
 	if err != nil {
-		return fmt.Errorf("failed to make x509 key pair (%s)", err)
+		return fmt.Errorf("failed to make x509 key pair (%w)", err)
 	}
 
 	// update certificate

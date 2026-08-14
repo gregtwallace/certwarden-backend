@@ -104,7 +104,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 
 	detailedResp, err := newAcct.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}
@@ -190,7 +190,8 @@ func (service *Service) PostAsGet(w http.ResponseWriter, r *http.Request) *outpu
 	if err != nil {
 		// if ACME error, don't actually error this API call, just return the error
 		// information to the client
-		_, isAcmeErr := err.(*acme.Error)
+		//nolint:errcheck // TODO: Refactor this
+		_, isAcmeErr := errors.AsType[*acme.Error](err)
 		if !isAcmeErr {
 			service.logger.Error(err)
 			return output.ErrorJsonErrInternal(err)
@@ -200,7 +201,7 @@ func (service *Service) PostAsGet(w http.ResponseWriter, r *http.Request) *outpu
 	// if content-type parses and is json, ensure it is pretty using Indent
 	contentType, _, err := mime.ParseMediaType(header.Get("Content-type"))
 	if err != nil {
-		service.logger.Errorf("accounts: debug pag response content-type failed to parse (%v)", err)
+		service.logger.Errorf("accounts: debug pag response content-type failed to parse (%s)", err)
 		// DONT return error -- just continue without modifying the response
 	} else if strings.EqualFold(contentType, "application/json") {
 		var prettyJson bytes.Buffer

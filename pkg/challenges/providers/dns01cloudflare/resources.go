@@ -3,6 +3,7 @@ package dns01cloudflare
 import (
 	"certwarden-backend/pkg/acme"
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/cloudflare/cloudflare-go/v6"
@@ -17,7 +18,7 @@ func (service *Service) Provision(domain string, _ string, keyAuth acme.KeyAuth)
 	// get zone
 	zoneID, err := service.getZoneID(dnsRecordName)
 	if err != nil {
-		return fmt.Errorf("dns01cloudflare: failed to get zone id for %s (%s)", dnsRecordName, err)
+		return fmt.Errorf("dns01cloudflare: failed to get zone id for %s (%w)", dnsRecordName, err)
 	}
 
 	// create DNS record on cloudflare for the ACME resource
@@ -30,9 +31,9 @@ func (service *Service) Provision(domain string, _ string, keyAuth acme.KeyAuth)
 	})
 	if err != nil {
 		// try to check cloudflare error
-		cfErr, ok := err.(*cloudflare.Error)
+		cfErr, ok := errors.AsType[*cloudflare.Error](err)
 		if !ok {
-			return fmt.Errorf("dns01cloudflare: failed to create dns record %s: %s (%s)", dnsRecordName, dnsRecordValue, err)
+			return fmt.Errorf("dns01cloudflare: failed to create dns record %s: %s (%w)", dnsRecordName, dnsRecordValue, err)
 		}
 
 		// record exists error (81057 or 81058) is fine
@@ -44,7 +45,7 @@ func (service *Service) Provision(domain string, _ string, keyAuth acme.KeyAuth)
 			}
 		}
 		if !alreadyExistsError {
-			return fmt.Errorf("dns01cloudflare: failed to create dns record %s: %s (%s)", dnsRecordName, dnsRecordValue, err)
+			return fmt.Errorf("dns01cloudflare: failed to create dns record %s: %s (%w)", dnsRecordName, dnsRecordValue, err)
 		}
 	}
 
@@ -59,7 +60,7 @@ func (service *Service) Deprovision(domain string, _ string, keyAuth acme.KeyAut
 	// get zone
 	zoneID, err := service.getZoneID(dnsRecordName)
 	if err != nil {
-		return fmt.Errorf("dns01cloudflare: failed to get zone id for %s (%s)", dnsRecordName, err)
+		return fmt.Errorf("dns01cloudflare: failed to get zone id for %s (%w)", dnsRecordName, err)
 	}
 
 	// fetch matching record(s) (should only be one)
@@ -68,7 +69,7 @@ func (service *Service) Deprovision(domain string, _ string, keyAuth acme.KeyAut
 
 	resultPage, err := service.cloudflareClient.DNS.Records.List(ctx, cloudflareListDNSParams(dnsRecordName, dnsRecordValue, zoneID))
 	if err != nil {
-		return fmt.Errorf("dns01cloudflare: failed to delete %s: %s (couldn't list dns records) (%s)", dnsRecordName, dnsRecordValue, err)
+		return fmt.Errorf("dns01cloudflare: failed to delete %s: %s (couldn't list dns records) (%w)", dnsRecordName, dnsRecordValue, err)
 	}
 
 	// don't bother checking addl pages, if there are over 100 records somehow, that's beyond the help of this application

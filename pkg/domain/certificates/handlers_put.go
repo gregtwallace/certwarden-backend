@@ -95,7 +95,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 		// specified, validate against acme service
 		acmeService, err := service.acmeServerService.AcmeService(cert.Account.AcmeServer.ID)
 		if err != nil {
-			err = fmt.Errorf("failed to retrieve acme service (%s)", err)
+			err = fmt.Errorf("failed to retrieve acme service (%w)", err)
 			service.logger.Error(err)
 			return output.ErrorJsonErrInternal(err)
 		}

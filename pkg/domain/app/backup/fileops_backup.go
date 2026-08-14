@@ -54,7 +54,7 @@ func (service *Service) createDataBackup(withOnDiskBackups bool) (zipFileBytes [
 		// this is a file, zip it and a hash of it
 		f, err := os.Open(path)
 		if err != nil {
-			return fmt.Errorf("failed to open file %s for data backup (%s)", path, err)
+			return errorFileError(path, "failed to open file")
 		}
 		defer f.Close()
 
@@ -62,14 +62,14 @@ func (service *Service) createDataBackup(withOnDiskBackups bool) (zipFileBytes [
 		zipFileInternalName := strings.TrimPrefix(path, service.cleanDataStorageRootPath+string(filepath.Separator))
 		zipFile, err := internalZipWriter.Create(zipFileInternalName)
 		if err != nil {
-			return fmt.Errorf("failed to create file %s for data backup (%s)", path, err)
+			return errorFileError(path, "failed to create file")
 		}
 
 		// copy file to zip file
 		// _, err = io.Copy(zipFile, fileDataWithHasher)
 		_, err = io.Copy(zipFile, f)
 		if err != nil {
-			return fmt.Errorf("failed to copy file %s into data backup (%s)", path, err)
+			return errorFileError(path, "failed to copy file")
 		}
 
 		// unlock
@@ -87,7 +87,7 @@ func (service *Service) createDataBackup(withOnDiskBackups bool) (zipFileBytes [
 	// close zip writer (note: Close() writes the gzip footer and cannot be deferred)
 	err = internalZipWriter.Close()
 	if err != nil {
-		return nil, fmt.Errorf("failed to close zip.writer (%s)", err)
+		return nil, fmt.Errorf("failed to close zip.writer (%w)", err)
 	}
 
 	// create wrapper zip that contains the hashed backup and the hash
@@ -98,31 +98,31 @@ func (service *Service) createDataBackup(withOnDiskBackups bool) (zipFileBytes [
 	// write internal backup zip
 	zipFile, err := wrapperZipWriter.Create(internalBackupFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create internal backup zip in wrapper zip (%s)", err)
+		return nil, fmt.Errorf("failed to create internal backup zip in wrapper zip (%w)", err)
 	}
 
 	// copy internal backup zip into wrapper
 	_, err = io.Copy(zipFile, &internalZipBuffer)
 	if err != nil {
-		return nil, fmt.Errorf("failed to copy internal backup zip into wrapper zip (%s)", err)
+		return nil, fmt.Errorf("failed to copy internal backup zip into wrapper zip (%w)", err)
 	}
 
 	// create hash file in wrapper zip
 	zipFileHashFile, err := wrapperZipWriter.Create(internalBackupHashFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create internal backup zip hash in wrapper zip (%s)", err)
+		return nil, fmt.Errorf("failed to create internal backup zip hash in wrapper zip (%w)", err)
 	}
 
 	// write hash (as hex string) file in wrapper zip
 	_, err = io.WriteString(zipFileHashFile, fmt.Sprintf("%x", internalZipHasher.Sum(nil)))
 	if err != nil {
-		return nil, fmt.Errorf("failed to copy internal backup hash into wrapper zip (%s)", err)
+		return nil, fmt.Errorf("failed to copy internal backup hash into wrapper zip (%w)", err)
 	}
 
 	// close wrapper zip writer (note: Close() writes the gzip footer and cannot be deferred)
 	err = wrapperZipWriter.Close()
 	if err != nil {
-		return nil, fmt.Errorf("failed to close wrapper zip.writer (%s)", err)
+		return nil, fmt.Errorf("failed to close wrapper zip.writer (%w)", err)
 	}
 
 	return wrapperZipBuffer.Bytes(), nil
@@ -142,7 +142,7 @@ func (service *Service) CreateBackupOnDisk() (backupFileDetails, error) {
 	fileNameWithPath := service.cleanDataStorageBackupPath + "/" + fileName
 	err = os.WriteFile(fileNameWithPath, zipFileData, backupFileMode)
 	if err != nil {
-		return backupFileDetails{}, fmt.Errorf("could not write backup file to disk (%s)", err)
+		return backupFileDetails{}, fmt.Errorf("could not write backup file to disk (%w)", err)
 	}
 
 	service.logger.Infof("backup saved to disk (%s)", fileName)

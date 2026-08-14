@@ -151,7 +151,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 			// ensure redirect parses
 			_, err = url.Parse(service.oidc.oauth2Config.RedirectURL)
 			if err != nil {
-				err = fmt.Errorf("auth: oidc cfg url failed to parse (%s), fix the config", err)
+				err = fmt.Errorf("auth: oidc cfg url failed to parse (%w), fix the config", err)
 				service.logger.Error(err)
 				return nil, err
 			}

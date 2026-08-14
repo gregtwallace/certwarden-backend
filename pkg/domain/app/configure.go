@@ -98,7 +98,7 @@ func (app *Application) loadConfigFile() (err error) {
 			// write file
 			err := os.WriteFile(configFilenameWithPath, []byte(newCfgFile), configFileMode)
 			if err != nil {
-				return fmt.Errorf("failed to create new config file (%s)", err)
+				return fmt.Errorf("failed to create new config file (%w)", err)
 			}
 		}
 	}
@@ -107,21 +107,21 @@ func (app *Application) loadConfigFile() (err error) {
 	// open config file
 	cfgFile, err := os.Open(configFilenameWithPath)
 	if err != nil {
-		return fmt.Errorf("failed to open config file (%s)", err)
+		return fmt.Errorf("failed to open config file (%w)", err)
 	}
 	defer cfgFile.Close()
 
 	// read in config file
 	cfgFileData, err := io.ReadAll(cfgFile)
 	if err != nil {
-		return fmt.Errorf("failed to read config file (%s)", err)
+		return fmt.Errorf("failed to read config file (%w)", err)
 	}
 
 	// unmarshal into yaml object
 	cfgFileYamlObj := make(map[string]any)
 	err = yaml.Unmarshal(cfgFileData, cfgFileYamlObj)
 	if err != nil {
-		return fmt.Errorf("failed to parse config file for version migration (%s)", err)
+		return fmt.Errorf("failed to parse config file for version migration (%w)", err)
 	}
 
 	// get current config version
@@ -179,19 +179,19 @@ func (app *Application) loadConfigFile() (err error) {
 		// backup
 		err = app.CreateBackupOnDisk()
 		if err != nil {
-			return fmt.Errorf("failed to backup data before writing config schema migration (%s)", err)
+			return fmt.Errorf("failed to backup data before writing config schema migration (%w)", err)
 		}
 
 		// update config bytes with new cfg
 		cfgFileData, err = yaml.Marshal(cfgFileYamlObj)
 		if err != nil {
-			return fmt.Errorf("failed to marshal new config file for schema version migration (%s)", err)
+			return fmt.Errorf("failed to marshal new config file for schema version migration (%w)", err)
 		}
 
 		// write new config
 		err = os.WriteFile(configFilenameWithPath, cfgFileData, configFileMode)
 		if err != nil {
-			return fmt.Errorf("could not write schema version migrated config file (%s)", err)
+			return fmt.Errorf("could not write schema version migrated config file (%w)", err)
 		}
 		app.logger.Infof("config schema version migrated from %d to %d", origCfgVer, cfgVer)
 	} else {
@@ -202,7 +202,7 @@ func (app *Application) loadConfigFile() (err error) {
 	app.config = new(config)
 	err = yaml.Unmarshal(cfgFileData, app.config)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal config file into config struct (%s)", err)
+		return fmt.Errorf("failed to unmarshal config file into config struct (%w)", err)
 	}
 
 	// set defaults on anything that wasn't specified

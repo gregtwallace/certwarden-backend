@@ -42,7 +42,7 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 	// lookup all orders in db
 	orders, err := service.storage.GetOrders(orderIDs)
 	if err != nil {
-		err = fmt.Errorf("orders: failed to convert fulfilling jobs to order objects (%s)", err)
+		err = fmt.Errorf("orders: failed to convert fulfilling jobs to order objects (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}

@@ -149,13 +149,13 @@ func openLogFile() (*os.File, error) {
 	// make log path if it does not exist
 	err := os.MkdirAll(dataStorageLogPath, 0755)
 	if err != nil {
-		return nil, fmt.Errorf("can't make directories for new logfile: %s", err)
+		return nil, fmt.Errorf("can't make directories for new logfile: %w", err)
 	}
 
 	// open log file (create if does not exist)
 	f, err := os.OpenFile(dataStorageLogPath+"/"+logFileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.FileMode(0600))
 	if err != nil {
-		return nil, fmt.Errorf("failed to open or create logfile: %s", err)
+		return nil, fmt.Errorf("failed to open or create logfile: %w", err)
 	}
 
 	return f, nil

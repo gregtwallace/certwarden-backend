@@ -86,7 +86,7 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) *o
 	// make detailed response
 	detailedResp, err := newServer.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate server summary response (%s)", err)
+		err = fmt.Errorf("failed to generate server summary response (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}

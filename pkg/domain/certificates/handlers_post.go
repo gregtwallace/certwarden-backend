@@ -135,7 +135,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 		// specified, validate against acme service
 		acmeService, err := service.acmeServerService.AcmeService(acct.AcmeServer.ID)
 		if err != nil {
-			err = fmt.Errorf("failed to retrieve acme service (%s)", err)
+			err = fmt.Errorf("failed to retrieve acme service (%w)", err)
 			service.logger.Error(err)
 			return output.ErrorJsonErrInternal(err)
 		}
@@ -248,7 +248,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 		if payload.PostProcessingClientAddress != nil && *payload.PostProcessingClientAddress != "" {
 			key, err := randomness.GenerateAES256KeyAsBase64RawUrl()
 			if err != nil {
-				err = fmt.Errorf("failed to generate client key for certificate (%s)", err)
+				err = fmt.Errorf("failed to generate client key for certificate (%w)", err)
 				service.logger.Error(err)
 				return output.ErrorJsonErrInternal(err)
 			}
@@ -355,7 +355,7 @@ func (service *Service) MakeNewClientKey(w http.ResponseWriter, r *http.Request)
 	// generate AES 256 key
 	clientKey, err := randomness.GenerateAES256KeyAsBase64RawUrl()
 	if err != nil {
-		err = fmt.Errorf("failed to generate client key (%s)", err)
+		err = fmt.Errorf("failed to generate client key (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}

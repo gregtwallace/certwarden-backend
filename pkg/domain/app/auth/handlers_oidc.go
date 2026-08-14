@@ -36,7 +36,7 @@ func (service *Service) OIDCGetLogin(w http.ResponseWriter, r *http.Request) *ou
 	redirectUri := r.URL.Query().Get("redirect_uri")
 	redirectUrlParsed, err := url.Parse(redirectUri)
 	if err != nil {
-		err = fmt.Errorf("client %s: oidc redirect_uri '%s' failed to parse (%s)", r.RemoteAddr, redirectUri, err)
+		err = fmt.Errorf("client %s: oidc redirect_uri '%s' failed to parse (%w)", r.RemoteAddr, redirectUri, err)
 		service.logger.Debug(err)
 		return output.ErrorJsonErrValidationFailed(err)
 	}
@@ -50,7 +50,7 @@ func (service *Service) OIDCGetLogin(w http.ResponseWriter, r *http.Request) *ou
 	// check if the redirect is to a frontend on the user specified RedirectURL (no err check as parse checked on startup)
 	cfgApiRedirectURLParsed, err := url.Parse(service.oidc.oauth2Config.RedirectURL)
 	if err != nil {
-		err = fmt.Errorf("client %s: oidc config redirecturl failed to parse (%s), fix the config", r.RemoteAddr, err)
+		err = fmt.Errorf("client %s: oidc config redirecturl failed to parse (%w), fix the config", r.RemoteAddr, err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}

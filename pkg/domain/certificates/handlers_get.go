@@ -153,7 +153,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 		// get profiles
 		acmeService, err := service.acmeServerService.AcmeService(accounts[i].AcmeServer.ID)
 		if err != nil {
-			err = fmt.Errorf("failed to retrieve acme service to list profiles (%s)", err)
+			err = fmt.Errorf("failed to retrieve acme service to list profiles (%w)", err)
 			service.logger.Error(err)
 			return output.ErrorJsonErrInternal(err)
 		}

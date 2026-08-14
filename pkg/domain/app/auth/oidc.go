@@ -116,13 +116,13 @@ func (oef *oidcExtraFuncs) RefreshCheck() error {
 	// unmarshal the token
 	bodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		return fmt.Errorf("oidc refresh failed, failed to read body (%s)", err)
+		return fmt.Errorf("oidc refresh failed, failed to read body (%w)", err)
 	}
 
 	var t expectedToken
 	err = json.Unmarshal(bodyBytes, &t)
 	if err != nil {
-		return fmt.Errorf("oidc refresh failed, failed to unmarshal new token (%s)", err)
+		return fmt.Errorf("oidc refresh failed, failed to unmarshal new token (%w)", err)
 	}
 
 	// validate token values
@@ -136,7 +136,7 @@ func (oef *oidcExtraFuncs) RefreshCheck() error {
 
 	_, err = oef.idTokenVerifier.Verify(oef.ctxWithHttpClient, t.IDToken)
 	if err != nil {
-		return fmt.Errorf("oidc refresh failed, id token failed verification (%s)", err)
+		return fmt.Errorf("oidc refresh failed, id token failed verification (%w)", err)
 	}
 
 	// Validate the required scopes were granted

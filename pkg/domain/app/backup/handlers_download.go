@@ -61,7 +61,7 @@ func (service *Service) DownloadDiskBackupHandler(w http.ResponseWriter, r *http
 			return output.ErrorJsonErrNotFound(errors.New(service.cleanDataStorageBackupPath + string(filepath.Separator) + filenameParam))
 		}
 		// internal for any other issue
-		err = fmt.Errorf("failed to open disk backup for download (%s)", err)
+		err = fmt.Errorf("failed to open disk backup for download (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}
@@ -71,7 +71,7 @@ func (service *Service) DownloadDiskBackupHandler(w http.ResponseWriter, r *http
 	zipBuffer := bytes.NewBuffer(nil)
 	_, err = io.Copy(zipBuffer, f)
 	if err != nil {
-		err = fmt.Errorf("failed to copy disk backup to buffer for download (%s)", err)
+		err = fmt.Errorf("failed to copy disk backup to buffer for download (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}

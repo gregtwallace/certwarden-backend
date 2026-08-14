@@ -49,7 +49,7 @@ func (service *Service) startServer() (err error) {
 	// create listener for web server
 	ln, err := net.Listen("tcp", servAddr)
 	if err != nil {
-		service.logger.Error(fmt.Errorf("failed to start http-01 challenge server, cannot bind to %s (%s)", servAddr, err))
+		service.logger.Errorf("failed to start http-01 challenge server, cannot bind to %s (%s)", servAddr, err)
 		return err
 	}
 

@@ -90,7 +90,7 @@ func (app *Application) startPprof() error {
 	// create listener for web server
 	ln, err := net.Listen("tcp", srv.Addr)
 	if err != nil {
-		return fmt.Errorf("pprof server cannot bind to %s (%s)", srv.Addr, err)
+		return fmt.Errorf("pprof server cannot bind to %s (%w)", srv.Addr, err)
 	}
 
 	// start server

@@ -72,7 +72,7 @@ func (store *Storage) PutRenewalInfo(payload orders.UpdateRenewalInfoPayload) (e
 	// marshal struct
 	ari, err := json.Marshal(payload.RenewalInfo)
 	if err != nil {
-		return fmt.Errorf("storage: failed to marshal renewal info (%s)", err)
+		return fmt.Errorf("storage: failed to marshal renewal info (%w)", err)
 	}
 
 	_, err = store.db.ExecContext(ctx, query,
@@ -177,7 +177,7 @@ func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) 
 	// marshal struct
 	ari, err := json.Marshal(payload.RenewalInfo)
 	if err != nil {
-		return fmt.Errorf("storage: failed to marshal renewal info (%s)", err)
+		return fmt.Errorf("storage: failed to marshal renewal info (%w)", err)
 	}
 
 	_, err = store.db.ExecContext(ctx, query,

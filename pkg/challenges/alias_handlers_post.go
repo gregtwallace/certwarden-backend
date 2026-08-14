@@ -57,7 +57,7 @@ func (service *Service) PostDomainAliases(w http.ResponseWriter, r *http.Request
 	service.dnsIDtoDomain = safemap.NewSafeMapFrom(m)
 	err = service.writeAliasConfig()
 	if err != nil {
-		err = fmt.Errorf("failed to write challenge domain alias config to disk (%s)", err)
+		err = fmt.Errorf("failed to write challenge domain alias config to disk (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}

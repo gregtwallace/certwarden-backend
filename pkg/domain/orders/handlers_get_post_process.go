@@ -26,7 +26,7 @@ func (service *Service) GetPostProcessWorkStatus(w http.ResponseWriter, r *http.
 	// lookup all orders in db
 	orders, err := service.storage.GetOrders(orderIDs)
 	if err != nil {
-		err = fmt.Errorf("orders: failed to convert post process jobs to order objects (%s)", err)
+		err = fmt.Errorf("orders: failed to convert post process jobs to order objects (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}

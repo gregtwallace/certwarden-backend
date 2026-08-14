@@ -74,14 +74,14 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 	// validate requested file is actually in the frontend path (i.e., block malicious payload)
 	fPathAbs, err := filepath.Abs(filepath.Join(frontendBuildDir, "/", fPathRel))
 	if err != nil {
-		err = fmt.Errorf("frontend: failed to get absolute path for request (%s)", err)
+		err = fmt.Errorf("frontend: failed to get absolute path for request (%w)", err)
 		app.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}
 
 	pathFrontendAbs, err := filepath.Abs(frontendBuildDir)
 	if err != nil {
-		err = fmt.Errorf("frontend: failed to get absolute path for frontend root (%s)", err)
+		err = fmt.Errorf("frontend: failed to get absolute path for frontend root (%w)", err)
 		app.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}
@@ -95,7 +95,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 	// open requested file
 	f, err := os.Open(fPathAbs)
 	if err != nil {
-		err = fmt.Errorf("frontend: failed to open frontend file %s (%s)", fPathRel, err)
+		err = fmt.Errorf("frontend: failed to open frontend file %s (%w)", fPathRel, err)
 		app.logger.Debug(err)
 		return output.ErrorJsonErrNotFound(err)
 	}
@@ -104,7 +104,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 	// get file info
 	fInfo, err := f.Stat()
 	if err != nil {
-		err = fmt.Errorf("frontend: failed to stat frontend file %s (%s)", fPathRel, err)
+		err = fmt.Errorf("frontend: failed to stat frontend file %s (%w)", fPathRel, err)
 		app.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}
@@ -117,7 +117,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		fBytes := make([]byte, fInfo.Size())
 		_, err = f.Read(fBytes)
 		if err != nil {
-			err = fmt.Errorf("frontend: could not read frontend file %s into buffer for nonce injection (%s)", fPathRel, err)
+			err = fmt.Errorf("frontend: could not read frontend file %s into buffer for nonce injection (%w)", fPathRel, err)
 			app.logger.Error(err)
 			return output.ErrorJsonErrInternal(err)
 		}
@@ -145,7 +145,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		// generate nonce
 		nonce, err := randomness.GenerateFrontendNonce()
 		if err != nil {
-			err = fmt.Errorf("frontend: failed to generate nonce for frontend (%s)", err)
+			err = fmt.Errorf("frontend: failed to generate nonce for frontend (%w)", err)
 			app.logger.Error(err)
 			return output.ErrorJsonErrInternal(err)
 		}
@@ -157,7 +157,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		fBytes := make([]byte, fInfo.Size())
 		_, err = f.Read(fBytes)
 		if err != nil {
-			err = fmt.Errorf("frontend: failed to read frontend file %s into buffer for nonce injection (%s)", fPathRel, err)
+			err = fmt.Errorf("frontend: failed to read frontend file %s into buffer for nonce injection (%w)", fPathRel, err)
 			app.logger.Error(err)
 			return output.ErrorJsonErrInternal(err)
 		}

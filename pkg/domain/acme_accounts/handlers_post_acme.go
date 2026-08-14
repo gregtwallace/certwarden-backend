@@ -84,7 +84,7 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *
 
 	updatedAcctDetailedResp, err := account.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}
@@ -161,7 +161,7 @@ func (service *Service) RefreshAcmeAccount(w http.ResponseWriter, r *http.Reques
 
 	updatedAcctDetailedResp, err := account.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}
@@ -245,7 +245,7 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) *outp
 
 	updatedAcctDetailedResp, err := account.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}

@@ -10,6 +10,7 @@ linters:
     # - err113 #TODO
     - errchkjson
     - errname
+    - errorlint
     - forbidigo
 
   settings:
@@ -43,6 +44,12 @@ linters:
     errchkjson:
       check-error-free-encoding: false
       report-no-exported: true
+
+    errorlint:
+      errorf: true
+      errorf-multi: true
+      asserts: true
+      comparison: true
 
     forbidigo:
       exclude-godoc-examples: false

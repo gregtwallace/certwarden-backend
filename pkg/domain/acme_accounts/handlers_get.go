@@ -86,7 +86,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) *o
 
 	detailedResp, err := account.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}

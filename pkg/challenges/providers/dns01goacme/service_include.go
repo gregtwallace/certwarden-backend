@@ -52,7 +52,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	for key, val := range envMap {
 		err := os.Setenv(key, val)
 		if err != nil {
-			return nil, fmt.Errorf("go-acme failed to set environment variable (%s)", err)
+			return nil, fmt.Errorf("go-acme failed to set environment variable (%w)", err)
 		}
 	}
 
@@ -74,14 +74,14 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	var err error
 	service.goacmeProvider, err = goacme_dns.NewDNSChallengeProviderByName(cfg.DnsProviderName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to configure go-acme dns provider (%s)", err)
+		return nil, fmt.Errorf("failed to configure go-acme dns provider (%w)", err)
 	}
 
 	// clear environment (only needed during creation of the go-acme provider)
 	for key := range envMap {
 		err := os.Unsetenv(key)
 		if err != nil {
-			return nil, fmt.Errorf("go-acme failed to clear environment variable (%s)", err)
+			return nil, fmt.Errorf("go-acme failed to clear environment variable (%w)", err)
 		}
 	}
 

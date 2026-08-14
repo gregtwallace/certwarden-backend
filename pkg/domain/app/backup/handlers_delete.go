@@ -29,7 +29,7 @@ func (service *Service) DeleteDiskBackupHandler(w http.ResponseWriter, r *http.R
 			return output.ErrorJsonErrNotFound(errors.New(service.cleanDataStorageBackupPath + string(filepath.Separator) + filenameParam))
 		}
 		// internal for any other issue
-		err = fmt.Errorf("failed to stat disk backup for delete (%s)", err)
+		err = fmt.Errorf("failed to stat disk backup for delete (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}
@@ -37,7 +37,7 @@ func (service *Service) DeleteDiskBackupHandler(w http.ResponseWriter, r *http.R
 	// delete file
 	err = os.Remove(service.cleanDataStorageBackupPath + string(filepath.Separator) + filenameParam)
 	if err != nil {
-		err = fmt.Errorf("failed to delete disk backup (%s)", err)
+		err = fmt.Errorf("failed to delete disk backup (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}

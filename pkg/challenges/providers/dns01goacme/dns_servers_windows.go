@@ -74,7 +74,7 @@ func getAdapterAddresses() (
 			(*ipAdapterAddresses)(unsafe.Pointer(&buffer[0])),
 			&sizeVar)
 		if err != nil {
-			sysErrno, ok := err.(syscall.Errno)
+			sysErrno, ok := errors.AsType[syscall.Errno](err)
 			if ok && sysErrno == syscall.ERROR_BUFFER_OVERFLOW {
 				if sizeVar <= uint32(len(buffer)) {
 					return nil, fmt.Errorf("%w: buffer size variable %d is "+

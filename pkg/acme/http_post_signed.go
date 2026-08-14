@@ -21,7 +21,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	// make acme msg
 	msg, err := makeAcmeSignedMessage(payload, nonce, url, accountKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("acme: failed to make signed post message (%s)", err)
+		return nil, nil, fmt.Errorf("acme: failed to make signed post message (%w)", err)
 	}
 
 	// post
@@ -110,7 +110,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 				// update msg & try again
 				err = msg.setNonceAndSign(nextNonce, accountKey)
 				if err != nil {
-					return nil, nil, fmt.Errorf("acme: failed to re-sign post message after badNonce error (%s)", err)
+					return nil, nil, fmt.Errorf("acme: failed to re-sign post message after badNonce error (%w)", err)
 				}
 
 				continue

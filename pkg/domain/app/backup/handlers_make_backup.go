@@ -17,7 +17,7 @@ type backupFileMakeResponse struct {
 func (service *Service) MakeDiskBackupNowHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	backupFileDetails, err := service.CreateBackupOnDisk()
 	if err != nil {
-		err = fmt.Errorf("failed to make on disk backup (%s)", err)
+		err = fmt.Errorf("failed to make on disk backup (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}

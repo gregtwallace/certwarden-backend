@@ -72,7 +72,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 
 	detailedResp, err := updatedAcct.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}

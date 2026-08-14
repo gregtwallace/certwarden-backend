@@ -90,7 +90,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	if len(payload.Domains) > 0 {
 		err = mgr.unsafeValidateDomains(payload.Domains, p)
 		if err != nil {
-			err = fmt.Errorf("failed to validate domains (%s)", err)
+			err = fmt.Errorf("failed to validate domains (%w)", err)
 			mgr.logger.Debug(err)
 			return output.ErrorJsonErrValidationFailed(err)
 		}
@@ -201,7 +201,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 
 		// common error check
 		if err != nil {
-			err = fmt.Errorf("failed to update service (%s)", err)
+			err = fmt.Errorf("failed to update service (%w)", err)
 			mgr.logger.Debug(err)
 			return output.ErrorJsonErrValidationFailed(err)
 		}
@@ -220,7 +220,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	// update config file
 	err = mgr.unsafeWriteProvidersConfig()
 	if err != nil {
-		err = fmt.Errorf("failed to save config file after providers update (%s)", err)
+		err = fmt.Errorf("failed to save config file after providers update (%w)", err)
 		mgr.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)
 	}
