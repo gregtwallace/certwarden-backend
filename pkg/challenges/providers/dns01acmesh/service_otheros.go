@@ -77,7 +77,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	// check for the needed dns script in custom folder
 	_, err = os.Stat(service.acmeShPath + dnsApiCwPath + "/" + service.dnsHook + ".sh")
 	if err != nil {
-		return nil, fmt.Errorf("acme.sh: erorr opening dns script (%s)", err)
+		return nil, fmt.Errorf("acme.sh: erorr opening dns script (%w)", err)
 	}
 
 	// environment vars
