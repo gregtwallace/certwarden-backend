@@ -50,7 +50,7 @@ type accountKeySummaryResponse struct {
 	Name string `json:"name"`
 }
 
-func (acct Account) SummaryResponse() AccountSummaryResponse {
+func (acct *Account) SummaryResponse() AccountSummaryResponse {
 	return AccountSummaryResponse{
 		ID:          acct.ID,
 		Name:        acct.Name,
@@ -97,7 +97,7 @@ type accountKeyDetailedResponse struct {
 	Algorithm key_crypto.Algorithm `json:"algorithm"`
 }
 
-func (acct Account) detailedResponse(service *Service) (accountDetailedResponse, error) {
+func (acct *Account) detailedResponse(service *Service) (accountDetailedResponse, error) {
 	as, err := service.acmeServerService.AcmeService(acct.AcmeServer.ID)
 	if err != nil {
 		return accountDetailedResponse{}, err

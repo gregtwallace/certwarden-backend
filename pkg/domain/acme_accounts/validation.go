@@ -21,11 +21,11 @@ var (
 )
 
 // getAccount returns the Account for the specified account id.
-func (service *Service) getAccount(id int) (Account, *output.JsonError) {
+func (service *Service) getAccount(id int) (*Account, *output.JsonError) {
 	// if id is not in valid range, it is definitely not valid
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)
-		return Account{}, output.ErrorJsonErrValidationFailed(ErrIdBad)
+		return nil, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get from storage
@@ -34,10 +34,10 @@ func (service *Service) getAccount(id int) (Account, *output.JsonError) {
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return Account{}, output.ErrorJsonErrNotFound(fmt.Errorf("account id %d not found", id))
+			return nil, output.ErrorJsonErrNotFound(fmt.Errorf("account id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Account{}, output.ErrorJsonErrStorageGeneric(err)
+			return nil, output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 
@@ -75,7 +75,7 @@ func (service *Service) nameValid(accountName string, accountId *int) bool {
 
 // GetUsableAccounts returns a list of accounts that have status == valid
 // and have also accepted the ToS (which is probably redundant)
-func (service *Service) GetUsableAccounts() ([]Account, error) {
+func (service *Service) GetUsableAccounts() ([]*Account, error) {
 	accounts, _, err := service.storage.GetAllAcmeAccounts(pagination_sort.Query{})
 	if err != nil {
 		return nil, err
@@ -107,7 +107,7 @@ func (service *Service) AccountUsable(accountId int) (bool, *Account) {
 	// verify specified account id is usable
 	for i := range accounts {
 		if accounts[i].ID == accountId {
-			return true, &accounts[i]
+			return true, accounts[i]
 		}
 	}
 

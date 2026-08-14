@@ -67,7 +67,7 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) *o
 	payload.UpdatedAt = t
 
 	// save new key to storage, which also returns the new server
-	newServer, err := service.storage.PostNewServer(payload)
+	newServer, err := service.storage.PostNewServer(&payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrorJsonErrStorageGeneric(err)

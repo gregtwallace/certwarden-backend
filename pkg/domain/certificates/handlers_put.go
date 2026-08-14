@@ -145,7 +145,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 
 	// save account name and desc to storage, which also returns the account id with new
 	// name and description
-	updatedCert, err := service.storage.PutCertUpdate(payload)
+	updatedCert, err := service.storage.PutCertUpdate(&payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrorJsonErrStorageGeneric(err)

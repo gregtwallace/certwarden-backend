@@ -48,16 +48,16 @@ func TestDeleteServer(t *testing.T) {
 	testCases := []struct {
 		serverID          int
 		expectedDelErr    error
-		expectedGetResult acme_servers.Server
+		expectedGetResult *acme_servers.Server
 		expectedGetErr    error
 	}{
-		{2, sql.ErrNoRows, acme_servers.Server{}, sql.ErrNoRows},  // non-existent
-		{25, sql.ErrNoRows, acme_servers.Server{}, sql.ErrNoRows}, // non-existent
-		{4, nil, acme_servers.Server{}, sql.ErrNoRows},            // not in use, gets deleted
-		{20, nil, acme_servers.Server{}, sql.ErrNoRows},           // not in use, gets deleted
-		{0, storage.ErrInUse, acmeServer0, nil},                   // in use
-		{1, storage.ErrInUse, acmeServer1, nil},                   // in use
-		{19, storage.ErrInUse, acmeServer19, nil},                 // in use
+		{2, sql.ErrNoRows, nil, sql.ErrNoRows},     // non-existent
+		{25, sql.ErrNoRows, nil, sql.ErrNoRows},    // non-existent
+		{4, nil, nil, sql.ErrNoRows},               // not in use, gets deleted
+		{20, nil, nil, sql.ErrNoRows},              // not in use, gets deleted
+		{0, storage.ErrInUse, &acmeServer0, nil},   // in use
+		{1, storage.ErrInUse, &acmeServer1, nil},   // in use
+		{19, storage.ErrInUse, &acmeServer19, nil}, // in use
 	}
 
 	// create testing service
@@ -78,7 +78,7 @@ func TestDeleteServer(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeServer(t, &server, &tc.expectedGetResult)
+			compareAcmeServer(t, server, tc.expectedGetResult)
 		})
 	}
 }

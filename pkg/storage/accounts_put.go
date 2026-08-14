@@ -6,7 +6,7 @@ import (
 )
 
 // PutAcmeAccountUpdate updates details about an acme account
-func (store *Storage) PutAcmeAccountUpdate(payload *acme_accounts.UpdatePayload) (acme_accounts.Account, error) {
+func (store *Storage) PutAcmeAccountUpdate(payload *acme_accounts.UpdatePayload) (*acme_accounts.Account, error) {
 	// database update
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -44,29 +44,29 @@ func (store *Storage) PutAcmeAccountUpdate(payload *acme_accounts.UpdatePayload)
 		payload.ID,
 	)
 	if err != nil {
-		return acme_accounts.Account{}, err
+		return nil, err
 	}
 
 	// verify update actually happened
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return acme_accounts.Account{}, err
+		return nil, err
 	}
 	if rowsAffected != 1 {
-		return acme_accounts.Account{}, errorWrongUpdateRowCount(1, rowsAffected)
+		return nil, errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	// get updated account to return
 	updatedAccount, err := store.GetOneAcmeAccountById(payload.ID)
 	if err != nil {
-		return acme_accounts.Account{}, err
+		return nil, err
 	}
 
 	return updatedAccount, nil
 }
 
 // PutAcmeAccountNewKey updates the specified account to the new key id
-func (store *Storage) PutAcmeAccountNewKey(payload acme_accounts.RolloverKeyPayload) (acme_accounts.Account, error) {
+func (store *Storage) PutAcmeAccountNewKey(payload *acme_accounts.RolloverKeyPayload) (*acme_accounts.Account, error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -86,22 +86,22 @@ func (store *Storage) PutAcmeAccountNewKey(payload acme_accounts.RolloverKeyPayl
 		payload.ID,
 	)
 	if err != nil {
-		return acme_accounts.Account{}, err
+		return nil, err
 	}
 
 	// verify update actually happened
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return acme_accounts.Account{}, err
+		return nil, err
 	}
 	if rowsAffected != 1 {
-		return acme_accounts.Account{}, errorWrongUpdateRowCount(1, rowsAffected)
+		return nil, errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	// get updated account to return
 	updatedAccount, err := store.GetOneAcmeAccountById(payload.ID)
 	if err != nil {
-		return acme_accounts.Account{}, err
+		return nil, err
 	}
 
 	return updatedAccount, nil

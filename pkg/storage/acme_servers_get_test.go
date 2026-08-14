@@ -58,11 +58,11 @@ func TestGetAllAcmeServers(t *testing.T) {
 		expectedTotalCt      int
 		expectedResultLen    int
 		testIndx             int
-		expectedServerAtIndx acme_servers.Server
+		expectedServerAtIndx *acme_servers.Server
 	}{
-		{pagination_sort.Query{}, 5, 5, 3, acmeServer0},
-		{queryBuilderForTest(1, 1, "id", true), 5, 1, 0, acmeServer1},
-		{queryBuilderForTest(2, 1, "updated_at", false), 5, 2, 1, acmeServer4},
+		{pagination_sort.Query{}, 5, 5, 3, &acmeServer0},
+		{queryBuilderForTest(1, 1, "id", true), 5, 1, 0, &acmeServer1},
+		{queryBuilderForTest(2, 1, "updated_at", false), 5, 2, 1, &acmeServer4},
 	}
 
 	// create testing service
@@ -86,7 +86,7 @@ func TestGetAllAcmeServers(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(servers))
 			}
 			if tc.testIndx <= len(servers)-1 {
-				compareAcmeServer(t, &servers[tc.testIndx], &tc.expectedServerAtIndx)
+				compareAcmeServer(t, servers[tc.testIndx], tc.expectedServerAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(servers))
 			}
@@ -98,13 +98,13 @@ func TestGetOneServerById(t *testing.T) {
 	testCases := []struct {
 		id             int
 		expectedErr    error
-		expectedServer acme_servers.Server
+		expectedServer *acme_servers.Server
 	}{
-		{-5, sql.ErrNoRows, acme_servers.Server{}},
-		{50, sql.ErrNoRows, acme_servers.Server{}},
-		{0, nil, acmeServer0},
-		{1, nil, acmeServer1},
-		{4, nil, acmeServer4},
+		{-5, sql.ErrNoRows, nil},
+		{50, sql.ErrNoRows, nil},
+		{0, nil, &acmeServer0},
+		{1, nil, &acmeServer1},
+		{4, nil, &acmeServer4},
 	}
 
 	// create testing service
@@ -120,7 +120,7 @@ func TestGetOneServerById(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeServer(t, &serv, &tc.expectedServer)
+			compareAcmeServer(t, serv, tc.expectedServer)
 		})
 	}
 }
@@ -129,13 +129,13 @@ func TestGetOneServerByName(t *testing.T) {
 	testCases := []struct {
 		name           string
 		expectedErr    error
-		expectedServer acme_servers.Server
+		expectedServer *acme_servers.Server
 	}{
-		{"fake-bad-name", sql.ErrNoRows, acme_servers.Server{}},
-		{"", sql.ErrNoRows, acme_servers.Server{}},
-		{"lets_encrypt", nil, acmeServer0}, // case is wrong
-		{"Lets_Encrypt_Staging", nil, acmeServer1},
-		{"Google_Prod", nil, acmeServer4},
+		{"fake-bad-name", sql.ErrNoRows, nil},
+		{"", sql.ErrNoRows, nil},
+		{"lets_encrypt", nil, &acmeServer0}, // case is wrong
+		{"Lets_Encrypt_Staging", nil, &acmeServer1},
+		{"Google_Prod", nil, &acmeServer4},
 	}
 
 	// create testing service
@@ -151,7 +151,7 @@ func TestGetOneServerByName(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeServer(t, &serv, &tc.expectedServer)
+			compareAcmeServer(t, serv, tc.expectedServer)
 		})
 	}
 }

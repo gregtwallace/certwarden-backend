@@ -96,7 +96,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 
 	// Save new account details to storage.
 	// No ACME actions are performed.
-	newAcct, err := service.storage.PostNewAcmeAccount(payload)
+	newAcct, err := service.storage.PostNewAcmeAccount(&payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrorJsonErrStorageGeneric(err)

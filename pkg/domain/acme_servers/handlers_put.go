@@ -69,7 +69,7 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	payload.UpdatedAt = time.Now()
 
 	// save updated key info to storage
-	updatedServer, err := service.storage.PutServerUpdate(payload)
+	updatedServer, err := service.storage.PutServerUpdate(&payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrorJsonErrStorageGeneric(err)

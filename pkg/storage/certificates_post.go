@@ -6,7 +6,7 @@ import (
 )
 
 // PostNewAccount inserts a new cert into the db
-func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates.Certificate, error) {
+func (store *Storage) PostNewCert(payload *certificates.NewPayload) (certificates.Certificate, error) {
 	// database update
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()

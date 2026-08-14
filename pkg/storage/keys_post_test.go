@@ -87,7 +87,7 @@ func TestPostNewKey(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newKeyPayload.Name)), func(t *testing.T) {
-			key, err := store.PostNewKey(tc.newKeyPayload)
+			key, err := store.PostNewKey(&tc.newKeyPayload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
 				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}

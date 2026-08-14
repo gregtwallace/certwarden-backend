@@ -25,6 +25,7 @@ linters:
     # - gocognit #TODO: enable
     # - goconst #TODO: enable
     - gocritic
+    # TODO: review additional linters (after writing more tests)
 
 
   settings:
@@ -81,9 +82,6 @@ linters:
 
     gocritic:
       enable-all: true
-      disabled-checks:
-      # TODO: Enable and address these
-        - hugeParam
 
   exclusions:
     rules:

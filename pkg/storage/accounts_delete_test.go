@@ -52,16 +52,16 @@ func TestDeleteAcmeAccount(t *testing.T) {
 	testCases := []struct {
 		acctID            int
 		expectedDelErr    error
-		expectedGetResult acme_accounts.Account
+		expectedGetResult *acme_accounts.Account
 		expectedGetErr    error
 	}{
-		{-2, sql.ErrNoRows, acme_accounts.Account{}, sql.ErrNoRows}, // non-existent
-		{25, sql.ErrNoRows, acme_accounts.Account{}, sql.ErrNoRows}, // non-existent
-		{16, nil, acme_accounts.Account{}, sql.ErrNoRows},           // not in use, gets deleted
-		{28, nil, acme_accounts.Account{}, sql.ErrNoRows},           // not in use, gets deleted
-		{1, storage.ErrInUse, acmeAcct1, nil},                       // in use
-		{2, storage.ErrInUse, acmeAcct2, nil},                       // in use
-		{20, storage.ErrInUse, acmeAcct20, nil},                     // in use
+		{-2, sql.ErrNoRows, nil, sql.ErrNoRows},  // non-existent
+		{25, sql.ErrNoRows, nil, sql.ErrNoRows},  // non-existent
+		{16, nil, nil, sql.ErrNoRows},            // not in use, gets deleted
+		{28, nil, nil, sql.ErrNoRows},            // not in use, gets deleted
+		{1, storage.ErrInUse, &acmeAcct1, nil},   // in use
+		{2, storage.ErrInUse, &acmeAcct2, nil},   // in use
+		{20, storage.ErrInUse, &acmeAcct20, nil}, // in use
 	}
 
 	// create testing service
@@ -82,7 +82,7 @@ func TestDeleteAcmeAccount(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, &acct, &tc.expectedGetResult)
+			compareAcmeAccount(t, acct, tc.expectedGetResult)
 		})
 	}
 }

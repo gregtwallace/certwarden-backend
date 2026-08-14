@@ -24,9 +24,9 @@ type Storage interface {
 	GetOneKeyById(id int) (Key, error)
 	GetOneKeyByName(name string) (Key, error)
 
-	PostNewKey(NewPayload) (Key, error)
+	PostNewKey(*NewPayload) (Key, error)
 
-	PutKeyUpdate(UpdatePayload) (Key, error)
+	PutKeyUpdate(*UpdatePayload) (Key, error)
 	PutKeyApiKey(keyId int, apiKey string, updatedAt time.Time) error
 	PutKeyApiKeyNew(keyId int, apiKeyNew string, updatedAt time.Time) error
 

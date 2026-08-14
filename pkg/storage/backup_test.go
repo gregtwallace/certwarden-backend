@@ -65,7 +65,7 @@ func backupTestBattery(t *testing.T, store *storage.Storage, expectLocked bool) 
 			UpdatedAt: time.Unix(6323444, 0),
 		}
 
-		_, err := store.PutServerUpdate(payload)
+		_, err := store.PutServerUpdate(&payload)
 		backupCheckErrOK(t, err, expectLocked)
 		wg.Done()
 	})

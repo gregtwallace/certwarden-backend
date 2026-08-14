@@ -118,7 +118,7 @@ func TestGetAllAcmeAccounts(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(accts))
 			}
 			if tc.testIndx <= len(accts)-1 {
-				compareAcmeAccount(t, &accts[tc.testIndx], &tc.expectedAcctAtIndx)
+				compareAcmeAccount(t, accts[tc.testIndx], &tc.expectedAcctAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(accts))
 			}
@@ -130,13 +130,13 @@ func TestGetOneAccountById(t *testing.T) {
 	testCases := []struct {
 		id           int
 		expectedErr  error
-		expectedAcct acme_accounts.Account
+		expectedAcct *acme_accounts.Account
 	}{
-		{-5, sql.ErrNoRows, acme_accounts.Account{}},
-		{50, sql.ErrNoRows, acme_accounts.Account{}},
-		{1, nil, acmeAcct1},
-		{2, nil, acmeAcct2},
-		{23, nil, acmeAcct23},
+		{-5, sql.ErrNoRows, nil},
+		{50, sql.ErrNoRows, nil},
+		{1, nil, &acmeAcct1},
+		{2, nil, &acmeAcct2},
+		{23, nil, &acmeAcct23},
 	}
 
 	// create testing service
@@ -152,7 +152,7 @@ func TestGetOneAccountById(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, &acct, &tc.expectedAcct)
+			compareAcmeAccount(t, acct, tc.expectedAcct)
 		})
 	}
 }
@@ -161,13 +161,13 @@ func TestGetOneAccountByName(t *testing.T) {
 	testCases := []struct {
 		name         string
 		expectedErr  error
-		expectedAcct acme_accounts.Account
+		expectedAcct *acme_accounts.Account
 	}{
-		{"", sql.ErrNoRows, acme_accounts.Account{}},
-		{"fake-name", sql.ErrNoRows, acme_accounts.Account{}},
-		{"le_staging_account", nil, acmeAcct1}, // case is wrong
-		{"LE_Production_Account", nil, acmeAcct2},
-		{"Google_Cloud_Staging2", nil, acmeAcct23},
+		{"", sql.ErrNoRows, nil},
+		{"fake-name", sql.ErrNoRows, nil},
+		{"le_staging_account", nil, &acmeAcct1}, // case is wrong
+		{"LE_Production_Account", nil, &acmeAcct2},
+		{"Google_Cloud_Staging2", nil, &acmeAcct23},
 	}
 
 	// create testing service
@@ -183,7 +183,7 @@ func TestGetOneAccountByName(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, &acct, &tc.expectedAcct)
+			compareAcmeAccount(t, acct, tc.expectedAcct)
 		})
 	}
 }

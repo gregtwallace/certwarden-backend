@@ -7,6 +7,18 @@ import (
 
 // compareAcmeAccount compares acct to expectedAcct and throws appropriate errors for any differences
 func compareAcmeAccount(t *testing.T, acct, expectedAcct *acme_accounts.Account) {
+	if acct == nil && expectedAcct == nil {
+		return
+	}
+	if acct == nil && expectedAcct != nil {
+		t.Errorf("acme account: acct is nil but expectedAcct is non-nil")
+		return
+	}
+	if acct != nil && expectedAcct == nil {
+		t.Errorf("acme account: acct is non-nil but expectedAcct is nil")
+		return
+	}
+
 	if acct.ID != expectedAcct.ID {
 		t.Errorf("acme account: id expected '%d' but got '%d'", expectedAcct.ID, acct.ID)
 	}

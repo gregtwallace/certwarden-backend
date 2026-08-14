@@ -6,7 +6,7 @@ import (
 )
 
 // PutServerUpdate updates details about an acme Server
-func (store *Storage) PutServerUpdate(payload acme_servers.UpdatePayload) (acme_servers.Server, error) {
+func (store *Storage) PutServerUpdate(payload *acme_servers.UpdatePayload) (*acme_servers.Server, error) {
 	// database update
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -33,22 +33,22 @@ func (store *Storage) PutServerUpdate(payload acme_servers.UpdatePayload) (acme_
 		payload.ID,
 	)
 	if err != nil {
-		return acme_servers.Server{}, err
+		return nil, err
 	}
 
 	// verify update actually happened
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return acme_servers.Server{}, err
+		return nil, err
 	}
 	if rowsAffected != 1 {
-		return acme_servers.Server{}, errorWrongUpdateRowCount(1, rowsAffected)
+		return nil, errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	// get updated server to return
 	updatedServer, err := store.GetOneServerById(payload.ID)
 	if err != nil {
-		return acme_servers.Server{}, err
+		return nil, err
 	}
 
 	return updatedServer, nil

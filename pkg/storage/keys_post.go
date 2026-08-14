@@ -6,7 +6,7 @@ import (
 )
 
 // PostNewKey saves the KeyExtended to the db as a new key
-func (store *Storage) PostNewKey(payload private_keys.NewPayload) (private_keys.Key, error) {
+func (store *Storage) PostNewKey(payload *private_keys.NewPayload) (private_keys.Key, error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()

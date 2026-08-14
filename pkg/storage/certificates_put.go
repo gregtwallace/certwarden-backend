@@ -8,7 +8,7 @@ import (
 
 // PutCertUpdate saves details about the cert that can be updated at any time. It only updates
 // the details which are provided
-func (store *Storage) PutCertUpdate(payload certificates.UpdatePayload) (certificates.Certificate, error) {
+func (store *Storage) PutCertUpdate(payload *certificates.UpdatePayload) (certificates.Certificate, error) {
 	// database update
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -94,7 +94,7 @@ func (store *Storage) PutCertUpdatedAt(certId int, updatedAt time.Time) (err err
 		UpdatedAt: updatedAt,
 	}
 
-	_, err = store.PutCertUpdate(payload)
+	_, err = store.PutCertUpdate(&payload)
 	return err
 }
 
@@ -107,7 +107,7 @@ func (store *Storage) PutCertApiKey(certId int, apiKey string, updatedAt time.Ti
 		UpdatedAt: updatedAt,
 	}
 
-	_, err = store.PutCertUpdate(payload)
+	_, err = store.PutCertUpdate(&payload)
 	return err
 }
 
@@ -120,7 +120,7 @@ func (store *Storage) PutCertApiKeyNew(certId int, apiKeyNew string, updatedAt t
 		UpdatedAt: updatedAt,
 	}
 
-	_, err = store.PutCertUpdate(payload)
+	_, err = store.PutCertUpdate(&payload)
 	return err
 }
 
@@ -133,7 +133,7 @@ func (store *Storage) PutCertClientKey(certId int, clientKeyB64 string, updatedA
 		UpdatedAt:                  updatedAt,
 	}
 
-	_, err = store.PutCertUpdate(payload)
+	_, err = store.PutCertUpdate(&payload)
 	return err
 }
 

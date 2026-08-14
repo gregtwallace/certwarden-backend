@@ -100,7 +100,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) *outp
 	payload.UpdatedAt = t
 
 	// save new key to storage, which also returns the new key id
-	newKey, err := service.storage.PostNewKey(payload)
+	newKey, err := service.storage.PostNewKey(&payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrorJsonErrStorageGeneric(err)

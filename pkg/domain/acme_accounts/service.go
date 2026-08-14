@@ -23,14 +23,14 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	GetAllAcmeAccounts(q pagination_sort.Query) ([]Account, int, error)
-	GetOneAcmeAccountById(id int) (Account, error)
-	GetOneAcmeAccountByName(name string) (Account, error)
+	GetAllAcmeAccounts(q pagination_sort.Query) ([]*Account, int, error)
+	GetOneAcmeAccountById(id int) (*Account, error)
+	GetOneAcmeAccountByName(name string) (*Account, error)
 
-	PostNewAcmeAccount(payload NewPayload) (newAcct Account, err error)
+	PostNewAcmeAccount(*NewPayload) (*Account, error)
 
-	PutAcmeAccountUpdate(payload *UpdatePayload) (updatedAcct Account, err error)
-	PutAcmeAccountNewKey(payload RolloverKeyPayload) (updatedAcct Account, err error)
+	PutAcmeAccountUpdate(*UpdatePayload) (*Account, error)
+	PutAcmeAccountNewKey(*RolloverKeyPayload) (*Account, error)
 
 	DeleteAcmeAccount(int) error
 

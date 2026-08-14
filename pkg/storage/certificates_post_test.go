@@ -210,7 +210,7 @@ func TestPostNewCert(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
-			record, err := store.PostNewCert(tc.newPayload)
+			record, err := store.PostNewCert(&tc.newPayload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
 				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}

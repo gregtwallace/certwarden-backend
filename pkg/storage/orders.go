@@ -33,7 +33,7 @@ type orderDb struct {
 	renewalInfo    sql.NullString
 }
 
-func (order orderDb) toOrder() (orders.Order, error) {
+func (order *orderDb) toOrder() (orders.Order, error) {
 	// handle if key is not null (id value would not be okay from coalesce if null)
 	var key *private_keys.Key
 	if order.finalizedKey.id >= 0 {

@@ -64,7 +64,7 @@ type Config struct {
 }
 
 // Len returns the total number of Provider Configs, regardless of type.
-func (cfg Config) Len() int {
+func (cfg *Config) Len() int {
 	return len(cfg.Http01InternalConfigs) +
 		len(cfg.Dns01ManualConfigs) +
 		len(cfg.Dns01AcmeDnsConfigs) +
@@ -82,7 +82,7 @@ type managerProviderConfig struct {
 }
 
 // All returns a slice of manager provider configs
-func (cfg Config) All() []managerProviderConfig {
+func (cfg *Config) All() []managerProviderConfig {
 	all := []managerProviderConfig{}
 	for _, mgrCfg := range cfg.Dns01AcmeDnsConfigs {
 		all = append(all, managerProviderConfig{

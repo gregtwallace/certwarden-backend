@@ -14,11 +14,11 @@ var (
 )
 
 // getAcmeServer returns the Server for the specified id or an error.
-func (service *Service) getServer(acmeServerId int) (Server, *output.JsonError) {
+func (service *Service) getServer(acmeServerId int) (*Server, *output.JsonError) {
 	// basic check
 	if !validation.IsIdExistingValidRange(acmeServerId) {
 		service.logger.Debug(ErrIdBad)
-		return Server{}, output.ErrorJsonErrValidationFailed(ErrIdBad)
+		return nil, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
 
 	// verify specified id has an acme service
@@ -26,7 +26,7 @@ func (service *Service) getServer(acmeServerId int) (Server, *output.JsonError) 
 	if service.acmeServers[acmeServerId] == nil {
 		err := errors.New("acme server id exists but doesn't have a service (how did this happen?!)")
 		service.logger.Error(err)
-		return Server{}, output.ErrorJsonErrInternal(err)
+		return nil, output.ErrorJsonErrInternal(err)
 	}
 
 	// get the Server from storage
@@ -35,10 +35,10 @@ func (service *Service) getServer(acmeServerId int) (Server, *output.JsonError) 
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return Server{}, output.ErrorJsonErrNotFound(fmt.Errorf("acme server id %d not found", acmeServerId))
+			return nil, output.ErrorJsonErrNotFound(fmt.Errorf("acme server id %d not found", acmeServerId))
 		} else {
 			service.logger.Error(err)
-			return Server{}, output.ErrorJsonErrStorageGeneric(err)
+			return nil, output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 

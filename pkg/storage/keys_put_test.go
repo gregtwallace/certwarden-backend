@@ -186,7 +186,7 @@ red-58
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
-			key, err := store.PutKeyUpdate(tc.payload)
+			key, err := store.PutKeyUpdate(&tc.payload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}

@@ -221,7 +221,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 		}
 
 		// save new key to storage, and set the cert key id based on returned key's id
-		newKey, err := service.storage.PostNewKey(newKeyPayload)
+		newKey, err := service.storage.PostNewKey(&newKeyPayload)
 		if err != nil {
 			service.logger.Error(err)
 			return output.ErrorJsonErrStorageGeneric(err)
@@ -257,7 +257,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	}
 
 	// save new cert
-	newCert, err := service.storage.PostNewCert(payload)
+	newCert, err := service.storage.PostNewCert(&payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrorJsonErrStorageGeneric(err)

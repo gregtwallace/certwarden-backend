@@ -70,7 +70,7 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) *ou
 	payload.UpdatedAt = time.Now()
 
 	// save updated key info to storage
-	updatedKey, err := service.storage.PutKeyUpdate(payload)
+	updatedKey, err := service.storage.PutKeyUpdate(&payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrorJsonErrStorageGeneric(err)

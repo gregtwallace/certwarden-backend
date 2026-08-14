@@ -7,6 +7,18 @@ import (
 
 // compareAcmeServer compares server to expectedServer and throws appropriate errors for any differences
 func compareAcmeServer(t *testing.T, server, expectedServer *acme_servers.Server) {
+	if server == nil && expectedServer == nil {
+		return
+	}
+	if server == nil && expectedServer != nil {
+		t.Errorf("acme server: server is nil but expectedServer is non-nil")
+		return
+	}
+	if server != nil && expectedServer == nil {
+		t.Errorf("acme server: server is non-nil but expectedServer is nil")
+		return
+	}
+
 	if server.ID != expectedServer.ID {
 		t.Errorf("acme server: id expected '%d' but got '%d'", expectedServer.ID, server.ID)
 	}

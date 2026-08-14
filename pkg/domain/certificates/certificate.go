@@ -68,7 +68,7 @@ type certificateAccountServerSummaryResponse struct {
 	IsStaging bool   `json:"is_staging"`
 }
 
-func (cert Certificate) summaryResponse() certificateSummaryResponse {
+func (cert *Certificate) summaryResponse() certificateSummaryResponse {
 	return certificateSummaryResponse{
 		ID:          cert.ID,
 		Name:        cert.Name,
@@ -117,7 +117,7 @@ type certificateDetailedResponse struct {
 	PostProcessingClientKeyB64  string          `json:"post_processing_client_key"`
 }
 
-func (cert Certificate) detailedResponse() certificateDetailedResponse {
+func (cert *Certificate) detailedResponse() certificateDetailedResponse {
 	return certificateDetailedResponse{
 		certificateSummaryResponse:  cert.summaryResponse(),
 		Organization:                cert.Organization,

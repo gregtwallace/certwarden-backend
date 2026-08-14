@@ -32,7 +32,7 @@ type Manager struct {
 	mu         sync.RWMutex
 }
 
-func MakeManager(app application, cfg Config) (mgr *Manager, err error) {
+func MakeManager(app application, cfg *Config) (mgr *Manager, err error) {
 	// make struct with configs
 	mgr = &Manager{
 		childApp:   app,
