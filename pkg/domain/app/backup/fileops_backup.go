@@ -13,7 +13,7 @@ import (
 )
 
 const dataStorageBackupDirName = "backup"
-const backupFileMode = 0600
+const backupFileMode = 0o600
 
 const internalBackupFile = "backup.zip"
 const internalBackupHashFile = internalBackupFile + ".sha1"
@@ -114,7 +114,7 @@ func (service *Service) createDataBackup(withOnDiskBackups bool) (zipFileBytes [
 	}
 
 	// write hash (as hex string) file in wrapper zip
-	_, err = io.WriteString(zipFileHashFile, fmt.Sprintf("%x", internalZipHasher.Sum(nil)))
+	_, err = fmt.Fprintf(zipFileHashFile, "%x", internalZipHasher.Sum(nil))
 	if err != nil {
 		return nil, fmt.Errorf("failed to copy internal backup hash into wrapper zip (%w)", err)
 	}

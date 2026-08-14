@@ -86,22 +86,26 @@ func ACMERenewalInfoIdentifier(cert *x509.Certificate) (string, error) {
 	serialBytes := cert.SerialNumber.Bytes()
 
 	// serial should always be non-negative (https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.2)
-	if cert.SerialNumber.Sign() < 0 {
+	sign := cert.SerialNumber.Sign()
+	switch {
+	case sign < 0:
 		// invalid (negative) serial number
 		return "", errorARIIdentifierFailed("cert serial number is invalid (negative)")
 
-	} else if cert.SerialNumber.Sign() > 0 && len(serialBytes) > 0 && serialBytes[0]&0x80 != 0 {
+	case sign > 0 && len(serialBytes) > 0 && serialBytes[0]&0x80 != 0:
 		// serial is positive but looks negative since the first bit is high, so prepend a 0x00 byte
 		serialBytes = append([]byte{0x00}, serialBytes...)
 
+	case sign == 0:
 		// serial is (confusingly, but still valid) 0
-	} else if cert.SerialNumber.Sign() == 0 {
 		serialBytes = []byte{0x00}
+
+	default:
+		// do nothing -- sign is positive and does not need to be modified
 	}
 
-	serialStr := base64.RawURLEncoding.EncodeToString(serialBytes)
-
 	// assemble the unique id
+	serialStr := base64.RawURLEncoding.EncodeToString(serialBytes)
 	return akiStr + "." + serialStr, nil
 }
 

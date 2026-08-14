@@ -14,7 +14,7 @@ var (
 
 // ValidationResourceDns01 returns the dnsRecord name and value to provision
 // in response to a Dns01 challenge for a given domain and keyAuth
-func ValidationResourceDns01(domain string, keyAuth KeyAuth) (dnsRecordName string, dnsRecordValue string) {
+func ValidationResourceDns01(domain string, keyAuth KeyAuth) (dnsRecordName, dnsRecordValue string) {
 	// dns record name is just the domain prepended with the special acme prefix
 	dnsRecordName = "_acme-challenge." + domain
 
@@ -80,6 +80,7 @@ func DNSChallengeCNAMEInfo(dnsIdValue, provisionDomain string, challengeType Cha
 		to = provisionDomain
 
 	case ChallengeTypeUnknown:
+		//nolint:gocritic // without this case, triggers `exhaustive` lint for missing cases
 		fallthrough
 	default:
 		return "", "", ErrChallengeTypeDoesntSupportCNAME

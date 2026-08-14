@@ -192,7 +192,7 @@ fulfillLoop:
 	loopTimedOut := time.Since(startTime) >= timeoutLength
 
 	// update order in storage (regardless of loop outcome)
-	err = j.service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(order.ID, acmeOrder))
+	err = j.service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(order.ID, &acmeOrder))
 	if err != nil {
 		j.service.logger.Errorf("orders: fulfilling worker %d: update order db error: %s", workerID, err)
 	}

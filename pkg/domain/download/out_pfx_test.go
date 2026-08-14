@@ -18,7 +18,7 @@ import (
 // function to run one pfx test (needed to be special due to the way pfx data is generated)
 func onePfxTest(t *testing.T, handler func(w http.ResponseWriter, r *http.Request) *output.JsonError,
 	apiKeyHeader *string, apiKeyURL *string, certName string, expectedJsonErr *output.JsonError) {
-	r, err := http.NewRequest("GET", "/certwarden/api/v1/download/certificates", nil)
+	r, err := http.NewRequest("GET", "/certwarden/api/v1/download/certificates", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}

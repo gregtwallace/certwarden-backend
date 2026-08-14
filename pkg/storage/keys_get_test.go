@@ -281,14 +281,14 @@ func TestGetAllKeys(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getallkeys")
+	store, err := openStorageWithTestData(t, "getallkeys")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedKeyAtIndx.Name), func(t *testing.T) {
-			keys, totalCt, err := storage.GetAllKeys(tc.q)
+			keys, totalCt, err := store.GetAllKeys(tc.q)
 			if err != nil {
 				t.Errorf("get all failed")
 				return
@@ -301,7 +301,7 @@ func TestGetAllKeys(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(keys))
 			}
 			if tc.testIndx <= len(keys)-1 {
-				compareKey(t, keys[tc.testIndx], tc.expectedKeyAtIndx)
+				compareKey(t, &keys[tc.testIndx], &tc.expectedKeyAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(keys))
 			}
@@ -322,19 +322,19 @@ func TestGetOneKeyById(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getonekeybyid")
+	store, err := openStorageWithTestData(t, "getonekeybyid")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
-			key, err := storage.GetOneKeyById(tc.id)
+			key, err := store.GetOneKeyById(tc.id)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, key, tc.expectedKey)
+			compareKey(t, &key, &tc.expectedKey)
 		})
 	}
 }
@@ -352,31 +352,31 @@ func TestGetOneKeyByName(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getonekeybyname")
+	store, err := openStorageWithTestData(t, "getonekeybyname")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
-			key, err := storage.GetOneKeyByName(tc.name)
+			key, err := store.GetOneKeyByName(tc.name)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, key, tc.expectedKey)
+			compareKey(t, &key, &tc.expectedKey)
 		})
 	}
 }
 
 func TestGetAvailableKeys(t *testing.T) {
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getavailablekeys")
+	store, err := openStorageWithTestData(t, "getavailablekeys")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	keys, err := storage.GetAvailableKeys()
+	keys, err := store.GetAvailableKeys()
 	if err != nil {
 		t.Errorf("get all failed")
 		return
@@ -394,6 +394,6 @@ func TestGetAvailableKeys(t *testing.T) {
 			continue
 		}
 
-		compareKey(t, keys[i], expectedKey)
+		compareKey(t, &keys[i], &expectedKey)
 	}
 }

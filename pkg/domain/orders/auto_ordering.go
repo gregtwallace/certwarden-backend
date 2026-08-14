@@ -70,7 +70,7 @@ func (service *Service) retryIncompleteOrders() {
 	}
 
 	// nothing to do?
-	if len(incompleteOrderIds) <= 0 {
+	if len(incompleteOrderIds) == 0 {
 		return
 	}
 

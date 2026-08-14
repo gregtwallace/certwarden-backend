@@ -202,7 +202,7 @@ func setFrontendEnv() error {
 	}
 	defer file.Close()
 
-	_, err = file.Write([]byte(envFileContent))
+	_, err = file.WriteString(envFileContent)
 	if err != nil {
 		return err
 	}

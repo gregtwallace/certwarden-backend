@@ -128,26 +128,26 @@ func TestPutServerUpdate(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putserverupdate")
+	store, err := openStorageWithTestData(t, "putserverupdate")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
-			server, err := storage.PutServerUpdate(tc.payload)
+			server, err := store.PutServerUpdate(tc.payload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeServer(t, server, tc.expectedPutResult)
+			compareAcmeServer(t, &server, &tc.expectedPutResult)
 
-			server, err = storage.GetOneServerById(tc.getId)
+			server, err = store.GetOneServerById(tc.getId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeServer(t, server, tc.expectedGetResult)
+			compareAcmeServer(t, &server, &tc.expectedGetResult)
 		})
 	}
 }

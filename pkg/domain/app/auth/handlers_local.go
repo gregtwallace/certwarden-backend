@@ -61,7 +61,7 @@ func (service *Service) LocalPostLogin(w http.ResponseWriter, r *http.Request) *
 			storageService: service.local.storage,
 		}
 
-		//make new session
+		// make new session
 		auth, err := service.sessionManager.NewSession(user.Username, session_manager.UserTypeLocal, extraFuncs)
 		if err != nil {
 			service.logger.Errorf("client %s: login failed (internal error: %s)", r.RemoteAddr, err)

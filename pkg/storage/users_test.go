@@ -6,7 +6,7 @@ import (
 )
 
 // compareUser compares user to expectedUser and throws appropriate errors for any differences
-func compareUser(t *testing.T, user, expectedUser auth.User) {
+func compareUser(t *testing.T, user, expectedUser *auth.User) {
 	if user.ID != expectedUser.ID {
 		t.Errorf("user: id expected '%d' but got '%d'", expectedUser.ID, user.ID)
 	}

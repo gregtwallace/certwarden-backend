@@ -98,14 +98,14 @@ func TestGetAllAcmeAccounts(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getallacmeaccounts")
+	store, err := openStorageWithTestData(t, "getallacmeaccounts")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedAcctAtIndx.Name), func(t *testing.T) {
-			accts, totalCt, err := storage.GetAllAcmeAccounts(tc.q)
+			accts, totalCt, err := store.GetAllAcmeAccounts(tc.q)
 			if err != nil {
 				t.Errorf("get all failed")
 				return
@@ -118,7 +118,7 @@ func TestGetAllAcmeAccounts(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(accts))
 			}
 			if tc.testIndx <= len(accts)-1 {
-				compareAcmeAccount(t, accts[tc.testIndx], tc.expectedAcctAtIndx)
+				compareAcmeAccount(t, &accts[tc.testIndx], &tc.expectedAcctAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(accts))
 			}
@@ -140,19 +140,19 @@ func TestGetOneAccountById(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getoneaccountbyid")
+	store, err := openStorageWithTestData(t, "getoneaccountbyid")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
-			acct, err := storage.GetOneAcmeAccountById(tc.id)
+			acct, err := store.GetOneAcmeAccountById(tc.id)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, acct, tc.expectedAcct)
+			compareAcmeAccount(t, &acct, &tc.expectedAcct)
 		})
 	}
 }
@@ -171,19 +171,19 @@ func TestGetOneAccountByName(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getoneaccountbyname")
+	store, err := openStorageWithTestData(t, "getoneaccountbyname")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
-			acct, err := storage.GetOneAcmeAccountByName(tc.name)
+			acct, err := store.GetOneAcmeAccountByName(tc.name)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, acct, tc.expectedAcct)
+			compareAcmeAccount(t, &acct, &tc.expectedAcct)
 		})
 	}
 }

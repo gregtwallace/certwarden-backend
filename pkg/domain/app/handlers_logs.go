@@ -36,7 +36,7 @@ type currentLogResponse struct {
 // readAndParseLogFile reads the specified log file and converts it into an array of log entries
 func readAndParseLogFile(filePathAndName string) ([]logEntry, error) {
 	// open log, read only
-	logFile, err := os.OpenFile(filePathAndName, os.O_RDONLY, 0600)
+	logFile, err := os.OpenFile(filePathAndName, os.O_RDONLY, 0o600)
 	if err != nil {
 		return nil, err
 	}
@@ -102,12 +102,14 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 
 				t, err := time.Parse("2006-01-02T15-04-05.000", timeString)
 				if err != nil {
+					// skip - invalid timestamp
 					app.logger.Errorf("app: log view: failed to parse time of log file %s (%s)", logFilename, err)
-				} else {
-					if t.After(newestTime) {
-						newestTime = t
-						oldestTimestampLogFilename = logFilename
-					}
+					continue
+				}
+
+				if t.After(newestTime) {
+					newestTime = t
+					oldestTimestampLogFilename = logFilename
 				}
 			}
 

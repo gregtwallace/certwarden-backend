@@ -2,7 +2,6 @@ package acme
 
 import (
 	"crypto"
-	"strings"
 )
 
 // AccountKey is the necessary account / key information for signed message generation
@@ -28,5 +27,5 @@ func (accountKey *AccountKey) KeyAuthorization(token string) (keyAuth KeyAuth, e
 		return "", err
 	}
 
-	return KeyAuth(strings.Join([]string{token, encodedThumbprint}, ".")), nil
+	return KeyAuth(token + "." + encodedThumbprint), nil
 }

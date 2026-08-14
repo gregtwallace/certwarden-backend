@@ -6,7 +6,7 @@ import (
 )
 
 // PutUserPasswordHash updates the specified user's password hash to the specified hash.
-func (store *Storage) PutUserPasswordHash(username string, passwordHash string, updatedAt time.Time) (userId int, err error) {
+func (store *Storage) PutUserPasswordHash(username, passwordHash string, updatedAt time.Time) (userId int, err error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()

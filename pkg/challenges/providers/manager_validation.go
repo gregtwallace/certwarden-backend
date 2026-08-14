@@ -16,7 +16,7 @@ func (mgr *Manager) unsafeValidateDomains(domains []string, p *provider) error {
 	// and also verify all domains are available in manager
 
 	// if there are none, invalid
-	if len(domains) <= 0 {
+	if len(domains) == 0 {
 		return errors.New("provider doesn't have any domains (must have at least 1)")
 	}
 

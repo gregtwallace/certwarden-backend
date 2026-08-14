@@ -24,24 +24,24 @@ func TestDeleteCert(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "deletecert")
+	store, err := openStorageWithTestData(t, "deletecert")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.id), func(t *testing.T) {
-			err := storage.DeleteCert(tc.id)
+			err := store.DeleteCert(tc.id)
 			if !helpers_test.ErrorsIs(err, tc.expectedDelErr) {
 				t.Errorf("expected delete error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedDelErr), helpers_test.ErrorToVal(err))
 			}
 
-			cert, err := storage.GetOneCertById(tc.id)
+			cert, err := store.GetOneCertById(tc.id)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, cert, tc.expectedGetResult)
+			compareCertificate(t, &cert, &tc.expectedGetResult)
 		})
 	}
 }

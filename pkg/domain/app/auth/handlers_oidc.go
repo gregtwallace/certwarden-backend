@@ -110,9 +110,10 @@ func (service *Service) OIDCGetLogin(w http.ResponseWriter, r *http.Request) *ou
 	}
 
 	// redirect, including code challenge & audience
-	opts := []oauth2.AuthCodeOption{}
-	opts = append(opts, oauth2.S256ChallengeOption(pendingSession.codeVerifierHex))
-	opts = append(opts, oauth2.SetAuthURLParam("audience", fmt.Sprintf("%s://%s%s", cfgApiRedirectURLParsed.Scheme, cfgApiRedirectURLParsed.Host, service.apiURLPath)))
+	opts := []oauth2.AuthCodeOption{
+		oauth2.S256ChallengeOption(pendingSession.codeVerifierHex),
+		oauth2.SetAuthURLParam("audience", fmt.Sprintf("%s://%s%s", cfgApiRedirectURLParsed.Scheme, cfgApiRedirectURLParsed.Host, service.apiURLPath)),
+	}
 	http.Redirect(w, r, service.oidc.oauth2Config.AuthCodeURL(stateString, opts...), http.StatusFound)
 
 	return nil

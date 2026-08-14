@@ -467,7 +467,7 @@ func makeFakeApp(t *testing.T) *fakeApp {
 // function to run one test
 func oneTest(t *testing.T, handler func(w http.ResponseWriter, r *http.Request) *output.JsonError,
 	apiKeyHeader *string, apiKeyURL *string, certName string, expectedBody string, expectedJsonErr *output.JsonError) {
-	r, err := http.NewRequest("GET", "/certwarden/api/v1/download/certificates", nil)
+	r, err := http.NewRequest("GET", "/certwarden/api/v1/download/certificates", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}

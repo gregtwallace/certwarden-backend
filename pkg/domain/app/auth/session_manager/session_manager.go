@@ -35,7 +35,7 @@ type SessionManager struct {
 }
 
 // newSessionManager creates a new sessionManager
-func NewSessionManager(https bool, corsPermitted bool, logger *zap.SugaredLogger) *SessionManager {
+func NewSessionManager(https, corsPermitted bool, logger *zap.SugaredLogger) *SessionManager {
 	sm := &SessionManager{
 		https:         https,
 		corsPermitted: corsPermitted,
@@ -63,8 +63,8 @@ func (sm *SessionManager) NewSession(username string, usertype userType, extraFu
 	}
 
 	// make a session id
-	uuid := uuid.New()
-	uuidString := uuid.String()
+	uuidObj := uuid.New()
+	uuidString := uuidObj.String()
 
 	// add session
 	sm.mu.Lock()

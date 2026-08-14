@@ -23,7 +23,7 @@ var (
 // getOrder returns the Order specified by the ids, so long as the Order belongs
 // to the Certificate.  An error is returned if the order doesn't exist or if the
 // order does not belong to the cert.
-func (service *Service) getOrder(certId int, orderId int) (Order, *output.JsonError) {
+func (service *Service) getOrder(certId, orderId int) (Order, *output.JsonError) {
 	// basic check
 	if !validation.IsIdExistingValidRange(certId) {
 		service.logger.Debug(errCertIdBad)
@@ -58,7 +58,7 @@ func (service *Service) getOrder(certId int, orderId int) (Order, *output.JsonEr
 
 // isOrderRetryable returns an error if the order is not valid, the order doesn't
 // belong to the specified cert, or the order is not in a state that can be retried.
-func (service *Service) isOrderRetryable(certId int, orderId int) *output.JsonError {
+func (service *Service) isOrderRetryable(certId, orderId int) *output.JsonError {
 	order, err := service.getOrder(certId, orderId)
 	if err != nil {
 		return err

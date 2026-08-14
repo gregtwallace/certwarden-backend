@@ -33,6 +33,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		if service.logger.Level() == zapcore.DebugLevel {
 			// VERY VERBOSE, includes Header & Signature, in addition to Payload
 
+			//nolint:gocritic // err is `commentedOutCode:` -- keep this for debugging locally
 			// prettyMsg, prettyErr := json.MarshalIndent(msg, "", "\t")
 			// if prettyErr != nil {
 			// 	service.logger.Debugf("sending acme signed post to: %s ; unencoded msg: %s", url, msg)

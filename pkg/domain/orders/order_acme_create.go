@@ -35,7 +35,7 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 			return Order{}, output.ErrorJsonErrInternal(err)
 		}
 
-		acmeResponse, err := acmeService.NewOrder(service.NewOrderPayload(cert), key)
+		acmeResponse, err := acmeService.NewOrder(service.NewOrderPayload(&cert), key)
 		if err != nil {
 			service.logger.Error(err)
 			return Order{}, output.ErrorJsonErrInternal(err)
@@ -43,13 +43,13 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		service.logger.Debugf("orders: new order location: %s", acmeResponse.Location)
 
 		// populate new order payload
-		payload := makeNewOrderAcmePayload(cert, acmeResponse)
+		payload := makeNewOrderAcmePayload(&cert, &acmeResponse)
 
 		// save ACME response to order storage
-		orderId, err = service.storage.PostNewOrder(payload)
+		orderId, err = service.storage.PostNewOrder(&payload)
 		// if exists error, try to update an existing order
 		if errors.Is(err, ErrOrderExists) {
-			err = service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(orderId, acmeResponse))
+			err = service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(orderId, &acmeResponse))
 			if err != nil {
 				service.logger.Error(err)
 				return Order{}, output.ErrorJsonErrStorageGeneric(err)

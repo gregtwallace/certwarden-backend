@@ -125,9 +125,9 @@ func (app *Application) initZapLogger() {
 	}
 
 	app.logger.syncAndClose = func() {
-		//nolint: errcheck // nowhere to log an error here (logger shutting down)
+		//nolint:errcheck // nowhere to log an error here (logger shutting down)
 		app.logger.Sync()
-		//nolint: errcheck // nowhere to log an error here (logger shutting down)
+		//nolint:errcheck // nowhere to log an error here (logger shutting down)
 		closeFileFunc()
 	}
 
@@ -147,13 +147,13 @@ func (app *Application) initZapLogger() {
 // openLogFile opens the app's current log file or creates one if it does not exist
 func openLogFile() (*os.File, error) {
 	// make log path if it does not exist
-	err := os.MkdirAll(dataStorageLogPath, 0755)
+	err := os.MkdirAll(dataStorageLogPath, 0o755)
 	if err != nil {
 		return nil, fmt.Errorf("can't make directories for new logfile: %w", err)
 	}
 
 	// open log file (create if does not exist)
-	f, err := os.OpenFile(dataStorageLogPath+"/"+logFileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.FileMode(0600))
+	f, err := os.OpenFile(dataStorageLogPath+"/"+logFileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.FileMode(0o600))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open or create logfile: %w", err)
 	}

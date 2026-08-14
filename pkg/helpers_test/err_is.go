@@ -27,7 +27,7 @@ func NewTestErrorStringComp(errText string) testStringCompError {
 }
 
 // ErrorsIs
-func ErrorsIs(err error, target error) bool {
+func ErrorsIs(err, target error) bool {
 	// check if target is our special error type and if not, just do a normal errors.Is()
 	tError, isTestErrStringCmp := errors.AsType[testStringCompError](target)
 	if !isTestErrStringCmp {

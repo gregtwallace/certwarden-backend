@@ -69,7 +69,7 @@ func TestOpenDB3_BothExist(t *testing.T) {
 		t.Errorf("failed to delete './data'")
 	}
 
-	err = os.Mkdir("./data", os.FileMode(0755))
+	err = os.Mkdir("./data", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
@@ -80,7 +80,7 @@ func TestOpenDB3_BothExist(t *testing.T) {
 		}
 	})
 
-	err = os.WriteFile("./data/appdata.db", []byte{'a', 'b', 'd'}, os.FileMode(0755))
+	err = os.WriteFile("./data/appdata.db", []byte{'a', 'b', 'd'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test data file (%s)", err)
 	}
@@ -91,7 +91,7 @@ func TestOpenDB3_BothExist(t *testing.T) {
 		t.Errorf("failed to delete './test-opendb3'")
 	}
 
-	err = os.Mkdir("./test-opendb3", os.FileMode(0755))
+	err = os.Mkdir("./test-opendb3", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
@@ -102,7 +102,7 @@ func TestOpenDB3_BothExist(t *testing.T) {
 		}
 	})
 
-	err = os.WriteFile("./test-opendb3/appdata.db", []byte{'1', '2', '4'}, os.FileMode(0755))
+	err = os.WriteFile("./test-opendb3/appdata.db", []byte{'1', '2', '4'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test data file (%s)", err)
 	}
@@ -129,7 +129,7 @@ func TestOpenDB3_BothExist(t *testing.T) {
 	}
 
 	// rewrite db file so it is a valid db
-	err = os.WriteFile("./test-opendb3/appdata.db", []byte{}, os.FileMode(0755))
+	err = os.WriteFile("./test-opendb3/appdata.db", []byte{}, os.FileMode(0o755))
 	if err != nil {
 		t.Fatalf("failed to re-write db (%s)", err)
 	}
@@ -179,7 +179,7 @@ func TestOpenDB4_OldPathDoesntExist(t *testing.T) {
 		t.Errorf("failed to delete './test-opendb4'")
 	}
 
-	err = os.Mkdir("./test-opendb4", os.FileMode(0755))
+	err = os.Mkdir("./test-opendb4", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
@@ -190,7 +190,7 @@ func TestOpenDB4_OldPathDoesntExist(t *testing.T) {
 		}
 	})
 
-	err = os.WriteFile("./test-opendb4/appdata.db", []byte{'1', '2', '4'}, os.FileMode(0755))
+	err = os.WriteFile("./test-opendb4/appdata.db", []byte{'1', '2', '4'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test data file (%s)", err)
 	}
@@ -217,7 +217,7 @@ func TestOpenDB4_OldPathDoesntExist(t *testing.T) {
 	}
 
 	// rewrite db file so it is a valid db
-	err = os.WriteFile("./test-opendb4/appdata.db", []byte{}, os.FileMode(0755))
+	err = os.WriteFile("./test-opendb4/appdata.db", []byte{}, os.FileMode(0o755))
 	if err != nil {
 		t.Fatalf("failed to re-write db (%s)", err)
 	}
@@ -261,7 +261,7 @@ func TestOpenDB5_OldPathExistsNewDoesnt(t *testing.T) {
 		t.Error("failed to delete './data'")
 	}
 
-	err = os.Mkdir("./data", os.FileMode(0755))
+	err = os.Mkdir("./data", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
@@ -272,7 +272,7 @@ func TestOpenDB5_OldPathExistsNewDoesnt(t *testing.T) {
 		}
 	})
 
-	err = os.WriteFile("./data/appdata.db", []byte{'z', 'a'}, os.FileMode(0755))
+	err = os.WriteFile("./data/appdata.db", []byte{'z', 'a'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test data file (%s)", err)
 	}
@@ -283,7 +283,7 @@ func TestOpenDB5_OldPathExistsNewDoesnt(t *testing.T) {
 		t.Error("failed to delete './test-opendb5'")
 	}
 
-	err = os.Mkdir("./test-opendb5", os.FileMode(0755))
+	err = os.Mkdir("./test-opendb5", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
@@ -322,7 +322,7 @@ func TestOpenDB5_OldPathExistsNewDoesnt(t *testing.T) {
 	}
 
 	// rewrite db file so it is a valid db
-	err = os.WriteFile("./test-opendb5/appdata.db", []byte{}, os.FileMode(0755))
+	err = os.WriteFile("./test-opendb5/appdata.db", []byte{}, os.FileMode(0o755))
 	if err != nil {
 		t.Fatalf("failed to re-write db (%s)", err)
 	}
@@ -366,7 +366,7 @@ func TestOpenDB6_NoFilesExist(t *testing.T) {
 		t.Error("failed to delete './data'")
 	}
 
-	err = os.Mkdir("./data", os.FileMode(0755))
+	err = os.Mkdir("./data", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
@@ -383,7 +383,7 @@ func TestOpenDB6_NoFilesExist(t *testing.T) {
 		t.Error("failed to delete './test-opendb6")
 	}
 
-	err = os.Mkdir("./test-opendb6", os.FileMode(0755))
+	err = os.Mkdir("./test-opendb6", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}

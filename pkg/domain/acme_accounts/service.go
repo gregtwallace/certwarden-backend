@@ -29,7 +29,7 @@ type Storage interface {
 
 	PostNewAcmeAccount(payload NewPayload) (newAcct Account, err error)
 
-	PutAcmeAccountUpdate(payload UpdatePayload) (updatedAcct Account, err error)
+	PutAcmeAccountUpdate(payload *UpdatePayload) (updatedAcct Account, err error)
 	PutAcmeAccountNewKey(payload RolloverKeyPayload) (updatedAcct Account, err error)
 
 	DeleteAcmeAccount(int) error

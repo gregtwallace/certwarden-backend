@@ -114,7 +114,7 @@ func (service *Service) DownloadOneKey(w http.ResponseWriter, r *http.Request) *
 	}
 
 	// return pem file to client
-	service.output.WritePem(w, r, key)
+	service.output.WritePem(w, r, &key)
 
 	return nil
 }

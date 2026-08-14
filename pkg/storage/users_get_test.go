@@ -48,19 +48,19 @@ func TestGetOneUserByName(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getoneuserbyusername")
+	store, err := openStorageWithTestData(t, "getoneuserbyusername")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.username), func(t *testing.T) {
-			user, err := storage.GetOneUserByUsername(tc.username)
+			user, err := store.GetOneUserByUsername(tc.username)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected get username error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareUser(t, user, tc.expectedUser)
+			compareUser(t, &user, &tc.expectedUser)
 		})
 	}
 }

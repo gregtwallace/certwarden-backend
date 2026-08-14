@@ -27,14 +27,14 @@ func TestKeyInUse(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "keyinuse")
+	store, err := openStorageWithTestData(t, "keyinuse")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.keyID), func(t *testing.T) {
-			inUse, err := storage.KeyInUse(tc.keyID)
+			inUse, err := store.KeyInUse(tc.keyID)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
@@ -62,24 +62,24 @@ func TestDeleteKey(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "deletekey")
+	store, err := openStorageWithTestData(t, "deletekey")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.keyID), func(t *testing.T) {
-			err := storage.DeleteKey(tc.keyID)
+			err := store.DeleteKey(tc.keyID)
 			if !helpers_test.ErrorsIs(err, tc.expectedDelErr) {
 				t.Errorf("expected delete error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedDelErr), helpers_test.ErrorToVal(err))
 			}
 
-			key, err := storage.GetOneKeyById(tc.keyID)
+			key, err := store.GetOneKeyById(tc.keyID)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, key, tc.expectedGetResult)
+			compareKey(t, &key, &tc.expectedGetResult)
 		})
 	}
 }

@@ -203,26 +203,26 @@ func TestPostNewCert(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "postnewcert")
+	store, err := openStorageWithTestData(t, "postnewcert")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
-			record, err := storage.PostNewCert(tc.newPayload)
+			record, err := store.PostNewCert(tc.newPayload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
 				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, record, tc.expectedNew)
+			compareCertificate(t, &record, &tc.expectedNew)
 
-			record, err = storage.GetOneCertByName(record.Name)
+			record, err = store.GetOneCertByName(record.Name)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, record, tc.expectedNew)
+			compareCertificate(t, &record, &tc.expectedNew)
 		})
 	}
 }

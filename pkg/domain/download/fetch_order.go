@@ -13,7 +13,7 @@ import (
 // apiKey matches the requested cert. It also checks the apiKeyViaUrl property if the client is making
 // a request with the apiKey in the Url. includeKeyPEM controls if the key API key is also checked
 // and sensitive Private Key PEM data is included in the Order.
-func (service *Service) getCertNewestValidOrder(certName string, apiKeyOrKeys string, apiKeyViaUrl bool, includeKeyPEM bool) (orders.Order, *output.JsonError) {
+func (service *Service) getCertNewestValidOrder(certName, apiKeyOrKeys string, apiKeyViaUrl, includeKeyPEM bool) (orders.Order, *output.JsonError) {
 	// if apiKeyOrKeys is blank, definitely unauthorized
 	if apiKeyOrKeys == "" {
 		service.logger.Debug(errBlankApiKey)

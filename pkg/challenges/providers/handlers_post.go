@@ -86,28 +86,29 @@ func (mgr *Manager) CreateProvider(w http.ResponseWriter, r *http.Request) *outp
 
 	// try to add the specified provider (actual action)
 	var p *provider
-	if payload.Http01InternalConfig != nil {
+	switch {
+	case payload.Http01InternalConfig != nil:
 		p, err = mgr.unsafeAddProvider(internalCfg, payload.Http01InternalConfig)
 
-	} else if payload.Dns01ManualConfig != nil {
+	case payload.Dns01ManualConfig != nil:
 		p, err = mgr.unsafeAddProvider(internalCfg, payload.Dns01ManualConfig)
 
-	} else if payload.Dns01AcmeDnsConfig != nil {
+	case payload.Dns01AcmeDnsConfig != nil:
 		p, err = mgr.unsafeAddProvider(internalCfg, payload.Dns01AcmeDnsConfig)
 
-	} else if payload.Dns01AcmeShConfig != nil {
+	case payload.Dns01AcmeShConfig != nil:
 		p, err = mgr.unsafeAddProvider(internalCfg, payload.Dns01AcmeShConfig)
 
-	} else if payload.Dns01CloudflareConfig != nil {
+	case payload.Dns01CloudflareConfig != nil:
 		p, err = mgr.unsafeAddProvider(internalCfg, payload.Dns01CloudflareConfig)
 
-	} else if payload.Dns01GoAcmeConfig != nil {
+	case payload.Dns01GoAcmeConfig != nil:
 		p, err = mgr.unsafeAddProvider(internalCfg, payload.Dns01GoAcmeConfig)
 
-	} else if payload.DnsPersist01Manual != nil {
+	case payload.DnsPersist01Manual != nil:
 		p, err = mgr.unsafeAddProvider(internalCfg, payload.DnsPersist01Manual)
 
-	} else {
+	default:
 		mgr.logger.Error("new provider cfg missing, this error should never trigger though, report bug to developer")
 	}
 

@@ -18,5 +18,5 @@ func NameValid(name string) bool {
 	}
 
 	// validate (if this matches, it is INVALID)
-	return !(regexp.MustCompile(NameValidRegex).Match([]byte(name)))
+	return !(regexp.MustCompile(NameValidRegex).MatchString(name))
 }

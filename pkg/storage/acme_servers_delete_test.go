@@ -25,14 +25,14 @@ func TestServerInUse(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "serverinuse")
+	store, err := openStorageWithTestData(t, "serverinuse")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("server id: %d", tc.serverID), func(t *testing.T) {
-			inUse, err := storage.ServerInUse(tc.serverID)
+			inUse, err := store.ServerInUse(tc.serverID)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
@@ -61,24 +61,24 @@ func TestDeleteServer(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "deleteserver")
+	store, err := openStorageWithTestData(t, "deleteserver")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("server id: %d", tc.serverID), func(t *testing.T) {
-			err := storage.DeleteServer(tc.serverID)
+			err := store.DeleteServer(tc.serverID)
 			if !helpers_test.ErrorsIs(err, tc.expectedDelErr) {
 				t.Errorf("expected delete error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedDelErr), helpers_test.ErrorToVal(err))
 			}
 
-			server, err := storage.GetOneServerById(tc.serverID)
+			server, err := store.GetOneServerById(tc.serverID)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeServer(t, server, tc.expectedGetResult)
+			compareAcmeServer(t, &server, &tc.expectedGetResult)
 		})
 	}
 }

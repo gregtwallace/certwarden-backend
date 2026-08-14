@@ -32,7 +32,7 @@ type postProcessClientPayload struct {
 
 // doClientPostProcess sends a data payload to the client located
 // at certificate's CN, using the encryption key specified on certificate
-func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
+func (j *postProcessJob) doClientPostProcess(order *Order, workerID int) {
 	// no-op if no client key
 	if order.Certificate.PostProcessingClientKeyB64 == "" || order.Certificate.PostProcessingClientAddress == "" {
 		j.service.logger.Debugf("orders: post processing worker %d: order %d: skipping client notify (cert does not have a client address and/or client key) (cert: %d, cn: %s, addr: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
@@ -66,13 +66,13 @@ func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
 	}
 
 	// make AES-GCM for encrypting
-	aes, err := aes.NewCipher(aesKey)
+	aesCipher, err := aes.NewCipher(aesKey)
 	if err != nil {
 		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to make cipher (%s) (cert: %d, cn: %s, addr: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
 		return
 	}
 
-	gcm, err := cipher.NewGCM(aes)
+	gcm, err := cipher.NewGCM(aesCipher)
 	if err != nil {
 		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to make gcm AEAD (%s) (cert: %d, cn: %s, addr: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
 		return

@@ -6,7 +6,7 @@ import (
 )
 
 // PutAcmeAccountUpdate updates details about an acme account
-func (store *Storage) PutAcmeAccountUpdate(payload acme_accounts.UpdatePayload) (acme_accounts.Account, error) {
+func (store *Storage) PutAcmeAccountUpdate(payload *acme_accounts.UpdatePayload) (acme_accounts.Account, error) {
 	// database update
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()

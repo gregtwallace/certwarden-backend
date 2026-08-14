@@ -285,26 +285,26 @@ func TestPutDetailsCert(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putcertupdate")
+	store, err := openStorageWithTestData(t, "putcertupdate")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
-			c, err := storage.PutCertUpdate(tc.payload)
+			c, err := store.PutCertUpdate(tc.payload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, c, tc.expectedPutResult)
+			compareCertificate(t, &c, &tc.expectedPutResult)
 
-			c, err = storage.GetOneCertById(tc.getId)
+			c, err = store.GetOneCertById(tc.getId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, c, tc.expectedGetResult)
+			compareCertificate(t, &c, &tc.expectedGetResult)
 		})
 	}
 }
@@ -416,24 +416,24 @@ func TestPutCertApiKey(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putcertapikey")
+	store, err := openStorageWithTestData(t, "putcertapikey")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.certId), func(t *testing.T) {
-			err := storage.PutCertApiKey(tc.certId, tc.apiKey, tc.updateTime)
+			err := store.PutCertApiKey(tc.certId, tc.apiKey, tc.updateTime)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put cert api key error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			cert, err := storage.GetOneCertById(tc.certId)
+			cert, err := store.GetOneCertById(tc.certId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get cert error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, cert, tc.expectedCert)
+			compareCertificate(t, &cert, &tc.expectedCert)
 		})
 	}
 }
@@ -545,24 +545,24 @@ func TestCertApiKeyNew(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putkeyapikeynew")
+	store, err := openStorageWithTestData(t, "putkeyapikeynew")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.certId), func(t *testing.T) {
-			err := storage.PutCertApiKeyNew(tc.certId, tc.apiKeyNew, tc.updatedAt)
+			err := store.PutCertApiKeyNew(tc.certId, tc.apiKeyNew, tc.updatedAt)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected apikeynew put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			cert, err := storage.GetOneCertById(tc.certId)
+			cert, err := store.GetOneCertById(tc.certId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected cert get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, cert, tc.expectedCert)
+			compareCertificate(t, &cert, &tc.expectedCert)
 		})
 	}
 
@@ -679,24 +679,24 @@ func TestPutCertUpdatedAt(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putcertupdatedat")
+	store, err := openStorageWithTestData(t, "putcertupdatedat")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.certId), func(t *testing.T) {
-			err := storage.PutCertUpdatedAt(tc.certId, tc.updatedAt)
+			err := store.PutCertUpdatedAt(tc.certId, tc.updatedAt)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			record, err := storage.GetOneCertById(tc.certId)
+			record, err := store.GetOneCertById(tc.certId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, record, tc.expectedCert)
+			compareCertificate(t, &record, &tc.expectedCert)
 		})
 	}
 
@@ -774,24 +774,24 @@ func TestPutCertClientKey(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putcertclientkey")
+	store, err := openStorageWithTestData(t, "putcertclientkey")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.certId), func(t *testing.T) {
-			err := storage.PutCertClientKey(tc.certId, tc.newKey, tc.updatedAt)
+			err := store.PutCertClientKey(tc.certId, tc.newKey, tc.updatedAt)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			record, err := storage.GetOneCertById(tc.certId)
+			record, err := store.GetOneCertById(tc.certId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, record, tc.expectedCert)
+			compareCertificate(t, &record, &tc.expectedCert)
 		})
 	}
 }
@@ -907,24 +907,24 @@ func TestPutCertLastAccess(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putcertlastaccess")
+	store, err := openStorageWithTestData(t, "putcertlastaccess")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.certId), func(t *testing.T) {
-			err := storage.PutCertLastAccess(tc.certId, tc.lastAccess)
+			err := store.PutCertLastAccess(tc.certId, tc.lastAccess)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			record, err := storage.GetOneCertById(tc.certId)
+			record, err := store.GetOneCertById(tc.certId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareCertificate(t, record, tc.expectedCert)
+			compareCertificate(t, &record, &tc.expectedCert)
 		})
 	}
 }

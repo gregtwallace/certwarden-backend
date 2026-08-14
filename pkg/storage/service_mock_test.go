@@ -55,7 +55,7 @@ func makeFakeApp(t *testing.T, appDataPath string) *fakeApp {
 
 // openStorageWithTestData makes a copy of the testing data db and then returns a storage service
 // that uses the copy; Cleanup() should be called at the end of the test
-func openStorageWithTestData(t *testing.T, testName string) (_ *storage.Storage, _ error) {
+func openStorageWithTestData(t *testing.T, testName string) (*storage.Storage, error) {
 	thisTestFolder := tempFileStorage + testName
 
 	// copy test data to temp appDataPath for tests to run
@@ -114,22 +114,22 @@ func openStorageWithTestData(t *testing.T, testName string) (_ *storage.Storage,
 
 	fakeApp := makeFakeApp(t, thisTestFolder)
 
-	storage, err := storage.OpenStorage(fakeApp)
+	store, err := storage.OpenStorage(fakeApp)
 	if err != nil {
 		return nil, err
 	}
 	t.Cleanup(func() {
-		err := storage.Close()
+		err := store.Close()
 		if err != nil {
 			t.Errorf("failed to close storage (%s)", err)
 		}
 	})
 
-	return storage, nil
+	return store, nil
 }
 
 // queryBuilderForTest generates a Query for use in tests
-func queryBuilderForTest(limit int, offset int, sortField string, sortAsc bool) pagination_sort.Query {
+func queryBuilderForTest(limit, offset int, sortField string, sortAsc bool) pagination_sort.Query {
 	sortDirText := "desc"
 	if sortAsc {
 		sortDirText = "asc"

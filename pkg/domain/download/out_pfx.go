@@ -21,12 +21,12 @@ type pfxPrivateCertificateChain orders.Order
 
 // pfxPrivateCertificateChain Output Methods
 
-func (pfxpcc pfxPrivateCertificateChain) FilenameNoExt() string {
+func (pfxpcc *pfxPrivateCertificateChain) FilenameNoExt() string {
 	return pfxpcc.Certificate.Name
 }
 
-func (pfxpcc pfxPrivateCertificateChain) Modtime() time.Time {
-	return orders.Order(pfxpcc).Modtime()
+func (pfxpcc *pfxPrivateCertificateChain) Modtime() time.Time {
+	return (*orders.Order)(pfxpcc).Modtime()
 }
 
 // keyPemToKey returns the private key from pemBytes
@@ -119,7 +119,7 @@ func certPemToCerts(certPem []byte) (cert *x509.Certificate, certChain []*x509.C
 // PfxContent returns the combined key + cert + chain pfx content; it accepts a bool
 // legacy3DES that when true uses the legacy 3DES encryption algorithm. This is needed
 // for compatibility with some older systems.
-func (pfxpcc pfxPrivateCertificateChain) PfxContent(legacy3DES bool) (pfxData []byte, err error) {
+func (pfxpcc *pfxPrivateCertificateChain) PfxContent(legacy3DES bool) (pfxData []byte, err error) {
 	// get private key
 	key, err := keyPemToKey([]byte(pfxpcc.FinalizedKey.PemContent()))
 	if err != nil {
@@ -127,7 +127,7 @@ func (pfxpcc pfxPrivateCertificateChain) PfxContent(legacy3DES bool) (pfxData []
 	}
 
 	// get cert and chain (if there is a chain)
-	cert, certChain, err := certPemToCerts([]byte(orders.Order(pfxpcc).PemContent()))
+	cert, certChain, err := certPemToCerts([]byte((*orders.Order)(pfxpcc).PemContent()))
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (service *Service) DownloadPfxViaHeader(w http.ResponseWriter, r *http.Requ
 
 	// return pfx file to client
 	pfxPrivCert := pfxPrivateCertificateChain(order)
-	err := service.output.WritePfx(w, r, pfxPrivCert, legacy3DES)
+	err := service.output.WritePfx(w, r, &pfxPrivCert, legacy3DES)
 	if err != nil {
 		return output.ErrorJsonErrInternal(err)
 	}
@@ -200,7 +200,7 @@ func (service *Service) DownloadPfxViaUrl(w http.ResponseWriter, r *http.Request
 
 	// return pfx file to client
 	pfxPrivCert := pfxPrivateCertificateChain(order)
-	err := service.output.WritePfx(w, r, pfxPrivCert, legacy3DES)
+	err := service.output.WritePfx(w, r, &pfxPrivCert, legacy3DES)
 	if err != nil {
 		return output.ErrorJsonErrInternal(err)
 	}

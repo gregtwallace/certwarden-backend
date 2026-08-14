@@ -11,7 +11,7 @@ import (
 // getKey returns the private key if the apiKey matches
 // the requested key. It also checks the apiKeyViaUrl property if
 // the client is making a request with the apiKey in the Url.
-func (service *Service) getKey(keyName string, apiKey string, apiKeyViaUrl bool) (private_keys.Key, *output.JsonError) {
+func (service *Service) getKey(keyName, apiKey string, apiKeyViaUrl bool) (private_keys.Key, *output.JsonError) {
 	// if apiKey is blank, definitely unauthorized
 	if apiKey == "" {
 		service.logger.Debug(errBlankApiKey)

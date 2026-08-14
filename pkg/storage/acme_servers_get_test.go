@@ -66,14 +66,14 @@ func TestGetAllAcmeServers(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getallacmeservers")
+	store, err := openStorageWithTestData(t, "getallacmeservers")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedServerAtIndx.Name), func(t *testing.T) {
-			servers, totalCt, err := storage.GetAllAcmeServers(tc.q)
+			servers, totalCt, err := store.GetAllAcmeServers(tc.q)
 			if err != nil {
 				t.Errorf("get all failed")
 				return
@@ -86,7 +86,7 @@ func TestGetAllAcmeServers(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(servers))
 			}
 			if tc.testIndx <= len(servers)-1 {
-				compareAcmeServer(t, servers[tc.testIndx], tc.expectedServerAtIndx)
+				compareAcmeServer(t, &servers[tc.testIndx], &tc.expectedServerAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(servers))
 			}
@@ -108,19 +108,19 @@ func TestGetOneServerById(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getoneserverbyid")
+	store, err := openStorageWithTestData(t, "getoneserverbyid")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
-			serv, err := storage.GetOneServerById(tc.id)
+			serv, err := store.GetOneServerById(tc.id)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeServer(t, serv, tc.expectedServer)
+			compareAcmeServer(t, &serv, &tc.expectedServer)
 		})
 	}
 }
@@ -139,19 +139,19 @@ func TestGetOneServerByName(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getoneserverbyname")
+	store, err := openStorageWithTestData(t, "getoneserverbyname")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
-			serv, err := storage.GetOneServerByName(tc.name)
+			serv, err := store.GetOneServerByName(tc.name)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeServer(t, serv, tc.expectedServer)
+			compareAcmeServer(t, &serv, &tc.expectedServer)
 		})
 	}
 }

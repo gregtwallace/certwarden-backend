@@ -29,7 +29,7 @@ type NewOrderAcmePayload struct {
 
 // newOrderAcmePayload makes a OrderAcmePayload using the specified certificate
 // and acme.Response
-func makeNewOrderAcmePayload(cert certificates.Certificate, acmeResponse acme.Order) NewOrderAcmePayload {
+func makeNewOrderAcmePayload(cert *certificates.Certificate, acmeResponse *acme.Order) NewOrderAcmePayload {
 	acmeErr, err := acmeResponse.Error.MarshalledString()
 	if err != nil {
 		acmeErr = nil
@@ -69,13 +69,13 @@ type UpdateAcmeOrderPayload struct {
 }
 
 // makeUpdateOrderAcmePayload makes the UpdateAcmeOrderPayload using a new payload and the orderId
-func makeUpdateOrderAcmePayload(orderId int, acmeResponse acme.Order) UpdateAcmeOrderPayload {
+func makeUpdateOrderAcmePayload(orderId int, acmeResponse *acme.Order) *UpdateAcmeOrderPayload {
 	acmeErr, err := acmeResponse.Error.MarshalledString()
 	if err != nil {
 		acmeErr = nil
 	}
 
-	return UpdateAcmeOrderPayload{
+	return &UpdateAcmeOrderPayload{
 		Status:         acmeResponse.Status,
 		Expires:        acmeResponse.Expires,
 		DnsIds:         acmeResponse.Identifiers.DnsIdentifiers(),

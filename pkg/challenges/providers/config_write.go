@@ -199,7 +199,7 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 	}
 
 	// Write new config to file
-	err = os.WriteFile(mgr.configFile, newCfg, 0600)
+	err = os.WriteFile(mgr.configFile, newCfg, 0o600)
 	if err != nil {
 		return err
 	}

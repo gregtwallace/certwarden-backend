@@ -14,7 +14,7 @@ func TestMigrateDBFile1_MoveOldToNew(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to delete './test-data-old-1'")
 	}
-	err = os.Mkdir("./test-data-old-1", os.FileMode(0755))
+	err = os.Mkdir("./test-data-old-1", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
@@ -30,7 +30,7 @@ func TestMigrateDBFile1_MoveOldToNew(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to delete './test-data-1'")
 	}
-	err = os.Mkdir("./test-data-1", os.FileMode(0755))
+	err = os.Mkdir("./test-data-1", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test-data folder (%s)", err)
 	}
@@ -42,7 +42,7 @@ func TestMigrateDBFile1_MoveOldToNew(t *testing.T) {
 	})
 
 	// make fake "old" db file
-	err = os.WriteFile("./test-data-old-1/appdata.db", []byte{'a', 'b', 'd'}, os.FileMode(0755))
+	err = os.WriteFile("./test-data-old-1/appdata.db", []byte{'a', 'b', 'd'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test data file (%s)", err)
 	}
@@ -101,7 +101,7 @@ func TestMigrateDBFile4_Error2(t *testing.T) {
 		t.Errorf("failed to delete './test-data-old-4'")
 	}
 
-	err = os.Mkdir("./test-data-old-4", os.FileMode(0755))
+	err = os.Mkdir("./test-data-old-4", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
@@ -113,7 +113,7 @@ func TestMigrateDBFile4_Error2(t *testing.T) {
 	})
 
 	// make fake "old" db file
-	err = os.WriteFile("./test-data-old-4/appdata.db", []byte{'a', 'b', 'd'}, os.FileMode(0755))
+	err = os.WriteFile("./test-data-old-4/appdata.db", []byte{'a', 'b', 'd'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test data file (%s)", err)
 	}
@@ -136,7 +136,7 @@ func TestMigrateDBFile5_Error3(t *testing.T) {
 		t.Errorf("failed to delete './test-data-old-5'")
 	}
 
-	err = os.Mkdir("./test-data-old-5", os.FileMode(0755))
+	err = os.Mkdir("./test-data-old-5", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
@@ -148,7 +148,7 @@ func TestMigrateDBFile5_Error3(t *testing.T) {
 	})
 
 	// make fake "old" db file
-	err = os.WriteFile("./test-data-old-5/appdata.db", []byte{'a', 'b', 'd'}, os.FileMode(0755))
+	err = os.WriteFile("./test-data-old-5/appdata.db", []byte{'a', 'b', 'd'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test-data folder (%s)", err)
 	}
@@ -171,7 +171,7 @@ func TestMigrateDBFile6_Error4(t *testing.T) {
 		t.Errorf("failed to delete './test-data-old-6'")
 	}
 
-	err = os.Mkdir("./test-data-old-6", os.FileMode(0755))
+	err = os.Mkdir("./test-data-old-6", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
@@ -183,7 +183,7 @@ func TestMigrateDBFile6_Error4(t *testing.T) {
 	})
 
 	// make fake "old" db file
-	err = os.WriteFile("./test-data-old-6/appdata.db", []byte{'a', 'b', 'd'}, os.FileMode(0755))
+	err = os.WriteFile("./test-data-old-6/appdata.db", []byte{'a', 'b', 'd'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test-data folder (%s)", err)
 	}
@@ -194,7 +194,7 @@ func TestMigrateDBFile6_Error4(t *testing.T) {
 		t.Errorf("failed to delete './test-data-6'")
 	}
 
-	err = os.Mkdir("./test-data-6", os.FileMode(0755))
+	err = os.Mkdir("./test-data-6", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
@@ -206,7 +206,7 @@ func TestMigrateDBFile6_Error4(t *testing.T) {
 	})
 
 	// make fake "new" db file
-	err = os.WriteFile("./test-data-6/appdata.db", []byte{'1', '2', '4'}, os.FileMode(0755))
+	err = os.WriteFile("./test-data-6/appdata.db", []byte{'1', '2', '4'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test-data folder (%s)", err)
 	}

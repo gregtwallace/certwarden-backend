@@ -144,7 +144,7 @@ func (account *Account) AcmeAccountKey() (acmeAcctKey acme.AccountKey, err error
 
 // newAccountPayload() generates the payload for ACME to post to the
 // new-account endpoint
-func (account *Account) newAccountPayload(eabKid string, eabHmacKey string, overrideEmail *string) acme.NewAccountPayload {
+func (account *Account) newAccountPayload(eabKid, eabHmacKey string, overrideEmail *string) acme.NewAccountPayload {
 	email := account.Email
 	if overrideEmail != nil {
 		email = *overrideEmail

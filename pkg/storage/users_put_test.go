@@ -66,14 +66,14 @@ func TestPutUserPasswordHash(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putuserpasswordhash")
+	store, err := openStorageWithTestData(t, "putuserpasswordhash")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.username), func(t *testing.T) {
-			userId, err := storage.PutUserPasswordHash(tc.username, tc.newPasswordHash, tc.updatedAt)
+			userId, err := store.PutUserPasswordHash(tc.username, tc.newPasswordHash, tc.updatedAt)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put username passwordhash error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
@@ -82,12 +82,12 @@ func TestPutUserPasswordHash(t *testing.T) {
 				t.Errorf("expected put username passwordhash return val '%d' but got '%d'", tc.expectedPutId, userId)
 			}
 
-			user, err := storage.GetOneUserByUsername(tc.username)
+			user, err := store.GetOneUserByUsername(tc.username)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get username error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareUser(t, user, tc.expectedGetUser)
+			compareUser(t, &user, &tc.expectedGetUser)
 		})
 	}
 }

@@ -29,7 +29,7 @@ func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *http.Cl
 	}
 
 	// make sure there is at least one OCSPServer for leaf
-	if len(leafCert.OCSPServer) <= 0 {
+	if len(leafCert.OCSPServer) == 0 {
 		return nil, errOCSPStaplingNotAvailable
 	}
 
@@ -50,7 +50,7 @@ func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *http.Cl
 		// make request
 		var req *http.Request
 		reqURL := leafCert.OCSPServer[(serverIndex+i)%len(leafCert.OCSPServer)] + "/" + ocspReq
-		req, err = http.NewRequest(http.MethodGet, reqURL, nil)
+		req, err = http.NewRequest(http.MethodGet, reqURL, http.NoBody)
 		if err != nil {
 			// this loop iteration failed
 			continue
@@ -61,17 +61,17 @@ func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *http.Cl
 		req.Header.Set("Accept", "application/ocsp-response")
 
 		// do request
-		var resp *http.Response
-		resp, err = httpClient.Do(req)
+		var response *http.Response
+		response, err = httpClient.Do(req)
 		if err != nil {
 			// this loop iteration failed
 			continue
 		}
-		defer resp.Body.Close()
+		defer response.Body.Close()
 
 		// read and parse
 		var respBody []byte
-		respBody, err = io.ReadAll(resp.Body)
+		respBody, err = io.ReadAll(response.Body)
 		if err != nil {
 			// this loop iteration failed
 			continue
@@ -124,7 +124,7 @@ func (sc *SafeCert) startOCSPManagement() {
 	}
 
 	// make sure there is at least one OCSPServer for leaf
-	if len(sc.leafCert.OCSPServer) <= 0 {
+	if len(sc.leafCert.OCSPServer) == 0 {
 		return
 	}
 

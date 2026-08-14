@@ -9,7 +9,7 @@ import (
 
 // UpdateOrderAcme updates the specified order ID with acme.Order response
 // data
-func (store *Storage) PutOrderAcme(payload orders.UpdateAcmeOrderPayload) (err error) {
+func (store *Storage) PutOrderAcme(payload *orders.UpdateAcmeOrderPayload) (err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -120,7 +120,7 @@ func (store *Storage) PutOrderInvalid(orderId int) (err error) {
 }
 
 // UpdateFinalizedKey updates the specified order ID with key id
-func (store *Storage) UpdateFinalizedKey(orderId int, keyId int) (err error) {
+func (store *Storage) UpdateFinalizedKey(orderId, keyId int) (err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 

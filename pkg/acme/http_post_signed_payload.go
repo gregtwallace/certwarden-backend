@@ -11,7 +11,6 @@ import (
 	"crypto/sha512"
 	"encoding/json"
 	"errors"
-	"strings"
 )
 
 // acmeSignedMessage contains the unencoded structure of an ACME Message
@@ -85,7 +84,7 @@ func (asm *acmeSignedMessage) setNonceAndSign(nonce string, accountKey AccountKe
 		}
 	}
 
-	dataToSign := []byte(strings.Join([]string{encodedHeader, encodedPayload}, "."))
+	dataToSign := []byte(encodedHeader + "." + encodedPayload)
 
 	// sign appropriately based on key type
 	switch key := accountKey.Key.(type) {
@@ -172,11 +171,11 @@ func (asm *acmeSignedMessage) setNonceAndSign(nonce string, accountKey AccountKe
 
 // makeAcmeSignedMessage creates an acmeSignedMessage struct which is mostly unencoded
 // for logging. Encoding for the HTTP body is performed in a different function.
-func makeAcmeSignedMessage(payload any, nonce string, url string, accountKey AccountKey) (*acmeSignedMessage, error) {
+func makeAcmeSignedMessage(payload any, nonce, url string, accountKey AccountKey) (*acmeSignedMessage, error) {
 	msg := new(acmeSignedMessage)
 	var err error
 
-	// ProtectedHeader
+	// ProtectedHeader section
 	// alg
 	switch privateKey := accountKey.Key.(type) {
 	case *rsa.PrivateKey:
@@ -210,7 +209,7 @@ func makeAcmeSignedMessage(payload any, nonce string, url string, accountKey Acc
 		if err != nil {
 			return nil, err
 		}
-		// msg.ProtectedHeader.KeyId = ""
+		// implicitly the keyId is empty: msg.ProtectedHeader.KeyId = ""
 	}
 
 	// nonce
@@ -219,10 +218,10 @@ func makeAcmeSignedMessage(payload any, nonce string, url string, accountKey Acc
 	// url
 	msg.ProtectedHeader.Url = url
 
-	// Payload
+	// Payload section
 	msg.Payload = payload
 
-	// Signature
+	// Signature section
 	err = msg.setNonceAndSign(nonce, accountKey)
 	if err != nil {
 		return nil, err

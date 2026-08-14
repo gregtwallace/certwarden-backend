@@ -179,26 +179,26 @@ red-58
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putkeyupdate")
+	store, err := openStorageWithTestData(t, "putkeyupdate")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
-			key, err := storage.PutKeyUpdate(tc.payload)
+			key, err := store.PutKeyUpdate(tc.payload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, key, tc.expectedPutResult)
+			compareKey(t, &key, &tc.expectedPutResult)
 
-			key, err = storage.GetOneKeyById(tc.getId)
+			key, err = store.GetOneKeyById(tc.getId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, key, tc.expectedGetResult)
+			compareKey(t, &key, &tc.expectedGetResult)
 		})
 	}
 }
@@ -281,24 +281,24 @@ red-62
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putkeyapikey")
+	store, err := openStorageWithTestData(t, "putkeyapikey")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
-			err := storage.PutKeyApiKey(tc.keyId, tc.apiKey, tc.updatedAt)
+			err := store.PutKeyApiKey(tc.keyId, tc.apiKey, tc.updatedAt)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			key, err := storage.GetOneKeyById(tc.keyId)
+			key, err := store.GetOneKeyById(tc.keyId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, key, tc.expectedKey)
+			compareKey(t, &key, &tc.expectedKey)
 		})
 	}
 }
@@ -381,24 +381,24 @@ red-67
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putkeyapikeynew")
+	store, err := openStorageWithTestData(t, "putkeyapikeynew")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
-			err := storage.PutKeyApiKeyNew(tc.keyId, tc.apiKeyNew, tc.updatedAt)
+			err := store.PutKeyApiKeyNew(tc.keyId, tc.apiKeyNew, tc.updatedAt)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			key, err := storage.GetOneKeyById(tc.keyId)
+			key, err := store.GetOneKeyById(tc.keyId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, key, tc.expectedKey)
+			compareKey(t, &key, &tc.expectedKey)
 		})
 	}
 }
@@ -499,24 +499,24 @@ red-62
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putkeylastaccess")
+	store, err := openStorageWithTestData(t, "putkeylastaccess")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
-			err := storage.PutKeyLastAccess(tc.keyId, tc.lastAccess)
+			err := store.PutKeyLastAccess(tc.keyId, tc.lastAccess)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			key, err := storage.GetOneKeyById(tc.keyId)
+			key, err := store.GetOneKeyById(tc.keyId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, key, tc.expectedKey)
+			compareKey(t, &key, &tc.expectedKey)
 		})
 	}
 }

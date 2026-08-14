@@ -238,26 +238,26 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putacmeacctupdate")
+	store, err := openStorageWithTestData(t, "putacmeacctupdate")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
-			acct, err := storage.PutAcmeAccountUpdate(tc.payload)
+			acct, err := store.PutAcmeAccountUpdate(&tc.payload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, acct, tc.expectedPutResult)
+			compareAcmeAccount(t, &acct, &tc.expectedPutResult)
 
-			acct, err = storage.GetOneAcmeAccountById(tc.getId)
+			acct, err = store.GetOneAcmeAccountById(tc.getId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, acct, tc.expectedGetResult)
+			compareAcmeAccount(t, &acct, &tc.expectedGetResult)
 		})
 	}
 }
@@ -368,26 +368,26 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putacmeacctnewkey")
+	store, err := openStorageWithTestData(t, "putacmeacctnewkey")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
-			acct, err := storage.PutAcmeAccountNewKey(tc.payload)
+			acct, err := store.PutAcmeAccountNewKey(tc.payload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, acct, tc.expectedPutResult)
+			compareAcmeAccount(t, &acct, &tc.expectedPutResult)
 
-			acct, err = storage.GetOneAcmeAccountById(tc.getId)
+			acct, err = store.GetOneAcmeAccountById(tc.getId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, acct, tc.expectedGetResult)
+			compareAcmeAccount(t, &acct, &tc.expectedGetResult)
 		})
 	}
 }

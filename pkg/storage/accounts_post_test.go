@@ -99,26 +99,26 @@ func TestPostNewAcmeAccount(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "postnewaccount")
+	store, err := openStorageWithTestData(t, "postnewaccount")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
-			acct, err := storage.PostNewAcmeAccount(tc.newPayload)
+			acct, err := store.PostNewAcmeAccount(tc.newPayload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
 				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, acct, tc.expectedNew)
+			compareAcmeAccount(t, &acct, &tc.expectedNew)
 
-			acct, err = storage.GetOneAcmeAccountByName(acct.Name)
+			acct, err = store.GetOneAcmeAccountByName(acct.Name)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, acct, tc.expectedNew)
+			compareAcmeAccount(t, &acct, &tc.expectedNew)
 		})
 	}
 }

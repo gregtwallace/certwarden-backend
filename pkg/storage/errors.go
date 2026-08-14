@@ -13,6 +13,6 @@ var (
 	ErrWrongUpdateRowCount = errors.New("wrong record update row count")
 )
 
-func errorWrongUpdateRowCount(expected int64, got int64) error {
+func errorWrongUpdateRowCount(expected, got int64) error {
 	return fmt.Errorf("%w (expected: '%d', got: '%d')", ErrWrongUpdateRowCount, expected, got)
 }

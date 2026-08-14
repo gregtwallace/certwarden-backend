@@ -105,7 +105,7 @@ func (service *Service) writeAliasConfig() error {
 	}
 
 	// Write new config to file
-	err = os.WriteFile(service.configFile, newCfg, 0600)
+	err = os.WriteFile(service.configFile, newCfg, 0o600)
 	if err != nil {
 		return err
 	}

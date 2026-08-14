@@ -29,14 +29,14 @@ func TestAcmeAccountInUse(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "acmeaccountinuse")
+	store, err := openStorageWithTestData(t, "acmeaccountinuse")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.acctID), func(t *testing.T) {
-			inUse, err := storage.AcmeAccountInUse(tc.acctID)
+			inUse, err := store.AcmeAccountInUse(tc.acctID)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
@@ -65,24 +65,24 @@ func TestDeleteAcmeAccount(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "deleteacmeaccount")
+	store, err := openStorageWithTestData(t, "deleteacmeaccount")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.acctID), func(t *testing.T) {
-			err := storage.DeleteAcmeAccount(tc.acctID)
+			err := store.DeleteAcmeAccount(tc.acctID)
 			if !helpers_test.ErrorsIs(err, tc.expectedDelErr) {
 				t.Errorf("expected delete error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedDelErr), helpers_test.ErrorToVal(err))
 			}
 
-			acct, err := storage.GetOneAcmeAccountById(tc.acctID)
+			acct, err := store.GetOneAcmeAccountById(tc.acctID)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, acct, tc.expectedGetResult)
+			compareAcmeAccount(t, &acct, &tc.expectedGetResult)
 		})
 	}
 }

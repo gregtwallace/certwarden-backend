@@ -23,6 +23,8 @@ linters:
     - gochecknoinits
     - gochecksumtype
     # - gocognit #TODO: enable
+    # - goconst #TODO: enable
+    - gocritic
 
 
   settings:
@@ -76,6 +78,17 @@ linters:
 
     # gocognit:
     #   min-complexity: 15 #TODO: set to 15
+
+    gocritic:
+      enable-all: true
+      disabled-checks:
+      # TODO: Enable and address these
+        - hugeParam
+        - rangeValCopy
+        - deferInLoop
+        - ifElseChain
+        - filepathJoin
+        - exitAfterDefer
 
   exclusions:
     rules:

@@ -71,7 +71,7 @@ func (sm *SafeMap[V]) CopyToMap(dst map[string]V) {
 // Add creates the named key and inserts the specified value.
 // If the key already exists, true and the existing value are
 // returned instead.
-func (sm *SafeMap[V]) Add(key string, value V) (bool, V) {
+func (sm *SafeMap[V]) Add(key string, value V) (exists bool, existingValue V) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 

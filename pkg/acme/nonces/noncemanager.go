@@ -25,15 +25,14 @@ type Manager struct {
 
 // NewManager creates a new nonce manager
 func NewManager(client *http.Client, shutdownCtx context.Context, nonceUrl *string) *Manager {
-	manager := new(Manager)
+	// Note: nonceUrl must be a pointer so directory updates are reflected in Manager
 
-	manager.httpClient = client
-	manager.shutdownContext = shutdownCtx
-
-	manager.newNonceUrl = nonceUrl
-	manager.nonces = ringbuffer.NewRingBuffer[string](bufferSize)
-
-	return manager
+	return &Manager{
+		httpClient:      client,
+		shutdownContext: shutdownCtx,
+		newNonceUrl:     nonceUrl,
+		nonces:          ringbuffer.NewRingBuffer[string](bufferSize),
+	}
 }
 
 // fetchNonce gets a nonce from the manager's newNonceUrl
@@ -42,14 +41,18 @@ func NewManager(client *http.Client, shutdownCtx context.Context, nonceUrl *stri
 func (manager *Manager) fetchNonce() (string, error) {
 	// if this fails for some reason, give a sane amount of retries
 	// dont bother getting fancy with exponential backoff, just fail if not resolved relatively quickly
-	maxRetries := 5
-	defaultWait := 1 * time.Minute
-	nonce := ""
+	const maxRetries = 5
 
-	for range maxRetries {
+	// use separate function to ensure proper resource release timing
+	tryGetNonce := func() (nonc string, tilNext time.Duration) {
+		// default wait time til next try
+		const defaultWait = 1 * time.Second
+		defaultTilNext := defaultWait + time.Duration(randomness.GenerateInsecureInt(30))
+
 		response, err := manager.httpClient.Head(*manager.newNonceUrl)
 		if err != nil {
-			return "", err
+			// request failed, return default wait
+			return "", defaultTilNext
 		}
 		defer response.Body.Close()
 
@@ -59,35 +62,45 @@ func (manager *Manager) fetchNonce() (string, error) {
 		//nolint:errcheck // don't care about errors since we're discarding
 		io.Copy(io.Discard, response.Body)
 
-		// verify we got a nonce and break if so
-		nonce = response.Header.Get("Replay-Nonce")
-		if nonce != "" {
-			break
+		// done if got nonce
+		nonc = response.Header.Get("Replay-Nonce")
+		if nonc != "" {
+			return nonc, 0
 		}
 
-		// no valid nonce value, delay and retry (add semi-random amount of waiting to default)
-		wait := defaultWait + time.Duration(randomness.GenerateInsecureInt(30))
+		// request did something; try to get a valid Retry-After value
 
-		// check for and use Retry-After if the server sent one
+		// no header? use default
 		retryAfter := response.Header.Get("Retry-After")
-		if retryAfter != "" {
-			// check if header was in seconds and ensure > 0
-			secs, err := strconv.Atoi(retryAfter)
-			if err == nil && secs > 0 {
-				wait = time.Duration(secs) * time.Second
-			} else {
-				// wasn't in seconds, try to parse date and ensure > 0
-				t, err := http.ParseTime(retryAfter)
-				if err == nil {
-					tempWait := time.Until(t)
-					if tempWait > 0 {
-						wait = tempWait
-					}
-				}
+		if retryAfter == "" {
+			return "", defaultTilNext
+		}
+
+		// check if header was in seconds and ensure > 0
+		secs, err := strconv.Atoi(retryAfter)
+		if err == nil && secs > 0 {
+			return "", time.Duration(secs) * time.Second
+		}
+
+		// seconds didnt work, try to parse date and ensure > 0
+		t, err := http.ParseTime(retryAfter)
+		if err == nil {
+			until := time.Until(t)
+			if until > 0 {
+				return "", until
 			}
 		}
-		// dont log or fail if header was missing or didn't parse, just use the default wait
 
+		// nothing worked, use default
+		return "", defaultTilNext
+	}
+
+	// first wait is 0
+	var nonce string
+	var wait time.Duration
+
+	// retry loop
+	for range maxRetries {
 		// do the waiting
 		select {
 		case <-manager.shutdownContext.Done():
@@ -97,13 +110,15 @@ func (manager *Manager) fetchNonce() (string, error) {
 		case <-time.After(wait):
 			// do the waiting then proceed to next
 		}
+
+		nonce, wait = tryGetNonce()
+		// success?
+		if nonce != "" {
+			return nonce, nil
+		}
 	}
 
-	if nonce == "" {
-		return "", errors.New("nonce manager: failed to fetch nonce from acme server (exhausted retries)")
-	}
-
-	return nonce, nil
+	return "", errors.New("nonce manager: failed to fetch nonce from acme server (exhausted retries)")
 }
 
 // Nonce returns the oldest nonce from the nonce buffer.

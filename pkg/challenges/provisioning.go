@@ -14,7 +14,7 @@ func errShutdown(domain string) error {
 
 // provision filles the apiMu channel and provisions the resource using the provider. The channel is emptied a few
 // seconds after provisioning completes as a way to rate limit these calls.
-func (service *Service) provision(domain string, token string, keyAuth acme.KeyAuth, provider providers.Service) (err error) {
+func (service *Service) provision(domain, token string, keyAuth acme.KeyAuth, provider providers.Service) (err error) {
 	// impose rate limit
 	err = service.apiRateLimiter.Wait(service.shutdownContext)
 	if err != nil {
@@ -40,7 +40,7 @@ func (service *Service) provision(domain string, token string, keyAuth acme.KeyA
 
 // deprovision fills the apiMu channel and deprovisions the resource using the provider. The channel is emptied one
 // second after deprovisioning completes as a way to rate limit these calls.
-func (service *Service) deprovision(domain string, token string, keyAuth acme.KeyAuth, provider providers.Service) (err error) {
+func (service *Service) deprovision(domain, token string, keyAuth acme.KeyAuth, provider providers.Service) (err error) {
 	// impose rate limit, but use background context
 	// background context ensures we try to deprovision all records
 	err = service.apiRateLimiter.Wait(context.Background())

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func acmeAcctToUpdatePayload(acctId int, acmeAcct acme.Account) UpdatePayload {
+func acmeAcctToUpdatePayload(acctId int, acmeAcct acme.Account) *UpdatePayload {
 	// convert to email if the first contact is a valid `mailto:`,
 	// otherwise leave it blank but not null (i.e., update it to blank)
 	email := ""
@@ -14,7 +14,7 @@ func acmeAcctToUpdatePayload(acctId int, acmeAcct acme.Account) UpdatePayload {
 		email = strings.TrimPrefix(acmeAcct.Contact[0], "mailto:")
 	}
 
-	return UpdatePayload{
+	return &UpdatePayload{
 		ID:        acctId,
 		Status:    &acmeAcct.Status,
 		Email:     &email,

@@ -44,7 +44,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 		return output.ErrorJsonErrValidationFailed(err)
 	}
 
-	// validation
+	// validation -- begin
 	// name
 	if payload.Name == nil || !service.nameValid(*payload.Name, nil) {
 		service.logger.Debug(ErrNameBad)
@@ -85,7 +85,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 		service.logger.Debug(err)
 		return output.ErrorJsonErrValidationFailed(err)
 	}
-	// end validation
+	// validation -- end
 
 	// add additional details to the payload before saving
 	payload.Status = "unknown"

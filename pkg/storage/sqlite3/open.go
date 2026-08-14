@@ -13,7 +13,7 @@ import (
 )
 
 const dbFilename = "appdata.db"
-const dbFileMode = 0600
+const dbFileMode = 0o600
 
 var dbOptions = url.Values{
 	"_fk": []string{"true"}, // enforce foreign key constraints

@@ -86,7 +86,7 @@ func (service *Service) getAcmeDnsResource(domain string) (*acmeDnsResource, err
 
 // Provision updates the acme-dns resource corresponding to domain with
 // the new value calculated from keyAuth
-func (service *Service) Provision(domain string, _ string, keyAuth acme.KeyAuth) error {
+func (service *Service) Provision(domain, _ string, keyAuth acme.KeyAuth) error {
 	// get acme-dns resource
 	adr, err := service.getAcmeDnsResource(domain)
 	if err != nil {
@@ -108,7 +108,7 @@ func (service *Service) Provision(domain string, _ string, keyAuth acme.KeyAuth)
 // Derovision updates the acme-dns resource corresponding to domain with
 // a dummy value. This probably isn't really needed and this function could just
 // be an empty stub, but clearing the data doesn't hurt.
-func (service *Service) Deprovision(domain string, _ string, _ acme.KeyAuth) error {
+func (service *Service) Deprovision(domain, _ string, _ acme.KeyAuth) error {
 	// get acme-dns resource
 	adr, err := service.getAcmeDnsResource(domain)
 	if err != nil {

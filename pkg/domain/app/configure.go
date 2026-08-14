@@ -20,8 +20,8 @@ import (
 const configFile = "config.yaml"
 const configFilenameWithPath = dataStorageAppDataPath + "/" + configFile
 
-const configFolderMode = 0700
-const configFileMode = 0600
+const configFolderMode = 0o700
+const configFileMode = 0o600
 
 func (app *Application) GetConfigFilenameWithPath() string {
 	return configFilenameWithPath
