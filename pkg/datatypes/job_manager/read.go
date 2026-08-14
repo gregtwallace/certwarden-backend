@@ -44,8 +44,8 @@ func (mgr *Manager[V]) JobExists(job V) *int {
 		return nil
 	}
 
-	mgr.RLock()
-	defer mgr.RUnlock()
+	mgr.mu.RLock()
+	defer mgr.mu.RUnlock()
 
 	return mgr.unsafeJobExists(job)
 }
@@ -59,8 +59,8 @@ type AllManagerJobs[V Job[V]] struct {
 // AllCurrentJobs returns all of the jobs in manager. Jobs are separated by those
 // currently being worked on, and those waiting in the queue.
 func (mgr *Manager[V]) AllCurrentJobs() *AllManagerJobs[V] {
-	mgr.RLock()
-	defer mgr.RUnlock()
+	mgr.mu.RLock()
+	defer mgr.mu.RUnlock()
 
 	// working jobs
 	workingJobs := make(map[int]V)

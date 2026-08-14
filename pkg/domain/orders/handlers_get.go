@@ -15,6 +15,7 @@ import (
 // to answer a query for a portion of a cert's orders
 type allOrdersResponse struct {
 	output.JsonResponse
+
 	TotalOrders int                    `json:"total_records"`
 	Orders      []orderSummaryResponse `json:"orders"`
 }

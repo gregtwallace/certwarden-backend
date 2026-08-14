@@ -3,7 +3,11 @@ version: "2"
 linters:
   default: standard
   enable:
+    - bodyclose
+    - copyloopvar
     - depguard
+    - embeddedstructfieldcheck
+    # - err113
     - forbidigo
 
   settings:
@@ -18,6 +22,10 @@ linters:
               desc: use app struct logger instead
             - pkg: "log/slog$"
               desc: use app struct logger instead
+
+    embeddedstructfieldcheck:
+      empty-line: true
+      forbid-mutex: true
 
     errcheck:
       check-type-assertions: true

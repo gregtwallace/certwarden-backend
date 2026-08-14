@@ -9,6 +9,7 @@ import (
 // getNewVersionInfoResponse
 type getNewVersionInfoResponse struct {
 	output.JsonResponse
+
 	NewVersion struct {
 		LastCheckedUnixTime  int          `json:"last_checked_time"`
 		Available            bool         `json:"available"`

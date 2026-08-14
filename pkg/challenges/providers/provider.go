@@ -17,14 +17,16 @@ type Service interface {
 }
 
 // provider is the structure of a provider that is being managed
+// TODO: Separate json to a different struct?
 type provider struct {
+	Service `json:"-"`
+
 	ID                       int      `json:"id"`
 	Tag                      string   `json:"tag"`
 	Type                     string   `json:"type"`
 	Domains                  []string `json:"domains"`
 	PostProvisionWaitSeconds int      `json:"post_resource_provision_wait"`
 	Config                   any      `json:"config"`
-	Service                  `json:"-"`
 }
 
 // PostProvisionResourceWait returns a duration that should be slept after a resource is

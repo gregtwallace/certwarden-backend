@@ -14,6 +14,7 @@ import (
 // to answer a query for a portion of the ACME servers
 type acmeServersResponse struct {
 	output.JsonResponse
+
 	TotalServers int                     `json:"total_records"`
 	Servers      []ServerSummaryResponse `json:"acme_servers"`
 }
@@ -61,6 +62,7 @@ func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) *o
 
 type acmeServerResponse struct {
 	output.JsonResponse
+
 	Server serverDetailedResponse `json:"acme_server"`
 }
 

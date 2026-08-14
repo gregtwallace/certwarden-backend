@@ -41,6 +41,7 @@ const (
 // AuthResponse contains the JSON response for successful login or refresh
 type AuthResponse struct {
 	output.JsonResponse
+
 	Authorization *authorization `json:"authorization"`
 }
 

@@ -7,6 +7,7 @@ import (
 
 type backupFileListResponse struct {
 	output.JsonResponse
+
 	Config      *Config             `json:"config"`
 	BackupFiles []backupFileDetails `json:"backup_files"`
 }

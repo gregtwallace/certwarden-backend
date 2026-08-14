@@ -15,6 +15,7 @@ import (
 // to answer a query for a portion of the keys
 type allKeysResponse struct {
 	output.JsonResponse
+
 	TotalKeys int                  `json:"total_records"`
 	Keys      []KeySummaryResponse `json:"private_keys"`
 }
@@ -55,6 +56,7 @@ func (service *Service) GetAllKeys(w http.ResponseWriter, r *http.Request) *outp
 
 type privateKeyResponse struct {
 	output.JsonResponse
+
 	PrivateKey keyDetailedResponse `json:"private_key"`
 }
 
@@ -121,6 +123,7 @@ func (service *Service) DownloadOneKey(w http.ResponseWriter, r *http.Request) *
 // used to return info about valid options when making a new key
 type newKeyOptions struct {
 	output.JsonResponse
+
 	PrivateKeyOptions struct {
 		KeyAlgorithms []key_crypto.Algorithm `json:"key_algorithms"`
 	} `json:"private_key_options"`

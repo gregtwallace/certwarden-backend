@@ -51,6 +51,7 @@ func (key Key) SummaryResponse() KeySummaryResponse {
 // fields that can be returned as JSON
 type keyDetailedResponse struct {
 	KeySummaryResponse
+
 	ApiKey    string `json:"api_key"`
 	ApiKeyNew string `json:"api_key_new,omitempty"`
 	CreatedAt int64  `json:"created_at"`

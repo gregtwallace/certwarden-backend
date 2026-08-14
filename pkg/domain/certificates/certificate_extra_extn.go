@@ -15,6 +15,7 @@ import (
 // a description
 type CertExtension struct {
 	pkix.Extension
+
 	Description string
 }
 

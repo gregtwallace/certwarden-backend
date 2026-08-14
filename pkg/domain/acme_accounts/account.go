@@ -76,6 +76,7 @@ func (acct Account) SummaryResponse() AccountSummaryResponse {
 // fields that can be returned as JSON
 type accountDetailedResponse struct {
 	AccountSummaryResponse
+
 	AcmeServer accountServerDetailedResponse `json:"acme_server"`
 	AccountKey accountKeyDetailedResponse    `json:"private_key"`
 	CreatedAt  int64                         `json:"created_at"`
@@ -84,6 +85,7 @@ type accountDetailedResponse struct {
 
 type accountServerDetailedResponse struct {
 	accountServerSummaryResponse
+
 	// from remote server
 	ExternalAccountRequired bool   `json:"external_account_required"`
 	TermsOfService          string `json:"terms_of_service"`
@@ -91,6 +93,7 @@ type accountServerDetailedResponse struct {
 
 type accountKeyDetailedResponse struct {
 	accountKeySummaryResponse
+
 	Algorithm key_crypto.Algorithm `json:"algorithm"`
 }
 

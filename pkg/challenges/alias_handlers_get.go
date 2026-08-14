@@ -7,6 +7,7 @@ import (
 
 type domainAliasesResponse struct {
 	output.JsonResponse
+
 	DomainAliases []domainAliasJson `json:"domain_aliases"`
 }
 

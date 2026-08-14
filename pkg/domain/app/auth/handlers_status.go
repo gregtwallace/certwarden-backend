@@ -9,6 +9,7 @@ import (
 // frontend / client can determine appropriate login method(s)
 type statusResponse struct {
 	output.JsonResponse
+
 	AuthorizationStatus struct {
 		Local struct {
 			Enabled bool `json:"enabled"`

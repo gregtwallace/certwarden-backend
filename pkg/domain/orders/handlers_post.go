@@ -14,6 +14,7 @@ import (
 
 type orderResponse struct {
 	output.JsonResponse
+
 	Order orderSummaryResponse `json:"order"`
 }
 

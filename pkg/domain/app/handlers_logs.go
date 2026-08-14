@@ -29,6 +29,7 @@ type logEntry struct {
 
 type currentLogResponse struct {
 	output.JsonResponse
+
 	LogEntries []logEntry `json:"log_entries"`
 }
 

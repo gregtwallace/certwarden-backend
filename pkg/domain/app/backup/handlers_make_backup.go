@@ -8,6 +8,7 @@ import (
 
 type backupFileMakeResponse struct {
 	output.JsonResponse
+
 	BackupFile backupFileDetails `json:"backup_file"`
 }
 

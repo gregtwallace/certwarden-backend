@@ -23,7 +23,8 @@ type SafeCert struct {
 	shutdownWg  *sync.WaitGroup
 	shutdownCtx context.Context
 	httpClient  *http.Client
-	sync.RWMutex
+
+	mu sync.RWMutex
 }
 
 // NewSafeCert returns a new SafeCert and also starts a routine to manage the
@@ -47,8 +48,8 @@ func (sc *SafeCert) TlsCertFunc() func(*tls.ClientHelloInfo) (*tls.Certificate, 
 
 // Read returns the current tls certificate
 func (sc *SafeCert) Read() *tls.Certificate {
-	sc.RLock()
-	defer sc.RUnlock()
+	sc.mu.RLock()
+	defer sc.mu.RUnlock()
 
 	// while this is a "write", ocspResp isn't written without Write lock,
 	// thus this will never cause an issue; that is, ocspResp is static here
@@ -63,8 +64,8 @@ func (sc *SafeCert) Read() *tls.Certificate {
 
 // Update updates the certificate with the specified cert
 func (sc *SafeCert) Update(tlsCert *tls.Certificate) {
-	sc.Lock()
-	defer sc.Unlock()
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
 
 	// set new cert & stop any previous OCSP routine
 	sc.cert = tlsCert

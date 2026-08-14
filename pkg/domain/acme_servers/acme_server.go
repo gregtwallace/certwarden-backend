@@ -68,6 +68,7 @@ func (serv Server) summaryResponse(service *Service) (ServerSummaryResponse, err
 // serverDetailedResponse contains full details about an ACME server
 type serverDetailedResponse struct {
 	ServerSummaryResponse
+
 	RawDirResp json.RawMessage `json:"raw_directory_response"`
 	CreatedAt  int64           `json:"created_at"`
 	UpdatedAt  int64           `json:"updated_at"`

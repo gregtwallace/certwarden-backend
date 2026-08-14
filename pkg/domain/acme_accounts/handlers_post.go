@@ -131,6 +131,7 @@ type postAsGetPayload struct {
 
 type postAsGetResponse struct {
 	output.JsonResponse
+
 	URL    string      `json:"url"`
 	Body   string      `json:"body"`
 	Header http.Header `json:"headers"`

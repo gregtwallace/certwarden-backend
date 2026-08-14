@@ -4,7 +4,7 @@ package job_manager
 // job
 func (mgr *Manager[V]) doJob(job V, workerID int) {
 	// move job from waiting to working
-	mgr.Lock()
+	mgr.mu.Lock()
 	for i, waitingJ := range mgr.waitingJobs {
 		if waitingJ.Equal(job) {
 			// remove from waiting
@@ -16,14 +16,14 @@ func (mgr *Manager[V]) doJob(job V, workerID int) {
 		}
 
 	}
-	mgr.Unlock()
+	mgr.mu.Unlock()
 
 	// run job
 	job.Do(workerID)
 
 	// after job completes, remove it from worker
-	mgr.Lock()
+	mgr.mu.Lock()
 	var zeroVal V
 	mgr.workingJobs[workerID] = zeroVal
-	mgr.Unlock()
+	mgr.mu.Unlock()
 }

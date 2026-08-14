@@ -98,6 +98,7 @@ func (cert Certificate) summaryResponse() certificateSummaryResponse {
 // fields that can be returned as JSON
 type certificateDetailedResponse struct {
 	certificateSummaryResponse
+
 	Organization                string          `json:"organization"`
 	OrganizationalUnit          string          `json:"organizational_unit"`
 	Country                     string          `json:"country"`

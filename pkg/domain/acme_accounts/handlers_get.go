@@ -17,6 +17,7 @@ import (
 // to answer a query for a portion of the accounts
 type accountsResponse struct {
 	output.JsonResponse
+
 	TotalAccounts int                      `json:"total_records"`
 	Accounts      []AccountSummaryResponse `json:"acme_accounts"`
 }
@@ -57,6 +58,7 @@ func (service *Service) GetAllAccounts(w http.ResponseWriter, r *http.Request) *
 
 type accountResponse struct {
 	output.JsonResponse
+
 	Account accountDetailedResponse `json:"acme_account"`
 }
 
@@ -109,6 +111,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) *o
 // used to return info about valid options when making a new account
 type newAccountOptions struct {
 	output.JsonResponse
+
 	AcmeAccountOptions struct {
 		AcmeServers   []acme_servers.ServerSummaryResponse `json:"acme_servers"`
 		AvailableKeys []private_keys.KeySummaryResponse    `json:"private_keys"`

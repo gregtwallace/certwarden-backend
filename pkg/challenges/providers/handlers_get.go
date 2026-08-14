@@ -10,6 +10,7 @@ import (
 
 type providersResponse struct {
 	output.JsonResponse
+
 	Providers []provider `json:"providers"`
 }
 
@@ -73,6 +74,7 @@ func (mgr *Manager) GetAllProviders(w http.ResponseWriter, r *http.Request) *out
 
 type providerResponse struct {
 	output.JsonResponse
+
 	Provider *provider `json:"provider"`
 }
 

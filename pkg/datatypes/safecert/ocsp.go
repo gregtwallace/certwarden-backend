@@ -149,7 +149,7 @@ func (sc *SafeCert) startOCSPManagement() {
 			// need write lock for OCSP updates
 			// Note: This will block until the original called of startOCSPManagement()
 			// releases its write lock.
-			sc.Lock()
+			sc.mu.Lock()
 
 			// get OCSP response from OCSP server
 			var nextRunTime time.Time
@@ -218,7 +218,7 @@ func (sc *SafeCert) startOCSPManagement() {
 			nextTimer := time.NewTimer(time.Until(nextRunTime.Truncate(time.Second).Add(time.Second)))
 
 			// OCSP update done
-			sc.Unlock()
+			sc.mu.Unlock()
 
 			select {
 			case <-stopCtx.Done():

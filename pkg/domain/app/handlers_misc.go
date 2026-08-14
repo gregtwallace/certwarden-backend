@@ -9,6 +9,7 @@ import (
 // serverStatusResponse
 type serverStatusResponse struct {
 	output.JsonResponse
+
 	ServerStatus struct {
 		Status        string `json:"status"`
 		LogLevel      string `json:"log_level"`

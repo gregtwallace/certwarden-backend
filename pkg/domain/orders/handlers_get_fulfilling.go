@@ -17,6 +17,7 @@ type orderJobResponse struct {
 // of the a work service
 type orderWorkStatusResponse struct {
 	output.JsonResponse
+
 	JobsWorking map[int]*orderJobResponse `json:"jobs_working"` // [workerid]
 	JobsWaiting []orderJobResponse        `json:"jobs_waiting"`
 }

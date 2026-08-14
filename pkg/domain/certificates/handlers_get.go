@@ -18,6 +18,7 @@ import (
 // to answer a query for a portion of the certs
 type allCertsResponse struct {
 	output.JsonResponse
+
 	TotalCertificates int                          `json:"total_records"`
 	Certificates      []certificateSummaryResponse `json:"certificates"`
 }
@@ -58,6 +59,7 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) *out
 
 type certificateResponse struct {
 	output.JsonResponse
+
 	Certificate certificateDetailedResponse `json:"certificate"`
 }
 
@@ -100,6 +102,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) *outp
 
 type newCertOptions struct {
 	output.JsonResponse
+
 	CertificateOptions struct {
 		AvailableKeys  []private_keys.KeySummaryResponse `json:"private_keys"`
 		KeyAlgorithms  []key_crypto.Algorithm            `json:"key_algorithms"`
@@ -110,6 +113,7 @@ type newCertOptions struct {
 // usableAccount uses a custom AcmeServer struct to also output valid profile names
 type usableAccount struct {
 	acme_accounts.AccountSummaryResponse
+
 	AcmeServer struct {
 		ID           int               `json:"id"`
 		Name         string            `json:"name"`
