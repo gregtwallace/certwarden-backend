@@ -72,7 +72,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// validate requested file is actually in the frontend path (i.e., block malicious payload)
-	fPathAbs, err := filepath.Abs(filepath.Join(frontendBuildDir, "/", fPathRel))
+	fPathAbs, err := filepath.Abs(filepath.Join(frontendBuildDir, fPathRel))
 	if err != nil {
 		err = fmt.Errorf("frontend: failed to get absolute path for request (%w)", err)
 		app.logger.Error(err)

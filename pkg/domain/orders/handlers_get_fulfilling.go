@@ -54,12 +54,12 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 		if mgrWorkingJob == nil {
 			workingResp[workerID] = nil
 		} else {
-			for _, order := range orders {
-				if mgrWorkingJob.orderID == order.ID {
+			for i := range orders {
+				if mgrWorkingJob.orderID == orders[i].ID {
 					workingResp[workerID] = &orderJobResponse{
 						AddedToQueue: int(mgrWorkingJob.addedToQueue.Unix()),
 						HighPriority: mgrWorkingJob.IsHighPriority(),
-						Order:        order.summaryResponse(service),
+						Order:        orders[i].summaryResponse(service),
 					}
 					break
 				}
@@ -70,12 +70,12 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 	// build waiting part of response
 	waitingResp := []orderJobResponse{}
 	for _, mgrWaitingJob := range mgrJobs.WaitingJobs {
-		for _, order := range orders {
-			if mgrWaitingJob.orderID == order.ID {
+		for i := range orders {
+			if mgrWaitingJob.orderID == orders[i].ID {
 				waitingResp = append(waitingResp, orderJobResponse{
 					AddedToQueue: int(mgrWaitingJob.addedToQueue.Unix()),
 					HighPriority: mgrWaitingJob.IsHighPriority(),
-					Order:        order.summaryResponse(service),
+					Order:        orders[i].summaryResponse(service),
 				})
 				break
 			}

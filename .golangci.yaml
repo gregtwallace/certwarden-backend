@@ -84,10 +84,8 @@ linters:
       disabled-checks:
       # TODO: Enable and address these
         - hugeParam
-        - rangeValCopy
         - deferInLoop
         - ifElseChain
-        - filepathJoin
         - exitAfterDefer
 
   exclusions:
@@ -96,4 +94,4 @@ linters:
       - path: '(.+)_test\.go'
         linters:
           - gochecknoglobals
-          - gocognit
+          # - gocognit
