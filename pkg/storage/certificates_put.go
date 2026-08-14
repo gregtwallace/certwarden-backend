@@ -3,8 +3,6 @@ package storage
 import (
 	"certwarden-backend/pkg/domain/certificates"
 	"context"
-	"errors"
-	"fmt"
 	"time"
 )
 
@@ -76,7 +74,7 @@ func (store *Storage) PutCertUpdate(payload certificates.UpdatePayload) (certifi
 		return certificates.Certificate{}, err
 	}
 	if rowsAffected != 1 {
-		return certificates.Certificate{}, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+		return certificates.Certificate{}, errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	// get updated to return
@@ -168,7 +166,7 @@ func (store *Storage) PutCertLastAccess(certId int, lastAccess time.Time) (err e
 		return err
 	}
 	if rowsAffected != 1 {
-		return errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+		return errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	return nil

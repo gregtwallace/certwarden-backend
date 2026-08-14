@@ -2,8 +2,6 @@ package storage
 
 import (
 	"context"
-	"errors"
-	"fmt"
 )
 
 // DeleteCert deletes a cert from the database
@@ -54,7 +52,7 @@ func (store *Storage) DeleteCert(id int) (err error) {
 		return err
 	}
 	if rowsAffected != 1 {
-		return errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+		return errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	err = tx.Commit()

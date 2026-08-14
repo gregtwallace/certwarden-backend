@@ -7,7 +7,7 @@ linters:
     - copyloopvar
     - depguard
     - embeddedstructfieldcheck
-    # - err113
+    # - err113 #TODO
     - forbidigo
 
   settings:

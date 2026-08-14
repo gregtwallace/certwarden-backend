@@ -2,8 +2,6 @@ package storage
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 )
 
@@ -38,7 +36,7 @@ func (store *Storage) PutUserPasswordHash(username string, passwordHash string, 
 		return -2, err
 	}
 	if rowsAffected != 1 {
-		return -2, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+		return -2, errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	// get updated key to return

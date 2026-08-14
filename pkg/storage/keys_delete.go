@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 )
 
 // KeyInUse returns a bool if the specified key is in use, it returns
@@ -140,7 +139,7 @@ func (store *Storage) DeleteKey(id int) error {
 		return err
 	}
 	if rowsAffected != 1 {
-		return errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+		return errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	return nil

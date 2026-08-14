@@ -3,8 +3,6 @@ package storage
 import (
 	"certwarden-backend/pkg/domain/private_keys"
 	"context"
-	"errors"
-	"fmt"
 	"time"
 )
 
@@ -50,7 +48,7 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_
 		return private_keys.Key{}, err
 	}
 	if rowsAffected != 1 {
-		return private_keys.Key{}, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+		return private_keys.Key{}, errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	// get updated key to return
@@ -117,7 +115,7 @@ func (store *Storage) PutKeyLastAccess(keyId int, lastAccess time.Time) (err err
 		return err
 	}
 	if rowsAffected != 1 {
-		return errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+		return errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	return nil

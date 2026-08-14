@@ -3,8 +3,6 @@ package storage
 import (
 	"certwarden-backend/pkg/domain/acme_accounts"
 	"context"
-	"errors"
-	"fmt"
 )
 
 // PutAcmeAccountUpdate updates details about an acme account
@@ -55,7 +53,7 @@ func (store *Storage) PutAcmeAccountUpdate(payload acme_accounts.UpdatePayload) 
 		return acme_accounts.Account{}, err
 	}
 	if rowsAffected != 1 {
-		return acme_accounts.Account{}, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+		return acme_accounts.Account{}, errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	// get updated account to return
@@ -97,7 +95,7 @@ func (store *Storage) PutAcmeAccountNewKey(payload acme_accounts.RolloverKeyPayl
 		return acme_accounts.Account{}, err
 	}
 	if rowsAffected != 1 {
-		return acme_accounts.Account{}, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+		return acme_accounts.Account{}, errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	// get updated account to return
