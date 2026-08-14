@@ -2,8 +2,9 @@ package main
 
 import (
 	"certwarden-backend/pkg/domain/app"
+	"os"
 )
 
 func main() {
-	app.Run()
+	os.Exit(app.Run())
 }

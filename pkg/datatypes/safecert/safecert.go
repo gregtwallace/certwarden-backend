@@ -88,28 +88,43 @@ func (sc *SafeCert) Update(tlsCert *tls.Certificate) {
 		sc.leafCert = nil
 	}
 
-	if len(tlsCert.Certificate) >= 2 {
+	switch {
+	// we already have the issuer certificate
+	case len(tlsCert.Certificate) >= 2:
 		sc.issuerCert, err = x509.ParseCertificate(tlsCert.Certificate[1])
 		if err != nil {
 			// clear issuer before panic
 			sc.issuerCert = nil
 			panic(err)
 		}
-	} else if sc.leafCert != nil && len(sc.leafCert.IssuingCertificateURL) > 0 {
-		// issuer not in tlsCert but can try to get it if there are URLS in the
-		// leaf certificate (randomly choose which URL to start with and then loop
-		// through them until find working or run out of options)
-		startIndex := rand.IntN(len(sc.leafCert.IssuingCertificateURL))
-		issuerOk := false
-		for i := 0; i < len(sc.leafCert.IssuingCertificateURL); i++ {
-			response, err := sc.httpClient.Get(sc.leafCert.IssuingCertificateURL[(startIndex+i)%len(sc.leafCert.IssuingCertificateURL)])
+
+	// issuer not in tlsCert but can try to get it if there are URLS in the
+	// leaf certificate (randomly choose which URL to start with and then loop
+	// through them until find working or run out of options)
+	case sc.leafCert != nil && len(sc.leafCert.IssuingCertificateURL) > 0:
+		httpGetter := func(url string) (respBodyBytes []byte, err error) {
+			response, err := sc.httpClient.Get(url)
 			if err != nil {
-				// this one failed
-				continue
+				return nil, err
 			}
 			defer response.Body.Close()
 
-			issuerCertBytes, err := io.ReadAll(response.Body)
+			bodyBytes, err := io.ReadAll(response.Body)
+			if err != nil {
+				return nil, err
+			}
+
+			return bodyBytes, nil
+		}
+
+		// random start index
+		indx := rand.IntN(len(sc.leafCert.IssuingCertificateURL))
+		issuerOk := false
+		for i := range len(sc.leafCert.IssuingCertificateURL) {
+			// cycle through all indexes
+			url := sc.leafCert.IssuingCertificateURL[(indx+i)%len(sc.leafCert.IssuingCertificateURL)]
+
+			issuerCertBytes, err := httpGetter(url)
 			if err != nil {
 				// this one failed
 				continue
@@ -132,8 +147,9 @@ func (sc *SafeCert) Update(tlsCert *tls.Certificate) {
 			// failed to fetch valid issuer cert
 			sc.issuerCert = nil
 		}
-	} else {
-		// no issuer cert and unable to fetch it, set to nil
+
+	// no issuer cert and unable to fetch it, set to nil
+	default:
 		sc.issuerCert = nil
 	}
 

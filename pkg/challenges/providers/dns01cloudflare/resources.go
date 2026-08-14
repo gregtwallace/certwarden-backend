@@ -78,9 +78,7 @@ func (service *Service) Deprovision(domain, _ string, keyAuth acme.KeyAuth) erro
 		dnsRecordIDs = append(dnsRecordIDs, resultPage.Result[i].ID)
 	}
 
-	// delete all records with the name and content (should only ever be one)
-	anyDeleteErr := false
-	for _, recordID := range dnsRecordIDs {
+	delOneRecord := func(recordID string) error {
 		ctx, cancel := context.WithTimeout(service.shutdownContext, apiCallTimeout)
 		defer cancel()
 
@@ -90,12 +88,24 @@ func (service *Service) Deprovision(domain, _ string, keyAuth acme.KeyAuth) erro
 			cloudflareDeleteDNSParams(zoneID),
 		)
 		if err != nil {
-			anyDeleteErr = true
-			service.logger.Errorf("dns01cloudflare: failed to delete %s: %s (record ID: %s) (%s)", dnsRecordName, dnsRecordValue, recordID, err)
+			return err
+		}
+
+		return nil
+	}
+
+	// delete all records with the name and content (should only ever be one)
+	errs := []error{}
+	for _, recordID := range dnsRecordIDs {
+		err := delOneRecord(recordID)
+		if err != nil {
+			err := fmt.Errorf("dns01cloudflare: failed to delete %s: %s (record ID: %s) (%w)", dnsRecordName, dnsRecordValue, recordID, err)
+			errs = append(errs, err)
+			service.logger.Error(err)
 		}
 	}
 
-	if anyDeleteErr {
+	if len(errs) > 0 {
 		return fmt.Errorf("dns01cloudflare: failed to delete dns record(s) during cleanup step of %s: %s", dnsRecordName, dnsRecordValue)
 	}
 

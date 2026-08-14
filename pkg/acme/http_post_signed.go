@@ -55,10 +55,11 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		if err != nil {
 			return nil, nil, err
 		}
-		defer response.Body.Close()
+		// re-add defer here
 
 		// read body of response
 		bodyBytes, err = io.ReadAll(response.Body)
+		response.Body.Close() // TODO: refactor and add defer back - doing this for now for resource release purposes
 		if err != nil {
 			// if body read fails, try post again
 			continue

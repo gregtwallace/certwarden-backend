@@ -44,6 +44,24 @@ func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *http.Cl
 	// randomly select starting ocsp server from list
 	serverIndex := rand.IntN(len(leafCert.OCSPServer))
 
+	// separate for defer resource release
+	httpDoer := func(req *http.Request) (bodyBytes []byte, err error) {
+		response, err := httpClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer response.Body.Close()
+
+		// read and parse
+		var respBody []byte
+		respBody, err = io.ReadAll(response.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		return respBody, nil
+	}
+
 	// fetch response (try each server until valid response, or run out of servers)
 	var ocspResp *ocsp.Response
 	for i := 0; i < len(leafCert.IssuingCertificateURL); i++ {
@@ -61,23 +79,13 @@ func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *http.Cl
 		req.Header.Set("Accept", "application/ocsp-response")
 
 		// do request
-		var response *http.Response
-		response, err = httpClient.Do(req)
+		var bodyBytes []byte
+		bodyBytes, err = httpDoer(req)
 		if err != nil {
-			// this loop iteration failed
-			continue
-		}
-		defer response.Body.Close()
-
-		// read and parse
-		var respBody []byte
-		respBody, err = io.ReadAll(response.Body)
-		if err != nil {
-			// this loop iteration failed
 			continue
 		}
 
-		ocspResp, err = ocsp.ParseResponse(respBody, issuerCert)
+		ocspResp, err = ocsp.ParseResponse(bodyBytes, issuerCert)
 		if err != nil {
 			// this loop iteration failed
 			continue

@@ -160,10 +160,9 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 		return output.ErrorJsonErrInternal(err)
 	}
 
-	// range through all log files
-	for _, logFilename := range logFiles {
+	addLogFileToZip := func(filename string) *output.JsonError {
 		// open log file
-		logFile, err := os.Open(dataStorageLogPath + "/" + logFilename)
+		logFile, err := os.Open(dataStorageLogPath + "/" + filename)
 		if err != nil {
 			app.logger.Error(err)
 			return output.ErrorJsonErrInternal(err)
@@ -171,7 +170,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 		defer logFile.Close()
 
 		// create file in zip
-		zipFile, err := zipWriter.Create(logFilename)
+		zipFile, err := zipWriter.Create(filename)
 		if err != nil {
 			app.logger.Error(err)
 			return output.ErrorJsonErrInternal(err)
@@ -182,6 +181,16 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 		if err != nil {
 			app.logger.Error(err)
 			return output.ErrorJsonErrInternal(err)
+		}
+
+		return nil
+	}
+
+	// range through all log files
+	for _, logFilename := range logFiles {
+		err := addLogFileToZip(logFilename)
+		if err != nil {
+			return err
 		}
 	}
 

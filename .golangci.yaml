@@ -84,9 +84,6 @@ linters:
       disabled-checks:
       # TODO: Enable and address these
         - hugeParam
-        - deferInLoop
-        - ifElseChain
-        - exitAfterDefer
 
   exclusions:
     rules:

@@ -12,6 +12,7 @@ import (
 func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (Order, *output.JsonError) {
 	// dont allow new order if a pending order exists
 	orderId, err := service.storage.GetNewestIncompleteCertOrderId(certId)
+	//nolint:gocritic // TODO: This code needs a refactor anyway, so leave the logic as-is for now
 	if errors.Is(err, sql.ErrNoRows) {
 		// no existing incomplete order, make a new one
 
