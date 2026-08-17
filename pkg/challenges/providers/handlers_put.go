@@ -51,7 +51,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// params
@@ -59,7 +59,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// find provider
@@ -74,7 +74,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 			} else {
 				err = errWrongTag
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 		}
 	}
@@ -83,16 +83,16 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	if p == nil {
 		err = errBadID(payload.ID)
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// if domains included, validate domains
 	if len(payload.Domains) > 0 {
 		err = mgr.unsafeValidateDomains(payload.Domains, p)
 		if err != nil {
-			err = fmt.Errorf("failed to validate domains (%s)", err)
+			err = fmt.Errorf("failed to validate domains (%w)", err)
 			mgr.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 	}
 
@@ -132,7 +132,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	if configCount > 1 {
 		err = fmt.Errorf("update provider expects max 1 config, received %d", configCount)
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	} else if configCount == 1 {
 		// update provider service first (if cfg specified) so if fails, domains are unchanged
 		switch pServ := p.Service.(type) {
@@ -140,7 +140,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 			if payload.Http01InternalConfig == nil {
 				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Http01InternalConfig)
 
@@ -148,7 +148,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 			if payload.Dns01ManualConfig == nil {
 				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Dns01ManualConfig)
 
@@ -156,7 +156,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 			if payload.Dns01AcmeDnsConfig == nil {
 				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Dns01AcmeDnsConfig)
 
@@ -164,7 +164,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 			if payload.Dns01AcmeShConfig == nil {
 				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Dns01AcmeShConfig)
 
@@ -172,7 +172,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 			if payload.Dns01CloudflareConfig == nil {
 				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Dns01CloudflareConfig)
 
@@ -180,7 +180,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 			if payload.Dns01GoAcmeConfig == nil {
 				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Dns01GoAcmeConfig)
 
@@ -188,7 +188,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 			if payload.DnsPersist01ManualConfig == nil {
 				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.DnsPersist01ManualConfig)
 
@@ -196,14 +196,14 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 			// default fail
 			err = errors.New("provider service is unsupported, please report this as a bug to developer")
 			mgr.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		// common error check
 		if err != nil {
-			err = fmt.Errorf("failed to update service (%s)", err)
+			err = fmt.Errorf("failed to update service (%w)", err)
 			mgr.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 
 		// success, update config
@@ -220,9 +220,9 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	// update config file
 	err = mgr.unsafeWriteProvidersConfig()
 	if err != nil {
-		err = fmt.Errorf("failed to save config file after providers update (%s)", err)
+		err = fmt.Errorf("failed to save config file after providers update (%w)", err)
 		mgr.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -234,7 +234,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	err = mgr.output.WriteJSON(w, response)
 	if err != nil {
 		mgr.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

@@ -54,18 +54,19 @@ func (service *Service) postUpdate(adr *acmeDnsResource, dnsRecordValue string) 
 	req.Header.Set("X-Api-Key", adr.Password)
 
 	// post to acme dns
-	resp, err := service.httpClient.Do(req)
+	response, err := service.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
 
 	// read body & close
-	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, resp.Body)
+	defer response.Body.Close()
+	//nolint:errcheck // don't care about errors since we're discarding
+	io.Copy(io.Discard, response.Body)
 
 	// if not status 200, error
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("acme-dns failed to update %s (%d)", adr.FullDomain, resp.StatusCode)
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("acme-dns failed to update %s (%d)", adr.FullDomain, response.StatusCode)
 	}
 
 	return nil
@@ -85,7 +86,7 @@ func (service *Service) getAcmeDnsResource(domain string) (*acmeDnsResource, err
 
 // Provision updates the acme-dns resource corresponding to domain with
 // the new value calculated from keyAuth
-func (service *Service) Provision(domain string, _ string, keyAuth acme.KeyAuth) error {
+func (service *Service) Provision(domain, _ string, keyAuth acme.KeyAuth) error {
 	// get acme-dns resource
 	adr, err := service.getAcmeDnsResource(domain)
 	if err != nil {
@@ -107,7 +108,7 @@ func (service *Service) Provision(domain string, _ string, keyAuth acme.KeyAuth)
 // Derovision updates the acme-dns resource corresponding to domain with
 // a dummy value. This probably isn't really needed and this function could just
 // be an empty stub, but clearing the data doesn't hurt.
-func (service *Service) Deprovision(domain string, _ string, _ acme.KeyAuth) error {
+func (service *Service) Deprovision(domain, _ string, _ acme.KeyAuth) error {
 	// get acme-dns resource
 	adr, err := service.getAcmeDnsResource(domain)
 	if err != nil {

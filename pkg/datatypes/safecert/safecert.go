@@ -23,7 +23,8 @@ type SafeCert struct {
 	shutdownWg  *sync.WaitGroup
 	shutdownCtx context.Context
 	httpClient  *http.Client
-	sync.RWMutex
+
+	mu sync.RWMutex
 }
 
 // NewSafeCert returns a new SafeCert and also starts a routine to manage the
@@ -47,8 +48,8 @@ func (sc *SafeCert) TlsCertFunc() func(*tls.ClientHelloInfo) (*tls.Certificate, 
 
 // Read returns the current tls certificate
 func (sc *SafeCert) Read() *tls.Certificate {
-	sc.RLock()
-	defer sc.RUnlock()
+	sc.mu.RLock()
+	defer sc.mu.RUnlock()
 
 	// while this is a "write", ocspResp isn't written without Write lock,
 	// thus this will never cause an issue; that is, ocspResp is static here
@@ -63,8 +64,8 @@ func (sc *SafeCert) Read() *tls.Certificate {
 
 // Update updates the certificate with the specified cert
 func (sc *SafeCert) Update(tlsCert *tls.Certificate) {
-	sc.Lock()
-	defer sc.Unlock()
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
 
 	// set new cert & stop any previous OCSP routine
 	sc.cert = tlsCert
@@ -87,28 +88,43 @@ func (sc *SafeCert) Update(tlsCert *tls.Certificate) {
 		sc.leafCert = nil
 	}
 
-	if len(tlsCert.Certificate) >= 2 {
+	switch {
+	// we already have the issuer certificate
+	case len(tlsCert.Certificate) >= 2:
 		sc.issuerCert, err = x509.ParseCertificate(tlsCert.Certificate[1])
 		if err != nil {
 			// clear issuer before panic
 			sc.issuerCert = nil
 			panic(err)
 		}
-	} else if sc.leafCert != nil && len(sc.leafCert.IssuingCertificateURL) > 0 {
-		// issuer not in tlsCert but can try to get it if there are URLS in the
-		// leaf certificate (randomly choose which URL to start with and then loop
-		// through them until find working or run out of options)
-		startIndex := rand.IntN(len(sc.leafCert.IssuingCertificateURL))
-		issuerOk := false
-		for i := 0; i < len(sc.leafCert.IssuingCertificateURL); i++ {
-			issuerCertResp, err := sc.httpClient.Get(sc.leafCert.IssuingCertificateURL[(startIndex+i)%len(sc.leafCert.IssuingCertificateURL)])
-			if err != nil {
-				// this one failed
-				continue
-			}
-			defer issuerCertResp.Body.Close()
 
-			issuerCertBytes, err := io.ReadAll(issuerCertResp.Body)
+	// issuer not in tlsCert but can try to get it if there are URLS in the
+	// leaf certificate (randomly choose which URL to start with and then loop
+	// through them until find working or run out of options)
+	case sc.leafCert != nil && len(sc.leafCert.IssuingCertificateURL) > 0:
+		httpGetter := func(url string) (respBodyBytes []byte, err error) {
+			response, err := sc.httpClient.Get(url)
+			if err != nil {
+				return nil, err
+			}
+			defer response.Body.Close()
+
+			bodyBytes, err := io.ReadAll(response.Body)
+			if err != nil {
+				return nil, err
+			}
+
+			return bodyBytes, nil
+		}
+
+		// random start index
+		indx := rand.IntN(len(sc.leafCert.IssuingCertificateURL))
+		issuerOk := false
+		for i := range len(sc.leafCert.IssuingCertificateURL) {
+			// cycle through all indexes
+			url := sc.leafCert.IssuingCertificateURL[(indx+i)%len(sc.leafCert.IssuingCertificateURL)]
+
+			issuerCertBytes, err := httpGetter(url)
 			if err != nil {
 				// this one failed
 				continue
@@ -131,8 +147,9 @@ func (sc *SafeCert) Update(tlsCert *tls.Certificate) {
 			// failed to fetch valid issuer cert
 			sc.issuerCert = nil
 		}
-	} else {
-		// no issuer cert and unable to fetch it, set to nil
+
+	// no issuer cert and unable to fetch it, set to nil
+	default:
 		sc.issuerCert = nil
 	}
 

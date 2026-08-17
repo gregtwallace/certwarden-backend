@@ -35,7 +35,7 @@ type KeySummaryResponse struct {
 	LastAccess     int64                `json:"last_access"`
 }
 
-func (key Key) SummaryResponse() KeySummaryResponse {
+func (key *Key) SummaryResponse() KeySummaryResponse {
 	return KeySummaryResponse{
 		ID:             key.ID,
 		Name:           key.Name,
@@ -51,6 +51,7 @@ func (key Key) SummaryResponse() KeySummaryResponse {
 // fields that can be returned as JSON
 type keyDetailedResponse struct {
 	KeySummaryResponse
+
 	ApiKey    string `json:"api_key"`
 	ApiKeyNew string `json:"api_key_new,omitempty"`
 	CreatedAt int64  `json:"created_at"`
@@ -58,7 +59,7 @@ type keyDetailedResponse struct {
 	// exclude PEM
 }
 
-func (key Key) detailedResponse() keyDetailedResponse {
+func (key *Key) detailedResponse() keyDetailedResponse {
 	return keyDetailedResponse{
 		KeySummaryResponse: key.SummaryResponse(),
 
@@ -71,15 +72,15 @@ func (key Key) detailedResponse() keyDetailedResponse {
 
 // Output Methods
 
-func (key Key) FilenameNoExt() string {
+func (key *Key) FilenameNoExt() string {
 	return fmt.Sprintf("%s.key", key.Name)
 }
 
-func (key Key) PemContent() string {
+func (key *Key) PemContent() string {
 	return key.Pem
 }
 
-func (key Key) Modtime() time.Time {
+func (key *Key) Modtime() time.Time {
 	return key.UpdatedAt
 }
 

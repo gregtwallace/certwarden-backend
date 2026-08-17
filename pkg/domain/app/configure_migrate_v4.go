@@ -64,10 +64,9 @@ func configMigrateV3toV4(cfgFileYamlObj map[string]any) (newCfgVer int, err erro
 			provider["precheck_wait"] = 3 * 60
 			provider["postcheck_wait"] = 0
 
-			// if internal http, special default
+			// if internal http, special precheck default
 			if key == "http_01_internal" {
 				provider["precheck_wait"] = 0
-				// provider["postcheck_wait"] = 0
 			}
 
 			// update tree

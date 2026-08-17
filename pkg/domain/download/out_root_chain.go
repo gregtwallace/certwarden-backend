@@ -16,19 +16,19 @@ type rootChain orders.Order
 
 // rootChain Output Methods
 
-func (rc rootChain) FilenameNoExt() string {
+func (rc *rootChain) FilenameNoExt() string {
 	return fmt.Sprintf("%s.chain", rc.Certificate.Name)
 }
 
-func (rc rootChain) Modtime() time.Time {
+func (rc *rootChain) Modtime() time.Time {
 	// use Order default
-	return orders.Order(rc).Modtime()
+	return (*orders.Order)(rc).Modtime()
 }
 
 // PemContent returns the PemContentChainOnly instead of what order would
 // normally return
-func (rc rootChain) PemContent() string {
-	return orders.Order(rc).PemContentChainOnly()
+func (rc *rootChain) PemContent() string {
+	return (*orders.Order)(rc).PemContentChainOnly()
 }
 
 // end rootChain Output Methods
@@ -52,7 +52,7 @@ func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r 
 
 	// return pem file to client
 	rootChain := rootChain(order)
-	service.output.WritePem(w, r, rootChain)
+	service.output.WritePem(w, r, &rootChain)
 
 	return nil
 }
@@ -76,7 +76,7 @@ func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *ht
 
 	// return pem file to client
 	rootChain := rootChain(order)
-	service.output.WritePem(w, r, rootChain)
+	service.output.WritePem(w, r, &rootChain)
 
 	return nil
 }

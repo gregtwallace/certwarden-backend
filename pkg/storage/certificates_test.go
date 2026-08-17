@@ -47,7 +47,19 @@ func compareCertificateCSRExtensions(t *testing.T, extns, expectedExtns []certif
 }
 
 // compareCertificate compares cert to expectedCert and throws appropriate errors for any differences
-func compareCertificate(t *testing.T, cert, expectedCert certificates.Certificate) {
+func compareCertificate(t *testing.T, cert, expectedCert *certificates.Certificate) {
+	if cert == nil && expectedCert == nil {
+		return
+	}
+	if cert == nil && expectedCert != nil {
+		t.Errorf("certificate: cert is nil but expectedCert is non-nil")
+		return
+	}
+	if cert != nil && expectedCert == nil {
+		t.Errorf("certificate: cert is non-nil but expectedCert is nil")
+		return
+	}
+
 	if cert.ID != expectedCert.ID {
 		t.Errorf("certificate: id expected '%d' but got '%d'", expectedCert.ID, cert.ID)
 	}
@@ -60,9 +72,9 @@ func compareCertificate(t *testing.T, cert, expectedCert certificates.Certificat
 		t.Errorf("certificate: description expected '%s' but got '%s'", expectedCert.Description, cert.Description)
 	}
 
-	compareKey(t, cert.Key, expectedCert.Key)
+	compareKey(t, &cert.Key, &expectedCert.Key)
 
-	compareAcmeAccount(t, cert.Account, expectedCert.Account)
+	compareAcmeAccount(t, &cert.Account, &expectedCert.Account)
 
 	if cert.Subject != expectedCert.Subject {
 		t.Errorf("certificate: subject expected '%s' but got '%s'", expectedCert.Subject, cert.Subject)

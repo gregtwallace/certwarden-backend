@@ -14,6 +14,7 @@ import (
 // to answer a query for a portion of the ACME servers
 type acmeServersResponse struct {
 	output.JsonResponse
+
 	TotalServers int                     `json:"total_records"`
 	Servers      []ServerSummaryResponse `json:"acme_servers"`
 }
@@ -27,7 +28,7 @@ func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) *o
 	servers, totalRows, err := service.storage.GetAllAcmeServers(query)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// populate summaries for output
@@ -35,9 +36,9 @@ func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) *o
 	for i := range servers {
 		summary, err := servers[i].summaryResponse(service)
 		if err != nil {
-			err = fmt.Errorf("failed to generate server summary response (%s)", err)
+			err = fmt.Errorf("failed to generate server summary response (%w)", err)
 			service.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		scmeServers = append(scmeServers, summary)
@@ -53,7 +54,7 @@ func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) *o
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -61,6 +62,7 @@ func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) *o
 
 type acmeServerResponse struct {
 	output.JsonResponse
+
 	Server serverDetailedResponse `json:"acme_server"`
 }
 
@@ -71,7 +73,7 @@ func (service *Service) GetOneServer(w http.ResponseWriter, r *http.Request) *ou
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// get the server from storage (and validate id)
@@ -83,9 +85,9 @@ func (service *Service) GetOneServer(w http.ResponseWriter, r *http.Request) *ou
 	// make detailed response
 	detailedResp, err := server.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate server summary response (%s)", err)
+		err = fmt.Errorf("failed to generate server summary response (%w)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -98,7 +100,7 @@ func (service *Service) GetOneServer(w http.ResponseWriter, r *http.Request) *ou
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

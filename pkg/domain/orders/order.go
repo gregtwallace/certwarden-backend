@@ -85,7 +85,7 @@ type orderKeySummaryResponse struct {
 	Name string `json:"name"`
 }
 
-func (order Order) summaryResponse(service *Service) orderSummaryResponse {
+func (order *Order) summaryResponse(service *Service) orderSummaryResponse {
 	// depends on if FinalizedKey is set yet
 	var finalKey *orderKeySummaryResponse
 	if order.FinalizedKey != nil {
@@ -97,6 +97,7 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 
 	// check if job is in queue (priority is irrelevant for checking if exists, so just use false)
 	// should never error, so ignore err
+	//nolint:errcheck // TODO: in the future, refactor the job_manager package (and add tests)
 	fulfillJob, _ := service.makeFulfillingJob(order.ID, false)
 	fulfillingWorker := service.orderFulfilling.JobExists(fulfillJob)
 
@@ -149,11 +150,11 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 
 // Output Methods
 
-func (order Order) FilenameNoExt() string {
+func (order *Order) FilenameNoExt() string {
 	return fmt.Sprintf("%s.cert", order.Certificate.Name)
 }
 
-func (order Order) PemContent() string {
+func (order *Order) PemContent() string {
 	// if Pem is nil, return empty
 	if order.Pem == nil {
 		return ""
@@ -162,7 +163,7 @@ func (order Order) PemContent() string {
 	return *order.Pem
 }
 
-func (order Order) Modtime() time.Time {
+func (order *Order) Modtime() time.Time {
 	// only available if finalized, ensure nil check
 	keyModtime := time.Time{}
 	if order.FinalizedKey != nil {
@@ -185,7 +186,7 @@ func (order Order) Modtime() time.Time {
 
 // PemContentNoChain returns the Pem data for the main certificate but discards the remainder
 // of the certificate chain
-func (order Order) PemContentNoChain() string {
+func (order *Order) PemContentNoChain() string {
 	// decode first cert and drop the rest
 	certBlock, _ := pem.Decode([]byte(order.PemContent()))
 
@@ -195,7 +196,7 @@ func (order Order) PemContentNoChain() string {
 
 // PemContentChainOnly returns the Pem data for the certificate chain, but not the actual
 // main cert
-func (order Order) PemContentChainOnly() string {
+func (order *Order) PemContentChainOnly() string {
 	// decode the first cert in the chain and discard it
 	// this effectively leaves the root chain as the "rest"
 	_, chain := pem.Decode([]byte(order.PemContent()))
@@ -226,7 +227,7 @@ func (order *Order) hasPostProcessingToDo() bool {
 }
 
 // NewOrderPayload creates the appropriate newOrder payload for ACME
-func (service *Service) NewOrderPayload(cert certificates.Certificate) acme.NewOrderPayload {
+func (service *Service) NewOrderPayload(cert *certificates.Certificate) acme.NewOrderPayload {
 	var identifiers []acme.Identifier
 
 	// subject is always required and should be first

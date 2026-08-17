@@ -25,14 +25,14 @@ func TestServerInUse(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "serverinuse")
+	store, err := openStorageWithTestData(t, "serverinuse")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("server id: %d", tc.serverID), func(t *testing.T) {
-			inUse, err := storage.ServerInUse(tc.serverID)
+			inUse, err := store.ServerInUse(tc.serverID)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
@@ -48,32 +48,32 @@ func TestDeleteServer(t *testing.T) {
 	testCases := []struct {
 		serverID          int
 		expectedDelErr    error
-		expectedGetResult acme_servers.Server
+		expectedGetResult *acme_servers.Server
 		expectedGetErr    error
 	}{
-		{2, sql.ErrNoRows, acme_servers.Server{}, sql.ErrNoRows},  // non-existent
-		{25, sql.ErrNoRows, acme_servers.Server{}, sql.ErrNoRows}, // non-existent
-		{4, nil, acme_servers.Server{}, sql.ErrNoRows},            // not in use, gets deleted
-		{20, nil, acme_servers.Server{}, sql.ErrNoRows},           // not in use, gets deleted
-		{0, storage.ErrInUse, acmeServer0, nil},                   // in use
-		{1, storage.ErrInUse, acmeServer1, nil},                   // in use
-		{19, storage.ErrInUse, acmeServer19, nil},                 // in use
+		{2, sql.ErrNoRows, nil, sql.ErrNoRows},     // non-existent
+		{25, sql.ErrNoRows, nil, sql.ErrNoRows},    // non-existent
+		{4, nil, nil, sql.ErrNoRows},               // not in use, gets deleted
+		{20, nil, nil, sql.ErrNoRows},              // not in use, gets deleted
+		{0, storage.ErrInUse, &acmeServer0, nil},   // in use
+		{1, storage.ErrInUse, &acmeServer1, nil},   // in use
+		{19, storage.ErrInUse, &acmeServer19, nil}, // in use
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "deleteserver")
+	store, err := openStorageWithTestData(t, "deleteserver")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("server id: %d", tc.serverID), func(t *testing.T) {
-			err := storage.DeleteServer(tc.serverID)
+			err := store.DeleteServer(tc.serverID)
 			if !helpers_test.ErrorsIs(err, tc.expectedDelErr) {
 				t.Errorf("expected delete error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedDelErr), helpers_test.ErrorToVal(err))
 			}
 
-			server, err := storage.GetOneServerById(tc.serverID)
+			server, err := store.GetOneServerById(tc.serverID)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}

@@ -36,26 +36,26 @@ var (
 func TestGetOneUserByName(t *testing.T) {
 	testCases := []struct {
 		username     string
-		expectedUser auth.User
+		expectedUser *auth.User
 		expectedErr  error
 	}{
-		{"", auth.User{}, sql.ErrNoRows},
-		{"fake-bad-username", auth.User{}, sql.ErrNoRows},
-		{"admin", user1, nil},
+		{"", nil, sql.ErrNoRows},
+		{"fake-bad-username", nil, sql.ErrNoRows},
+		{"admin", &user1, nil},
 		// {"AdMiN", user1, nil}, // case is wrong TODO: make case insensitive
-		{"user2", user2, nil},
-		{"user4", user4, nil},
+		{"user2", &user2, nil},
+		{"user4", &user4, nil},
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getoneuserbyusername")
+	store, err := openStorageWithTestData(t, "getoneuserbyusername")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.username), func(t *testing.T) {
-			user, err := storage.GetOneUserByUsername(tc.username)
+			user, err := store.GetOneUserByUsername(tc.username)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected get username error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}

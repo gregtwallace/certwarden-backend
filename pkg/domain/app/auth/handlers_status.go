@@ -9,6 +9,7 @@ import (
 // frontend / client can determine appropriate login method(s)
 type statusResponse struct {
 	output.JsonResponse
+
 	AuthorizationStatus struct {
 		Local struct {
 			Enabled bool `json:"enabled"`
@@ -35,7 +36,7 @@ func (service *Service) Status(w http.ResponseWriter, r *http.Request) *output.J
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
 		// err not detailed as this route will not be secured
-		return output.JsonErrWriteJsonError(nil)
+		return output.ErrorJsonErrWriteJsonError(nil)
 	}
 
 	return nil

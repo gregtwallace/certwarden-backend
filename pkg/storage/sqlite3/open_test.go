@@ -64,27 +64,45 @@ func TestOpenDB3_BothExist(t *testing.T) {
 	fakeApp := newFakeApp(t, "./test-opendb3")
 
 	// make old data folder and file
-	os.RemoveAll("./data")
-	err := os.Mkdir("./data", os.FileMode(0755))
+	err := os.RemoveAll("./data")
+	if err != nil {
+		t.Errorf("failed to delete './data'")
+	}
+
+	err = os.Mkdir("./data", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
-	defer os.RemoveAll("./data")
+	t.Cleanup(func() {
+		err := os.RemoveAll("./data")
+		if err != nil {
+			t.Errorf("failed to delete './data'")
+		}
+	})
 
-	err = os.WriteFile("./data/appdata.db", []byte{'a', 'b', 'd'}, os.FileMode(0755))
+	err = os.WriteFile("./data/appdata.db", []byte{'a', 'b', 'd'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test data file (%s)", err)
 	}
 
 	// make current data folder and file
-	os.RemoveAll("./test-opendb3")
-	err = os.Mkdir("./test-opendb3", os.FileMode(0755))
+	err = os.RemoveAll("./test-opendb3")
+	if err != nil {
+		t.Errorf("failed to delete './test-opendb3'")
+	}
+
+	err = os.Mkdir("./test-opendb3", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
-	defer os.RemoveAll("./test-opendb3")
+	t.Cleanup(func() {
+		err := os.RemoveAll("./test-opendb3")
+		if err != nil {
+			t.Error("failed to delete './test-opendb3'")
+		}
+	})
 
-	err = os.WriteFile("./test-opendb3/appdata.db", []byte{'1', '2', '4'}, os.FileMode(0755))
+	err = os.WriteFile("./test-opendb3/appdata.db", []byte{'1', '2', '4'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test data file (%s)", err)
 	}
@@ -94,7 +112,7 @@ func TestOpenDB3_BothExist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("migration error '%s' but expected none", err)
 	}
-	defer onErrCleanup()
+	t.Cleanup(onErrCleanup)
 
 	// shouldnt be new
 	if isNew {
@@ -111,14 +129,14 @@ func TestOpenDB3_BothExist(t *testing.T) {
 	}
 
 	// rewrite db file so it is a valid db
-	err = os.WriteFile("./test-opendb3/appdata.db", []byte{}, os.FileMode(0755))
+	err = os.WriteFile("./test-opendb3/appdata.db", []byte{}, os.FileMode(0o755))
 	if err != nil {
 		t.Fatalf("failed to re-write db (%s)", err)
 	}
 
 	// ensure db connection is usable
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	err = db.PingContext(ctx)
 	if err != nil {
@@ -137,7 +155,7 @@ func TestOpenDB3_BothExist(t *testing.T) {
 
 	// ensure onErrCleanup closed the db
 	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	err = db.PingContext(ctx)
 	if err == nil || !strings.Contains(err.Error(), "database is closed") {
@@ -150,17 +168,29 @@ func TestOpenDB4_OldPathDoesntExist(t *testing.T) {
 	fakeApp := newFakeApp(t, "./test-opendb4")
 
 	// remove old path if exists
-	os.RemoveAll("./data")
+	err := os.RemoveAll("./data")
+	if err != nil {
+		t.Errorf("failed to delete './data'")
+	}
 
 	// make current data folder & file
-	os.RemoveAll("./test-opendb4")
-	err := os.Mkdir("./test-opendb4", os.FileMode(0755))
+	err = os.RemoveAll("./test-opendb4")
+	if err != nil {
+		t.Errorf("failed to delete './test-opendb4'")
+	}
+
+	err = os.Mkdir("./test-opendb4", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
-	defer os.RemoveAll("./test-opendb4")
+	t.Cleanup(func() {
+		err := os.RemoveAll("./test-opendb4")
+		if err != nil {
+			t.Error("failed to delete './test-opendb4'")
+		}
+	})
 
-	err = os.WriteFile("./test-opendb4/appdata.db", []byte{'1', '2', '4'}, os.FileMode(0755))
+	err = os.WriteFile("./test-opendb4/appdata.db", []byte{'1', '2', '4'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test data file (%s)", err)
 	}
@@ -170,7 +200,7 @@ func TestOpenDB4_OldPathDoesntExist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("migration error '%s' but expected none", err)
 	}
-	defer onErrCleanup()
+	t.Cleanup(onErrCleanup)
 
 	// shouldnt be new
 	if isNew {
@@ -187,14 +217,14 @@ func TestOpenDB4_OldPathDoesntExist(t *testing.T) {
 	}
 
 	// rewrite db file so it is a valid db
-	err = os.WriteFile("./test-opendb4/appdata.db", []byte{}, os.FileMode(0755))
+	err = os.WriteFile("./test-opendb4/appdata.db", []byte{}, os.FileMode(0o755))
 	if err != nil {
 		t.Fatalf("failed to re-write db (%s)", err)
 	}
 
 	// ensure db connection is usable
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	err = db.PingContext(ctx)
 	if err != nil {
@@ -213,7 +243,7 @@ func TestOpenDB4_OldPathDoesntExist(t *testing.T) {
 
 	// ensure onErrCleanup closed the db
 	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	err = db.PingContext(ctx)
 	if err == nil || !strings.Contains(err.Error(), "database is closed") {
@@ -226,32 +256,50 @@ func TestOpenDB5_OldPathExistsNewDoesnt(t *testing.T) {
 	fakeApp := newFakeApp(t, "./test-opendb5")
 
 	// make old
-	os.RemoveAll("./data")
-	err := os.Mkdir("./data", os.FileMode(0755))
+	err := os.RemoveAll("./data")
+	if err != nil {
+		t.Error("failed to delete './data'")
+	}
+
+	err = os.Mkdir("./data", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
-	defer os.RemoveAll("./data")
+	t.Cleanup(func() {
+		err := os.RemoveAll("./data")
+		if err != nil {
+			t.Error("failed to delete './data'")
+		}
+	})
 
-	err = os.WriteFile("./data/appdata.db", []byte{'z', 'a'}, os.FileMode(0755))
+	err = os.WriteFile("./data/appdata.db", []byte{'z', 'a'}, os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy test data file (%s)", err)
 	}
 
 	// make new path
-	os.RemoveAll("./test-opendb5")
-	err = os.Mkdir("./test-opendb5", os.FileMode(0755))
+	err = os.RemoveAll("./test-opendb5")
+	if err != nil {
+		t.Error("failed to delete './test-opendb5'")
+	}
+
+	err = os.Mkdir("./test-opendb5", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
-	defer os.RemoveAll("./test-opendb5")
+	t.Cleanup(func() {
+		err := os.RemoveAll("./test-opendb5")
+		if err != nil {
+			t.Error("failed to delete './test-opendb5'")
+		}
+	})
 
 	// do migration
 	db, isNew, onErrCleanup, err := OpenSqlite3Database(fakeApp)
 	if err != nil {
 		t.Fatalf("migration error '%s' but expected none", err)
 	}
-	defer onErrCleanup()
+	t.Cleanup(onErrCleanup)
 
 	// shouldnt be new
 	if isNew {
@@ -274,14 +322,14 @@ func TestOpenDB5_OldPathExistsNewDoesnt(t *testing.T) {
 	}
 
 	// rewrite db file so it is a valid db
-	err = os.WriteFile("./test-opendb5/appdata.db", []byte{}, os.FileMode(0755))
+	err = os.WriteFile("./test-opendb5/appdata.db", []byte{}, os.FileMode(0o755))
 	if err != nil {
 		t.Fatalf("failed to re-write db (%s)", err)
 	}
 
 	// ensure db connection is usable
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	err = db.PingContext(ctx)
 	if err != nil {
@@ -300,7 +348,7 @@ func TestOpenDB5_OldPathExistsNewDoesnt(t *testing.T) {
 
 	// ensure onErrCleanup closed the db
 	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	err = db.PingContext(ctx)
 	if err == nil || !strings.Contains(err.Error(), "database is closed") {
@@ -313,27 +361,45 @@ func TestOpenDB6_NoFilesExist(t *testing.T) {
 	fakeApp := newFakeApp(t, "./test-opendb6")
 
 	// make old path
-	os.RemoveAll("./data")
-	err := os.Mkdir("./data", os.FileMode(0755))
+	err := os.RemoveAll("./data")
+	if err != nil {
+		t.Error("failed to delete './data'")
+	}
+
+	err = os.Mkdir("./data", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
-	defer os.RemoveAll("./data")
+	t.Cleanup(func() {
+		err := os.RemoveAll("./data")
+		if err != nil {
+			t.Error("failed to delete './data'")
+		}
+	})
 
 	// make new path
-	os.RemoveAll("./test-opendb6")
-	err = os.Mkdir("./test-opendb6", os.FileMode(0755))
+	err = os.RemoveAll("./test-opendb6")
+	if err != nil {
+		t.Error("failed to delete './test-opendb6")
+	}
+
+	err = os.Mkdir("./test-opendb6", os.FileMode(0o755))
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		t.Fatalf("failed to make dummy data folder (%s)", err)
 	}
-	defer os.RemoveAll("./test-opendb6")
+	t.Cleanup(func() {
+		err := os.RemoveAll("./test-opendb6")
+		if err != nil {
+			t.Error("failed to delete './test-opendb6'")
+		}
+	})
 
 	// do migration
 	db, isNew, onErrCleanup, err := OpenSqlite3Database(fakeApp)
 	if err != nil {
 		t.Fatalf("migration error '%s' but expected none", err)
 	}
-	defer onErrCleanup()
+	t.Cleanup(onErrCleanup)
 
 	// should be new
 	if !isNew {
@@ -351,7 +417,7 @@ func TestOpenDB6_NoFilesExist(t *testing.T) {
 
 	// ensure db connection is usable
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	err = db.PingContext(ctx)
 	if err != nil {
@@ -367,7 +433,7 @@ func TestOpenDB6_NoFilesExist(t *testing.T) {
 
 	// ensure onErrCleanup closed the db
 	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	t.Cleanup(cancel)
 
 	err = db.PingContext(ctx)
 	if err == nil || !strings.Contains(err.Error(), "database is closed") {

@@ -23,10 +23,10 @@ func (service *Service) makeDeleteCommand(dnsRecordName, dnsRecordValue string) 
 }
 
 // makeCommand makes a command to create or delete a dns record
-func (service *Service) makeCommand(dnsRecordName, dnsRecordValue string, delete bool) *exec.Cmd {
+func (service *Service) makeCommand(dnsRecordName, dnsRecordValue string, doDelete bool) *exec.Cmd {
 	// func name
 	funcName := service.dnsHook + "_add"
-	if delete {
+	if doDelete {
 		funcName = service.dnsHook + "_rm"
 	}
 

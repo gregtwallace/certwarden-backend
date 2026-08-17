@@ -39,13 +39,13 @@ func makeFakeOutputterApp(l *zap.SugaredLogger) *fakeOutputterApp {
 type fakeStorage struct {
 }
 
-func (fs *fakeStorage) GetOneKeyByName(name string) (private_keys.Key, error) {
+func (fs *fakeStorage) GetOneKeyByName(name string) (*private_keys.Key, error) {
 	// just get the key from the same name cert
 	c, err := fs.GetCertNewestValidOrderByName(name)
 	if err != nil {
-		return private_keys.Key{}, err
+		return nil, err
 	}
-	return *c.FinalizedKey, nil
+	return c.FinalizedKey, nil
 }
 
 func (fs *fakeStorage) GetCertNewestValidOrderByName(certName string) (order orders.Order, err error) {
@@ -467,7 +467,7 @@ func makeFakeApp(t *testing.T) *fakeApp {
 // function to run one test
 func oneTest(t *testing.T, handler func(w http.ResponseWriter, r *http.Request) *output.JsonError,
 	apiKeyHeader *string, apiKeyURL *string, certName string, expectedBody string, expectedJsonErr *output.JsonError) {
-	r, err := http.NewRequest("GET", "/certwarden/api/v1/download/certificates", nil)
+	r, err := http.NewRequest("GET", "/certwarden/api/v1/download/certificates", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -48,6 +48,7 @@ const pprofServerIdleTimeout = httpServerIdleTimeout
 // logger and to close the underlying file
 type appLogger struct {
 	*zap.SugaredLogger
+
 	syncAndClose func()
 }
 

@@ -58,22 +58,22 @@ func TestGetAllAcmeServers(t *testing.T) {
 		expectedTotalCt      int
 		expectedResultLen    int
 		testIndx             int
-		expectedServerAtIndx acme_servers.Server
+		expectedServerAtIndx *acme_servers.Server
 	}{
-		{pagination_sort.Query{}, 5, 5, 3, acmeServer0},
-		{queryBuilderForTest(1, 1, "id", true), 5, 1, 0, acmeServer1},
-		{queryBuilderForTest(2, 1, "updated_at", false), 5, 2, 1, acmeServer4},
+		{pagination_sort.Query{}, 5, 5, 3, &acmeServer0},
+		{queryBuilderForTest(1, 1, "id", true), 5, 1, 0, &acmeServer1},
+		{queryBuilderForTest(2, 1, "updated_at", false), 5, 2, 1, &acmeServer4},
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getallacmeservers")
+	store, err := openStorageWithTestData(t, "getallacmeservers")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedServerAtIndx.Name), func(t *testing.T) {
-			servers, totalCt, err := storage.GetAllAcmeServers(tc.q)
+			servers, totalCt, err := store.GetAllAcmeServers(tc.q)
 			if err != nil {
 				t.Errorf("get all failed")
 				return
@@ -98,24 +98,24 @@ func TestGetOneServerById(t *testing.T) {
 	testCases := []struct {
 		id             int
 		expectedErr    error
-		expectedServer acme_servers.Server
+		expectedServer *acme_servers.Server
 	}{
-		{-5, sql.ErrNoRows, acme_servers.Server{}},
-		{50, sql.ErrNoRows, acme_servers.Server{}},
-		{0, nil, acmeServer0},
-		{1, nil, acmeServer1},
-		{4, nil, acmeServer4},
+		{-5, sql.ErrNoRows, nil},
+		{50, sql.ErrNoRows, nil},
+		{0, nil, &acmeServer0},
+		{1, nil, &acmeServer1},
+		{4, nil, &acmeServer4},
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getoneserverbyid")
+	store, err := openStorageWithTestData(t, "getoneserverbyid")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
-			serv, err := storage.GetOneServerById(tc.id)
+			serv, err := store.GetOneServerById(tc.id)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
@@ -129,24 +129,24 @@ func TestGetOneServerByName(t *testing.T) {
 	testCases := []struct {
 		name           string
 		expectedErr    error
-		expectedServer acme_servers.Server
+		expectedServer *acme_servers.Server
 	}{
-		{"fake-bad-name", sql.ErrNoRows, acme_servers.Server{}},
-		{"", sql.ErrNoRows, acme_servers.Server{}},
-		{"lets_encrypt", nil, acmeServer0}, // case is wrong
-		{"Lets_Encrypt_Staging", nil, acmeServer1},
-		{"Google_Prod", nil, acmeServer4},
+		{"fake-bad-name", sql.ErrNoRows, nil},
+		{"", sql.ErrNoRows, nil},
+		{"lets_encrypt", nil, &acmeServer0}, // case is wrong
+		{"Lets_Encrypt_Staging", nil, &acmeServer1},
+		{"Google_Prod", nil, &acmeServer4},
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getoneserverbyname")
+	store, err := openStorageWithTestData(t, "getoneserverbyname")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
-			serv, err := storage.GetOneServerByName(tc.name)
+			serv, err := store.GetOneServerByName(tc.name)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}

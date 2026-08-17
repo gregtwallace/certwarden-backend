@@ -13,9 +13,12 @@ import (
 func TestPostNewKey(t *testing.T) {
 	testCases := []struct {
 		newKeyPayload   private_keys.NewPayload
+		expectedPostKey *private_keys.Key
 		expectedPostErr error
-		expectedNewKey  private_keys.Key
-		expectedGetErr  error
+
+		getName        string
+		expectedGetKey *private_keys.Key
+		expectedGetErr error
 	}{
 		{ // valid insertion
 			private_keys.NewPayload{
@@ -29,8 +32,23 @@ func TestPostNewKey(t *testing.T) {
 				CreatedAt:      time.Unix(1780336479, 0),
 				UpdatedAt:      time.Unix(1780337000, 0),
 			},
+			&private_keys.Key{
+				ID:             72,
+				Name:           "new_key_xyz",
+				Description:    "",
+				Algorithm:      key_crypto.AlgorithmECDSAp256,
+				Pem:            "-- new pem xyz --",
+				ApiKey:         "apikeyxyz",
+				ApiKeyNew:      "",
+				ApiKeyDisabled: true,
+				ApiKeyViaUrl:   true,
+				LastAccess:     time.Unix(0, 0),
+				CreatedAt:      time.Unix(1780336479, 0),
+				UpdatedAt:      time.Unix(1780337000, 0),
+			},
 			nil,
-			private_keys.Key{
+			"new_key_xyz",
+			&private_keys.Key{
 				ID:             72,
 				Name:           "new_key_xyz",
 				Description:    "",
@@ -58,13 +76,15 @@ func TestPostNewKey(t *testing.T) {
 				CreatedAt:      time.Unix(1780336477, 0),
 				UpdatedAt:      time.Unix(1780337010, 0),
 			},
+			nil,
 			helpers_test.NewTestErrorStringComp("UNIQUE constraint failed"),
-			private_keys.Key{},
-			sql.ErrNoRows,
+			"le_staging",
+			&key1,
+			nil,
 		},
 		{ // incomplete payload
 			private_keys.NewPayload{
-				Name:           new("its_a_new_key_valid"),
+				Name:           new("its_a_new_key_inco"),
 				AlgorithmValue: new(key_crypto.AlgorithmRSA2048.StorageValue()),
 				PemContent:     new("-- new pem again --"),
 				ApiKey:         "irrelevant2",
@@ -73,33 +93,35 @@ func TestPostNewKey(t *testing.T) {
 				CreatedAt:      time.Unix(1780336480, 0),
 				UpdatedAt:      time.Unix(1780337001, 0),
 			},
+			nil,
 			helpers_test.NewTestErrorStringComp("NOT NULL constraint failed"),
-			private_keys.Key{},
+			"its_a_new_key_inco",
+			nil,
 			sql.ErrNoRows,
 		},
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "postnewkey")
+	store, err := openStorageWithTestData(t, "postnewkey")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newKeyPayload.Name)), func(t *testing.T) {
-			key, err := storage.PostNewKey(tc.newKeyPayload)
+			key, err := store.PostNewKey(&tc.newKeyPayload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
 				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, key, tc.expectedNewKey)
+			compareKey(t, key, tc.expectedPostKey)
 
-			key, err = storage.GetOneKeyByName(key.Name)
+			key, err = store.GetOneKeyByName(tc.getName)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, key, tc.expectedNewKey)
+			compareKey(t, key, tc.expectedGetKey)
 		})
 	}
 }

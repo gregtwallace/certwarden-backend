@@ -13,7 +13,7 @@ import (
 
 // GetAllValidCurrentOrders fetches each cert's most recent valid order, if the cert currently has a valid order.
 // This is used for a frontend dashboard.
-func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders []orders.Order, totalRowCount int, err error) {
+func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (ordersSlice []orders.Order, totalRowCount int, err error) {
 	// validate and set sort
 	sortField := q.SortField()
 	switch sortField {
@@ -236,14 +236,14 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (orders 
 			return nil, 0, err
 		}
 
-		orders = append(orders, oneOrderConvert)
+		ordersSlice = append(ordersSlice, oneOrderConvert)
 	}
 
-	return orders, totalRows, nil
+	return ordersSlice, totalRows, nil
 }
 
 // GetOrdersByCert fetches all of the orders for a specified certificate ID
-func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orders []orders.Order, totalRowCount int, err error) {
+func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (ordersSlice []orders.Order, totalRowCount int, err error) {
 	// validate and set sort
 	sortField := q.SortField()
 
@@ -456,10 +456,10 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 			return nil, 0, err
 		}
 
-		orders = append(orders, oneOrderConvert)
+		ordersSlice = append(ordersSlice, oneOrderConvert)
 	}
 
-	return orders, totalRows, nil
+	return ordersSlice, totalRows, nil
 }
 
 // GetAllIncompleteOrderIds returns an array of all of the incomplete orders in storage.
@@ -545,7 +545,7 @@ func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, e
 
 // GetOrders fetches the Order for each ID in the orderIDs slice and returns the
 // slice of Order
-func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err error) {
+func (store *Storage) GetOrders(orderIDs []int) (ordersSlice []orders.Order, err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -725,10 +725,10 @@ func (store *Storage) GetOrders(orderIDs []int) (orders []orders.Order, err erro
 		if err != nil {
 			return nil, err
 		}
-		orders = append(orders, oneOrderConvert)
+		ordersSlice = append(ordersSlice, oneOrderConvert)
 	}
 
-	return orders, nil
+	return ordersSlice, nil
 }
 
 // GetOneOrder fetches a specific Order by ID

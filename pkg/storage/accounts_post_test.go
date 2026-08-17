@@ -11,9 +11,12 @@ import (
 
 func TestPostNewAcmeAccount(t *testing.T) {
 	testCases := []struct {
-		newPayload      acme_accounts.NewPayload
-		expectedPostErr error
-		expectedNew     acme_accounts.Account
+		newPayload       acme_accounts.NewPayload
+		expectedPostAcct *acme_accounts.Account
+		expectedPostErr  error
+
+		getName         string
+		expectedGetAcct *acme_accounts.Account
 		expectedGetErr  error
 	}{
 		{ // valid insertion
@@ -29,8 +32,22 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:    time.Unix(1788838000, 0),
 				Kid:          "https://fake.example.com/1234",
 			},
+			&acme_accounts.Account{
+				ID:          30,
+				Name:        "NewAcct",
+				Description: "some acct",
+				AcmeServer:  acmeServer1,
+				AccountKey:  key58,
+				Status:      "a status",
+				Email:       "anemail@example.com",
+				AcceptedTos: false,
+				CreatedAt:   time.Unix(1788837479, 0),
+				UpdatedAt:   time.Unix(1788838000, 0),
+				Kid:         "https://fake.example.com/1234",
+			},
 			nil,
-			acme_accounts.Account{
+			"NewAcct",
+			&acme_accounts.Account{
 				ID:          30,
 				Name:        "NewAcct",
 				Description: "some acct",
@@ -58,9 +75,11 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:    time.Unix(1888838000, 0),
 				Kid:          "https://fake.example.com/123456",
 			},
+			nil,
 			helpers_test.NewTestErrorStringComp("UNIQUE constraint failed"),
-			acme_accounts.Account{},
-			sql.ErrNoRows,
+			"le_staging_account",
+			&acmeAcct1,
+			nil,
 		},
 		{ // incomplete payload
 			acme_accounts.NewPayload{
@@ -75,13 +94,15 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:   time.Unix(1888838000, 0),
 				Kid:         "https://fake.example.com/123456",
 			},
+			nil,
 			helpers_test.NewTestErrorStringComp("NOT NULL constraint failed"),
-			acme_accounts.Account{},
+			"its_a_new_acct",
+			nil,
 			sql.ErrNoRows,
 		},
 		{ // incomplete payload
 			acme_accounts.NewPayload{
-				Name:         new("its_a_new_acct"),
+				Name:         new("its_a_new_acct2"),
 				Description:  new("wont work 2"),
 				AcmeServerID: new(1),
 				PrivateKeyID: new(62),
@@ -92,33 +113,35 @@ func TestPostNewAcmeAccount(t *testing.T) {
 				UpdatedAt:   time.Unix(1888838000, 0),
 				Kid:         "https://fake.example.com/123456",
 			},
+			nil,
 			helpers_test.NewTestErrorStringComp("NOT NULL constraint failed"),
-			acme_accounts.Account{},
+			"its_a_new_acct2",
+			nil,
 			sql.ErrNoRows,
 		},
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "postnewaccount")
+	store, err := openStorageWithTestData(t, "postnewaccount")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {
-			acct, err := storage.PostNewAcmeAccount(tc.newPayload)
+			acct, err := store.PostNewAcmeAccount(&tc.newPayload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPostErr) {
 				t.Errorf("expected post error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPostErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, acct, tc.expectedNew)
+			compareAcmeAccount(t, acct, tc.expectedPostAcct)
 
-			acct, err = storage.GetOneAcmeAccountByName(acct.Name)
+			acct, err = store.GetOneAcmeAccountByName(tc.getName)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareAcmeAccount(t, acct, tc.expectedNew)
+			compareAcmeAccount(t, acct, tc.expectedGetAcct)
 		})
 	}
 }

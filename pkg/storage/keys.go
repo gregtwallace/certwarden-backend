@@ -25,8 +25,8 @@ type keyDb struct {
 
 // toKey maps the database key info to the private_keys Key
 // object
-func (key keyDb) toKey() private_keys.Key {
-	return private_keys.Key{
+func (key *keyDb) toKey() *private_keys.Key {
+	return &private_keys.Key{
 		ID:             key.id,
 		Name:           key.name,
 		Description:    key.description,

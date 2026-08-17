@@ -48,7 +48,7 @@ type ServerSummaryResponse struct {
 	TermsOfService          string `json:"terms_of_service"`
 }
 
-func (serv Server) summaryResponse(service *Service) (ServerSummaryResponse, error) {
+func (serv *Server) summaryResponse(service *Service) (ServerSummaryResponse, error) {
 	acmeService, err := service.AcmeService(serv.ID)
 	if err != nil {
 		return ServerSummaryResponse{}, err
@@ -68,12 +68,13 @@ func (serv Server) summaryResponse(service *Service) (ServerSummaryResponse, err
 // serverDetailedResponse contains full details about an ACME server
 type serverDetailedResponse struct {
 	ServerSummaryResponse
+
 	RawDirResp json.RawMessage `json:"raw_directory_response"`
 	CreatedAt  int64           `json:"created_at"`
 	UpdatedAt  int64           `json:"updated_at"`
 }
 
-func (serv Server) detailedResponse(service *Service) (serverDetailedResponse, error) {
+func (serv *Server) detailedResponse(service *Service) (serverDetailedResponse, error) {
 	summaryResp, err := serv.summaryResponse(service)
 	if err != nil {
 		service.logger.Errorf("failed to generate acme server summary response (%s)", err)

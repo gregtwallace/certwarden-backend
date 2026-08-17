@@ -34,14 +34,14 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) *outp
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// do validation
 	// name (missing or invalid)
 	if payload.Name == nil || !service.NameValid(*payload.Name, nil) {
 		service.logger.Debug(ErrNameBad)
-		return output.JsonErrValidationFailed(ErrNameBad)
+		return output.ErrorJsonErrValidationFailed(ErrNameBad)
 	}
 	// description (if none, set to blank)
 	if payload.Description == nil {
@@ -51,12 +51,12 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) *outp
 	// error if no method specified
 	if (payload.AlgorithmValue == nil || *payload.AlgorithmValue == "") && (payload.PemContent == nil || *payload.PemContent == "") {
 		service.logger.Debug(ErrKeyOptionNone)
-		return output.JsonErrValidationFailed(ErrKeyOptionNone)
+		return output.ErrorJsonErrValidationFailed(ErrKeyOptionNone)
 	}
 	// error if more than one method specified
 	if (payload.AlgorithmValue != nil && *payload.AlgorithmValue != "") && (payload.PemContent != nil && *payload.PemContent != "") {
 		service.logger.Debug(ErrKeyOptionMultiple)
-		return output.JsonErrValidationFailed(ErrKeyOptionMultiple)
+		return output.ErrorJsonErrValidationFailed(ErrKeyOptionMultiple)
 	}
 	// generate or verify the key
 	// generate with algorithm, error if fails
@@ -66,7 +66,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) *outp
 		*payload.PemContent, err = key_crypto.AlgorithmByStorageValue(*payload.AlgorithmValue).GeneratePrivateKeyPem()
 		if err != nil {
 			service.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 	} else if payload.PemContent != nil && *payload.PemContent != "" {
 		// pem inputted - verify pem and determine algorithm
@@ -77,7 +77,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) *outp
 		*payload.AlgorithmValue = alg.StorageValue()
 		if err != nil {
 			service.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 	}
 	// end key add method
@@ -92,7 +92,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) *outp
 	payload.ApiKey, err = randomness.GenerateApiKey()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 	payload.ApiKeyViaUrl = false
 	t := time.Now()
@@ -100,10 +100,10 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) *outp
 	payload.UpdatedAt = t
 
 	// save new key to storage, which also returns the new key id
-	newKey, err := service.storage.PostNewKey(payload)
+	newKey, err := service.storage.PostNewKey(&payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// write response
@@ -116,7 +116,7 @@ func (service *Service) PostNewKey(w http.ResponseWriter, r *http.Request) *outp
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -129,7 +129,7 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	keyId, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -143,7 +143,7 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	if key.ApiKeyNew != "" {
 		err = errors.New("new api key already exists")
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 	// validation -- end
 
@@ -151,14 +151,14 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	newApiKey, err := randomness.GenerateApiKey()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// update storage
 	err = service.storage.PutKeyApiKeyNew(keyId, newApiKey, time.Now())
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 	key.ApiKeyNew = newApiKey
 
@@ -172,7 +172,7 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

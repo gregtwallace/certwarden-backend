@@ -36,7 +36,7 @@ func responseToCertificate(bodyBytes []byte, headers http.Header) (*Certificate,
 	// this server only supports pem (application/pem-certificate-chain)
 	contentType, _, err := mime.ParseMediaType(headers.Get("Content-type"))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing Content-Type (%v)", err)
+		return nil, fmt.Errorf("error parsing Content-Type (%w)", err)
 	}
 
 	if !strings.EqualFold(contentType, "application/pem-certificate-chain") {

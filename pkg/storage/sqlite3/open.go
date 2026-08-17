@@ -13,7 +13,7 @@ import (
 )
 
 const dbFilename = "appdata.db"
-const dbFileMode = 0600
+const dbFileMode = 0o600
 
 var dbOptions = url.Values{
 	"_fk": []string{"true"}, // enforce foreign key constraints
@@ -28,6 +28,8 @@ type App interface {
 func OpenSqlite3Database(app App) (_ *sql.DB, isNewDb bool, onErrCleanup func(), _ error) {
 	// full path and append options to the Dsn for connString
 	dbWithPath := app.GetDataStorageAppDataPath() + "/" + dbFilename
+
+	logger := app.GetLogger()
 
 	// check if db file exists
 	dbExists := true
@@ -48,7 +50,7 @@ func OpenSqlite3Database(app App) (_ *sql.DB, isNewDb bool, onErrCleanup func(),
 		}
 		if didMigrate {
 			// old db migrated
-			app.GetLogger().Infof("sqlite3: db file moved to %s", dbWithPath)
+			logger.Infof("sqlite3: db file moved to %s", dbWithPath)
 		} else {
 			// no old one either, so new db
 			newDbFile = true
@@ -57,7 +59,7 @@ func OpenSqlite3Database(app App) (_ *sql.DB, isNewDb bool, onErrCleanup func(),
 
 	// setup new db
 	if newDbFile {
-		app.GetLogger().Warn("sqlite3: database file does not exist, creating a new one")
+		logger.Warn("sqlite3: database file does not exist, creating a new one")
 		// create db file
 		err := os.WriteFile(dbWithPath, []byte{}, dbFileMode)
 		if err != nil {
@@ -70,20 +72,27 @@ func OpenSqlite3Database(app App) (_ *sql.DB, isNewDb bool, onErrCleanup func(),
 	if err != nil {
 		// if db file is new, delete it on error
 		if newDbFile {
-			_ = os.Remove(dbWithPath)
+			err := os.Remove(dbWithPath)
+			if err != nil {
+				logger.Errorf("sqlite3: failed to remove newly created db file (%s)", err)
+			}
 		}
 		return nil, false, func() {}, fmt.Errorf("sqlite3: failed to open database file (%w)", err)
 	}
 
 	// cleanup func for if there is a failure later
-	cleanUp := func() {
-		_ = db.Close()
+	onErrCleanup = func() {
+		//nolint:errcheck // who cares, app already failed anyway
+		db.Close()
 
 		// only remove file if new file was created
 		if newDbFile {
-			_ = os.Remove(dbWithPath)
+			err := os.Remove(dbWithPath)
+			if err != nil {
+				logger.Errorf("sqlite3: failed to remove newly created db file (%s)", err)
+			}
 		}
 	}
 
-	return db, newDbFile, cleanUp, nil
+	return db, newDbFile, onErrCleanup, nil
 }

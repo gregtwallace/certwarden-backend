@@ -31,7 +31,7 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// get id param
@@ -39,7 +39,7 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -51,14 +51,14 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	// name (optional - check if not nil)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
 		service.logger.Debug(ErrNameBad)
-		return output.JsonErrValidationFailed(ErrNameBad)
+		return output.ErrorJsonErrValidationFailed(ErrNameBad)
 	}
 	// directory_url (optional - check if not nil)
 	if payload.DirectoryURL != nil {
 		_, err = acme.FetchAcmeDirectory(service.httpClient, *payload.DirectoryURL)
 		if err != nil {
 			service.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 	}
 
@@ -69,10 +69,10 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	payload.UpdatedAt = time.Now()
 
 	// save updated key info to storage
-	updatedServer, err := service.storage.PutServerUpdate(payload)
+	updatedServer, err := service.storage.PutServerUpdate(&payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// if directory url changed, create new acme.Service
@@ -83,16 +83,16 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 		service.acmeServers[payload.ID], err = acme.NewService(service, *payload.DirectoryURL)
 		if err != nil {
 			service.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 	}
 
 	// make detailed response
 	detailedResp, err := updatedServer.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate server summary response (%s)", err)
+		err = fmt.Errorf("failed to generate server summary response (%w)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -105,7 +105,7 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

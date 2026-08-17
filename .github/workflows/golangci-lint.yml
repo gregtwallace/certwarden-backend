@@ -1,0 +1,34 @@
+name: golangci-lint
+
+on:
+  workflow_dispatch:
+  push:
+
+env:
+  GITHUB_REF: ${{ github.ref }}
+  GOLANGCI_LINT_VERSION: v2.12
+
+permissions:
+  contents: read
+
+jobs:
+  golangci:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ env.GITHUB_REF }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}

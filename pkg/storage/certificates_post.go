@@ -6,7 +6,7 @@ import (
 )
 
 // PostNewAccount inserts a new cert into the db
-func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates.Certificate, error) {
+func (store *Storage) PostNewCert(payload *certificates.NewPayload) (*certificates.Certificate, error) {
 	// database update
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -52,13 +52,13 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates
 	).Scan(&id)
 
 	if err != nil {
-		return certificates.Certificate{}, err
+		return nil, err
 	}
 
 	// get updated to return
 	newCert, err := store.GetOneCertById(id)
 	if err != nil {
-		return certificates.Certificate{}, err
+		return nil, err
 	}
 
 	return newCert, nil

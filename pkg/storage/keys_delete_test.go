@@ -27,14 +27,14 @@ func TestKeyInUse(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "keyinuse")
+	store, err := openStorageWithTestData(t, "keyinuse")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.keyID), func(t *testing.T) {
-			inUse, err := storage.KeyInUse(tc.keyID)
+			inUse, err := store.KeyInUse(tc.keyID)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
@@ -50,31 +50,31 @@ func TestDeleteKey(t *testing.T) {
 	testCases := []struct {
 		keyID             int
 		expectedDelErr    error
-		expectedGetResult private_keys.Key
+		expectedGetResult *private_keys.Key
 		expectedGetErr    error
 	}{
-		{2, sql.ErrNoRows, private_keys.Key{}, sql.ErrNoRows}, // non-existent
-		{58, nil, private_keys.Key{}, sql.ErrNoRows},          // not in use, gets deleted
-		{62, nil, private_keys.Key{}, sql.ErrNoRows},          // not in use, gets deleted
-		{63, storage.ErrInUse, key63, nil},                    // in use by acct
-		{64, storage.ErrInUse, key64, nil},                    // in use by cert
-		{69, storage.ErrInUse, key69, nil},                    // in use by newest order (but isn't in use on a cert)
+		{2, sql.ErrNoRows, nil, sql.ErrNoRows}, // non-existent
+		{58, nil, nil, sql.ErrNoRows},          // not in use, gets deleted
+		{62, nil, nil, sql.ErrNoRows},          // not in use, gets deleted
+		{63, storage.ErrInUse, &key63, nil},    // in use by acct
+		{64, storage.ErrInUse, &key64, nil},    // in use by cert
+		{69, storage.ErrInUse, &key69, nil},    // in use by newest order (but isn't in use on a cert)
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "deletekey")
+	store, err := openStorageWithTestData(t, "deletekey")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.keyID), func(t *testing.T) {
-			err := storage.DeleteKey(tc.keyID)
+			err := store.DeleteKey(tc.keyID)
 			if !helpers_test.ErrorsIs(err, tc.expectedDelErr) {
 				t.Errorf("expected delete error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedDelErr), helpers_test.ErrorToVal(err))
 			}
 
-			key, err := storage.GetOneKeyById(tc.keyID)
+			key, err := store.GetOneKeyById(tc.keyID)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}

@@ -12,6 +12,7 @@ import (
 func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (Order, *output.JsonError) {
 	// dont allow new order if a pending order exists
 	orderId, err := service.storage.GetNewestIncompleteCertOrderId(certId)
+	//nolint:gocritic // TODO: This code needs a refactor anyway, so leave the logic as-is for now
 	if errors.Is(err, sql.ErrNoRows) {
 		// no existing incomplete order, make a new one
 
@@ -25,38 +26,38 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		key, err := cert.Account.AcmeAccountKey()
 		if err != nil {
 			service.logger.Error(err)
-			return Order{}, output.JsonErrInternal(err)
+			return Order{}, output.ErrorJsonErrInternal(err)
 		}
 
 		// send the new-order to ACME
 		acmeService, err := service.acmeServerService.AcmeService(cert.Account.AcmeServer.ID)
 		if err != nil {
 			service.logger.Error(err)
-			return Order{}, output.JsonErrInternal(err)
+			return Order{}, output.ErrorJsonErrInternal(err)
 		}
 
 		acmeResponse, err := acmeService.NewOrder(service.NewOrderPayload(cert), key)
 		if err != nil {
 			service.logger.Error(err)
-			return Order{}, output.JsonErrInternal(err)
+			return Order{}, output.ErrorJsonErrInternal(err)
 		}
 		service.logger.Debugf("orders: new order location: %s", acmeResponse.Location)
 
 		// populate new order payload
-		payload := makeNewOrderAcmePayload(cert, acmeResponse)
+		payload := makeNewOrderAcmePayload(cert, &acmeResponse)
 
 		// save ACME response to order storage
-		orderId, err = service.storage.PostNewOrder(payload)
+		orderId, err = service.storage.PostNewOrder(&payload)
 		// if exists error, try to update an existing order
 		if errors.Is(err, ErrOrderExists) {
-			err = service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(orderId, acmeResponse))
+			err = service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(orderId, &acmeResponse))
 			if err != nil {
 				service.logger.Error(err)
-				return Order{}, output.JsonErrStorageGeneric(err)
+				return Order{}, output.ErrorJsonErrStorageGeneric(err)
 			}
 		} else if err != nil {
 			service.logger.Error(err)
-			return Order{}, output.JsonErrStorageGeneric(err)
+			return Order{}, output.ErrorJsonErrStorageGeneric(err)
 		}
 
 		// update certificate timestamp
@@ -68,7 +69,7 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 	} else if err != nil {
 		// some other unexpected storage error
 		service.logger.Error(err)
-		return Order{}, output.JsonErrStorageGeneric(err)
+		return Order{}, output.ErrorJsonErrStorageGeneric(err)
 	} else {
 		// continue with existing order
 		service.logger.Debugf("orders: create new order is retrying existing pending order instead of creating new")

@@ -8,7 +8,7 @@ import (
 )
 
 // GetAllKeys returns a slice of all Keys in the db
-func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Key, totalRowCount int, err error) {
+func (store Storage) GetAllKeys(q pagination_sort.Query) (allKeys []*private_keys.Key, totalRowCount int, err error) {
 	// validate and set sort
 	sortField := q.SortField()
 	switch sortField {
@@ -56,10 +56,6 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 	}
 	defer rows.Close()
 
-	// for total row count
-	var totalRows int
-
-	var allKeys []private_keys.Key
 	for rows.Next() {
 		var oneKeyDb keyDb
 		err = rows.Scan(
@@ -76,7 +72,7 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 			&oneKeyDb.createdAt,
 			&oneKeyDb.updatedAt,
 
-			&totalRows,
+			&totalRowCount,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -87,21 +83,21 @@ func (store Storage) GetAllKeys(q pagination_sort.Query) (keys []private_keys.Ke
 		allKeys = append(allKeys, convertedKey)
 	}
 
-	return allKeys, totalRows, nil
+	return allKeys, totalRowCount, nil
 }
 
 // GetOneKeyById returns a KeyExtended based on unique id
-func (store *Storage) GetOneKeyById(id int) (private_keys.Key, error) {
+func (store *Storage) GetOneKeyById(id int) (*private_keys.Key, error) {
 	return store.getOneKey(id, "")
 }
 
 // GetOneKeyByName returns a KeyExtended based on unique name
-func (store *Storage) GetOneKeyByName(name string) (private_keys.Key, error) {
+func (store *Storage) GetOneKeyByName(name string) (*private_keys.Key, error) {
 	return store.getOneKey(-1, name)
 }
 
 // dbGetOneKey returns a KeyExtended based on unique id or unique name
-func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
+func (store Storage) getOneKey(id int, name string) (*private_keys.Key, error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -136,7 +132,7 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 	)
 
 	if err != nil {
-		return private_keys.Key{}, err
+		return nil, err
 	}
 
 	// convert to KeyExtended
@@ -148,7 +144,7 @@ func (store Storage) getOneKey(id int, name string) (private_keys.Key, error) {
 // GetAvailableKeys returns a slice of private keys that exist but are not already associated
 // with a known ACME account or certificate (NOTE: This does NOT check if the key is in use
 // by a most recent order.)
-func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
+func (store *Storage) GetAvailableKeys() (availableKeys []*private_keys.Key, err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -185,7 +181,6 @@ func (store *Storage) GetAvailableKeys() ([]private_keys.Key, error) {
 	}
 	defer rows.Close()
 
-	var availableKeys []private_keys.Key
 	for rows.Next() {
 		var oneKeyDb keyDb
 

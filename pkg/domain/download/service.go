@@ -21,7 +21,7 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	GetOneKeyByName(name string) (private_keys.Key, error)
+	GetOneKeyByName(name string) (*private_keys.Key, error)
 
 	GetCertNewestValidOrderByName(certName string) (order orders.Order, err error)
 

@@ -46,7 +46,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// get id from param
@@ -54,7 +54,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -62,24 +62,24 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	cert, outErr := service.GetCertificate(payload.ID)
 	if outErr != nil {
 		service.logger.Debug(ErrIdBad)
-		return output.JsonErrValidationFailed(ErrIdBad)
+		return output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
 	// name (optional)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
 		service.logger.Debug(ErrNameBad)
-		return output.JsonErrValidationFailed(ErrNameBad)
+		return output.ErrorJsonErrValidationFailed(ErrNameBad)
 	}
 	// description - no validation
 	// private key (optional)
 	if payload.PrivateKeyId != nil && !service.privateKeyIdValid(*payload.PrivateKeyId, &payload.ID) {
-		return output.JsonErrValidationFailed(ErrKeyIdBad)
+		return output.ErrorJsonErrValidationFailed(ErrKeyIdBad)
 	}
 	// subject alts (optional)
 	// if new alts are being specified
 	if payload.SubjectAltNames != nil {
 		if !subjectAltsValid(payload.SubjectAltNames) {
 			service.logger.Debug(ErrDomainBad)
-			return output.JsonErrValidationFailed(ErrDomainBad)
+			return output.ErrorJsonErrValidationFailed(ErrDomainBad)
 		}
 
 	} else if len(cert.SubjectAltNames) > 0 {
@@ -87,7 +87,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 		// verify against the challenge method
 		if !subjectAltsValid(cert.SubjectAltNames) {
 			service.logger.Debug(ErrDomainBad)
-			return output.JsonErrValidationFailed(ErrDomainBad)
+			return output.ErrorJsonErrValidationFailed(ErrDomainBad)
 		}
 	}
 	// profile Extension -- validate if specified
@@ -95,25 +95,25 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 		// specified, validate against acme service
 		acmeService, err := service.acmeServerService.AcmeService(cert.Account.AcmeServer.ID)
 		if err != nil {
-			err = fmt.Errorf("failed to retrieve acme service (%s)", err)
+			err = fmt.Errorf("failed to retrieve acme service (%w)", err)
 			service.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 		if !acmeService.ProfileValidate(*payload.Profile) {
 			err = fmt.Errorf("acme service for specified account does not advertise profile `%s`", *payload.Profile)
 			service.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 	}
 	// api key must be at least 10 characters long
 	if payload.ApiKey != nil && len(*payload.ApiKey) < 10 {
 		service.logger.Debug(ErrApiKeyBad)
-		return output.JsonErrValidationFailed(ErrApiKeyBad)
+		return output.ErrorJsonErrValidationFailed(ErrApiKeyBad)
 	}
 	// api key new must be at least 10 characters long
 	if payload.ApiKeyNew != nil && *payload.ApiKeyNew != "" && len(*payload.ApiKeyNew) < 10 {
 		service.logger.Debug(ErrApiKeyNewBad)
-		return output.JsonErrValidationFailed(ErrApiKeyNewBad)
+		return output.ErrorJsonErrValidationFailed(ErrApiKeyNewBad)
 	}
 
 	// CSR Extra Extensions - error checking is now in the custom unmarshal function
@@ -125,7 +125,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 		valid := validation.DomainAndPortValid(*payload.PostProcessingClientAddress)
 		if !valid {
 			service.logger.Debug(ErrClientAddressBad)
-			return output.JsonErrValidationFailed(ErrClientAddressBad)
+			return output.ErrorJsonErrValidationFailed(ErrClientAddressBad)
 		}
 	}
 
@@ -134,7 +134,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 		valid := clientKeyB64Valid(*payload.PostProcessingClientKeyB64)
 		if !valid {
 			service.logger.Debug(ErrPostProcessingClientKeyB64Bad)
-			return output.JsonErrValidationFailed(ErrPostProcessingClientKeyB64Bad)
+			return output.ErrorJsonErrValidationFailed(ErrPostProcessingClientKeyB64Bad)
 		}
 	}
 
@@ -145,10 +145,10 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 
 	// save account name and desc to storage, which also returns the account id with new
 	// name and description
-	updatedCert, err := service.storage.PutCertUpdate(payload)
+	updatedCert, err := service.storage.PutCertUpdate(&payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// write response
@@ -160,7 +160,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

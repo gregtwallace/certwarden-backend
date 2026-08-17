@@ -16,20 +16,20 @@ type privateCertificateChain orders.Order
 
 // privateCertificateChain Output Methods
 
-func (pcc privateCertificateChain) FilenameNoExt() string {
+func (pcc *privateCertificateChain) FilenameNoExt() string {
 	return fmt.Sprintf("%s.certchainkey", pcc.Certificate.Name)
 }
 
-func (pcc privateCertificateChain) Modtime() time.Time {
-	return orders.Order(pcc).Modtime()
+func (pcc *privateCertificateChain) Modtime() time.Time {
+	return (*orders.Order)(pcc).Modtime()
 }
 
 // PemContent returns the combined key + cert + chain pem content
-func (pcc privateCertificateChain) PemContent() string {
+func (pcc *privateCertificateChain) PemContent() string {
 	keyPem := pcc.FinalizedKey.PemContent()
 
 	// all cert pem data
-	certPem := orders.Order(pcc).PemContent()
+	certPem := (*orders.Order)(pcc).PemContent()
 
 	// append key + LF + cert
 	return keyPem + string([]byte{10}) + certPem
@@ -54,7 +54,7 @@ func (service *Service) DownloadPrivateCertChainViaHeader(w http.ResponseWriter,
 
 	// return pem file to client
 	privCertChain := privateCertificateChain(order)
-	service.output.WritePem(w, r, privCertChain)
+	service.output.WritePem(w, r, &privCertChain)
 
 	return nil
 }
@@ -75,7 +75,7 @@ func (service *Service) DownloadPrivateCertChainViaUrl(w http.ResponseWriter, r 
 
 	// return pem file to client
 	privCertChain := privateCertificateChain(order)
-	service.output.WritePem(w, r, privCertChain)
+	service.output.WritePem(w, r, &privCertChain)
 
 	return nil
 }

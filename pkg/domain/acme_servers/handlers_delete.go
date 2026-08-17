@@ -17,7 +17,7 @@ func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) *ou
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -31,11 +31,11 @@ func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) *ou
 	inUse, err := service.storage.ServerInUse(id)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 	if inUse {
 		service.logger.Debug("cannot delete, in use")
-		return output.JsonErrDeleteInUse("acme server")
+		return output.ErrorJsonErrDeleteInUse("acme server")
 	}
 	// end validation
 
@@ -43,7 +43,7 @@ func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) *ou
 	err = service.storage.DeleteServer(id)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// delete acme Service
@@ -60,7 +60,7 @@ func (service *Service) DeleteServer(w http.ResponseWriter, r *http.Request) *ou
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

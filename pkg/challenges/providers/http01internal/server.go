@@ -49,7 +49,7 @@ func (service *Service) startServer() (err error) {
 	// create listener for web server
 	ln, err := net.Listen("tcp", servAddr)
 	if err != nil {
-		service.logger.Error(fmt.Errorf("failed to start http-01 challenge server, cannot bind to %s (%s)", servAddr, err))
+		service.logger.Errorf("failed to start http-01 challenge server, cannot bind to %s (%s)", servAddr, err)
 		return err
 	}
 
@@ -57,7 +57,8 @@ func (service *Service) startServer() (err error) {
 	service.shutdownWaitgroup.Add(1)
 	go func() {
 		defer service.shutdownWaitgroup.Done()
-		defer func() { _ = ln.Close }()
+		//nolint:errcheck // shutting down, who cares
+		defer ln.Close()
 
 		err := srv.Serve(ln)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {

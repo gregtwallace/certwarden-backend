@@ -48,16 +48,20 @@ func (service *Service) configureCloudflareClient(cfg *Config) (err error) {
 	// make option to use the custom http.Client
 	opts := []option.RequestOption{option.WithHTTPClient(service.httpClient)}
 
-	// if using apiToken
-	if cfg.ApiToken != nil {
-		// make api for the token
+	switch {
+	// scoped api token
+	case cfg.ApiToken != nil:
 		opts = append(opts, option.WithAPIToken(*cfg.ApiToken))
-	} else if cfg.Account != nil && cfg.Account.Email != nil && cfg.Account.GlobalApiKey != nil {
-		// else if using Account
-		opts = append(opts, option.WithAPIEmail(*cfg.Account.Email))
-		opts = append(opts, option.WithAPIKey(*cfg.Account.GlobalApiKey))
-	} else {
-		// else incomplete config
+
+	// account email and global key
+	case cfg.Account != nil && cfg.Account.Email != nil && cfg.Account.GlobalApiKey != nil:
+		opts = append(opts,
+			option.WithAPIEmail(*cfg.Account.Email),
+			option.WithAPIKey(*cfg.Account.GlobalApiKey),
+		)
+
+	// incomplete config
+	default:
 		return errMissingConfigInfo
 	}
 

@@ -16,7 +16,7 @@ func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Reques
 	auth, err := service.sessionManager.RefreshSession(r, w)
 	if err != nil {
 		service.logger.Infof("client %s: session refresh failed (%s)", r.RemoteAddr, err)
-		return output.JsonErrUnauthorized
+		return output.ErrJsonUnauthorized
 	}
 
 	// return response to client
@@ -31,7 +31,7 @@ func (service *Service) RefreshUsingCookie(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
 		// detailed error is OK here because the user passed auth checks
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	// log success
@@ -52,7 +52,7 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) *output.J
 	deletedAuth, err := service.sessionManager.DeleteSession(r)
 	if err != nil {
 		service.logger.Errorf("client %s: logout failed (%s)", r.RemoteAddr, err)
-		return output.JsonErrUnauthorized
+		return output.ErrJsonUnauthorized
 	}
 
 	// log success
@@ -67,7 +67,7 @@ func (service *Service) Logout(w http.ResponseWriter, r *http.Request) *output.J
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
 		// detailed error is OK here because the user passed auth checks
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

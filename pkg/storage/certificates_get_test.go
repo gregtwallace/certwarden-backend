@@ -122,14 +122,14 @@ func TestGetAllCerts(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getallcerts")
+	store, err := openStorageWithTestData(t, "getallcerts")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedAtIndx.Name), func(t *testing.T) {
-			certs, totalCt, err := storage.GetAllCerts(tc.q)
+			certs, totalCt, err := store.GetAllCerts(tc.q)
 			if err != nil {
 				t.Errorf("get all failed")
 				return
@@ -142,7 +142,7 @@ func TestGetAllCerts(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(certs))
 			}
 			if tc.testIndx <= len(certs)-1 {
-				compareCertificate(t, certs[tc.testIndx], tc.expectedAtIndx)
+				compareCertificate(t, certs[tc.testIndx], &tc.expectedAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(certs))
 			}
@@ -153,25 +153,25 @@ func TestGetAllCerts(t *testing.T) {
 func TestGetOneCertById(t *testing.T) {
 	testCases := []struct {
 		id           int
+		expectedCert *certificates.Certificate
 		expectedErr  error
-		expectedCert certificates.Certificate
 	}{
-		{-5, sql.ErrNoRows, certificates.Certificate{}},
-		{50, sql.ErrNoRows, certificates.Certificate{}},
-		{18, nil, cert18},
-		{26, nil, cert26},
-		{27, nil, cert27},
+		{-5, nil, sql.ErrNoRows},
+		{50, nil, sql.ErrNoRows},
+		{18, &cert18, nil},
+		{26, &cert26, nil},
+		{27, &cert27, nil},
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getonecertbyid")
+	store, err := openStorageWithTestData(t, "getonecertbyid")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
-			serv, err := storage.GetOneCertById(tc.id)
+			serv, err := store.GetOneCertById(tc.id)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
@@ -184,25 +184,25 @@ func TestGetOneCertById(t *testing.T) {
 func TestGetOneCertByName(t *testing.T) {
 	testCases := []struct {
 		name         string
+		expectedCert *certificates.Certificate
 		expectedErr  error
-		expectedCert certificates.Certificate
 	}{
-		{"fake-bad-name", sql.ErrNoRows, certificates.Certificate{}},
-		{"", sql.ErrNoRows, certificates.Certificate{}},
-		{"serverDEFault", nil, cert18}, // case is wrong
-		{"test008.test.example.com", nil, cert26},
-		{"test008.test.example.com-p", nil, cert27},
+		{"fake-bad-name", nil, sql.ErrNoRows},
+		{"", nil, sql.ErrNoRows},
+		{"serverDEFault", &cert18, nil}, // case is wrong
+		{"test008.test.example.com", &cert26, nil},
+		{"test008.test.example.com-p", &cert27, nil},
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getonecertbyname")
+	store, err := openStorageWithTestData(t, "getonecertbyname")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
-			serv, err := storage.GetOneCertByName(tc.name)
+			serv, err := store.GetOneCertByName(tc.name)
 			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}

@@ -41,14 +41,14 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
-	// validation
+	// validation -- begin
 	// name
 	if payload.Name == nil || !service.nameValid(*payload.Name, nil) {
 		service.logger.Debug(ErrNameBad)
-		return output.JsonErrValidationFailed(ErrNameBad)
+		return output.ErrorJsonErrValidationFailed(ErrNameBad)
 	}
 
 	// description (blank if not specified)
@@ -63,29 +63,29 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 		*payload.Email = ""
 	} else if !validation.EmailValidOrBlank(*payload.Email) {
 		service.logger.Debug(ErrEmailBad)
-		return output.JsonErrValidationFailed(ErrEmailBad)
+		return output.ErrorJsonErrValidationFailed(ErrEmailBad)
 	}
 
 	// TOS must be accepted
 	if payload.AcceptedTos == nil || !*payload.AcceptedTos {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// ACME Server
 	if payload.AcmeServerID == nil || !service.acmeServerService.AcmeServerValid(*payload.AcmeServerID) {
 		err = errors.New("acme_server_id not specified or invalid")
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// private key (make last since most intense op)
 	if payload.PrivateKeyID == nil || !service.keys.KeyAvailable(*payload.PrivateKeyID) {
 		err = errors.New("private_key_id not available")
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
-	// end validation
+	// validation -- end
 
 	// add additional details to the payload before saving
 	payload.Status = "unknown"
@@ -96,17 +96,17 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 
 	// Save new account details to storage.
 	// No ACME actions are performed.
-	newAcct, err := service.storage.PostNewAcmeAccount(payload)
+	newAcct, err := service.storage.PostNewAcmeAccount(&payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	detailedResp, err := newAcct.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -118,7 +118,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -131,6 +131,7 @@ type postAsGetPayload struct {
 
 type postAsGetResponse struct {
 	output.JsonResponse
+
 	URL    string      `json:"url"`
 	Body   string      `json:"body"`
 	Header http.Header `json:"headers"`
@@ -145,7 +146,7 @@ func (service *Service) PostAsGet(w http.ResponseWriter, r *http.Request) *outpu
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// decode body into payload
@@ -153,7 +154,7 @@ func (service *Service) PostAsGet(w http.ResponseWriter, r *http.Request) *outpu
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -166,7 +167,7 @@ func (service *Service) PostAsGet(w http.ResponseWriter, r *http.Request) *outpu
 	// URL
 	u, err := url.Parse(payload.URL)
 	if err != nil || u.Scheme != "https" || u.Host == "" {
-		return output.JsonErrValidationFailed(fmt.Errorf("url (%s) is insecure or not valid", payload.URL))
+		return output.ErrorJsonErrValidationFailed(fmt.Errorf("url (%s) is insecure or not valid", payload.URL))
 	}
 
 	// end validation
@@ -175,31 +176,32 @@ func (service *Service) PostAsGet(w http.ResponseWriter, r *http.Request) *outpu
 	acmeAccountKey, err := account.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// send the PaG to ACME
 	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	resp, header, err := acmeService.PostAsGet(payload.URL, acmeAccountKey)
 	if err != nil {
 		// if ACME error, don't actually error this API call, just return the error
 		// information to the client
-		_, isAcmeErr := err.(*acme.Error)
+		//nolint:errcheck // TODO: Refactor this
+		_, isAcmeErr := errors.AsType[*acme.Error](err)
 		if !isAcmeErr {
 			service.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 	}
 
 	// if content-type parses and is json, ensure it is pretty using Indent
 	contentType, _, err := mime.ParseMediaType(header.Get("Content-type"))
 	if err != nil {
-		service.logger.Errorf("accounts: debug pag response content-type failed to parse (%v)", err)
+		service.logger.Errorf("accounts: debug pag response content-type failed to parse (%s)", err)
 		// DONT return error -- just continue without modifying the response
 	} else if strings.EqualFold(contentType, "application/json") {
 		var prettyJson bytes.Buffer
@@ -222,7 +224,7 @@ func (service *Service) PostAsGet(w http.ResponseWriter, r *http.Request) *outpu
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

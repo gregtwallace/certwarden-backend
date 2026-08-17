@@ -1,4 +1,4 @@
-name: Run Tests
+name: go-test
 
 on:
   workflow_dispatch:

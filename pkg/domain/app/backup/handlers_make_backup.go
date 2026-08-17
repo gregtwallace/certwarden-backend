@@ -8,6 +8,7 @@ import (
 
 type backupFileMakeResponse struct {
 	output.JsonResponse
+
 	BackupFile backupFileDetails `json:"backup_file"`
 }
 
@@ -16,9 +17,9 @@ type backupFileMakeResponse struct {
 func (service *Service) MakeDiskBackupNowHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	backupFileDetails, err := service.CreateBackupOnDisk()
 	if err != nil {
-		err = fmt.Errorf("failed to make on disk backup (%s)", err)
+		err = fmt.Errorf("failed to make on disk backup (%w)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write success response
@@ -30,7 +31,7 @@ func (service *Service) MakeDiskBackupNowHandler(w http.ResponseWriter, r *http.
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

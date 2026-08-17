@@ -2,13 +2,11 @@ package storage
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 )
 
 // PutUserPasswordHash updates the specified user's password hash to the specified hash.
-func (store *Storage) PutUserPasswordHash(username string, passwordHash string, updatedAt time.Time) (userId int, err error) {
+func (store *Storage) PutUserPasswordHash(username, passwordHash string, updatedAt time.Time) (userId int, err error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -38,7 +36,7 @@ func (store *Storage) PutUserPasswordHash(username string, passwordHash string, 
 		return -2, err
 	}
 	if rowsAffected != 1 {
-		return -2, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+		return -2, errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	// get updated key to return

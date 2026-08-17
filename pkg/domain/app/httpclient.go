@@ -75,13 +75,13 @@ func makeHttpClient() (client *http.Client) {
 	// assemble header value (acquired vals, then default vals, then final wildcard)
 	sb := strings.Builder{}
 	for indx, langVal := range acceptLanguages {
-		_, _ = sb.WriteString(langVal)
+		sb.WriteString(langVal)
 		if indx != 0 {
-			_, _ = sb.WriteString(fmt.Sprintf(";q=%.1f", 1-.1*float32(indx)))
+			fmt.Fprintf(&sb, ";q=%.1f", 1-.1*float32(indx))
 		}
-		_, _ = sb.WriteString(", ")
+		sb.WriteString(", ")
 	}
-	_, _ = sb.WriteString("*;q=0.5")
+	sb.WriteString("*;q=0.5")
 
 	// create rate limit Ticker
 	rlTicker := time.NewTicker(time.Second / rateLimit)

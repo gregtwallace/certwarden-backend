@@ -6,7 +6,19 @@ import (
 )
 
 // compareKey compares key to expectedKey and throws appropriate errors for any differences
-func compareKey(t *testing.T, key, expectedKey private_keys.Key) {
+func compareKey(t *testing.T, key, expectedKey *private_keys.Key) {
+	if key == nil && expectedKey == nil {
+		return
+	}
+	if key == nil && expectedKey != nil {
+		t.Errorf("key: key is nil but expectedKey is non-nil")
+		return
+	}
+	if key != nil && expectedKey == nil {
+		t.Errorf("key: key is non-nil but expectedKey is nil")
+		return
+	}
+
 	if key.ID != expectedKey.ID {
 		t.Errorf("key: id expected '%d' but got '%d'", expectedKey.ID, key.ID)
 	}

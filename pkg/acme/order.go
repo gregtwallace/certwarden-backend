@@ -3,6 +3,7 @@ package acme
 import (
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -65,7 +66,7 @@ func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey)
 	jsonResp, headers, err := service.postToUrlSigned(payload, service.dir.NewOrder, accountKey)
 	// if there is an acme.Error of type `malformed` or `alreadyReplaced` AND the `replaces` field is
 	// set, strip the replaces filed and do exactly 1 retry
-	acmeErr, isAcmeErr := err.(*Error)
+	acmeErr, isAcmeErr := errors.AsType[*Error](err)
 	if isAcmeErr && payload.Replaces != nil && acmeErr != nil &&
 		(acmeErr.Type == "urn:ietf:params:acme:error:malformed" || acmeErr.Type == "urn:ietf:params:acme:error:alreadyReplaced") {
 

@@ -47,13 +47,12 @@ func makeValidEmails() []string {
 // makeInvalidEmails makes the array of emails to test that should yield
 // an invalid result
 func makeInvalidEmails() []string {
-	invalidEmails := []string{}
-
-	// example without an @
-	invalidEmails = append(invalidEmails, "john.smith.example.com")
-
-	// example with wildcard
-	invalidEmails = append(invalidEmails, "greg@*.example.com")
+	invalidEmails := []string{
+		// example without an @
+		"john.smith.example.com",
+		// example with wildcard
+		"greg@*.example.com",
+	}
 
 	// invalid usernames with known valid domain
 	for _, username := range invalidUsernames {

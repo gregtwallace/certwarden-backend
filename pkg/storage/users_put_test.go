@@ -18,7 +18,7 @@ func TestPutUserPasswordHash(t *testing.T) {
 
 		expectedPutId   int
 		expectedPutErr  error
-		expectedGetUser auth.User
+		expectedGetUser *auth.User
 		expectedGetErr  error
 	}{
 		{
@@ -27,7 +27,7 @@ func TestPutUserPasswordHash(t *testing.T) {
 			time.Unix(12222222, 0),
 			-2,
 			storage.ErrWrongUpdateRowCount,
-			auth.User{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{
@@ -36,7 +36,7 @@ func TestPutUserPasswordHash(t *testing.T) {
 			time.Unix(12222223, 0),
 			-2,
 			storage.ErrWrongUpdateRowCount,
-			auth.User{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{
@@ -45,7 +45,7 @@ func TestPutUserPasswordHash(t *testing.T) {
 			time.Unix(12244224, 0),
 			-2,
 			storage.ErrWrongUpdateRowCount,
-			auth.User{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{
@@ -54,7 +54,7 @@ func TestPutUserPasswordHash(t *testing.T) {
 			time.Unix(22422224, 0),
 			4,
 			nil,
-			auth.User{
+			&auth.User{
 				ID:           4,
 				Username:     "user4",
 				PasswordHash: "anewhash",
@@ -66,14 +66,14 @@ func TestPutUserPasswordHash(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putuserpasswordhash")
+	store, err := openStorageWithTestData(t, "putuserpasswordhash")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.username), func(t *testing.T) {
-			userId, err := storage.PutUserPasswordHash(tc.username, tc.newPasswordHash, tc.updatedAt)
+			userId, err := store.PutUserPasswordHash(tc.username, tc.newPasswordHash, tc.updatedAt)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put username passwordhash error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
@@ -82,7 +82,7 @@ func TestPutUserPasswordHash(t *testing.T) {
 				t.Errorf("expected put username passwordhash return val '%d' but got '%d'", tc.expectedPutId, userId)
 			}
 
-			user, err := storage.GetOneUserByUsername(tc.username)
+			user, err := store.GetOneUserByUsername(tc.username)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get username error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}

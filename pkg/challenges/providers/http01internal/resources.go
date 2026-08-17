@@ -6,7 +6,7 @@ import (
 )
 
 // Provision adds a resource to host
-func (service *Service) Provision(_ string, token string, keyAuth acme.KeyAuth) error {
+func (service *Service) Provision(_, token string, keyAuth acme.KeyAuth) error {
 	// add new entry
 	exists, _ := service.provisionedResources.Add(token, keyAuth)
 
@@ -22,7 +22,7 @@ func (service *Service) Provision(_ string, token string, keyAuth acme.KeyAuth) 
 }
 
 // Deprovision removes a removes a resource from those being hosted
-func (service *Service) Deprovision(_ string, token string, _ acme.KeyAuth) error {
+func (service *Service) Deprovision(_, token string, _ acme.KeyAuth) error {
 	// delete entry
 	delFunc := func(tokenKey string, _ acme.KeyAuth) bool {
 		return tokenKey == token

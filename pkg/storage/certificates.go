@@ -35,18 +35,18 @@ type certificateDb struct {
 	profile                     string
 }
 
-func (cert certificateDb) toCertificate() (certificates.Certificate, error) {
+func (cert *certificateDb) toCertificate() (*certificates.Certificate, error) {
 	certExt, err := cert.csrExtraExtensions.toCertExtensionSlice()
 	if err != nil {
-		return certificates.Certificate{}, err
+		return nil, err
 	}
 
-	return certificates.Certificate{
+	return &certificates.Certificate{
 		ID:                          cert.id,
 		Name:                        cert.name,
 		Description:                 cert.description,
-		Key:                         cert.certificateKeyDb.toKey(),
-		Account:                     cert.certificateAccountDb.toAccount(),
+		Key:                         *cert.certificateKeyDb.toKey(),
+		Account:                     *cert.certificateAccountDb.toAccount(),
 		Subject:                     cert.subject,
 		SubjectAltNames:             cert.subjectAltNames.toSlice(),
 		Organization:                cert.organization,

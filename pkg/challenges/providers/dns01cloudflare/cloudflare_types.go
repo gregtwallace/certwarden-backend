@@ -8,6 +8,7 @@ import (
 
 	"github.com/cloudflare/cloudflare-go/v6"
 	"github.com/cloudflare/cloudflare-go/v6/dns"
+	"github.com/cloudflare/cloudflare-go/v6/packages/pagination"
 	"github.com/cloudflare/cloudflare-go/v6/zones"
 )
 
@@ -17,6 +18,16 @@ func (service *Service) getZoneID(dnsRecordName string) (string, error) {
 	domainParts := strings.Split(dnsRecordName, ".")
 	checkFor := ""
 	zoneID := ""
+
+	// separate func for resource release
+	checkForZone := func() (*pagination.V4PagePaginationArray[zones.Zone], error) {
+		ctx, cancel := context.WithTimeout(service.shutdownContext, apiCallTimeout)
+		defer cancel()
+
+		return service.cloudflareClient.Zones.List(ctx, zones.ZoneListParams{
+			Name: cloudflare.F("equal:" + checkFor),
+		})
+	}
 
 	for i := range len(domainParts) {
 		if i != 0 {
@@ -29,27 +40,18 @@ func (service *Service) getZoneID(dnsRecordName string) (string, error) {
 			continue
 		}
 
-		ctx, cancel := context.WithTimeout(service.shutdownContext, apiCallTimeout)
-		defer cancel()
-		resp, err := service.cloudflareClient.Zones.List(ctx, zones.ZoneListParams{
-			Name: cloudflare.F("equal:" + checkFor),
-		})
+		res, err := checkForZone()
 		if err != nil {
 			service.logger.Errorf("dns01cloudflare: list zones api call failed (%s)", err)
 			continue
 		}
 
-		if len(resp.Result) > 0 {
-			zoneID = resp.Result[0].ID
-			break
+		if len(res.Result) > 0 {
+			return res.Result[0].ID, nil
 		}
 	}
 
-	if zoneID == "" {
-		return "", fmt.Errorf("could not find cloudflare zone for %s", dnsRecordName)
-	}
-
-	return zoneID, nil
+	return zoneID, fmt.Errorf("could not find cloudflare zone for %s", dnsRecordName)
 }
 
 // cloudflareCreateDNSParams returns the cloudflare create dns record params for a given

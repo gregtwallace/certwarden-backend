@@ -16,14 +16,14 @@ func (mgr *Manager) unsafeValidateDomains(domains []string, p *provider) error {
 	// and also verify all domains are available in manager
 
 	// if there are none, invalid
-	if len(domains) <= 0 {
+	if len(domains) == 0 {
 		return errors.New("provider doesn't have any domains (must have at least 1)")
 	}
 
 	// validate domain names
 	for _, domain := range domains {
 		// check validity -or- wildcard
-		if !validation.DomainValid(domain, false) && !(len(domains) == 1 && domains[0] == "*") {
+		if !validation.DomainValid(domain, false) && (len(domains) != 1 || domain != "*") {
 			if domain == "*" {
 				return errors.New("when using wildcard domain * it must be the only specified domain on the provider")
 			}

@@ -47,9 +47,9 @@ type Storage interface {
 	GetOrdersByCert(certId int, q pagination_sort.Query) (orders []Order, totalRows int, err error)
 	GetCertNewestValidOrderById(id int) (order Order, err error)
 
-	PostNewOrder(payload NewOrderAcmePayload) (newId int, err error)
+	PostNewOrder(payload *NewOrderAcmePayload) (newId int, err error)
 
-	PutOrderAcme(payload UpdateAcmeOrderPayload) (err error)
+	PutOrderAcme(payload *UpdateAcmeOrderPayload) (err error)
 	PutOrderInvalid(orderId int) (err error)
 	PutRenewalInfo(UpdateRenewalInfoPayload) (err error)
 	UpdateFinalizedKey(orderId int, keyId int) (err error)

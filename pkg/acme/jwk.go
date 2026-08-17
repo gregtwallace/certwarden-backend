@@ -65,19 +65,19 @@ func (jwk *jsonWebKey) encodedSHA256PublicThumbprint() (thumbprint string, err e
 	var buf bytes.Buffer
 	switch jwk.KeyType {
 	case "RSA":
-		_, _ = buf.WriteString(`{"e":"`)
-		_, _ = buf.WriteString(jwk.PublicExponent)
-		_, _ = buf.WriteString(`","kty":"RSA","n":"`)
-		_, _ = buf.WriteString(jwk.Modulus)
-		_, _ = buf.WriteString(`"}`)
+		buf.WriteString(`{"e":"`)
+		buf.WriteString(jwk.PublicExponent)
+		buf.WriteString(`","kty":"RSA","n":"`)
+		buf.WriteString(jwk.Modulus)
+		buf.WriteString(`"}`)
 	case "EC":
-		_, _ = buf.WriteString(`{"crv":"`)
-		_, _ = buf.WriteString(jwk.CurveName)
-		_, _ = buf.WriteString(`","kty":"EC","x":"`)
-		_, _ = buf.WriteString(jwk.CurvePointX)
-		_, _ = buf.WriteString(`","y":"`)
-		_, _ = buf.WriteString(jwk.CurvePointY)
-		_, _ = buf.WriteString(`"}`)
+		buf.WriteString(`{"crv":"`)
+		buf.WriteString(jwk.CurveName)
+		buf.WriteString(`","kty":"EC","x":"`)
+		buf.WriteString(jwk.CurvePointX)
+		buf.WriteString(`","y":"`)
+		buf.WriteString(jwk.CurvePointY)
+		buf.WriteString(`"}`)
 	default:
 		return "", errors.New("acme: jwk thumbprint: unsupported private key type")
 	}

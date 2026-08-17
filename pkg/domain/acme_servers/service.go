@@ -26,12 +26,12 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	GetAllAcmeServers(q pagination_sort.Query) ([]Server, int, error)
-	GetOneServerById(acmeServerId int) (Server, error)
-	GetOneServerByName(name string) (Server, error)
+	GetAllAcmeServers(q pagination_sort.Query) ([]*Server, int, error)
+	GetOneServerById(acmeServerId int) (*Server, error)
+	GetOneServerByName(name string) (*Server, error)
 
-	PostNewServer(NewPayload) (Server, error)
-	PutServerUpdate(UpdatePayload) (Server, error)
+	PostNewServer(*NewPayload) (*Server, error)
+	PutServerUpdate(*UpdatePayload) (*Server, error)
 	DeleteServer(acmeServerId int) error
 
 	ServerInUse(accountId int) (inUse bool, err error)
@@ -108,7 +108,7 @@ func NewService(app App) (*Service, error) {
 
 	// for each server, configure ACME service
 	for i := range servers {
-		go func(serv Server) {
+		go func(serv *Server) {
 			// done after func
 			defer wg.Done()
 

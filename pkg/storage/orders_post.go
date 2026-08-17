@@ -4,11 +4,12 @@ import (
 	"certwarden-backend/pkg/domain/orders"
 	"context"
 	"database/sql"
+	"errors"
 )
 
 // PostNewOrder makes a new order in the db. An error is returned if the order
 // location already exists (or any other error)
-func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId int, err error) {
+func (store *Storage) PostNewOrder(payload *orders.NewOrderAcmePayload) (newId int, err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -35,7 +36,7 @@ func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId in
 	// if err == nil, record was found. return the existingId and a corresponding error
 	if err == nil {
 		return newId, orders.ErrOrderExists
-	} else if err != sql.ErrNoRows {
+	} else if !errors.Is(err, sql.ErrNoRows) {
 		// any other error, except no rows (because that indicates this order is truly new to db)
 		return -2, err
 	}

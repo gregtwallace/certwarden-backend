@@ -50,7 +50,7 @@ type accountKeySummaryResponse struct {
 	Name string `json:"name"`
 }
 
-func (acct Account) SummaryResponse() AccountSummaryResponse {
+func (acct *Account) SummaryResponse() AccountSummaryResponse {
 	return AccountSummaryResponse{
 		ID:          acct.ID,
 		Name:        acct.Name,
@@ -76,6 +76,7 @@ func (acct Account) SummaryResponse() AccountSummaryResponse {
 // fields that can be returned as JSON
 type accountDetailedResponse struct {
 	AccountSummaryResponse
+
 	AcmeServer accountServerDetailedResponse `json:"acme_server"`
 	AccountKey accountKeyDetailedResponse    `json:"private_key"`
 	CreatedAt  int64                         `json:"created_at"`
@@ -84,6 +85,7 @@ type accountDetailedResponse struct {
 
 type accountServerDetailedResponse struct {
 	accountServerSummaryResponse
+
 	// from remote server
 	ExternalAccountRequired bool   `json:"external_account_required"`
 	TermsOfService          string `json:"terms_of_service"`
@@ -91,10 +93,11 @@ type accountServerDetailedResponse struct {
 
 type accountKeyDetailedResponse struct {
 	accountKeySummaryResponse
+
 	Algorithm key_crypto.Algorithm `json:"algorithm"`
 }
 
-func (acct Account) detailedResponse(service *Service) (accountDetailedResponse, error) {
+func (acct *Account) detailedResponse(service *Service) (accountDetailedResponse, error) {
 	as, err := service.acmeServerService.AcmeService(acct.AcmeServer.ID)
 	if err != nil {
 		return accountDetailedResponse{}, err
@@ -141,7 +144,7 @@ func (account *Account) AcmeAccountKey() (acmeAcctKey acme.AccountKey, err error
 
 // newAccountPayload() generates the payload for ACME to post to the
 // new-account endpoint
-func (account *Account) newAccountPayload(eabKid string, eabHmacKey string, overrideEmail *string) acme.NewAccountPayload {
+func (account *Account) newAccountPayload(eabKid, eabHmacKey string, overrideEmail *string) acme.NewAccountPayload {
 	email := account.Email
 	if overrideEmail != nil {
 		email = *overrideEmail

@@ -18,16 +18,21 @@ const maxShutdownTime = 30 * time.Second
 
 // Run starts the application and also contains restart logic
 // in the event the app calls for a restart after termination
-func Run() {
+func Run() (exitCode int) {
 	// run the actual run func and wait for exit
-	restart := run()
+	restart, exitCode := run()
+	// any bad exitCode, terminate the program
+	if exitCode != 0 {
+		return 1
+	}
 
 	// if restart, execute self before exit
 	if restart {
 		// get path, args, and environment for execution
 		self, err := os.Executable()
 		if err != nil {
-			os.Exit(1)
+			// exit
+			return 1
 		}
 		args := os.Args
 		env := os.Environ()
@@ -49,21 +54,22 @@ func Run() {
 
 		// err check from either run command
 		if err != nil {
-			os.Exit(1)
+			// exit
+			return 1
 		}
 	}
 
-	os.Exit(0)
+	return 0
 }
 
 // run starts an instance of the application
-func run() (restart bool) {
+func run() (restart bool, exitCode int) {
 	// create the app
 	app, err := create()
 	if err != nil {
 		app.logger.Errorf("failed to create app (%s)", err)
-		os.Exit(1)
-		return
+		// error exit
+		return false, 1
 	}
 	// defer storage close, logger close, and app nil
 	defer func() {
@@ -94,7 +100,8 @@ func run() (restart bool) {
 		err = app.startPprof()
 		if err != nil {
 			app.logger.Errorf("failed to start pprof (%s), exiting", err)
-			os.Exit(1)
+			// error exit
+			return false, 1
 		}
 	}
 
@@ -140,14 +147,16 @@ func run() (restart bool) {
 			ln1, err := net.Listen("tcp", redirectSrv.Addr)
 			if err != nil {
 				app.logger.Errorf("http redirect server cannot bind to %s (%s), exiting", redirectSrv.Addr, err)
-				os.Exit(1)
+				// error exit
+				return false, 1
 			}
 
 			// start server
 			app.shutdownWaitgroup.Add(1)
 			go func() {
 				defer app.shutdownWaitgroup.Done()
-				defer func() { _ = ln1.Close }()
+				//nolint:errcheck // shutting down, who cares
+				defer ln1.Close()
 
 				err := redirectSrv.Serve(ln1)
 				if err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -164,14 +173,16 @@ func run() (restart bool) {
 		ln2, err := net.Listen("tcp", srv.Addr)
 		if err != nil {
 			app.logger.Errorf("https server cannot bind to %s (%s), exiting", srv.Addr, err)
-			os.Exit(1)
+			// error exit
+			return false, 1
 		}
 
 		// start server
 		app.shutdownWaitgroup.Add(1)
 		go func() {
 			defer app.shutdownWaitgroup.Done()
-			defer func() { _ = ln2.Close }()
+			//nolint:errcheck // shutting down, who cares
+			defer ln2.Close()
 
 			err := srv.ServeTLS(ln2, "", "")
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -189,14 +200,16 @@ func run() (restart bool) {
 		ln3, err := net.Listen("tcp", srv.Addr)
 		if err != nil {
 			app.logger.Errorf("insecure http server cannot bind to %s (%s), exiting", srv.Addr, err)
-			os.Exit(1)
+			// error exit
+			return false, 1
 		}
 
 		// start server
 		app.shutdownWaitgroup.Add(1)
 		go func() {
 			defer app.shutdownWaitgroup.Done()
-			defer func() { _ = ln3.Close }()
+			//nolint:errcheck // shutting down, who cares
+			defer ln3.Close()
 
 			err := srv.Serve(ln3)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -259,5 +272,5 @@ func run() (restart bool) {
 		app.logger.Panic("graceful shutdown of component(s) failed due to time out, forcing shutdown")
 	}
 
-	return app.restart
+	return app.restart, 0
 }

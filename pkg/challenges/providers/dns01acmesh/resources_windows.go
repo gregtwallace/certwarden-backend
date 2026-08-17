@@ -7,11 +7,11 @@ import (
 )
 
 // Provision adds the requested DNS record.
-func (service *Service) Provision(_ string, _ string, _ acme.KeyAuth) error {
+func (service *Service) Provision(_, _ string, _ acme.KeyAuth) error {
 	return errWindows
 }
 
 // Deprovision deletes the corresponding DNS record.
-func (service *Service) Deprovision(_ string, _ string, _ acme.KeyAuth) error {
+func (service *Service) Deprovision(_, _ string, _ acme.KeyAuth) error {
 	return errWindows
 }

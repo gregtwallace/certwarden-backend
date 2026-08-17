@@ -26,20 +26,20 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	GetAllCerts(q pagination_sort.Query) (certs []Certificate, totalRowCount int, err error)
-	GetOneCertById(id int) (Certificate, error)
-	GetOneCertByName(name string) (Certificate, error)
+	GetAllCerts(q pagination_sort.Query) (certs []*Certificate, totalRowCount int, err error)
+	GetOneCertById(id int) (*Certificate, error)
+	GetOneCertByName(name string) (*Certificate, error)
 
-	PostNewCert(payload NewPayload) (Certificate, error)
+	PostNewCert(payload *NewPayload) (*Certificate, error)
 
-	PutCertUpdate(payload UpdatePayload) (Certificate, error)
+	PutCertUpdate(payload *UpdatePayload) (*Certificate, error)
 	PutCertApiKey(certId int, apiKey string, updatedAt time.Time) error
 	PutCertApiKeyNew(certId int, apiKeyNew string, updatedAt time.Time) error
 	PutCertClientKey(certId int, newClientKeyB64 string, updatedAt time.Time) error
 
 	DeleteCert(id int) error
 
-	PostNewKey(private_keys.NewPayload) (private_keys.Key, error)
+	PostNewKey(*private_keys.NewPayload) (*private_keys.Key, error)
 }
 
 // Keys service struct

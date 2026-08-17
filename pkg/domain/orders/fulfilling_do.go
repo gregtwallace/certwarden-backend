@@ -75,7 +75,10 @@ fulfillLoop:
 			// status of the order to "invalid" and MAY delete the order resource.")
 			acmeErr := new(acme.Error)
 			if errors.As(err, &acmeErr) && acmeErr.Status == http.StatusNotFound {
-				j.service.storage.PutOrderInvalid(order.ID)
+				err := j.service.storage.PutOrderInvalid(order.ID)
+				if err != nil {
+					j.service.logger.Errorf("orders: fulfilling worker %d: failed to set order '%d' to invalid status (%s)", workerID, order.ID, err)
+				}
 				return // done, permanent status
 			}
 
@@ -189,7 +192,7 @@ fulfillLoop:
 	loopTimedOut := time.Since(startTime) >= timeoutLength
 
 	// update order in storage (regardless of loop outcome)
-	err = j.service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(order.ID, acmeOrder))
+	err = j.service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(order.ID, &acmeOrder))
 	if err != nil {
 		j.service.logger.Errorf("orders: fulfilling worker %d: update order db error: %s", workerID, err)
 	}

@@ -26,7 +26,7 @@ func backupCheckErrOK(t *testing.T, err error, expectLockErr bool) {
 }
 
 // backupTestBattery is the group of tests run both while db is locked and while it is unlocked
-func backupTestBattery(t *testing.T, storage *storage.Storage, expectLocked bool) {
+func backupTestBattery(t *testing.T, store *storage.Storage, expectLocked bool) {
 	wg := sync.WaitGroup{}
 	lockedStateTxt := "unlocked"
 	if !expectLocked {
@@ -36,14 +36,14 @@ func backupTestBattery(t *testing.T, storage *storage.Storage, expectLocked bool
 	// read only
 	wg.Add(1)
 	go t.Run(fmt.Sprintf("%s: get all acme accounts", lockedStateTxt), func(t *testing.T) {
-		_, _, err := storage.GetAllAcmeAccounts(queryBuilderForTest(5, 0, "", true))
+		_, _, err := store.GetAllAcmeAccounts(queryBuilderForTest(5, 0, "", true))
 		backupCheckErrOK(t, err, false)
 		wg.Done()
 	})
 
 	wg.Add(1)
 	go t.Run(fmt.Sprintf("%s: get one key by id", lockedStateTxt), func(t *testing.T) {
-		_, err := storage.GetOneKeyById(62)
+		_, err := store.GetOneKeyById(62)
 		backupCheckErrOK(t, err, false)
 		wg.Done()
 	})
@@ -53,7 +53,7 @@ func backupTestBattery(t *testing.T, storage *storage.Storage, expectLocked bool
 	// trying to write
 	wg.Add(1)
 	go t.Run(fmt.Sprintf("%s: put key api key", lockedStateTxt), func(t *testing.T) {
-		err := storage.PutKeyApiKey(1, "xyz", time.Unix(123, 0))
+		err := store.PutKeyApiKey(1, "xyz", time.Unix(123, 0))
 		backupCheckErrOK(t, err, expectLocked)
 		wg.Done()
 	})
@@ -65,7 +65,7 @@ func backupTestBattery(t *testing.T, storage *storage.Storage, expectLocked bool
 			UpdatedAt: time.Unix(6323444, 0),
 		}
 
-		_, err := storage.PutServerUpdate(payload)
+		_, err := store.PutServerUpdate(&payload)
 		backupCheckErrOK(t, err, expectLocked)
 		wg.Done()
 	})
@@ -76,22 +76,22 @@ func backupTestBattery(t *testing.T, storage *storage.Storage, expectLocked bool
 
 func TestLockDBForBackup(t *testing.T) {
 	// create testing service
-	storage, err := openStorageWithTestData(t, "lockdbforbackup")
+	store, err := openStorageWithTestData(t, "lockdbforbackup")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	unlock, err := storage.LockDBForBackup()
+	unlock, err := store.LockDBForBackup()
 	if err != nil {
 		t.Fatalf("failed to lock db: %s", err)
 	}
 
 	// try various operations (locked)
-	backupTestBattery(t, storage, true)
+	backupTestBattery(t, store, true)
 
 	// verify things work after unlock
 	unlock()
 
 	// try various operations (unlocked)
-	backupTestBattery(t, storage, false)
+	backupTestBattery(t, store, false)
 }

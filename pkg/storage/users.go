@@ -15,8 +15,8 @@ type userDb struct {
 }
 
 // dbToUser converts the user db object to app object
-func (userDb *userDb) dbToUser() (user auth.User) {
-	return auth.User{
+func (userDb *userDb) dbToUser() (user *auth.User) {
+	return &auth.User{
 		ID:           userDb.id,
 		Username:     userDb.username,
 		PasswordHash: userDb.passwordHash,

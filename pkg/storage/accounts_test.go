@@ -6,7 +6,19 @@ import (
 )
 
 // compareAcmeAccount compares acct to expectedAcct and throws appropriate errors for any differences
-func compareAcmeAccount(t *testing.T, acct, expectedAcct acme_accounts.Account) {
+func compareAcmeAccount(t *testing.T, acct, expectedAcct *acme_accounts.Account) {
+	if acct == nil && expectedAcct == nil {
+		return
+	}
+	if acct == nil && expectedAcct != nil {
+		t.Errorf("acme account: acct is nil but expectedAcct is non-nil")
+		return
+	}
+	if acct != nil && expectedAcct == nil {
+		t.Errorf("acme account: acct is non-nil but expectedAcct is nil")
+		return
+	}
+
 	if acct.ID != expectedAcct.ID {
 		t.Errorf("acme account: id expected '%d' but got '%d'", expectedAcct.ID, acct.ID)
 	}
@@ -19,9 +31,9 @@ func compareAcmeAccount(t *testing.T, acct, expectedAcct acme_accounts.Account) 
 		t.Errorf("acme account: description expected '%s' but got '%s'", expectedAcct.Description, acct.Description)
 	}
 
-	compareAcmeServer(t, acct.AcmeServer, expectedAcct.AcmeServer)
+	compareAcmeServer(t, &acct.AcmeServer, &expectedAcct.AcmeServer)
 
-	compareKey(t, acct.AccountKey, expectedAcct.AccountKey)
+	compareKey(t, &acct.AccountKey, &expectedAcct.AccountKey)
 
 	if acct.Status != expectedAcct.Status {
 		t.Errorf("acme account: status expected '%s' but got '%s'", expectedAcct.Status, acct.Status)

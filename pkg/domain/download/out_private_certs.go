@@ -16,18 +16,18 @@ type privateCertificate orders.Order
 
 // privateCertificate Output Methods
 
-func (pc privateCertificate) FilenameNoExt() string {
+func (pc *privateCertificate) FilenameNoExt() string {
 	return fmt.Sprintf("%s.certkey", pc.Certificate.Name)
 }
 
-func (pc privateCertificate) Modtime() time.Time {
-	return orders.Order(pc).Modtime()
+func (pc *privateCertificate) Modtime() time.Time {
+	return (*orders.Order)(pc).Modtime()
 }
 
-func (pc privateCertificate) PemContent() string {
+func (pc *privateCertificate) PemContent() string {
 	keyPem := pc.FinalizedKey.PemContent()
 	// don't include the cert chain
-	certPem := orders.Order(pc).PemContentNoChain()
+	certPem := (*orders.Order)(pc).PemContentNoChain()
 
 	// append key + LF + cert
 	return keyPem + string([]byte{10}) + certPem
@@ -52,7 +52,7 @@ func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *h
 
 	// return pem file to client
 	privCert := privateCertificate(order)
-	service.output.WritePem(w, r, privCert)
+	service.output.WritePem(w, r, &privCert)
 
 	return nil
 }
@@ -73,7 +73,7 @@ func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http
 
 	// return pem file to client
 	privCert := privateCertificate(order)
-	service.output.WritePem(w, r, privCert)
+	service.output.WritePem(w, r, &privCert)
 
 	return nil
 }

@@ -54,9 +54,9 @@ func NewService(app App) (*Service, error) {
 	}
 
 	// create backup storage folder, if doesn't exist
-	err := os.MkdirAll(service.cleanDataStorageBackupPath, 0755)
+	err := os.MkdirAll(service.cleanDataStorageBackupPath, 0o755)
 	if err != nil {
-		return nil, fmt.Errorf("backup: failed to make directory for on disk backups (%s)", err)
+		return nil, fmt.Errorf("backup: failed to make directory for on disk backups (%w)", err)
 	}
 
 	// storage lock func

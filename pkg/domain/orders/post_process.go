@@ -21,7 +21,7 @@ func (service *Service) makePostProcessJob(orderID int, highPriority bool) (*pos
 	// get order
 	order, err := service.storage.GetOneOrder(orderID)
 	if err != nil {
-		return nil, fmt.Errorf("orders: post processing: failed to make post process job for order id %d (%s)", orderID, err)
+		return nil, fmt.Errorf("orders: post processing: failed to make post process job for order id %d (%w)", orderID, err)
 	}
 
 	// fail add if order isn't valid

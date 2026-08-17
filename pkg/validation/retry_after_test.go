@@ -71,7 +71,7 @@ var retryAfterTests = []retryAfterTest{
 // test invalid formats
 var retryAfterInvalidFormatTests = []string{
 	time.Layout,
-	"Mon Jan  2 15:04:05 MST 2006", //time.UnixDate,
+	"Mon Jan  2 15:04:05 MST 2006", // time.UnixDate,
 	time.RubyDate,
 	time.RFC822,
 	time.RFC822Z,

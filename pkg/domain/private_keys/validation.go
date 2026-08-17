@@ -21,11 +21,11 @@ var (
 
 // getKey returns the Key for the specified id or an
 // error.
-func (service *Service) getKey(id int) (Key, *output.JsonError) {
+func (service *Service) getKey(id int) (*Key, *output.JsonError) {
 	// basic check
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)
-		return Key{}, output.JsonErrValidationFailed(ErrIdBad)
+		return nil, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get the key from storage
@@ -34,10 +34,10 @@ func (service *Service) getKey(id int) (Key, *output.JsonError) {
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return Key{}, output.JsonErrNotFound(fmt.Errorf("key id %d not found", id))
+			return nil, output.ErrorJsonErrNotFound(fmt.Errorf("key id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Key{}, output.JsonErrStorageGeneric(err)
+			return nil, output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 
@@ -77,7 +77,7 @@ func (service *Service) NameValid(keyName string, keyId *int) bool {
 // return keys that exist but are not already in use by an account or a
 // certificate
 // TODO: Maybe move business logic here instead of in storage
-func (service *Service) AvailableKeys() (keys []Key, err error) {
+func (service *Service) AvailableKeys() (keys []*Key, err error) {
 	return service.storage.GetAvailableKeys()
 }
 

@@ -48,8 +48,8 @@ func GenerateAES256KeyAsBase64RawUrl() (string, error) {
 
 // generateSecureRandomInt returns a uniform random value in [0, max) that
 // is cryptographically random.
-func generateSecureRandomInt(max int) (int, error) {
-	num, err := crypto_rand.Int(crypto_rand.Reader, big.NewInt(int64(max)))
+func generateSecureRandomInt(maxVal int) (int, error) {
+	num, err := crypto_rand.Int(crypto_rand.Reader, big.NewInt(int64(maxVal)))
 	if err != nil {
 		return -2, err
 	}
@@ -99,8 +99,8 @@ func Generate32ByteSecret() ([]byte, error) {
 
 // GenerateInsecureInt creates a random int between [0, max). It is NOT
 // cryptographically secure.
-func GenerateInsecureInt(max int) int {
-	return math_rand.IntN(max)
+func GenerateInsecureInt(maxVal int) int {
+	return math_rand.IntN(maxVal)
 }
 
 // GenerateInsecureString creates a random string of length 'length' using the char
