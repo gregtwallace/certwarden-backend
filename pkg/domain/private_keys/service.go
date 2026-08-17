@@ -20,19 +20,19 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	GetAllKeys(q pagination_sort.Query) (keys []Key, totalRows int, err error)
-	GetOneKeyById(id int) (Key, error)
-	GetOneKeyByName(name string) (Key, error)
+	GetAllKeys(q pagination_sort.Query) (keys []*Key, totalRows int, err error)
+	GetOneKeyById(id int) (*Key, error)
+	GetOneKeyByName(name string) (*Key, error)
 
-	PostNewKey(*NewPayload) (Key, error)
+	PostNewKey(*NewPayload) (*Key, error)
 
-	PutKeyUpdate(*UpdatePayload) (Key, error)
+	PutKeyUpdate(*UpdatePayload) (*Key, error)
 	PutKeyApiKey(keyId int, apiKey string, updatedAt time.Time) error
 	PutKeyApiKeyNew(keyId int, apiKeyNew string, updatedAt time.Time) error
 
 	DeleteKey(int) error
 
-	GetAvailableKeys() ([]Key, error)
+	GetAvailableKeys() ([]*Key, error)
 	KeyInUse(id int) (inUse bool, err error)
 }
 

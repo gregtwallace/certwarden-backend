@@ -14,30 +14,31 @@ import (
 func TestPutKeyUpdate(t *testing.T) {
 	testCases := []struct {
 		payload           private_keys.UpdatePayload
-		expectedPutResult private_keys.Key
+		expectedPutResult *private_keys.Key
 		expectedPutErr    error
+
 		getId             int
-		expectedGetResult private_keys.Key
+		expectedGetResult *private_keys.Key
 		expectedGetErr    error
 	}{
 		{ // invalid key
 			private_keys.UpdatePayload{
 				ID: -1,
 			},
-			private_keys.Key{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			-1,
-			private_keys.Key{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{ // invalid key
 			private_keys.UpdatePayload{
 				ID: 522,
 			},
-			private_keys.Key{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			522,
-			private_keys.Key{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{ // update all things
@@ -51,7 +52,7 @@ func TestPutKeyUpdate(t *testing.T) {
 				ApiKeyViaUrl:   new(false),
 				UpdatedAt:      time.Unix(1001111, 0),
 			},
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          31,
 				Name:        "newNameHere21",
 				Description: "a new desc",
@@ -70,7 +71,7 @@ red-31
 			},
 			nil,
 			31,
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          31,
 				Name:        "newNameHere21",
 				Description: "a new desc",
@@ -94,7 +95,7 @@ red-31
 				ID:        62,
 				UpdatedAt: time.Unix(1001111, 0),
 			},
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          62,
 				Name:        "SomeKEy",
 				Description: "some desc",
@@ -113,7 +114,7 @@ red-62
 			},
 			nil,
 			62,
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          62,
 				Name:        "SomeKEy",
 				Description: "some desc",
@@ -138,7 +139,7 @@ red-62
 				ApiKeyDisabled: new(false),
 				UpdatedAt:      time.Unix(1751730000, 0),
 			},
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          58,
 				Name:        "_Buypass_Staging",
 				Description: "",
@@ -157,7 +158,7 @@ red-58
 			},
 			nil,
 			58,
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          58,
 				Name:        "_Buypass_Staging",
 				Description: "",
@@ -191,14 +192,14 @@ red-58
 				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, &key, &tc.expectedPutResult)
+			compareKey(t, key, tc.expectedPutResult)
 
 			key, err = store.GetOneKeyById(tc.getId)
 			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, &key, &tc.expectedGetResult)
+			compareKey(t, key, tc.expectedGetResult)
 		})
 	}
 }
@@ -209,15 +210,16 @@ func TestPutKeyApiKey(t *testing.T) {
 		apiKey    string
 		updatedAt time.Time
 
-		expectedKey    private_keys.Key
+		expectedKey    *private_keys.Key
 		expectedPutErr error
+
 		expectedGetErr error
 	}{
 		{ // invalid key id
 			-1,
 			"fake",
 			time.Unix(100005, 0),
-			private_keys.Key{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -225,7 +227,7 @@ func TestPutKeyApiKey(t *testing.T) {
 			500,
 			"anotherfake",
 			time.Unix(10005000, 0),
-			private_keys.Key{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -234,7 +236,7 @@ func TestPutKeyApiKey(t *testing.T) {
 			31,
 			"fake31",
 			time.Unix(1022005, 0),
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          31,
 				Name:        "certwarden",
 				Description: "localhost / dev work w/ real cert",
@@ -258,7 +260,7 @@ red-31
 			62,
 			"",
 			time.Unix(0, 0),
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          62,
 				Name:        "SomeKEy",
 				Description: "some desc",
@@ -298,7 +300,7 @@ red-62
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, &key, &tc.expectedKey)
+			compareKey(t, key, tc.expectedKey)
 		})
 	}
 }
@@ -309,7 +311,7 @@ func TestPutKeyApiKeyNew(t *testing.T) {
 		apiKeyNew string
 		updatedAt time.Time
 
-		expectedKey    private_keys.Key
+		expectedKey    *private_keys.Key
 		expectedPutErr error
 		expectedGetErr error
 	}{
@@ -317,7 +319,7 @@ func TestPutKeyApiKeyNew(t *testing.T) {
 			-1,
 			"",
 			time.Unix(1099905, 0),
-			private_keys.Key{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -325,7 +327,7 @@ func TestPutKeyApiKeyNew(t *testing.T) {
 			500,
 			"anotherfake",
 			time.Unix(10005000, 0),
-			private_keys.Key{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -334,7 +336,7 @@ func TestPutKeyApiKeyNew(t *testing.T) {
 			69,
 			"fakenew69",
 			time.Unix(1022005, 0),
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          69,
 				Name:        "STAGING_persist--test007.test.example2.com",
 				Description: "",
@@ -358,7 +360,7 @@ red-69
 			67,
 			"otherfakenew67",
 			time.Unix(0, 0),
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          67,
 				Name:        "_GC3",
 				Description: "",
@@ -398,7 +400,7 @@ red-67
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, &key, &tc.expectedKey)
+			compareKey(t, key, tc.expectedKey)
 		})
 	}
 }
@@ -408,21 +410,21 @@ func TestPutKeyLastAccess(t *testing.T) {
 		keyId      int
 		lastAccess time.Time
 
-		expectedKey    private_keys.Key
+		expectedKey    *private_keys.Key
 		expectedPutErr error
 		expectedGetErr error
 	}{
 		{ // invalid key id
 			-1,
 			time.Unix(88888888, 0),
-			private_keys.Key{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
 		{ // invalid key id
 			500,
 			time.Unix(88888888, 0),
-			private_keys.Key{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			sql.ErrNoRows,
 		},
@@ -430,7 +432,7 @@ func TestPutKeyLastAccess(t *testing.T) {
 		{
 			64,
 			time.Unix(1022885, 0),
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          64,
 				Name:        "_Another_Test_Acct_LE_Staging_Roll",
 				Description: "",
@@ -453,7 +455,7 @@ red-64
 		{
 			63,
 			time.Unix(9999999, 0),
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          63,
 				Name:        "_Another_Test_Acct_LE_Staging",
 				Description: "",
@@ -476,7 +478,7 @@ red-63
 		{
 			62,
 			time.Unix(0, 0),
-			private_keys.Key{
+			&private_keys.Key{
 				ID:          62,
 				Name:        "SomeKEy",
 				Description: "some desc",
@@ -516,7 +518,7 @@ red-62
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, &key, &tc.expectedKey)
+			compareKey(t, key, tc.expectedKey)
 		})
 	}
 }

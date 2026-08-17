@@ -37,8 +37,7 @@ func (order *orderDb) toOrder() (orders.Order, error) {
 	// handle if key is not null (id value would not be okay from coalesce if null)
 	var key *private_keys.Key
 	if order.finalizedKey.id >= 0 {
-		key = new(private_keys.Key)
-		*key = order.finalizedKey.toKey()
+		key = order.finalizedKey.toKey()
 	}
 
 	// handle acme Error

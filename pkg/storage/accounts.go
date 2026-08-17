@@ -27,7 +27,7 @@ func (acct *accountDb) toAccount() *acme_accounts.Account {
 		Name:        acct.name,
 		Description: acct.description,
 		AcmeServer:  *acct.accountServerDb.toServer(),
-		AccountKey:  acct.accountKeyDb.toKey(),
+		AccountKey:  *acct.accountKeyDb.toKey(),
 		Status:      acct.status,
 		Email:       acct.email,
 		AcceptedTos: acct.acceptedTos,

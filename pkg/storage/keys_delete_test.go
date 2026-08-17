@@ -50,15 +50,15 @@ func TestDeleteKey(t *testing.T) {
 	testCases := []struct {
 		keyID             int
 		expectedDelErr    error
-		expectedGetResult private_keys.Key
+		expectedGetResult *private_keys.Key
 		expectedGetErr    error
 	}{
-		{2, sql.ErrNoRows, private_keys.Key{}, sql.ErrNoRows}, // non-existent
-		{58, nil, private_keys.Key{}, sql.ErrNoRows},          // not in use, gets deleted
-		{62, nil, private_keys.Key{}, sql.ErrNoRows},          // not in use, gets deleted
-		{63, storage.ErrInUse, key63, nil},                    // in use by acct
-		{64, storage.ErrInUse, key64, nil},                    // in use by cert
-		{69, storage.ErrInUse, key69, nil},                    // in use by newest order (but isn't in use on a cert)
+		{2, sql.ErrNoRows, nil, sql.ErrNoRows}, // non-existent
+		{58, nil, nil, sql.ErrNoRows},          // not in use, gets deleted
+		{62, nil, nil, sql.ErrNoRows},          // not in use, gets deleted
+		{63, storage.ErrInUse, &key63, nil},    // in use by acct
+		{64, storage.ErrInUse, &key64, nil},    // in use by cert
+		{69, storage.ErrInUse, &key69, nil},    // in use by newest order (but isn't in use on a cert)
 	}
 
 	// create testing service
@@ -79,7 +79,7 @@ func TestDeleteKey(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, &key, &tc.expectedGetResult)
+			compareKey(t, key, tc.expectedGetResult)
 		})
 	}
 }

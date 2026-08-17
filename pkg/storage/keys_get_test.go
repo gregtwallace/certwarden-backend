@@ -273,11 +273,11 @@ func TestGetAllKeys(t *testing.T) {
 		expectedTotalCt   int
 		expectedResultLen int
 		testIndx          int
-		expectedKeyAtIndx private_keys.Key
+		expectedKeyAtIndx *private_keys.Key
 	}{
-		{pagination_sort.Query{}, 19, 19, 0, key63},
-		{queryBuilderForTest(5, 15, "algorithm", true), 19, 4, 2, key67},
-		{queryBuilderForTest(10, 0, "last_access", false), 19, 10, 2, key31},
+		{pagination_sort.Query{}, 19, 19, 0, &key63},
+		{queryBuilderForTest(5, 15, "algorithm", true), 19, 4, 2, &key67},
+		{queryBuilderForTest(10, 0, "last_access", false), 19, 10, 2, &key31},
 	}
 
 	// create testing service
@@ -301,7 +301,7 @@ func TestGetAllKeys(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(keys))
 			}
 			if tc.testIndx <= len(keys)-1 {
-				compareKey(t, &keys[tc.testIndx], &tc.expectedKeyAtIndx)
+				compareKey(t, keys[tc.testIndx], tc.expectedKeyAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(keys))
 			}
@@ -313,12 +313,12 @@ func TestGetOneKeyById(t *testing.T) {
 	testCases := []struct {
 		id          int
 		expectedErr error
-		expectedKey private_keys.Key
+		expectedKey *private_keys.Key
 	}{
-		{-1, sql.ErrNoRows, private_keys.Key{}},
-		{22, sql.ErrNoRows, private_keys.Key{}},
-		{31, nil, key31},
-		{67, nil, key67},
+		{-1, sql.ErrNoRows, nil},
+		{22, sql.ErrNoRows, nil},
+		{31, nil, &key31},
+		{67, nil, &key67},
 	}
 
 	// create testing service
@@ -334,7 +334,7 @@ func TestGetOneKeyById(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, &key, &tc.expectedKey)
+			compareKey(t, key, tc.expectedKey)
 		})
 	}
 }
@@ -343,12 +343,12 @@ func TestGetOneKeyByName(t *testing.T) {
 	testCases := []struct {
 		name        string
 		expectedErr error
-		expectedKey private_keys.Key
+		expectedKey *private_keys.Key
 	}{
-		{"", sql.ErrNoRows, private_keys.Key{}},
-		{"fake-bad-name", sql.ErrNoRows, private_keys.Key{}},
-		{"cerTWarden", nil, key31},
-		{"_Another_TEST_Acct_le_Staging", nil, key63}, // case is wrong
+		{"", sql.ErrNoRows, nil},
+		{"fake-bad-name", sql.ErrNoRows, nil},
+		{"cerTWarden", nil, &key31},
+		{"_Another_TEST_Acct_le_Staging", nil, &key63}, // case is wrong
 	}
 
 	// create testing service
@@ -364,7 +364,7 @@ func TestGetOneKeyByName(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareKey(t, &key, &tc.expectedKey)
+			compareKey(t, key, tc.expectedKey)
 		})
 	}
 }
@@ -394,6 +394,6 @@ func TestGetAvailableKeys(t *testing.T) {
 			continue
 		}
 
-		compareKey(t, &keys[i], &expectedKey)
+		compareKey(t, keys[i], &expectedKey)
 	}
 }

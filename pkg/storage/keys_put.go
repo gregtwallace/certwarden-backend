@@ -8,7 +8,7 @@ import (
 
 // PutKeyUpdate updates an existing key in the db using any non-null
 // fields specified in the UpdatePayload.
-func (store *Storage) PutKeyUpdate(payload *private_keys.UpdatePayload) (private_keys.Key, error) {
+func (store *Storage) PutKeyUpdate(payload *private_keys.UpdatePayload) (*private_keys.Key, error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -39,22 +39,22 @@ func (store *Storage) PutKeyUpdate(payload *private_keys.UpdatePayload) (private
 		payload.ID,
 	)
 	if err != nil {
-		return private_keys.Key{}, err
+		return nil, err
 	}
 
 	// verify update actually happened
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return private_keys.Key{}, err
+		return nil, err
 	}
 	if rowsAffected != 1 {
-		return private_keys.Key{}, errorWrongUpdateRowCount(1, rowsAffected)
+		return nil, errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	// get updated key to return
 	updatedKey, err := store.GetOneKeyById(payload.ID)
 	if err != nil {
-		return private_keys.Key{}, err
+		return nil, err
 	}
 
 	return updatedKey, nil

@@ -45,7 +45,7 @@ func (cert *certificateDb) toCertificate() (*certificates.Certificate, error) {
 		ID:                          cert.id,
 		Name:                        cert.name,
 		Description:                 cert.description,
-		Key:                         cert.certificateKeyDb.toKey(),
+		Key:                         *cert.certificateKeyDb.toKey(),
 		Account:                     *cert.certificateAccountDb.toAccount(),
 		Subject:                     cert.subject,
 		SubjectAltNames:             cert.subjectAltNames.toSlice(),

@@ -39,13 +39,13 @@ func makeFakeOutputterApp(l *zap.SugaredLogger) *fakeOutputterApp {
 type fakeStorage struct {
 }
 
-func (fs *fakeStorage) GetOneKeyByName(name string) (private_keys.Key, error) {
+func (fs *fakeStorage) GetOneKeyByName(name string) (*private_keys.Key, error) {
 	// just get the key from the same name cert
 	c, err := fs.GetCertNewestValidOrderByName(name)
 	if err != nil {
-		return private_keys.Key{}, err
+		return nil, err
 	}
-	return *c.FinalizedKey, nil
+	return c.FinalizedKey, nil
 }
 
 func (fs *fakeStorage) GetCertNewestValidOrderByName(certName string) (order orders.Order, err error) {

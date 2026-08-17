@@ -24,7 +24,7 @@ func (service *Service) DownloadKeyViaHeader(w http.ResponseWriter, r *http.Requ
 	}
 
 	// return pem file to client
-	service.output.WritePem(w, r, &key)
+	service.output.WritePem(w, r, key)
 
 	return nil
 }
@@ -46,7 +46,7 @@ func (service *Service) DownloadKeyViaUrl(w http.ResponseWriter, r *http.Request
 	}
 
 	// return pem file to client
-	service.output.WritePem(w, r, &key)
+	service.output.WritePem(w, r, key)
 
 	return nil
 }

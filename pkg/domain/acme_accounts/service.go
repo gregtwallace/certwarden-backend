@@ -36,7 +36,7 @@ type Storage interface {
 
 	AcmeAccountInUse(accountId int) (inUse bool, err error)
 
-	GetOneKeyById(id int) (private_keys.Key, error)
+	GetOneKeyById(id int) (*private_keys.Key, error)
 }
 
 // Accounts service struct

@@ -39,7 +39,7 @@ type Storage interface {
 
 	DeleteCert(id int) error
 
-	PostNewKey(*private_keys.NewPayload) (private_keys.Key, error)
+	PostNewKey(*private_keys.NewPayload) (*private_keys.Key, error)
 }
 
 // Keys service struct
