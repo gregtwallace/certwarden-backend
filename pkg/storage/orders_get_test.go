@@ -262,6 +262,38 @@ LORExLpyf4W2494Zil1LsqWq+54a+RNzTBRfeazeXU5vXTITzvjaa5at42Ui
 	}
 )
 
+func TestGetOneOrder(t *testing.T) {
+	testCases := []struct {
+		id int
+
+		expectedOrd orders.Order
+		expectedErr error
+	}{
+		{-1, orders.Order{}, sql.ErrNoRows},
+		{666, orders.Order{}, sql.ErrNoRows},
+		{203, ord203, nil},
+		{198, ord198, nil},
+	}
+
+	// create testing service
+	store, err := openStorageWithTestData(t, "getoneorder")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// run tests
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
+			ord, err := store.GetOneOrder(tc.id)
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
+			}
+
+			compareOrder(t, &ord, &tc.expectedOrd)
+		})
+	}
+}
+
 func TestGetCertNewestValidOrderById(t *testing.T) {
 	testCases := []struct {
 		id int

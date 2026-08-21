@@ -572,7 +572,7 @@ func (store *Storage) GetOrders(orderIDs []int) (ordersSlice []orders.Order, err
 		c.post_processing_client_address, c.post_processing_client_key, c.profile, 
 		
 		/* cert's key */
-		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ak.api_key_new, ck.api_key_disabled,
+		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new, ck.api_key_disabled,
 		ck.api_key_via_url,	ck.last_access, ck.created_at, ck.updated_at,
 
 		/* cert's account */
