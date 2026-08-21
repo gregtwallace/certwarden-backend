@@ -1,13 +1,10 @@
 package storage_test
 
 import (
-	"certwarden-backend/pkg/domain/certificates"
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/storage"
-	"crypto/x509/pkix"
 	"database/sql"
-	"encoding/asn1"
 	"fmt"
 	"testing"
 	"time"
@@ -16,47 +13,34 @@ import (
 // GetAllValidCurrentOrders
 // GetOrdersByCert
 // GetAllIncompleteOrderIds
-// GetNewestIncompleteCertOrderId
 
 var (
+	ord99 = orders.Order{
+		ID:             99,
+		Certificate:    cert18,
+		Location:       "https://acme-v02.api.letsencrypt.org/acme/order/red-2/red-99",
+		Status:         "pending",
+		KnownRevoked:   false,
+		Error:          nil,
+		Expires:        nil,
+		DnsIdentifiers: []string{"desk.dude.example.com"},
+		Authorizations: []string{"https://acme-v02.api.letsencrypt.org/acme/authz-v3/r-4199/"},
+		Finalize:       "https://somefinalize.example.com/1234",
+		FinalizedKey:   nil,
+		CertificateUrl: nil,
+		Pem:            nil,
+		ValidFrom:      nil,
+		ValidTo:        nil,
+		CreatedAt:      time.Unix(1, 0),
+		UpdatedAt:      time.Unix(2, 0),
+		ChainRootCN:    new("xxxy"),
+		Profile:        new("y1"),
+		RenewalInfo:    nil,
+	}
+
 	ord203 = orders.Order{
-		ID: 203,
-		Certificate: certificates.Certificate{
-			ID:                 18,
-			Name:               "serverdefault",
-			Description:        "its a decript",
-			Key:                key31,
-			Account:            acmeAcct2,
-			Subject:            "desk.dude.example.com",
-			SubjectAltNames:    []string{"test011.test.example.com"},
-			Organization:       "my org",
-			OrganizationalUnit: "my ou",
-			Country:            "your country",
-			State:              "a state",
-			City:               "springfield",
-			CSRExtraExtensions: []certificates.CertExtension{
-				{
-					Extension: pkix.Extension{
-						Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 5, 5, 7, 1, 24},
-						Critical: false,
-						Value:    []byte{0x30, 0x03, 0x02, 0x01, 0x05},
-					},
-					Description: "OCSP Must Staple",
-				},
-			},
-			PreferredRootCN:             "ISRG Root X1",
-			LastAccess:                  time.Unix(1745952074, 0),
-			CreatedAt:                   time.Unix(1709327717, 0),
-			UpdatedAt:                   time.Unix(1779386440, 0),
-			ApiKey:                      "api-secret-18",
-			ApiKeyNew:                   "api-new-secret-18",
-			ApiKeyViaUrl:                true,
-			PostProcessingCommand:       "./scripts/windows/post-processing.example.ps1",
-			PostProcessingEnvironment:   []string{"asdasdasdsd=asasd"},
-			PostProcessingClientAddress: "dude.greg.example.com",
-			PostProcessingClientKeyB64:  "aaaaaaaaaaaaaaaaaaaaaaaaaaa-ccccccccccccccc",
-			Profile:                     "tlsserver",
-		},
+		ID:           203,
+		Certificate:  cert18,
 		Location:     "https://acme-v02.api.letsencrypt.org/acme/order/red-2/red-203",
 		Status:       "valid",
 		KnownRevoked: false,
@@ -258,6 +242,49 @@ LORExLpyf4W2494Zil1LsqWq+54a+RNzTBRfeazeXU5vXTITzvjaa5at42Ui
 	}
 )
 
+func TestGetNewestIncompleteCertOrderId(t *testing.T) {
+	testCases := []struct {
+		certID int
+
+		expectedOrderID int
+		expectedErr     error
+	}{
+		{-1, -2, sql.ErrNoRows},
+		{666, -2, sql.ErrNoRows},
+		{18, 99, nil},           // 18: newest is valid, but there is a pending order out there
+		{35, -2, sql.ErrNoRows}, // 35: no valid order
+		{28, -2, sql.ErrNoRows}, // 28: newest valid is expired
+		{31, -2, sql.ErrNoRows}, // 31: all valid orders but expired
+		{33, -2, sql.ErrNoRows}, // 33: newest is valid but revoked, drop back to next newest valid
+		{26, -2, sql.ErrNoRows}, // 26: newest valid is expired
+
+	}
+
+	// create testing service
+	store, err := openStorageWithTestData(t, "getnewestincompletecertorderid")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// override timenow
+	revertToDefaultTimeNow := storage.SetTimeNow(time.Unix(1779991589, 0))
+	t.Cleanup(revertToDefaultTimeNow)
+
+	// run tests
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.certID), func(t *testing.T) {
+			ordID, err := store.GetNewestIncompleteCertOrderId(tc.certID)
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
+			}
+
+			if ordID != tc.expectedOrderID {
+				t.Errorf("expected order id '%d' but got '%d'", tc.expectedOrderID, ordID)
+			}
+		})
+	}
+}
+
 func TestGetOrders(t *testing.T) {
 	testCases := []struct {
 		ids []int
@@ -309,6 +336,7 @@ func TestGetOneOrder(t *testing.T) {
 		{666, orders.Order{}, sql.ErrNoRows},
 		{203, ord203, nil},
 		{198, ord198, nil},
+		{99, ord99, nil}, // many nulls
 	}
 
 	// create testing service

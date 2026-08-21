@@ -522,10 +522,9 @@ func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, e
 			OR
 			status = "processing"
 		)
-	GROUP BY
-		certificate_id
-	HAVING
-		MAX(created_at)
+	ORDER BY
+		created_at DESC, id DESC
+	LIMIT 1
 	`
 
 	row := store.db.QueryRowContext(ctx, query,
