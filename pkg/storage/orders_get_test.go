@@ -45,7 +45,7 @@ var (
 		Status:       "valid",
 		KnownRevoked: false,
 		Error:        nil,
-		Expires:      new(1779411544),
+		Expires:      new(time.Unix(1779411544, 0)),
 		DnsIdentifiers: []string{
 			"desk.dude.example.com",
 		},
@@ -147,7 +147,7 @@ TT0mQ/r5XyA4MEAiabn7XJjvCERlF2dcn2wqJw+CreTkkQ2R
 		Status:         "valid",
 		KnownRevoked:   false,
 		Error:          nil,
-		Expires:        new(1779389985),
+		Expires:        new(time.Unix(1779389985, 0)),
 		DnsIdentifiers: []string{"test007.test.example2.com"},
 		Authorizations: []string{"https://acme-staging-v02.api.letsencrypt.org/acme/authz/red-1/r-4643"},
 		Finalize:       "https://acme-staging-v02.api.letsencrypt.org/acme/finalize/red-1/red-198",

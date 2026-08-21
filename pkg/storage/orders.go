@@ -17,7 +17,7 @@ type orderDb struct {
 	status         string
 	knownRevoked   bool
 	err            sql.NullString // stored as json object
-	expires        sql.NullInt32
+	expires        sql.NullInt64
 	dnsIdentifiers jsonStringSlice // stored as json array
 	authorizations jsonStringSlice // stored as json array
 	finalize       string
@@ -25,8 +25,8 @@ type orderDb struct {
 	certificateUrl sql.NullString
 	pem            sql.NullString
 	chainRootCN    sql.NullString
-	validFrom      sql.NullInt32
-	validTo        sql.NullInt32
+	validFrom      sql.NullInt64
+	validTo        sql.NullInt64
 	createdAt      int64
 	updatedAt      int64
 	profile        sql.NullString
@@ -65,15 +65,15 @@ func (order *orderDb) toOrder() (orders.Order, error) {
 		Status:         order.status,
 		KnownRevoked:   order.knownRevoked,
 		Error:          acmeErr,
-		Expires:        nullInt32ToInt(order.expires),
+		Expires:        nullInt64UnixToTime(order.expires),
 		DnsIdentifiers: order.dnsIdentifiers.toSlice(),
 		Authorizations: order.authorizations.toSlice(),
 		Finalize:       order.finalize,
 		FinalizedKey:   key,
 		CertificateUrl: nullStringToString(order.certificateUrl),
 		Pem:            nullStringToString(order.pem),
-		ValidFrom:      nullInt32UnixToTime(order.validFrom),
-		ValidTo:        nullInt32UnixToTime(order.validTo),
+		ValidFrom:      nullInt64UnixToTime(order.validFrom),
+		ValidTo:        nullInt64UnixToTime(order.validTo),
 		ChainRootCN:    nullStringToString(order.chainRootCN),
 		CreatedAt:      time.Unix(order.createdAt, 0),
 		UpdatedAt:      time.Unix(order.updatedAt, 0),

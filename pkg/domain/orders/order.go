@@ -22,7 +22,7 @@ type Order struct {
 	Status         string
 	KnownRevoked   bool
 	Error          *acme.Error
-	Expires        *int
+	Expires        *time.Time
 	DnsIdentifiers []string
 	Authorizations []string
 	Finalize       string

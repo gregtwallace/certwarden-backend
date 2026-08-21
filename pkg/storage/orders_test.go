@@ -7,8 +7,6 @@ import (
 	"testing"
 )
 
-// TODO: Uncomment remaining checks
-
 // compareACMERenewalInfo is for comparing order renewal info structs
 func compareACMERenewalInfo(t *testing.T, ari, expectedARI *orders.RenewalInfo) {
 	if ari == nil && expectedARI == nil {
@@ -74,13 +72,16 @@ func compareOrder(t *testing.T, ord, expectedOrd *orders.Order) {
 		t.Errorf("order: knownrevoked expected '%t' but got '%t'", expectedOrd.KnownRevoked, ord.KnownRevoked)
 	}
 
-	// if ord.Error != expectedOrd.Error {
-	// 	t.Errorf("order: acme error expected '%s' but got '%s'", helpers_test.ErrorToVal(expectedOrd.Error), helpers_test.ErrorToVal(ord.Error))
-	// }
+	// TODO: Looks like this never actually gets populated; this check is fine for now but if the attribute is ever used
+	// this won't work properly.
+	if ord.Error != expectedOrd.Error {
+		t.Errorf("order: acme error expected '%s' but got '%s'", helpers_test.ErrorToVal(expectedOrd.Error), helpers_test.ErrorToVal(ord.Error))
+	}
 
-	// if *ord.Expires != *expectedOrd.Expires {
-	// 	t.Errorf("order: expires expected '%s' but got '%s'", helpers_test.IntPointerToVal(expectedOrd.Expires), helpers_test.IntPointerToVal(ord.Expires))
-	// }
+	err := helpers_test.TimePointerEquals(ord.Expires, expectedOrd.Expires)
+	if err != nil {
+		t.Errorf("order: expires '%s'", err)
+	}
 
 	if !slices.Equal(ord.DnsIdentifiers, expectedOrd.DnsIdentifiers) {
 		t.Errorf("order: dnsidentifiers expected '%s' but got '%s'", expectedOrd.DnsIdentifiers, ord.DnsIdentifiers)
@@ -96,7 +97,7 @@ func compareOrder(t *testing.T, ord, expectedOrd *orders.Order) {
 
 	compareKey(t, ord.FinalizedKey, expectedOrd.FinalizedKey)
 
-	err := helpers_test.StringPointerEquals(ord.CertificateUrl, expectedOrd.CertificateUrl)
+	err = helpers_test.StringPointerEquals(ord.CertificateUrl, expectedOrd.CertificateUrl)
 	if err != nil {
 		t.Errorf("order: certificateurl expected '%s' but got '%s'", helpers_test.StringPointerToVal(expectedOrd.CertificateUrl), helpers_test.StringPointerToVal(ord.CertificateUrl))
 	}
