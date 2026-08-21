@@ -83,19 +83,34 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (ordersS
 		LEFT JOIN private_keys ak on (ca.private_key_id = ak.id)
 		LEFT JOIN private_keys fk on (ao.finalized_key_id = fk.id)
 	WHERE 
-		ao.status = "valid"
-		AND
-		ao.known_revoked = 0
-		AND
-		ao.valid_to > $1
-		AND
-		ao.pem NOT NULL
-		AND
-		ao.certificate_id IS NOT NULL
-	GROUP BY
-		ao.certificate_id
-	HAVING
-		MAX(ao.created_at)
+			ao.id IN
+			/* ugly but it works to force id as the tiebreaker if created_at is equal */
+				(SELECT 
+					v.id
+				FROM
+					(SELECT
+						ao.id, ao.certificate_id, ao.created_at
+					FROM
+						acme_orders ao
+					WHERE
+						ao.status = "valid"
+						AND
+						ao.known_revoked = 0
+						AND
+						ao.valid_to > $1
+						AND
+						ao.pem NOT NULL
+						AND
+						ao.certificate_id IS NOT NULL
+					GROUP BY
+						ao.certificate_id, ao.created_at
+					HAVING
+						max(ao.id)
+					) as v
+				GROUP BY
+					v.certificate_id
+				HAVING
+					max(v.created_at))
 	ORDER BY
 		%s
 	LIMIT

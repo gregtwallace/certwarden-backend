@@ -3,6 +3,7 @@ package storage_test
 import (
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/helpers_test"
+	"certwarden-backend/pkg/pagination_sort"
 	"certwarden-backend/pkg/storage"
 	"database/sql"
 	"fmt"
@@ -11,7 +12,6 @@ import (
 	"time"
 )
 
-// GetAllValidCurrentOrders
 // GetOrdersByCert
 
 var (
@@ -225,7 +225,7 @@ LORExLpyf4W2494Zil1LsqWq+54a+RNzTBRfeazeXU5vXTITzvjaa5at42Ui
 		ValidFrom:   new(time.Unix(1779382883, 0)),
 		ValidTo:     new(time.Unix(1783270882, 0)),
 		ChainRootCN: new("(STAGING) Pretend Pear X1"),
-		CreatedAt:   time.Unix(1779386387, 0),
+		CreatedAt:   time.Unix(1789386387, 0),
 		UpdatedAt:   time.Unix(1779802225, 0),
 		Profile:     new("tlsserver"),
 		RenewalInfo: &orders.RenewalInfo{
@@ -241,6 +241,57 @@ LORExLpyf4W2494Zil1LsqWq+54a+RNzTBRfeazeXU5vXTITzvjaa5at42Ui
 		},
 	}
 )
+
+func TestGetAllValidCurrentOrders(t *testing.T) {
+	testCases := []struct {
+		q                 pagination_sort.Query
+		expectedTotalCt   int
+		expectedResultLen int
+
+		testIndx       int
+		expectedAtIndx orders.Order
+	}{
+		{pagination_sort.Query{}, 2, 2, 0, ord198},
+		{pagination_sort.Query{}, 2, 2, 1, ord203},
+		{queryBuilderForTest(1, 0, "subject", true), 2, 1, 0, ord203},
+		{queryBuilderForTest(1, 1, "subject", true), 2, 1, 0, ord198},
+		{queryBuilderForTest(30, 0, "last_access", true), 2, 2, 0, ord203},
+		{queryBuilderForTest(4, 0, "id", false), 2, 2, 1, ord203},
+	}
+
+	// create testing service
+	store, err := openStorageWithTestData(t, "getallcerts")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// override timenow
+	revertToDefaultTimeNow := storage.SetTimeNow(time.Unix(1779991589, 0))
+	t.Cleanup(revertToDefaultTimeNow)
+
+	// run tests
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("#%d (order id: %d)", i, tc.expectedAtIndx.ID), func(t *testing.T) {
+			ords, totalCt, err := store.GetAllValidCurrentOrders(tc.q)
+			if err != nil {
+				t.Errorf("get all valid current orders failed")
+				return
+			}
+
+			if totalCt != tc.expectedTotalCt {
+				t.Errorf("incorrect total count, expected '%d' but got '%d'", tc.expectedTotalCt, totalCt)
+			}
+			if len(ords) != tc.expectedResultLen {
+				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(ords))
+			}
+			if tc.testIndx <= len(ords)-1 {
+				compareOrder(t, &ords[tc.testIndx], &tc.expectedAtIndx)
+			} else {
+				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(ords))
+			}
+		})
+	}
+}
 
 func TestGetAllIncompleteOrderIds(t *testing.T) {
 	expectedOrderIDs := []int{99, 98, 97, 96}
