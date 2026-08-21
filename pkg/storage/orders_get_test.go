@@ -17,10 +17,6 @@ import (
 // GetOrdersByCert
 // GetAllIncompleteOrderIds
 // GetNewestIncompleteCertOrderId
-// GetOrders
-// GetOneOrder
-// GetCertNewestValidOrderById
-// GetCertNewestValidOrderByName
 
 var (
 	ord203 = orders.Order{
@@ -261,6 +257,46 @@ LORExLpyf4W2494Zil1LsqWq+54a+RNzTBRfeazeXU5vXTITzvjaa5at42Ui
 		},
 	}
 )
+
+func TestGetOrders(t *testing.T) {
+	testCases := []struct {
+		ids []int
+
+		expectedOrds []orders.Order
+		expectedErr  error
+	}{
+		{[]int{-1}, []orders.Order{}, sql.ErrNoRows},           // just one bad
+		{[]int{-1, 666}, []orders.Order{}, sql.ErrNoRows},      // just two bad
+		{[]int{666, 203}, []orders.Order{ord203}, nil},         // one bad, one good
+		{[]int{198, 203}, []orders.Order{ord198, ord203}, nil}, // two good
+	}
+
+	// create testing service
+	store, err := openStorageWithTestData(t, "getorders")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// run tests
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.ids), func(t *testing.T) {
+			ords, err := store.GetOrders(tc.ids)
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
+			}
+
+			if len(ords) != len(tc.expectedOrds) {
+				t.Errorf("expected len of '%d' but actual len is '%d' (aborting element comparison)", len(tc.expectedOrds), len(ords))
+				return
+			}
+
+			for i := range ords {
+				compareOrder(t, &ords[i], &tc.expectedOrds[i])
+			}
+
+		})
+	}
+}
 
 func TestGetOneOrder(t *testing.T) {
 	testCases := []struct {
