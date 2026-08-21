@@ -35,7 +35,7 @@ type Order struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	Profile        *string
-	RenewalInfo    *renewalInfo
+	RenewalInfo    *RenewalInfo
 }
 
 // orderSummaryResponse is a JSON response containing only
@@ -53,7 +53,7 @@ type orderSummaryResponse struct {
 	ValidTo           *int                            `json:"valid_to"`
 	ChainRootCN       *string                         `json:"chain_root_cn"`
 	Profile           *string                         `json:"profile,omitempty"`
-	RenewalInfo       *renewalInfo                    `json:"renewal_info"`
+	RenewalInfo       *RenewalInfo                    `json:"renewal_info"`
 	CreatedAt         int64                           `json:"created_at"`
 	UpdatedAt         int64                           `json:"updated_at"`
 }

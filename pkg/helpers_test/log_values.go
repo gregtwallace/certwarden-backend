@@ -3,7 +3,9 @@ package helpers_test
 import (
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // GetFunctionName uses reflection to return a string with the function name; if something
@@ -30,10 +32,30 @@ func StringPointerToVal(sp *string) string {
 	return "<nil>"
 }
 
+// IntPointerToVal returns the string representation of the value i points to,
+// or the string '<nil>' if i is nil
+func IntPointerToVal(i *int) string {
+	if i != nil {
+		return strconv.Itoa(*i)
+	}
+
+	return "<nil>"
+}
+
 // ErrorToVal returns the error string, or the string '<nil>' if err is nil
 func ErrorToVal(err error) string {
 	if err != nil {
 		return err.Error()
+	}
+
+	return "<nil>"
+}
+
+// TimeToVal returns the time string (in UTC), formatted in RFC3339,
+// or the string '<nil>' if t is nil
+func TimeToVal(t *time.Time) string {
+	if t != nil {
+		return t.UTC().Format(time.RFC3339)
 	}
 
 	return "<nil>"

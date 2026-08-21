@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // GetAllValidCurrentOrders fetches each cert's most recent valid order, if the cert currently has a valid order.
@@ -108,7 +107,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (ordersS
 
 	// get records
 	rows, err := store.db.QueryContext(ctx, query,
-		time.Now().Unix(),
+		timeNow().Unix(),
 		q.Limit(),
 		q.Offset(),
 	)
@@ -777,7 +776,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		c.post_processing_client_address, c.post_processing_client_key, c.profile,
 		
 		/* cert's key */
-		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ak.api_key_new, ck.api_key_disabled,
+		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new, ck.api_key_disabled,
 		ck.api_key_via_url,	ck.last_access, ck.created_at, ck.updated_at,
 
 		/* cert's account */
@@ -820,14 +819,13 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 			OR
 			c.name = $3
 		)
-	GROUP BY
-		certificate_id
-	HAVING
-		MAX(ao.created_at)
+	ORDER BY
+		ao.created_at DESC, ao.id DESC
+	LIMIT 1
 	`
 
 	row := store.db.QueryRowContext(ctx, query,
-		time.Now().Unix(),
+		timeNow().Unix(),
 		certId,
 		certName,
 	)

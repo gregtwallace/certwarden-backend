@@ -105,6 +105,34 @@ var (
 		PostProcessingClientKeyB64:  "",
 		Profile:                     "",
 	}
+
+	cert33 = certificates.Certificate{
+		ID:                          33,
+		Name:                        "STAGING_persist--test007.test.example2.com",
+		Description:                 "",
+		Key:                         key64,
+		Account:                     acmeAcct1,
+		Subject:                     "test007.test.example2.com",
+		SubjectAltNames:             []string{},
+		Organization:                "",
+		OrganizationalUnit:          "",
+		Country:                     "",
+		State:                       "",
+		City:                        "",
+		CSRExtraExtensions:          []certificates.CertExtension{},
+		PreferredRootCN:             "",
+		LastAccess:                  time.Unix(1777555692, 0),
+		CreatedAt:                   time.Unix(1775761592, 0),
+		UpdatedAt:                   time.Unix(1779386476, 0),
+		ApiKey:                      "api-secret-33",
+		ApiKeyNew:                   "",
+		ApiKeyViaUrl:                false,
+		PostProcessingCommand:       "",
+		PostProcessingEnvironment:   []string{},
+		PostProcessingClientAddress: "",
+		PostProcessingClientKeyB64:  "",
+		Profile:                     "tlsserver",
+	}
 )
 
 func TestGetAllCerts(t *testing.T) {

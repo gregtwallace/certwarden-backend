@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"strconv"
-	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -86,8 +85,8 @@ func insertDefaultUser(tx *sql.Tx) error {
 	_, err = tx.Exec(query,
 		defaultUsername,
 		defaultHashedPw,
-		time.Now().Unix(),
-		time.Now().Unix(),
+		timeNow().Unix(),
+		timeNow().Unix(),
 	)
 
 	if err != nil {

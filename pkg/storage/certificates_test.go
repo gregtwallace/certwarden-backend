@@ -115,7 +115,7 @@ func compareCertificate(t *testing.T, cert, expectedCert *certificates.Certifica
 	}
 
 	if !cert.CreatedAt.Equal(expectedCert.CreatedAt) {
-		t.Errorf("certificater: created at expected '%s' but got '%s'", expectedCert.CreatedAt.UTC(), cert.CreatedAt.UTC())
+		t.Errorf("certificate: created at expected '%s' but got '%s'", expectedCert.CreatedAt.UTC(), cert.CreatedAt.UTC())
 	}
 
 	if !cert.UpdatedAt.Equal(expectedCert.UpdatedAt) {

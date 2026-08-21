@@ -50,7 +50,7 @@ func (service *Service) orderExpiringCerts() {
 					service.logger.Errorf("orders: auto order failed to fetch new ari info for certificate '%s' (order: %d) (%s)", orders[i].Certificate.Name, orders[i].ID, err)
 				} else {
 					// success
-					ari = &renewalInfo{
+					ari = &RenewalInfo{
 						SuggestedWindow: struct {
 							Start time.Time "json:\"start\""
 							End   time.Time "json:\"end\""

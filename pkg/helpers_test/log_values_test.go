@@ -4,6 +4,7 @@ import (
 	"certwarden-backend/pkg/helpers_test"
 	"errors"
 	"testing"
+	"time"
 )
 
 func someFunctionA() error {
@@ -50,6 +51,33 @@ func TestStringPointerToVal(t *testing.T) {
 	}
 }
 
+func TestIntPointerToVal(t *testing.T) {
+	i := 15
+	result := helpers_test.IntPointerToVal(&i)
+	if result != "15" {
+		t.Errorf("intpointertoval expected '15', but got '%s'", result)
+	}
+
+	i = -15
+	result = helpers_test.IntPointerToVal(&i)
+	if result != "-15" {
+		t.Errorf("intpointertoval expected '-15', but got '%s'", result)
+	}
+
+	i = 89342342034920234
+	result = helpers_test.IntPointerToVal(&i)
+	if result != "89342342034920234" {
+		t.Errorf("intpointertoval expected '89342342034920234', but got '%s'", result)
+	}
+
+	// nil
+	var in *int
+	result = helpers_test.IntPointerToVal(in)
+	if result != "<nil>" {
+		t.Errorf("intpointertoval expected '<nil>', but got '%s'", result)
+	}
+}
+
 func TestErrorToVal(t *testing.T) {
 	e := errors.New("test-2")
 	result := helpers_test.ErrorToVal(e)
@@ -68,5 +96,32 @@ func TestErrorToVal(t *testing.T) {
 	result = helpers_test.ErrorToVal(e)
 	if result != "<nil>" {
 		t.Errorf("errortoval expected '<nil>', but got '%s'", result)
+	}
+}
+
+func TestTimePointerToVal(t *testing.T) {
+	ti := time.Unix(1787150875, 0)
+	result := helpers_test.TimeToVal(&ti)
+	if result != "2026-08-19T14:47:55Z" {
+		t.Errorf("timepointertoval expected '2026-08-19T14:47:55Z', but got '%s'", result)
+	}
+
+	ti = time.Unix(-55, 0)
+	result = helpers_test.TimeToVal(&ti)
+	if result != "1969-12-31T23:59:05Z" {
+		t.Errorf("timepointertoval expected '1969-12-31T23:59:05Z', but got '%s'", result)
+	}
+
+	ti = time.Unix(1785150875, 0)
+	result = helpers_test.TimeToVal(&ti)
+	if result != "2026-07-27T11:14:35Z" {
+		t.Errorf("timepointertoval expected '2026-07-27T11:14:35Z', but got '%s'", result)
+	}
+
+	// nil
+	var tn *time.Time
+	result = helpers_test.TimeToVal(tn)
+	if result != "<nil>" {
+		t.Errorf("timepointertoval expected '<nil>', but got '%s'", result)
 	}
 }
