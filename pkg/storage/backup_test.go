@@ -36,7 +36,7 @@ func backupTestBattery(t *testing.T, store *storage.Storage, expectLocked bool) 
 	// read only
 	wg.Add(1)
 	go t.Run(fmt.Sprintf("%s: get all acme accounts", lockedStateTxt), func(t *testing.T) {
-		_, _, err := store.GetAllAcmeAccounts(queryBuilderForTest(5, 0, "", true))
+		_, _, err := store.GetAllAcmeAccounts(queryBuilderForTest(5, 0, "", false))
 		backupCheckErrOK(t, err, false)
 		wg.Done()
 	})

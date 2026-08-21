@@ -272,8 +272,6 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 		sortField = "ao.status"
 	case "keyname":
 		sortField = "fk.name"
-	case "last_access":
-		sortField = "c.last_access"
 	default:
 		sortField = "ao.created_at"
 	}
