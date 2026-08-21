@@ -477,6 +477,8 @@ func (store *Storage) GetAllIncompleteOrderIds() (orderIds []int, err error) {
 		status = "ready"
 		OR
 		status = "processing"
+	ORDER BY
+		created_at DESC, id DESC
 	`
 
 	// qeuery db
@@ -524,7 +526,6 @@ func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, e
 		)
 	ORDER BY
 		created_at DESC, id DESC
-	LIMIT 1
 	`
 
 	row := store.db.QueryRowContext(ctx, query,
@@ -825,7 +826,6 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		)
 	ORDER BY
 		ao.created_at DESC, ao.id DESC
-	LIMIT 1
 	`
 
 	row := store.db.QueryRowContext(ctx, query,

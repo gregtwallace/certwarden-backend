@@ -6,13 +6,13 @@ import (
 	"certwarden-backend/pkg/storage"
 	"database/sql"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 )
 
 // GetAllValidCurrentOrders
 // GetOrdersByCert
-// GetAllIncompleteOrderIds
 
 var (
 	ord99 = orders.Order{
@@ -242,6 +242,26 @@ LORExLpyf4W2494Zil1LsqWq+54a+RNzTBRfeazeXU5vXTITzvjaa5at42Ui
 	}
 )
 
+func TestGetAllIncompleteOrderIds(t *testing.T) {
+	expectedOrderIDs := []int{99, 98, 97, 96}
+
+	// create testing service
+	store, err := openStorageWithTestData(t, "getallincompleteorderids")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// run test
+	ordIDs, err := store.GetAllIncompleteOrderIds()
+	if !helpers_test.ErrorsIs(err, nil) {
+		t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(nil), helpers_test.ErrorToVal(err))
+	}
+
+	if !slices.Equal(ordIDs, expectedOrderIDs) {
+		t.Errorf("expected order ids '%d' but got '%d'", expectedOrderIDs, ordIDs)
+	}
+}
+
 func TestGetNewestIncompleteCertOrderId(t *testing.T) {
 	testCases := []struct {
 		certID int
@@ -265,10 +285,6 @@ func TestGetNewestIncompleteCertOrderId(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	// override timenow
-	revertToDefaultTimeNow := storage.SetTimeNow(time.Unix(1779991589, 0))
-	t.Cleanup(revertToDefaultTimeNow)
 
 	// run tests
 	for i, tc := range testCases {
