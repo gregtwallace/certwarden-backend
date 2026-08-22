@@ -125,6 +125,39 @@ func TestPostNewOrder(t *testing.T) {
 			nil,
 			nil,
 		},
+		// bare minimum (new location)
+		{
+			orders.NewOrderAcmePayload{
+				CertId:    33,
+				AccountId: 1,
+				Location:  "https://acme-staging-v02.api.letsencrypt.org/acme/order/red-1/red-209",
+			},
+			209,
+			nil,
+			&orders.Order{
+				ID:             209,
+				Certificate:    cert33,
+				Location:       "https://acme-staging-v02.api.letsencrypt.org/acme/order/red-1/red-209",
+				Status:         "",
+				KnownRevoked:   false,
+				Error:          nil,
+				Expires:        nil,
+				DnsIdentifiers: nil,
+				Authorizations: nil,
+				Finalize:       "",
+				FinalizedKey:   nil,
+				CertificateUrl: nil,
+				Pem:            nil,
+				ValidFrom:      nil,
+				ValidTo:        nil,
+				ChainRootCN:    nil,
+				CreatedAt:      time.Unix(0, 0),
+				UpdatedAt:      time.Unix(0, 0),
+				Profile:        nil,
+				RenewalInfo:    nil,
+			},
+			nil,
+		},
 		// new all vals
 		{
 			orders.NewOrderAcmePayload{
@@ -146,10 +179,10 @@ func TestPostNewOrder(t *testing.T) {
 				CreatedAt:      7778888,
 				UpdatedAt:      9998888,
 			},
-			209,
+			210,
 			nil,
 			&orders.Order{
-				ID:           209,
+				ID:           210,
 				Certificate:  cert35,
 				Location:     "abc.example.com/ord/99888",
 				Status:       "processing",
