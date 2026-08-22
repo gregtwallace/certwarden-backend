@@ -4,11 +4,17 @@ import (
 	"certwarden-backend/pkg/domain/orders"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 )
 
 // PostNewOrder makes a new order in the db. An error is returned if the order
 // location already exists (or any other error)
+// TODO: Refactor to make this behave like the other 'post' methods. (e.g., return
+// the new order if success, otherwise just return error). Switch 'put' method to
+// take the order URL (which is unique) and then all this func will need to do is
+// return already existing error.
+// TODO: Should not rely on int value when non-nil error is returned.
 func (store *Storage) PostNewOrder(payload *orders.NewOrderAcmePayload) (newId int, err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -32,13 +38,22 @@ func (store *Storage) PostNewOrder(payload *orders.NewOrderAcmePayload) (newId i
 
 	row := tx.QueryRowContext(ctx, query, payload.Location)
 	err = row.Scan(&newId)
-
 	// if err == nil, record was found. return the existingId and a corresponding error
 	if err == nil {
 		return newId, orders.ErrOrderExists
 	} else if !errors.Is(err, sql.ErrNoRows) {
 		// any other error, except no rows (because that indicates this order is truly new to db)
 		return -2, err
+	}
+
+	// deal with error obj
+	var acmeErr *string
+	if payload.Error != nil {
+		ae, err := json.Marshal(payload.Error)
+		if err != nil {
+			return -2, err
+		}
+		acmeErr = new(string(ae))
 	}
 
 	query = `
@@ -84,9 +99,9 @@ func (store *Storage) PostNewOrder(payload *orders.NewOrderAcmePayload) (newId i
 		payload.AccountId,
 		payload.Status,
 		payload.KnownRevoked,
-		payload.Expires.Unix(),
+		timePointerToNullInt64(payload.Expires),
 		makeJsonStringSlice(payload.DnsIds, false),
-		payload.Error,
+		acmeErr,
 		makeJsonStringSlice(payload.Authorizations, false),
 		payload.Finalize,
 		payload.Profile,
@@ -95,12 +110,14 @@ func (store *Storage) PostNewOrder(payload *orders.NewOrderAcmePayload) (newId i
 		payload.UpdatedAt,
 	).Scan(&newId)
 
-	err = tx.Commit()
 	if err != nil {
 		return -2, err
 	}
 
-	// TODO: Handle 0 rows updated.
+	err = tx.Commit()
+	if err != nil {
+		return -2, err
+	}
 
 	return newId, nil
 }

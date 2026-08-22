@@ -5,6 +5,7 @@ import (
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
 	"database/sql"
+	"encoding/json"
 	"time"
 )
 
@@ -43,7 +44,11 @@ func (order *orderDb) toOrder() (orders.Order, error) {
 	// handle acme Error
 	var acmeErr *acme.Error
 	if order.err.Valid {
-		acmeErr = acme.NewAcmeError(&order.err.String)
+		acmeErr = new(acme.Error)
+		err := json.Unmarshal([]byte(order.err.String), acmeErr)
+		if err != nil {
+			return orders.Order{}, err
+		}
 	}
 
 	// convert cert

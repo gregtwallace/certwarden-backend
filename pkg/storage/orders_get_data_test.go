@@ -1,6 +1,7 @@
 package storage_test
 
 import (
+	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/domain/orders"
 	"time"
 )
@@ -76,12 +77,16 @@ var (
 	}
 
 	ord204 = orders.Order{
-		ID:             204,
-		Certificate:    cert35,
-		Location:       "https://acme-staging-v02.api.letsencrypt.org/acme/order/red-1/red-204",
-		Status:         "invalid",
-		KnownRevoked:   false,
-		Error:          nil,
+		ID:           204,
+		Certificate:  cert35,
+		Location:     "https://acme-staging-v02.api.letsencrypt.org/acme/order/red-1/red-204",
+		Status:       "invalid",
+		KnownRevoked: false,
+		Error: new(acme.Error{
+			Status: 522,
+			Type:   "urn:ietf:params:acme:error:badNonce",
+			Detail: "some kind of error info",
+		}),
 		Expires:        nil,
 		DnsIdentifiers: []string{"test005.test.example2.com"},
 		Authorizations: []string{"https://acme-staging-v02.api.letsencrypt.org/acme/authz/red-1/r-9773"},

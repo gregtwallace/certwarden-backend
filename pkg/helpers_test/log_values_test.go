@@ -78,6 +78,11 @@ func TestIntPointerToVal(t *testing.T) {
 	}
 }
 
+// custom error type for testing concrete nil pointer (reflection nil check)
+type nilError struct{ text string }
+
+func (ne *nilError) Error() string { return ne.text }
+
 func TestErrorToVal(t *testing.T) {
 	e := errors.New("test-2")
 	result := helpers_test.ErrorToVal(e)
@@ -94,6 +99,13 @@ func TestErrorToVal(t *testing.T) {
 	// nil
 	e = nil
 	result = helpers_test.ErrorToVal(e)
+	if result != "<nil>" {
+		t.Errorf("errortoval expected '<nil>', but got '%s'", result)
+	}
+
+	// nil - concrete error type pointer
+	var ne *nilError
+	result = helpers_test.ErrorToVal(ne)
 	if result != "<nil>" {
 		t.Errorf("errortoval expected '<nil>', but got '%s'", result)
 	}

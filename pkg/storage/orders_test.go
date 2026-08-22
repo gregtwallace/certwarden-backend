@@ -1,6 +1,7 @@
 package storage_test
 
 import (
+	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/helpers_test"
 	"slices"
@@ -40,6 +41,33 @@ func compareACMERenewalInfo(t *testing.T, ari, expectedARI *orders.RenewalInfo) 
 	}
 }
 
+// compareACMEError is for comparing acme.Error structs
+func compareACMEError(t *testing.T, err, expectedErr *acme.Error) {
+	if err == nil && expectedErr == nil {
+		return
+	}
+	if err == nil && expectedErr != nil {
+		t.Errorf("order: acmeerr is nil but expectedAcmeErr is non-nil")
+		return
+	}
+	if err != nil && expectedErr == nil {
+		t.Errorf("order: acmeerr is non-nil but expectedAcmeErr is nil")
+		return
+	}
+
+	if err.Status != expectedErr.Status {
+		t.Errorf("order: acmeerr status expected '%d' but got '%d'", err.Status, expectedErr.Status)
+	}
+
+	if err.Type != expectedErr.Type {
+		t.Errorf("order: acmeerr type expected '%s' but got '%s'", err.Type, expectedErr.Type)
+	}
+
+	if err.Detail != expectedErr.Detail {
+		t.Errorf("order: acmeerr detail expected '%s' but got '%s'", err.Detail, expectedErr.Detail)
+	}
+}
+
 // compareOrder compares ord to expectedOrd and throws appropriate errors for any differences
 func compareOrder(t *testing.T, ord, expectedOrd *orders.Order) {
 	if ord == nil && expectedOrd == nil {
@@ -72,11 +100,7 @@ func compareOrder(t *testing.T, ord, expectedOrd *orders.Order) {
 		t.Errorf("order: knownrevoked expected '%t' but got '%t'", expectedOrd.KnownRevoked, ord.KnownRevoked)
 	}
 
-	// TODO: Looks like this never actually gets populated; this check is fine for now but if the attribute is ever used
-	// this won't work properly.
-	if ord.Error != expectedOrd.Error {
-		t.Errorf("order: acme error expected '%s' but got '%s'", helpers_test.ErrorToVal(expectedOrd.Error), helpers_test.ErrorToVal(ord.Error))
-	}
+	compareACMEError(t, ord.Error, expectedOrd.Error)
 
 	err := helpers_test.TimePointerEquals(ord.Expires, expectedOrd.Expires)
 	if err != nil {

@@ -44,11 +44,16 @@ func IntPointerToVal(i *int) string {
 
 // ErrorToVal returns the error string, or the string '<nil>' if err is nil
 func ErrorToVal(err error) string {
-	if err != nil {
-		return err.Error()
+	if err == nil {
+		return "<nil>"
 	}
 
-	return "<nil>"
+	// addl nil check using reflect since error is an interface
+	if reflect.ValueOf(err).Kind() == reflect.Pointer && reflect.ValueOf(err).IsNil() {
+		return "<nil>"
+	}
+
+	return err.Error()
 }
 
 // TimeToVal returns the time string (in UTC), formatted in RFC3339,
