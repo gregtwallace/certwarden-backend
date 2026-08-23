@@ -200,8 +200,8 @@ func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) 
 	return nil
 }
 
-// PutRevokeOrder updates the revoked flag in db to true (1)
-func (store *Storage) PutRevokeOrder(orderId int, updatedAt time.Time) (err error) {
+// PutOrderRevoke updates the revoked flag in db to true (1)
+func (store *Storage) PutOrderRevoke(orderId int, updatedAt time.Time) (err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 

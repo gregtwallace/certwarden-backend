@@ -185,7 +185,7 @@ func (service *Service) RevokeOrder(w http.ResponseWriter, r *http.Request) *out
 	}
 
 	// update db
-	err = service.storage.PutRevokeOrder(orderId, time.Now())
+	err = service.storage.PutOrderRevoke(orderId, time.Now())
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrorJsonErrStorageGeneric(err)

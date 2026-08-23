@@ -24,7 +24,7 @@ import (
 //   pem = REPLACE(pem, CHAR(13), '')
 // WHERE id = [insert id here];
 
-func TestPutRevokeOrder(t *testing.T) {
+func TestPutOrderRevoke(t *testing.T) {
 	testCases := []struct {
 		ordId     int
 		updatedAt time.Time
@@ -199,7 +199,7 @@ LORExLpyf4W2494Zil1LsqWq+54a+RNzTBRfeazeXU5vXTITzvjaa5at42Ui
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d: order id: %d)", i, tc.ordId), func(t *testing.T) {
-			err := store.PutRevokeOrder(tc.ordId, tc.updatedAt)
+			err := store.PutOrderRevoke(tc.ordId, tc.updatedAt)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
 				t.Errorf("expected put order revoke error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
