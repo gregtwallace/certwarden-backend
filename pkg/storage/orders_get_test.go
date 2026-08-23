@@ -221,6 +221,7 @@ func TestGetOneOrder(t *testing.T) {
 		{203, ord203, nil},
 		{198, ord198, nil},
 		{99, ord99, nil}, // many nulls
+		{206, ord206, nil},
 	}
 
 	// create testing service
