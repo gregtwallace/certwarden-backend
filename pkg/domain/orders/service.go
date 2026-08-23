@@ -52,7 +52,7 @@ type Storage interface {
 	PutOrderAcme(payload *UpdateAcmeOrderPayload) (err error)
 	PutOrderInvalid(orderId int) (err error)
 	PutRenewalInfo(UpdateRenewalInfoPayload) (err error)
-	UpdateFinalizedKey(orderId int, keyId int) (err error)
+	PutOrderFinalizedKey(orderId, keyId int, updatedAt time.Time) (err error)
 	PutOrderPemData(orderId int, CertPayload CertPayload) (err error)
 	PutOrderRevoke(orderId int, updatedAt time.Time) (err error)
 

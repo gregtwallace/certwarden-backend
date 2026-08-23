@@ -121,11 +121,9 @@ func (store *Storage) PutOrderInvalid(orderId int) (err error) {
 }
 
 // UpdateFinalizedKey updates the specified order ID with key id
-func (store *Storage) UpdateFinalizedKey(orderId, keyId int) (err error) {
+func (store *Storage) PutOrderFinalizedKey(orderId, keyId int, updatedAt time.Time) (err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
-
-	// no checks or validation (shouldn't be needed)
 
 	// update existing record
 	query := `
@@ -138,17 +136,23 @@ func (store *Storage) UpdateFinalizedKey(orderId, keyId int) (err error) {
 			id = $3
 		`
 
-	_, err = store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		keyId,
-		timeNow(),
+		updatedAt.Unix(),
 		orderId,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	// TODO: Handle 0 rows updated.
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errorWrongUpdateRowCount(1, rowsAffected)
+	}
 
 	return nil
 }

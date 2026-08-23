@@ -107,7 +107,7 @@ fulfillLoop:
 			// save finalized_key_id in storage (if finalize ACME cmd below fails, this will save any key change
 			// upon next attempt to finalize with ACME; therefore this should always occur BEFORE the ACME finalize
 			// command)
-			err = j.service.storage.UpdateFinalizedKey(order.ID, order.Certificate.Key.ID)
+			err = j.service.storage.PutOrderFinalizedKey(order.ID, order.Certificate.Key.ID, time.Now())
 			if err != nil {
 				j.service.logger.Errorf("orders: fulfilling worker %d: update finalized key error: %s", workerID, err)
 				return // done, failed
