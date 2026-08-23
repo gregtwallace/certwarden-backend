@@ -53,7 +53,7 @@ type Storage interface {
 	PutOrderInvalid(orderId int) (err error)
 	PutRenewalInfo(UpdateRenewalInfoPayload) (err error)
 	UpdateFinalizedKey(orderId int, keyId int) (err error)
-	UpdateOrderCert(orderId int, CertPayload *CertPayload) (err error)
+	PutOrderPemData(orderId int, CertPayload CertPayload) (err error)
 	PutOrderRevoke(orderId int, updatedAt time.Time) (err error)
 
 	GetAllValidCurrentOrders(q pagination_sort.Query) (orders []Order, totalRows int, err error)

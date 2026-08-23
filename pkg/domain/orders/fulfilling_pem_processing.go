@@ -37,14 +37,14 @@ func (j *orderFulfillJob) saveAcmeCert(orderId int, cert *acme.Certificate, acme
 	}
 
 	// payload to save
-	payload := &CertPayload{
+	payload := CertPayload{
 		AcmeCert:    cert,
 		RenewalInfo: ari,
 		UpdatedAt:   time.Now(),
 	}
 
 	// save to storage
-	err = j.service.storage.UpdateOrderCert(orderId, payload)
+	err = j.service.storage.PutOrderPemData(orderId, payload)
 	if err != nil {
 		return err
 	}

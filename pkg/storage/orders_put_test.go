@@ -16,13 +16,72 @@ import (
 // PutRenewalInfo
 // PutOrderInvalid
 // UpdateFinalizedKey
-// UpdateOrderCert
+// PutOrderPemData // TODO: need to rewrite some logic to do proper testing
 
 // Useful for removing CR chars from pem
 // UPDATE acme_orders
 // SET
 //   pem = REPLACE(pem, CHAR(13), '')
 // WHERE id = [insert id here];
+
+func TestPutOrderPemData(t *testing.T) {
+	testCases := []struct {
+		ordID   int
+		payload orders.CertPayload
+
+		expectedPutErr error
+		expectedGetOrd orders.Order
+		expectedGetErr error
+	}{
+		// invalid id -2
+		{
+			-2,
+			orders.CertPayload{
+				AcmeCert:    new(acme.Certificate{}),
+				RenewalInfo: new(orders.RenewalInfo{}),
+				UpdatedAt:   time.Unix(2, 0),
+			},
+			storage.ErrWrongUpdateRowCount,
+			orders.Order{},
+			sql.ErrNoRows,
+		},
+		// invalid id 444
+		{
+			444,
+			orders.CertPayload{
+				AcmeCert:    new(acme.Certificate{}),
+				RenewalInfo: new(orders.RenewalInfo{}),
+				UpdatedAt:   time.Unix(2, 0),
+			},
+			storage.ErrWrongUpdateRowCount,
+			orders.Order{},
+			sql.ErrNoRows,
+		},
+		// TODO: Addl tests
+	}
+
+	// create testing service
+	store, err := openStorageWithTestData(t, "putorderpemdata")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%d: order id: %d)", i, tc.ordID), func(t *testing.T) {
+			err := store.PutOrderPemData(tc.ordID, tc.payload)
+			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
+				t.Errorf("expected put order revoke error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
+			}
+
+			ord, err := store.GetOneOrder(tc.ordID)
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
+			}
+
+			compareOrder(t, &ord, &tc.expectedGetOrd)
+		})
+	}
+}
 
 func TestPutOrderRevoke(t *testing.T) {
 	testCases := []struct {

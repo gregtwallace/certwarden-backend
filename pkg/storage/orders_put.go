@@ -153,12 +153,11 @@ func (store *Storage) UpdateFinalizedKey(orderId, keyId int) (err error) {
 	return nil
 }
 
-// UpdateOrderCert updates the specified order ID with the specified certificate data and ari
-func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) (err error) {
+// PutOrderPemData updates the specified order ID with the specified certificate data and ari
+// Todo: Refactor this to remove ARI
+func (store *Storage) PutOrderPemData(orderId int, payload orders.CertPayload) (err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
-
-	// no checks or validation (shouldn't be needed)
 
 	// update existing record
 	query := `
@@ -175,13 +174,13 @@ func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) 
 			id = $7
 		`
 
-	// marshal struct
+	// marshal ARI struct
 	ari, err := json.Marshal(payload.RenewalInfo)
 	if err != nil {
 		return fmt.Errorf("storage: failed to marshal renewal info (%w)", err)
 	}
 
-	_, err = store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		payload.AcmeCert.PEM(),
 		payload.AcmeCert.NotBefore().Unix(),
 		payload.AcmeCert.NotAfter().Unix(),
@@ -190,12 +189,18 @@ func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) 
 		payload.UpdatedAt.Unix(),
 		orderId,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	// TODO: Handle 0 rows updated.
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errorWrongUpdateRowCount(1, rowsAffected)
+	}
 
 	return nil
 }
