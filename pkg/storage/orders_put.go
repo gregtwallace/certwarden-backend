@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 // UpdateOrderAcme updates the specified order ID with acme.Order response
@@ -199,12 +200,10 @@ func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) 
 	return nil
 }
 
-// RevokeOrder updates the revoked flag in db to true (1)
-func (store *Storage) RevokeOrder(orderId int) (err error) {
+// PutRevokeOrder updates the revoked flag in db to true (1)
+func (store *Storage) PutRevokeOrder(orderId int, updatedAt time.Time) (err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
-
-	// no checks or validation (shouldn't be needed)
 
 	// update existing record
 	query := `
@@ -217,17 +216,23 @@ func (store *Storage) RevokeOrder(orderId int) (err error) {
 			id = $3
 		`
 
-	_, err = store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		1, // true
-		timeNow(),
+		updatedAt.Unix(),
 		orderId,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	// TODO: Handle 0 rows updated.
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errorWrongUpdateRowCount(1, rowsAffected)
+	}
 
 	return nil
 }
