@@ -37,7 +37,7 @@ type RenewalInfo struct {
 type UpdateRenewalInfoPayload struct {
 	OrderID     int
 	RenewalInfo *RenewalInfo
-	UpdatedAt   int
+	UpdatedAt   time.Time
 }
 
 // UnmarshalRenewalInfo unmarshals data into the renewalInfo struct; it does some basic checking

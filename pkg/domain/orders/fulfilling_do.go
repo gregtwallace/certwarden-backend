@@ -75,7 +75,7 @@ fulfillLoop:
 			// status of the order to "invalid" and MAY delete the order resource.")
 			acmeErr := new(acme.Error)
 			if errors.As(err, &acmeErr) && acmeErr.Status == http.StatusNotFound {
-				err := j.service.storage.PutOrderInvalid(order.ID)
+				err := j.service.storage.PutOrderStatusInvalid(order.ID, time.Now())
 				if err != nil {
 					j.service.logger.Errorf("orders: fulfilling worker %d: failed to set order '%d' to invalid status (%s)", workerID, order.ID, err)
 				}

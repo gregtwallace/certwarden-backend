@@ -13,8 +13,6 @@ import (
 
 // TODO:
 // PutOrderAcme
-// PutRenewalInfo
-// PutOrderInvalid
 // PutOrderPemData // TODO: need to rewrite some logic to do proper testing
 
 // Useful for removing CR chars from pem
@@ -22,6 +20,236 @@ import (
 // SET
 //   pem = REPLACE(pem, CHAR(13), '')
 // WHERE id = [insert id here];
+
+func TestPutOrderRenewalInfo(t *testing.T) {
+	// modifications of existing orders
+	ord203newARI := ord203
+	ord203newARI.RenewalInfo = &orders.RenewalInfo{
+		SuggestedWindow: struct {
+			Start time.Time "json:\"start\""
+			End   time.Time "json:\"end\""
+		}{
+			Start: time.Unix(1581937245, 0),
+			End:   time.Unix(1582014934, 0),
+		},
+		ExplanationURL: new("https://www.example.com/"),
+		RetryAfter:     new(time.Unix(1579410250, 0)),
+	}
+	ord203newARI.UpdatedAt = time.Unix(132435555, 0)
+
+	ord204newARI := ord204
+	ord204newARI.RenewalInfo = &orders.RenewalInfo{
+		SuggestedWindow: struct {
+			Start time.Time "json:\"start\""
+			End   time.Time "json:\"end\""
+		}{
+			Start: time.Unix(1581137265, 0),
+			End:   time.Unix(1582114936, 0),
+		},
+		ExplanationURL: nil,
+		RetryAfter:     new(time.Unix(1579410150, 0)),
+	}
+	ord204newARI.UpdatedAt = time.Unix(152435555, 0)
+
+	// test cases
+	testCases := []struct {
+		payload orders.UpdateRenewalInfoPayload
+
+		expectedPutErr error
+		expectedGetOrd orders.Order
+		expectedGetErr error
+	}{
+		// invalid id (negative)
+		{
+			orders.UpdateRenewalInfoPayload{
+				OrderID: -9,
+				RenewalInfo: &orders.RenewalInfo{
+					SuggestedWindow: struct {
+						Start time.Time "json:\"start\""
+						End   time.Time "json:\"end\""
+					}{
+						Start: time.Unix(1781937245, 0),
+						End:   time.Unix(1782014934, 0),
+					},
+					ExplanationURL: nil,
+					RetryAfter:     new(time.Unix(1779410250, 0)), //
+				},
+				UpdatedAt: time.Unix(2334234234, 0),
+			},
+
+			storage.ErrWrongUpdateRowCount,
+			orders.Order{},
+			sql.ErrNoRows,
+		},
+		// invalid id (positive)
+		{
+			orders.UpdateRenewalInfoPayload{
+				OrderID: 1234,
+				RenewalInfo: &orders.RenewalInfo{
+					SuggestedWindow: struct {
+						Start time.Time "json:\"start\""
+						End   time.Time "json:\"end\""
+					}{
+						Start: time.Unix(1781937245, 0),
+						End:   time.Unix(1782014934, 0),
+					},
+					ExplanationURL: nil,
+					RetryAfter:     new(time.Unix(1779410250, 0)), //
+				},
+				UpdatedAt: time.Unix(2334234234, 0),
+			},
+
+			storage.ErrWrongUpdateRowCount,
+			orders.Order{},
+			sql.ErrNoRows,
+		},
+		// has existing ARI
+		{
+			orders.UpdateRenewalInfoPayload{
+				OrderID: 203,
+				RenewalInfo: &orders.RenewalInfo{
+					SuggestedWindow: struct {
+						Start time.Time "json:\"start\""
+						End   time.Time "json:\"end\""
+					}{
+						Start: time.Unix(1581937245, 0),
+						End:   time.Unix(1582014934, 0),
+					},
+					ExplanationURL: new("https://www.example.com/"),
+					RetryAfter:     new(time.Unix(1579410250, 0)),
+				},
+				UpdatedAt: time.Unix(132435555, 0),
+			},
+
+			nil,
+			ord203newARI,
+			nil,
+		},
+		// has NULL ari
+		{
+			orders.UpdateRenewalInfoPayload{
+				OrderID: 204,
+				RenewalInfo: &orders.RenewalInfo{
+					SuggestedWindow: struct {
+						Start time.Time "json:\"start\""
+						End   time.Time "json:\"end\""
+					}{
+						Start: time.Unix(1581137265, 0),
+						End:   time.Unix(1582114936, 0),
+					},
+					ExplanationURL: nil,
+					RetryAfter:     new(time.Unix(1579410150, 0)),
+				},
+				UpdatedAt: time.Unix(152435555, 0),
+			},
+
+			nil,
+			ord204newARI,
+			nil,
+		},
+	}
+
+	// create testing service
+	store, err := openStorageWithTestData(t, "putorderrenewalinfo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%d: order id: %d)", i, tc.payload.OrderID), func(t *testing.T) {
+			err := store.PutOrderRenewalInfo(tc.payload)
+			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
+				t.Errorf("expected put order renewal info error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
+			}
+
+			ord, err := store.GetOneOrder(tc.payload.OrderID)
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
+			}
+
+			compareOrder(t, &ord, &tc.expectedGetOrd)
+		})
+	}
+}
+
+func TestPutOrderStatusInvalid(t *testing.T) {
+	// modifications of existing orders
+	ord203nowInvalid := ord203
+	ord203nowInvalid.Status = "invalid"
+	ord203nowInvalid.UpdatedAt = time.Unix(125435555, 0)
+
+	ord204newUpdatedAt := ord204
+	ord204newUpdatedAt.UpdatedAt = time.Unix(111135555, 0)
+
+	// test cases
+	testCases := []struct {
+		ordID     int
+		updatedAt time.Time
+
+		expectedPutErr error
+		expectedGetOrd orders.Order
+		expectedGetErr error
+	}{
+		// invalid id (negative)
+		{
+			-3,
+			time.Unix(265465487, 0),
+
+			storage.ErrWrongUpdateRowCount,
+			orders.Order{},
+			sql.ErrNoRows,
+		},
+		// invalid id (positive)
+		{
+			452,
+			time.Unix(5435645, 0),
+
+			storage.ErrWrongUpdateRowCount,
+			orders.Order{},
+			sql.ErrNoRows,
+		},
+		// set to 'invalid'
+		{
+			203,
+			time.Unix(125435555, 0),
+
+			nil,
+			ord203nowInvalid,
+			nil,
+		},
+		// already at 'invalid' state
+		{
+			204,
+			time.Unix(111135555, 0),
+
+			nil,
+			ord204newUpdatedAt,
+			nil,
+		},
+	}
+
+	// create testing service
+	store, err := openStorageWithTestData(t, "putorderstatusinvalid")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("%d: order id: %d)", i, tc.ordID), func(t *testing.T) {
+			err := store.PutOrderStatusInvalid(tc.ordID, tc.updatedAt)
+			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
+				t.Errorf("expected put order invalid error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
+			}
+
+			ord, err := store.GetOneOrder(tc.ordID)
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
+			}
+
+			compareOrder(t, &ord, &tc.expectedGetOrd)
+		})
+	}
+}
 
 func TestPutOrderFinalizedKey(t *testing.T) {
 	// modifications of existing orders
@@ -105,7 +333,7 @@ func TestPutOrderFinalizedKey(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: order id: %d)", i, tc.ordID), func(t *testing.T) {
 			err := store.PutOrderFinalizedKey(tc.ordID, tc.finalKeyID, tc.updatedAt)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
-				t.Errorf("expected put order revoke error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
+				t.Errorf("expected put order finalized key error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
 			ord, err := store.GetOneOrder(tc.ordID)
@@ -164,7 +392,7 @@ func TestPutOrderPemData(t *testing.T) {
 		t.Run(fmt.Sprintf("%d: order id: %d)", i, tc.ordID), func(t *testing.T) {
 			err := store.PutOrderPemData(tc.ordID, tc.payload)
 			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
-				t.Errorf("expected put order revoke error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
+				t.Errorf("expected put order pem data error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
 			ord, err := store.GetOneOrder(tc.ordID)

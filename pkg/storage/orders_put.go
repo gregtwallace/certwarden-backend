@@ -10,7 +10,7 @@ import (
 
 // UpdateOrderAcme updates the specified order ID with acme.Order response
 // data
-func (store *Storage) PutOrderAcme(payload *orders.UpdateAcmeOrderPayload) (err error) {
+func (store *Storage) PutOrderAcme(payload *orders.UpdateAcmeOrderPayload) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -32,7 +32,7 @@ func (store *Storage) PutOrderAcme(payload *orders.UpdateAcmeOrderPayload) (err 
 			id = $10
 		`
 
-	_, err = store.db.ExecContext(ctx, query,
+	_, err := store.db.ExecContext(ctx, query,
 		payload.Status,
 		payload.Expires.Unix(),
 		makeJsonStringSlice(payload.DnsIds, true),
@@ -54,8 +54,8 @@ func (store *Storage) PutOrderAcme(payload *orders.UpdateAcmeOrderPayload) (err 
 	return nil
 }
 
-// PutRenewalInfo updates the specified order ID with its renewal information object
-func (store *Storage) PutRenewalInfo(payload orders.UpdateRenewalInfoPayload) (err error) {
+// PutOrderRenewalInfo updates the specified order ID with its renewal information object
+func (store *Storage) PutOrderRenewalInfo(payload orders.UpdateRenewalInfoPayload) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -76,23 +76,29 @@ func (store *Storage) PutRenewalInfo(payload orders.UpdateRenewalInfoPayload) (e
 		return fmt.Errorf("storage: failed to marshal renewal info (%w)", err)
 	}
 
-	_, err = store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		string(ari),
-		payload.UpdatedAt,
+		payload.UpdatedAt.Unix(),
 		payload.OrderID,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	// TODO: Handle 0 rows updated.
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errorWrongUpdateRowCount(1, rowsAffected)
+	}
 
 	return nil
 }
 
-// PutOrderInvalid updates the specified order ID to the status of 'invalid'.
-func (store *Storage) PutOrderInvalid(orderId int) (err error) {
+// PutOrderStatusInvalid updates the specified order ID to the status of 'invalid'.
+func (store *Storage) PutOrderStatusInvalid(orderId int, updatedAt time.Time) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -101,27 +107,34 @@ func (store *Storage) PutOrderInvalid(orderId int) (err error) {
 		UPDATE
 			acme_orders
 		SET
-			status = $1
+			status = 'invalid',
+			updated_at = $1
 		WHERE
 			id = $2
 		`
 
-	_, err = store.db.ExecContext(ctx, query,
-		"invalid",
+	res, err := store.db.ExecContext(ctx, query,
+		updatedAt.Unix(),
 		orderId,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	// TODO: Handle 0 rows updated.
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errorWrongUpdateRowCount(1, rowsAffected)
+	}
 
 	return nil
 }
 
 // UpdateFinalizedKey updates the specified order ID with key id
-func (store *Storage) PutOrderFinalizedKey(orderId, keyId int, updatedAt time.Time) (err error) {
+func (store *Storage) PutOrderFinalizedKey(orderId, keyId int, updatedAt time.Time) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -159,7 +172,7 @@ func (store *Storage) PutOrderFinalizedKey(orderId, keyId int, updatedAt time.Ti
 
 // PutOrderPemData updates the specified order ID with the specified certificate data and ari
 // Todo: Refactor this to remove ARI
-func (store *Storage) PutOrderPemData(orderId int, payload orders.CertPayload) (err error) {
+func (store *Storage) PutOrderPemData(orderId int, payload orders.CertPayload) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -210,7 +223,7 @@ func (store *Storage) PutOrderPemData(orderId int, payload orders.CertPayload) (
 }
 
 // PutOrderRevoke updates the revoked flag in db to true (1)
-func (store *Storage) PutOrderRevoke(orderId int, updatedAt time.Time) (err error) {
+func (store *Storage) PutOrderRevoke(orderId int, updatedAt time.Time) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
