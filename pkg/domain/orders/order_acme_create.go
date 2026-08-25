@@ -50,7 +50,7 @@ func (service *Service) placeNewOrderAndFulfill(certId int, highPriority bool) (
 		orderId, err = service.storage.PostNewOrder(&payload)
 		// if exists error, try to update an existing order
 		if errors.Is(err, ErrOrderExists) {
-			err = service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(orderId, &acmeResponse))
+			err = service.storage.PutOrderACME(makeUpdateOrderAcmePayload(orderId, &acmeResponse))
 			if err != nil {
 				service.logger.Error(err)
 				return Order{}, output.ErrorJsonErrStorageGeneric(err)

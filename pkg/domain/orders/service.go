@@ -49,12 +49,12 @@ type Storage interface {
 
 	PostNewOrder(payload *NewOrderAcmePayload) (newId int, err error)
 
-	PutOrderAcme(payload *UpdateAcmeOrderPayload) (err error)
+	PutOrderACME(payload *UpdateAcmeOrderPayload) error
 	PutOrderStatusInvalid(orderId int, updatedAt time.Time) error
 	PutOrderRenewalInfo(payload UpdateRenewalInfoPayload) error
-	PutOrderFinalizedKey(orderId, keyId int, updatedAt time.Time) (err error)
-	PutOrderPemData(orderId int, CertPayload CertPayload) (err error)
-	PutOrderRevoke(orderId int, updatedAt time.Time) (err error)
+	PutOrderFinalizedKey(orderId, keyId int, updatedAt time.Time) error
+	PutOrderPemData(orderId int, CertPayload CertPayload) error
+	PutOrderRevoke(orderId int, updatedAt time.Time) error
 
 	GetAllValidCurrentOrders(q pagination_sort.Query) (orders []Order, totalRows int, err error)
 	GetAllIncompleteOrderIds() (orderIds []int, err error)

@@ -8,11 +8,26 @@ import (
 	"time"
 )
 
-// UpdateOrderAcme updates the specified order ID with acme.Order response
-// data
-func (store *Storage) PutOrderAcme(payload *orders.UpdateAcmeOrderPayload) error {
+// UpdateOrderAcme updates the specified order ID with acme.Order response data
+func (store *Storage) PutOrderACME(payload *orders.UpdateAcmeOrderPayload) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
+
+	// handle null expires
+	var expiresVal *int64
+	if payload.Expires != nil {
+		expiresVal = new(payload.Expires.Unix())
+	}
+
+	// deal with error obj
+	var acmeErr *string
+	if payload.Error != nil {
+		ae, err := json.Marshal(payload.Error)
+		if err != nil {
+			return err
+		}
+		acmeErr = new(string(ae))
+	}
 
 	// update existing record
 	query := `
@@ -32,24 +47,30 @@ func (store *Storage) PutOrderAcme(payload *orders.UpdateAcmeOrderPayload) error
 			id = $10
 		`
 
-	_, err := store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		payload.Status,
-		payload.Expires.Unix(),
+		expiresVal,
 		makeJsonStringSlice(payload.DnsIds, true),
-		payload.Error,
+		acmeErr,
 		makeJsonStringSlice(payload.Authorizations, true),
 		payload.Finalize,
 		payload.Profile,
 		payload.CertificateUrl,
-		payload.UpdatedAt,
-		payload.OrderId,
+		payload.UpdatedAt.Unix(),
+		payload.OrderID,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	// TODO: Handle 0 rows updated.
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errorWrongUpdateRowCount(1, rowsAffected)
+	}
 
 	return nil
 }
