@@ -102,7 +102,7 @@ func TestAppHttpToHttpsRedirectHandler(t *testing.T) {
 				// if it failed, assume there is no port and use raw r.Host
 				hostName = r.Host
 			}
-			expectedBody := []byte{}
+			var expectedBody []byte
 
 			// expect error
 			if !tc[i].expectSuccess {
@@ -116,7 +116,7 @@ func TestAppHttpToHttpsRedirectHandler(t *testing.T) {
 				if r.URL.RawQuery != "" {
 					newAddr += "?" + strings.TrimPrefix(r.URL.RawQuery, "?")
 				}
-				expectedBody = []byte(fmt.Sprintf("<a href=\"%s\">Temporary Redirect</a>.", newAddr))
+				expectedBody = []byte(fmt.Sprintf("<a href=%q>Temporary Redirect</a>.", newAddr))
 			}
 
 			if !bytes.Equal(resDat, expectedBody) {

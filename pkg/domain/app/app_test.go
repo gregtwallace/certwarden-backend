@@ -18,7 +18,8 @@ import (
 
 // NewTestSafecert generates a self-signed certificate for use in testing; the first dnsName or
 // ip address is promoted to CommonName
-func NewTestSafecert(dnsNames []string, ips []string) (*safecert.SafeCert, error) {
+// TODO: move to `helpers_test` package as I'm sure this will come up again in other pkg tests
+func NewTestSafecert(dnsNames, ips []string) (*safecert.SafeCert, error) {
 	if len(dnsNames) == 0 && len(ips) == 0 {
 		return nil, errors.New("no dnsnames or ips specified")
 	}

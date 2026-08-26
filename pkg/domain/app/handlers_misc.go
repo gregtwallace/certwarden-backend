@@ -72,10 +72,11 @@ func (app *Application) httpToHttpsRedirectHandler(w http.ResponseWriter, r *htt
 		// Invalid Redirect target -- write 400 (Bad Request)
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusBadRequest)
-		//nolint:errcheck // don't care if this doesn't write, user errored out anyway
+
 		if isRawV6 {
 			hostName = "[" + hostName + "]"
 		}
+		//nolint:errcheck // don't care if this doesn't write, user errored out anyway
 		fmt.Fprintf(w, "redirect failed: https hostname '%s' is not a part of the server's certificate", hostName)
 		return
 	}
