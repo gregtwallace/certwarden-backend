@@ -10,9 +10,17 @@ import (
 
 // CertPayload is the data to store for an issued certificate
 type CertPayload struct {
-	AcmeCert    *acme.Certificate
+	AcmeCert    Cert
 	RenewalInfo *RenewalInfo
 	UpdatedAt   time.Time
+}
+
+// TODO: Get rid of this.
+type Cert interface {
+	PEM() string
+	NotBefore() time.Time
+	NotAfter() time.Time
+	ChainRootCN() string
 }
 
 // savePemChain calls a func to determine the valid from and to dates for the issued pem chain

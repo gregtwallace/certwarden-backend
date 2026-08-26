@@ -11,15 +11,28 @@ import (
 	"time"
 )
 
-// TODO: need to rewrite some logic to do proper testing
-// PutOrderPemData
-// Also, refactor methods to use pointers
+// TODO: Refactor methods to use pointers
 
 // Useful for removing CR chars from pem
 // UPDATE acme_orders
 // SET
 //   pem = REPLACE(pem, CHAR(13), '')
 // WHERE id = [insert id here];
+
+// TODO: Refactor other parts of the codebase and remove this workaround
+type TestCertificate struct {
+	pem         string
+	notBefore   time.Time
+	notAfter    time.Time
+	chainRootCN string
+}
+
+func (c *TestCertificate) PEM() string          { return c.pem }
+func (c *TestCertificate) NotBefore() time.Time { return c.notBefore }
+func (c *TestCertificate) NotAfter() time.Time  { return c.notAfter }
+func (c *TestCertificate) ChainRootCN() string  { return c.chainRootCN }
+
+//
 
 func TestPutOrderACME(t *testing.T) {
 	// modifications of existing orders
@@ -469,6 +482,34 @@ func TestPutOrderFinalizedKey(t *testing.T) {
 }
 
 func TestPutOrderPemData(t *testing.T) {
+	// modifications of existing orders
+	ord186updated := ord186
+	ord186updated.Pem = new("some data 1")
+	ord186updated.ValidFrom = new(time.Unix(123456, 0))
+	ord186updated.ValidTo = new(time.Unix(234567, 0))
+	ord186updated.ChainRootCN = new("a common name 1")
+	ord186updated.RenewalInfo = &orders.RenewalInfo{
+		SuggestedWindow: struct {
+			Start time.Time "json:\"start\""
+			End   time.Time "json:\"end\""
+		}{
+			Start: time.Unix(1581937200, 0),
+			End:   time.Unix(1582014900, 0),
+		},
+		ExplanationURL: new("https://www.example.com/ari"),
+		RetryAfter:     new(time.Unix(1579410000, 0)),
+	}
+	ord186updated.UpdatedAt = time.Unix(28888889, 0)
+
+	ord203updated := ord203
+	ord203updated.Pem = new("some data 2")
+	ord203updated.ValidFrom = new(time.Unix(223456, 0))
+	ord203updated.ValidTo = new(time.Unix(334567, 0))
+	ord203updated.ChainRootCN = new("a common name 2")
+	ord203updated.RenewalInfo = nil
+	ord203updated.UpdatedAt = time.Unix(48888889, 0)
+
+	// test cases
 	testCases := []struct {
 		ordID   int
 		payload orders.CertPayload
@@ -481,7 +522,7 @@ func TestPutOrderPemData(t *testing.T) {
 		{
 			-2,
 			orders.CertPayload{
-				AcmeCert:    new(acme.Certificate{}),
+				AcmeCert:    new(TestCertificate{}),
 				RenewalInfo: new(orders.RenewalInfo{}),
 				UpdatedAt:   time.Unix(2, 0),
 			},
@@ -493,7 +534,7 @@ func TestPutOrderPemData(t *testing.T) {
 		{
 			444,
 			orders.CertPayload{
-				AcmeCert:    new(acme.Certificate{}),
+				AcmeCert:    new(TestCertificate{}),
 				RenewalInfo: new(orders.RenewalInfo{}),
 				UpdatedAt:   time.Unix(2, 0),
 			},
@@ -501,7 +542,50 @@ func TestPutOrderPemData(t *testing.T) {
 			orders.Order{},
 			sql.ErrNoRows,
 		},
-		// TODO: Addl tests
+		// ord has existing null values -> value
+		{
+			186,
+			orders.CertPayload{
+				AcmeCert: new(TestCertificate{
+					pem:         "some data 1",
+					notBefore:   time.Unix(123456, 0),
+					notAfter:    time.Unix(234567, 0),
+					chainRootCN: "a common name 1",
+				}),
+				RenewalInfo: &orders.RenewalInfo{
+					SuggestedWindow: struct {
+						Start time.Time "json:\"start\""
+						End   time.Time "json:\"end\""
+					}{
+						Start: time.Unix(1581937200, 0),
+						End:   time.Unix(1582014900, 0),
+					},
+					ExplanationURL: new("https://www.example.com/ari"),
+					RetryAfter:     new(time.Unix(1579410000, 0)),
+				},
+				UpdatedAt: time.Unix(28888889, 0),
+			},
+			nil,
+			ord186updated,
+			nil,
+		},
+		// null payload as much as possible
+		{
+			203,
+			orders.CertPayload{
+				AcmeCert: new(TestCertificate{
+					pem:         "some data 2",
+					notBefore:   time.Unix(223456, 0),
+					notAfter:    time.Unix(334567, 0),
+					chainRootCN: "a common name 2",
+				}),
+				RenewalInfo: nil,
+				UpdatedAt:   time.Unix(48888889, 0),
+			},
+			nil,
+			ord203updated,
+			nil,
+		},
 	}
 
 	// create testing service

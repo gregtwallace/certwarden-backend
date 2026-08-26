@@ -91,14 +91,18 @@ func (store *Storage) PutOrderRenewalInfo(payload orders.UpdateRenewalInfoPayloa
 			id = $3
 		`
 
-	// marshal struct
-	ari, err := json.Marshal(payload.RenewalInfo)
-	if err != nil {
-		return fmt.Errorf("storage: failed to marshal renewal info (%w)", err)
+	// marshal struct & account for possible null
+	var ari *string
+	if payload.RenewalInfo != nil {
+		ariBytes, err := json.Marshal(payload.RenewalInfo)
+		if err != nil {
+			return fmt.Errorf("storage: failed to marshal renewal info (%w)", err)
+		}
+		ari = new(string(ariBytes))
 	}
 
 	res, err := store.db.ExecContext(ctx, query,
-		string(ari),
+		ari,
 		payload.UpdatedAt.Unix(),
 		payload.OrderID,
 	)
@@ -212,10 +216,14 @@ func (store *Storage) PutOrderPemData(orderId int, payload orders.CertPayload) e
 			id = $7
 		`
 
-	// marshal ARI struct
-	ari, err := json.Marshal(payload.RenewalInfo)
-	if err != nil {
-		return fmt.Errorf("storage: failed to marshal renewal info (%w)", err)
+	// marshal struct & account for possible null
+	var ari *string
+	if payload.RenewalInfo != nil {
+		ariBytes, err := json.Marshal(payload.RenewalInfo)
+		if err != nil {
+			return fmt.Errorf("storage: failed to marshal renewal info (%w)", err)
+		}
+		ari = new(string(ariBytes))
 	}
 
 	res, err := store.db.ExecContext(ctx, query,
@@ -223,7 +231,7 @@ func (store *Storage) PutOrderPemData(orderId int, payload orders.CertPayload) e
 		payload.AcmeCert.NotBefore().Unix(),
 		payload.AcmeCert.NotAfter().Unix(),
 		payload.AcmeCert.ChainRootCN(),
-		string(ari),
+		ari,
 		payload.UpdatedAt.Unix(),
 		orderId,
 	)
