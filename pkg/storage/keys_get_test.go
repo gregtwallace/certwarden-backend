@@ -103,6 +103,24 @@ red-56
 		UpdatedAt:      time.Unix(0, 0),
 	}
 
+	key57 = private_keys.Key{
+		ID:          57,
+		Name:        "a0.alias.test.example.com",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp256,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-57
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-57",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: false,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1743173262, 0),
+		UpdatedAt:      time.Unix(0, 0),
+	}
+
 	key58 = private_keys.Key{
 		ID:          58,
 		Name:        "_Buypass_Staging",
@@ -264,6 +282,24 @@ red-69
 		CreatedAt:      time.Unix(1775761592, 0),
 		UpdatedAt:      time.Unix(0, 0),
 	}
+
+	key70 = private_keys.Key{
+		ID:          70,
+		Name:        "STAGING_persist--test005.test.example2.com",
+		Description: "",
+		Algorithm:   key_crypto.AlgorithmECDSAp256,
+		Pem: `-----BEGIN EC PRIVATE KEY-----
+red-70
+-----END EC PRIVATE KEY-----
+`,
+		ApiKey:         "key-api-key-70",
+		ApiKeyNew:      "",
+		ApiKeyDisabled: false,
+		ApiKeyViaUrl:   false,
+		LastAccess:     time.Unix(0, 0),
+		CreatedAt:      time.Unix(1779386740, 0),
+		UpdatedAt:      time.Unix(0, 0),
+	}
 )
 
 // TestGetAllKeys does spot checking of expected results
@@ -276,8 +312,8 @@ func TestGetAllKeys(t *testing.T) {
 		expectedKeyAtIndx *private_keys.Key
 	}{
 		{pagination_sort.Query{}, 19, 19, 0, &key63},
-		{queryBuilderForTest(5, 15, "algorithm", true), 19, 4, 2, &key67},
-		{queryBuilderForTest(10, 0, "last_access", false), 19, 10, 2, &key31},
+		{queryBuilderForTest(5, 15, "algorithm", false), 19, 4, 2, &key67},
+		{queryBuilderForTest(10, 0, "last_access", true), 19, 10, 2, &key31},
 	}
 
 	// create testing service

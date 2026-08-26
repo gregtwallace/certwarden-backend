@@ -20,10 +20,11 @@ const (
 	expiringShortLivedRemainingValidFraction = 0.5
 )
 
-// renewalInfo is a struct to hold information that instructs Cert Warden when renewal
+// RenewalInfo is a struct to hold information that instructs Cert Warden when renewal
 // should be attempted by the auto ordering task; it is similar but NOT identical the
 // one specified in the ACME ARI specification
-type renewalInfo struct {
+// TODO: Make json Marshal/Ummarshal to ensure consistent time formatting?
+type RenewalInfo struct {
 	SuggestedWindow struct {
 		Start time.Time `json:"start"`
 		End   time.Time `json:"end"`
@@ -35,14 +36,14 @@ type renewalInfo struct {
 // UpdateRenewalInfoPayload is the object to update ARI in the database
 type UpdateRenewalInfoPayload struct {
 	OrderID     int
-	RenewalInfo *renewalInfo
-	UpdatedAt   int
+	RenewalInfo *RenewalInfo
+	UpdatedAt   time.Time
 }
 
 // UnmarshalRenewalInfo unmarshals data into the renewalInfo struct; it does some basic checking
 // of values and if any checks fail, null is returned instead
-func UnmarshalRenewalInfo(data []byte) *renewalInfo {
-	ri := &renewalInfo{}
+func UnmarshalRenewalInfo(data []byte) *RenewalInfo {
+	ri := &RenewalInfo{}
 	err := json.Unmarshal(data, ri)
 	if err != nil {
 		return nil
@@ -59,7 +60,7 @@ func UnmarshalRenewalInfo(data []byte) *renewalInfo {
 // MakeRenewalInfo returns a renewalInfo struct based on a certificate's validity. This is essentially
 // a local ARI calculation, which will be used when the ACME Server does not implement ARI or is not
 // returning valid ARI responses.
-func MakeRenewalInfo(validFrom, validTo time.Time) *renewalInfo {
+func MakeRenewalInfo(validFrom, validTo time.Time) *RenewalInfo {
 	// determine if the cert is "short lived"
 	validDuration := validTo.Sub(validFrom)
 	shortLived := validTo.Sub(validFrom) < shortLivedValidityThreshold
@@ -84,7 +85,7 @@ func MakeRenewalInfo(validFrom, validTo time.Time) *renewalInfo {
 	}
 
 	// return struct
-	return &renewalInfo{
+	return &RenewalInfo{
 		SuggestedWindow: struct {
 			Start time.Time "json:\"start\""
 			End   time.Time "json:\"end\""

@@ -5,13 +5,29 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
-// UpdateOrderAcme updates the specified order ID with acme.Order response
-// data
-func (store *Storage) PutOrderAcme(payload *orders.UpdateAcmeOrderPayload) (err error) {
+// UpdateOrderAcme updates the specified order ID with acme.Order response data
+func (store *Storage) PutOrderACME(payload *orders.UpdateAcmeOrderPayload) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
+
+	// handle null expires
+	var expiresVal *int64
+	if payload.Expires != nil {
+		expiresVal = new(payload.Expires.Unix())
+	}
+
+	// deal with error obj
+	var acmeErr *string
+	if payload.Error != nil {
+		ae, err := json.Marshal(payload.Error)
+		if err != nil {
+			return err
+		}
+		acmeErr = new(string(ae))
+	}
 
 	// update existing record
 	query := `
@@ -31,30 +47,36 @@ func (store *Storage) PutOrderAcme(payload *orders.UpdateAcmeOrderPayload) (err 
 			id = $10
 		`
 
-	_, err = store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		payload.Status,
-		payload.Expires.Unix(),
+		expiresVal,
 		makeJsonStringSlice(payload.DnsIds, true),
-		payload.Error,
+		acmeErr,
 		makeJsonStringSlice(payload.Authorizations, true),
 		payload.Finalize,
 		payload.Profile,
 		payload.CertificateUrl,
-		payload.UpdatedAt,
-		payload.OrderId,
+		payload.UpdatedAt.Unix(),
+		payload.OrderID,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	// TODO: Handle 0 rows updated.
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errorWrongUpdateRowCount(1, rowsAffected)
+	}
 
 	return nil
 }
 
-// PutRenewalInfo updates the specified order ID with its renewal information object
-func (store *Storage) PutRenewalInfo(payload orders.UpdateRenewalInfoPayload) (err error) {
+// PutOrderRenewalInfo updates the specified order ID with its renewal information object
+func (store *Storage) PutOrderRenewalInfo(payload *orders.UpdateRenewalInfoPayload) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -69,29 +91,39 @@ func (store *Storage) PutRenewalInfo(payload orders.UpdateRenewalInfoPayload) (e
 			id = $3
 		`
 
-	// marshal struct
-	ari, err := json.Marshal(payload.RenewalInfo)
-	if err != nil {
-		return fmt.Errorf("storage: failed to marshal renewal info (%w)", err)
+	// marshal struct & account for possible null
+	var ari *string
+	if payload.RenewalInfo != nil {
+		ariBytes, err := json.Marshal(payload.RenewalInfo)
+		if err != nil {
+			return fmt.Errorf("storage: failed to marshal renewal info (%w)", err)
+		}
+		ari = new(string(ariBytes))
 	}
 
-	_, err = store.db.ExecContext(ctx, query,
-		string(ari),
-		payload.UpdatedAt,
+	res, err := store.db.ExecContext(ctx, query,
+		ari,
+		payload.UpdatedAt.Unix(),
 		payload.OrderID,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	// TODO: Handle 0 rows updated.
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errorWrongUpdateRowCount(1, rowsAffected)
+	}
 
 	return nil
 }
 
-// PutOrderInvalid updates the specified order ID to the status of 'invalid'.
-func (store *Storage) PutOrderInvalid(orderId int) (err error) {
+// PutOrderStatusInvalid updates the specified order ID to the status of 'invalid'.
+func (store *Storage) PutOrderStatusInvalid(orderId int, updatedAt time.Time) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -100,31 +132,36 @@ func (store *Storage) PutOrderInvalid(orderId int) (err error) {
 		UPDATE
 			acme_orders
 		SET
-			status = $1
+			status = 'invalid',
+			updated_at = $1
 		WHERE
 			id = $2
 		`
 
-	_, err = store.db.ExecContext(ctx, query,
-		"invalid",
+	res, err := store.db.ExecContext(ctx, query,
+		updatedAt.Unix(),
 		orderId,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	// TODO: Handle 0 rows updated.
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errorWrongUpdateRowCount(1, rowsAffected)
+	}
 
 	return nil
 }
 
 // UpdateFinalizedKey updates the specified order ID with key id
-func (store *Storage) UpdateFinalizedKey(orderId, keyId int) (err error) {
+func (store *Storage) PutOrderFinalizedKey(orderId, keyId int, updatedAt time.Time) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
-
-	// no checks or validation (shouldn't be needed)
 
 	// update existing record
 	query := `
@@ -137,27 +174,32 @@ func (store *Storage) UpdateFinalizedKey(orderId, keyId int) (err error) {
 			id = $3
 		`
 
-	_, err = store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		keyId,
-		timeNow(),
+		updatedAt.Unix(),
 		orderId,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	// TODO: Handle 0 rows updated.
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errorWrongUpdateRowCount(1, rowsAffected)
+	}
 
 	return nil
 }
 
-// UpdateOrderCert updates the specified order ID with the specified certificate data and ari
-func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) (err error) {
+// PutOrderPemData updates the specified order ID with the specified certificate data and ari
+// Todo: Refactor this to remove ARI
+func (store *Storage) PutOrderPemData(orderId int, payload *orders.CertPayload) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
-
-	// no checks or validation (shouldn't be needed)
 
 	// update existing record
 	query := `
@@ -174,37 +216,45 @@ func (store *Storage) UpdateOrderCert(orderId int, payload *orders.CertPayload) 
 			id = $7
 		`
 
-	// marshal struct
-	ari, err := json.Marshal(payload.RenewalInfo)
-	if err != nil {
-		return fmt.Errorf("storage: failed to marshal renewal info (%w)", err)
+	// marshal struct & account for possible null
+	var ari *string
+	if payload.RenewalInfo != nil {
+		ariBytes, err := json.Marshal(payload.RenewalInfo)
+		if err != nil {
+			return fmt.Errorf("storage: failed to marshal renewal info (%w)", err)
+		}
+		ari = new(string(ariBytes))
 	}
 
-	_, err = store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		payload.AcmeCert.PEM(),
 		payload.AcmeCert.NotBefore().Unix(),
 		payload.AcmeCert.NotAfter().Unix(),
 		payload.AcmeCert.ChainRootCN(),
-		string(ari),
+		ari,
 		payload.UpdatedAt.Unix(),
 		orderId,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	// TODO: Handle 0 rows updated.
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errorWrongUpdateRowCount(1, rowsAffected)
+	}
 
 	return nil
 }
 
-// RevokeOrder updates the revoked flag in db to true (1)
-func (store *Storage) RevokeOrder(orderId int) (err error) {
+// PutOrderRevoke updates the revoked flag in db to true (1)
+func (store *Storage) PutOrderRevoke(orderId int, updatedAt time.Time) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
-
-	// no checks or validation (shouldn't be needed)
 
 	// update existing record
 	query := `
@@ -217,17 +267,23 @@ func (store *Storage) RevokeOrder(orderId int) (err error) {
 			id = $3
 		`
 
-	_, err = store.db.ExecContext(ctx, query,
+	res, err := store.db.ExecContext(ctx, query,
 		1, // true
-		timeNow(),
+		updatedAt.Unix(),
 		orderId,
 	)
-
 	if err != nil {
 		return err
 	}
 
-	// TODO: Handle 0 rows updated.
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected != 1 {
+		return errorWrongUpdateRowCount(1, rowsAffected)
+	}
 
 	return nil
 }

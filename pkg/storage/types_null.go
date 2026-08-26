@@ -7,36 +7,34 @@ import (
 
 // Funcs to transform sql types into correspoinding pointer type
 
-// nullInt32UnixToTime converts a NullInt32 into an a time.Time pointer
-func nullInt32UnixToTime(nullInt sql.NullInt32) *time.Time {
+// nullInt64UnixToTime converts a NullInt64 into an a time.Time pointer
+func nullInt64UnixToTime(nullInt sql.NullInt64) *time.Time {
 	if nullInt.Valid {
-		t := time.Unix(int64(nullInt.Int32), 0)
-
-		return &t
+		return new(time.Unix(int64(nullInt.Int64), 0))
 	}
 
 	return nil
 }
 
-// NullInt32ToInt converts a NullInt32 into an int pointer
-func nullInt32ToInt(nullInt sql.NullInt32) *int {
-	if nullInt.Valid {
-		i := new(int)
-		*i = int(nullInt.Int32)
-
-		return i
+// timePointerToNullInt64 converts a time.Time pointer to a NullInt64 with the
+// int value set to the Unix time value of the time.Time pointer
+func timePointerToNullInt64(tPtr *time.Time) sql.NullInt64 {
+	// not valid (nil)
+	if tPtr == nil {
+		return sql.NullInt64{Valid: false}
 	}
 
-	return nil
+	// is valid
+	return sql.NullInt64{
+		Valid: true,
+		Int64: tPtr.Unix(),
+	}
 }
 
 // nullStringToString converts the nullstring to a string pointer
 func nullStringToString(nullString sql.NullString) *string {
 	if nullString.Valid {
-		s := new(string)
-		*s = nullString.String
-
-		return s
+		return new(nullString.String)
 	}
 
 	return nil

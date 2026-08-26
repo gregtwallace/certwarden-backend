@@ -61,6 +61,9 @@ func unmarshalACMERenewalInfo(jsonResp json.RawMessage, headers http.Header) (ar
 		ari.RetryAfter = time.Now().Add(24 * time.Hour)
 	}
 
+	// set to UTC for consistency
+	ari.RetryAfter = ari.RetryAfter.UTC()
+
 	return ari, nil
 }
 

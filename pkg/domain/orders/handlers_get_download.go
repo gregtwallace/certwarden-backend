@@ -41,7 +41,7 @@ func (service *Service) DownloadCertNewestOrder(w http.ResponseWriter, r *http.R
 	}
 
 	// return pem file to client
-	service.output.WritePem(w, r, &order)
+	service.output.WritePem(w, r, order)
 
 	return nil
 }
@@ -101,7 +101,7 @@ func (service *Service) DownloadOneOrder(w http.ResponseWriter, r *http.Request)
 	}
 
 	// return pem file to client
-	service.output.WritePem(w, r, &order)
+	service.output.WritePem(w, r, order)
 
 	return nil
 }

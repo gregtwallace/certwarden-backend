@@ -10,8 +10,8 @@ func (j *postProcessJob) Do(workerID int) {
 	}
 
 	// run client post processing
-	j.doClientPostProcess(&order, workerID)
+	j.doClientPostProcess(order, workerID)
 
 	// run command post processing
-	j.doScriptOrBinaryPostProcess(&order, workerID)
+	j.doScriptOrBinaryPostProcess(order, workerID)
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 )
 
 // CHANGES v0 to v1:
@@ -228,8 +227,8 @@ func insertDefaultAcmeServers(tx *sql.Tx) error {
 		"Let's Encrypt Production Server",
 		"https://acme-v02.api.letsencrypt.org/directory",
 		false,
-		int(time.Now().Unix()),
-		int(time.Now().Unix()),
+		int(timeNow().Unix()),
+		int(timeNow().Unix()),
 	)
 	if err != nil {
 		return err
@@ -242,8 +241,8 @@ func insertDefaultAcmeServers(tx *sql.Tx) error {
 		"Let's Encrypt Staging Server",
 		"https://acme-staging-v02.api.letsencrypt.org/directory",
 		true,
-		int(time.Now().Unix()),
-		int(time.Now().Unix()),
+		int(timeNow().Unix()),
+		int(timeNow().Unix()),
 	)
 	if err != nil {
 		return err

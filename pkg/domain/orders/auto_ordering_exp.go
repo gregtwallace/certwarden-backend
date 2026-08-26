@@ -50,7 +50,7 @@ func (service *Service) orderExpiringCerts() {
 					service.logger.Errorf("orders: auto order failed to fetch new ari info for certificate '%s' (order: %d) (%s)", orders[i].Certificate.Name, orders[i].ID, err)
 				} else {
 					// success
-					ari = &renewalInfo{
+					ari = &RenewalInfo{
 						SuggestedWindow: struct {
 							Start time.Time "json:\"start\""
 							End   time.Time "json:\"end\""
@@ -73,12 +73,12 @@ func (service *Service) orderExpiringCerts() {
 
 			// update storage if we have new ari
 			if newARI {
-				payload := UpdateRenewalInfoPayload{
+				payload := &UpdateRenewalInfoPayload{
 					OrderID:     orders[i].ID,
 					RenewalInfo: ari,
-					UpdatedAt:   int(time.Now().Unix()),
+					UpdatedAt:   time.Now(),
 				}
-				err = service.storage.PutRenewalInfo(payload)
+				err = service.storage.PutOrderRenewalInfo(payload)
 				if err != nil {
 					service.logger.Errorf("orders: auto order failed to save renewal info for order %d to storage (%s)", orders[i].ID, err)
 				}

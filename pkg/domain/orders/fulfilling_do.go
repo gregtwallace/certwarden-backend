@@ -75,7 +75,7 @@ fulfillLoop:
 			// status of the order to "invalid" and MAY delete the order resource.")
 			acmeErr := new(acme.Error)
 			if errors.As(err, &acmeErr) && acmeErr.Status == http.StatusNotFound {
-				err := j.service.storage.PutOrderInvalid(order.ID)
+				err := j.service.storage.PutOrderStatusInvalid(order.ID, time.Now())
 				if err != nil {
 					j.service.logger.Errorf("orders: fulfilling worker %d: failed to set order '%d' to invalid status (%s)", workerID, order.ID, err)
 				}
@@ -107,7 +107,7 @@ fulfillLoop:
 			// save finalized_key_id in storage (if finalize ACME cmd below fails, this will save any key change
 			// upon next attempt to finalize with ACME; therefore this should always occur BEFORE the ACME finalize
 			// command)
-			err = j.service.storage.UpdateFinalizedKey(order.ID, order.Certificate.Key.ID)
+			err = j.service.storage.PutOrderFinalizedKey(order.ID, order.Certificate.Key.ID, time.Now())
 			if err != nil {
 				j.service.logger.Errorf("orders: fulfilling worker %d: update finalized key error: %s", workerID, err)
 				return // done, failed
@@ -192,7 +192,7 @@ fulfillLoop:
 	loopTimedOut := time.Since(startTime) >= timeoutLength
 
 	// update order in storage (regardless of loop outcome)
-	err = j.service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(order.ID, &acmeOrder))
+	err = j.service.storage.PutOrderACME(makeUpdateOrderAcmePayload(order.ID, &acmeOrder))
 	if err != nil {
 		j.service.logger.Errorf("orders: fulfilling worker %d: update order db error: %s", workerID, err)
 	}

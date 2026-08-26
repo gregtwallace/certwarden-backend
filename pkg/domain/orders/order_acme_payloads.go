@@ -18,7 +18,7 @@ type NewOrderAcmePayload struct {
 	KnownRevoked   bool
 	Expires        *time.Time
 	DnsIds         []string
-	Error          *string
+	Error          *acme.Error
 	Authorizations []string
 	Finalize       string
 	Profile        *string
@@ -30,19 +30,14 @@ type NewOrderAcmePayload struct {
 // newOrderAcmePayload makes a OrderAcmePayload using the specified certificate
 // and acme.Response
 func makeNewOrderAcmePayload(cert *certificates.Certificate, acmeResponse *acme.Order) NewOrderAcmePayload {
-	acmeErr, err := acmeResponse.Error.MarshalledString()
-	if err != nil {
-		acmeErr = nil
-	}
-
-	payload := NewOrderAcmePayload{
+	return NewOrderAcmePayload{
 		CertId:         cert.ID,
 		AccountId:      cert.Account.ID,
 		Status:         acmeResponse.Status,
 		KnownRevoked:   false,
 		Expires:        acmeResponse.Expires,
 		DnsIds:         acmeResponse.Identifiers.DnsIdentifiers(),
-		Error:          acmeErr,
+		Error:          acmeResponse.Error,
 		Authorizations: acmeResponse.Authorizations,
 		Finalize:       acmeResponse.Finalize,
 		Profile:        acmeResponse.Profile,
@@ -50,41 +45,34 @@ func makeNewOrderAcmePayload(cert *certificates.Certificate, acmeResponse *acme.
 		CreatedAt:      int(time.Now().Unix()),
 		UpdatedAt:      int(time.Now().Unix()),
 	}
-
-	return payload
 }
 
 // UpdateAcmeOrderPayload is the payload to update storage regarding an existing ACME order
 type UpdateAcmeOrderPayload struct {
+	OrderID        int
 	Status         string
 	Expires        *time.Time
 	DnsIds         []string
-	Error          *string
+	Error          *acme.Error
 	Authorizations []string
 	Finalize       string
 	Profile        *string
 	CertificateUrl *string
-	UpdatedAt      int
-	OrderId        int
+	UpdatedAt      time.Time
 }
 
 // makeUpdateOrderAcmePayload makes the UpdateAcmeOrderPayload using a new payload and the orderId
-func makeUpdateOrderAcmePayload(orderId int, acmeResponse *acme.Order) *UpdateAcmeOrderPayload {
-	acmeErr, err := acmeResponse.Error.MarshalledString()
-	if err != nil {
-		acmeErr = nil
-	}
-
+func makeUpdateOrderAcmePayload(orderID int, acmeResponse *acme.Order) *UpdateAcmeOrderPayload {
 	return &UpdateAcmeOrderPayload{
+		OrderID:        orderID,
 		Status:         acmeResponse.Status,
 		Expires:        acmeResponse.Expires,
 		DnsIds:         acmeResponse.Identifiers.DnsIdentifiers(),
-		Error:          acmeErr,
+		Error:          acmeResponse.Error,
 		Authorizations: acmeResponse.Authorizations,
 		Finalize:       acmeResponse.Finalize,
 		Profile:        acmeResponse.Profile,
 		CertificateUrl: acmeResponse.Certificate,
-		UpdatedAt:      int(time.Now().Unix()),
-		OrderId:        orderId,
+		UpdatedAt:      time.Now(),
 	}
 }

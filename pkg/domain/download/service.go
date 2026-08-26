@@ -23,7 +23,7 @@ type App interface {
 type Storage interface {
 	GetOneKeyByName(name string) (*private_keys.Key, error)
 
-	GetCertNewestValidOrderByName(certName string) (order orders.Order, err error)
+	GetCertNewestValidOrderByName(certName string) (*orders.Order, error)
 
 	PutKeyLastAccess(keyId int, lastAccess time.Time) (err error)
 	PutCertLastAccess(certId int, lastAccess time.Time) (err error)

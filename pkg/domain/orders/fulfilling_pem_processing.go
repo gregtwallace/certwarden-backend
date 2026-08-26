@@ -10,18 +10,26 @@ import (
 
 // CertPayload is the data to store for an issued certificate
 type CertPayload struct {
-	AcmeCert    *acme.Certificate
-	RenewalInfo *renewalInfo
+	AcmeCert    Cert
+	RenewalInfo *RenewalInfo
 	UpdatedAt   time.Time
+}
+
+// TODO: Get rid of this.
+type Cert interface {
+	PEM() string
+	NotBefore() time.Time
+	NotAfter() time.Time
+	ChainRootCN() string
 }
 
 // savePemChain calls a func to determine the valid from and to dates for the issued pem chain
 // and then saves the pem chain and valid dates to storage
 func (j *orderFulfillJob) saveAcmeCert(orderId int, cert *acme.Certificate, acmeARI *acme.ACMERenewalInfo) (err error) {
 	// if acme ARI is available, use it, else make a sane default
-	var ari *renewalInfo
+	var ari *RenewalInfo
 	if acmeARI != nil {
-		ari = &renewalInfo{
+		ari = &RenewalInfo{
 			SuggestedWindow: struct {
 				Start time.Time "json:\"start\""
 				End   time.Time "json:\"end\""
@@ -44,7 +52,7 @@ func (j *orderFulfillJob) saveAcmeCert(orderId int, cert *acme.Certificate, acme
 	}
 
 	// save to storage
-	err = j.service.storage.UpdateOrderCert(orderId, payload)
+	err = j.service.storage.PutOrderPemData(orderId, payload)
 	if err != nil {
 		return err
 	}

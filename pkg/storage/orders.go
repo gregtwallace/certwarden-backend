@@ -5,6 +5,7 @@ import (
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
 	"database/sql"
+	"encoding/json"
 	"time"
 )
 
@@ -17,7 +18,7 @@ type orderDb struct {
 	status         string
 	knownRevoked   bool
 	err            sql.NullString // stored as json object
-	expires        sql.NullInt32
+	expires        sql.NullInt64
 	dnsIdentifiers jsonStringSlice // stored as json array
 	authorizations jsonStringSlice // stored as json array
 	finalize       string
@@ -25,15 +26,15 @@ type orderDb struct {
 	certificateUrl sql.NullString
 	pem            sql.NullString
 	chainRootCN    sql.NullString
-	validFrom      sql.NullInt32
-	validTo        sql.NullInt32
+	validFrom      sql.NullInt64
+	validTo        sql.NullInt64
 	createdAt      int64
 	updatedAt      int64
 	profile        sql.NullString
 	renewalInfo    sql.NullString
 }
 
-func (order *orderDb) toOrder() (orders.Order, error) {
+func (order *orderDb) toOrder() (*orders.Order, error) {
 	// handle if key is not null (id value would not be okay from coalesce if null)
 	var key *private_keys.Key
 	if order.finalizedKey.id >= 0 {
@@ -43,13 +44,17 @@ func (order *orderDb) toOrder() (orders.Order, error) {
 	// handle acme Error
 	var acmeErr *acme.Error
 	if order.err.Valid {
-		acmeErr = acme.NewAcmeError(&order.err.String)
+		acmeErr = new(acme.Error)
+		err := json.Unmarshal([]byte(order.err.String), acmeErr)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// convert cert
 	cert, err := order.certificate.toCertificate()
 	if err != nil {
-		return orders.Order{}, err
+		return nil, err
 	}
 
 	// renewal info
@@ -58,22 +63,22 @@ func (order *orderDb) toOrder() (orders.Order, error) {
 		ri = nil
 	}
 
-	return orders.Order{
+	return &orders.Order{
 		ID:             order.id,
 		Certificate:    *cert,
 		Location:       order.location,
 		Status:         order.status,
 		KnownRevoked:   order.knownRevoked,
 		Error:          acmeErr,
-		Expires:        nullInt32ToInt(order.expires),
+		Expires:        nullInt64UnixToTime(order.expires),
 		DnsIdentifiers: order.dnsIdentifiers.toSlice(),
 		Authorizations: order.authorizations.toSlice(),
 		Finalize:       order.finalize,
 		FinalizedKey:   key,
 		CertificateUrl: nullStringToString(order.certificateUrl),
 		Pem:            nullStringToString(order.pem),
-		ValidFrom:      nullInt32UnixToTime(order.validFrom),
-		ValidTo:        nullInt32UnixToTime(order.validTo),
+		ValidFrom:      nullInt64UnixToTime(order.validFrom),
+		ValidTo:        nullInt64UnixToTime(order.validTo),
 		ChainRootCN:    nullStringToString(order.chainRootCN),
 		CreatedAt:      time.Unix(order.createdAt, 0),
 		UpdatedAt:      time.Unix(order.updatedAt, 0),

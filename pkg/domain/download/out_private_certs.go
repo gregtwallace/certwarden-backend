@@ -51,8 +51,8 @@ func (service *Service) DownloadPrivateCertViaHeader(w http.ResponseWriter, r *h
 	}
 
 	// return pem file to client
-	privCert := privateCertificate(order)
-	service.output.WritePem(w, r, &privCert)
+	privCert := (*privateCertificate)(order)
+	service.output.WritePem(w, r, privCert)
 
 	return nil
 }
@@ -72,8 +72,8 @@ func (service *Service) DownloadPrivateCertViaUrl(w http.ResponseWriter, r *http
 	}
 
 	// return pem file to client
-	privCert := privateCertificate(order)
-	service.output.WritePem(w, r, &privCert)
+	privCert := (*privateCertificate)(order)
+	service.output.WritePem(w, r, privCert)
 
 	return nil
 }

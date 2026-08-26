@@ -105,6 +105,90 @@ var (
 		PostProcessingClientKeyB64:  "",
 		Profile:                     "",
 	}
+
+	cert28 = certificates.Certificate{
+		ID:                          28,
+		Name:                        "a0.alias.test.example.com",
+		Description:                 "",
+		Key:                         key57,
+		Account:                     acmeAcct1,
+		Subject:                     "a1.alias.test.example.com",
+		SubjectAltNames:             []string{"q1.alias.test.example.com", "*.q1.alias.test.example.com", "q2.alias.test.example.com", "*.q2.alias.test.example.com", "q3.alias.test.example.com", "*.q3.alias.test.example.com", "q4.alias.test.example.com", "*.q4.alias.test.example.com", "q5.alias.test.example.com", "*.q5.alias.test.example.com", "q6.alias.test.example.com", "*.q6.alias.test.example.com"},
+		Organization:                "",
+		OrganizationalUnit:          "",
+		Country:                     "",
+		State:                       "",
+		City:                        "",
+		CSRExtraExtensions:          []certificates.CertExtension{},
+		PreferredRootCN:             "",
+		LastAccess:                  time.Unix(0, 0),
+		CreatedAt:                   time.Unix(1743173262, 0),
+		UpdatedAt:                   time.Unix(1777494241, 0),
+		ApiKey:                      "api-secret-28",
+		ApiKeyNew:                   "",
+		ApiKeyViaUrl:                false,
+		PostProcessingCommand:       "",
+		PostProcessingEnvironment:   []string{},
+		PostProcessingClientAddress: "asdasdas.com",
+		PostProcessingClientKeyB64:  "aaaaaaaaaaaaaaaaaaaaaaaaaaa-aaaaaaaaaaaaaaa",
+		Profile:                     "",
+	}
+
+	cert33 = certificates.Certificate{
+		ID:                          33,
+		Name:                        "STAGING_persist--test007.test.example2.com",
+		Description:                 "",
+		Key:                         key64,
+		Account:                     acmeAcct1,
+		Subject:                     "test007.test.example2.com",
+		SubjectAltNames:             []string{},
+		Organization:                "",
+		OrganizationalUnit:          "",
+		Country:                     "",
+		State:                       "",
+		City:                        "",
+		CSRExtraExtensions:          []certificates.CertExtension{},
+		PreferredRootCN:             "",
+		LastAccess:                  time.Unix(1777555692, 0),
+		CreatedAt:                   time.Unix(1775761592, 0),
+		UpdatedAt:                   time.Unix(1779386476, 0),
+		ApiKey:                      "api-secret-33",
+		ApiKeyNew:                   "",
+		ApiKeyViaUrl:                false,
+		PostProcessingCommand:       "",
+		PostProcessingEnvironment:   []string{},
+		PostProcessingClientAddress: "",
+		PostProcessingClientKeyB64:  "",
+		Profile:                     "tlsserver",
+	}
+
+	cert35 = certificates.Certificate{
+		ID:                          35,
+		Name:                        "STAGING_persist--test005.test.example2.com",
+		Description:                 "",
+		Key:                         key70,
+		Account:                     acmeAcct1,
+		Subject:                     "test005.test.example2.com",
+		SubjectAltNames:             []string{},
+		Organization:                "",
+		OrganizationalUnit:          "",
+		Country:                     "",
+		State:                       "",
+		City:                        "",
+		CSRExtraExtensions:          []certificates.CertExtension{},
+		PreferredRootCN:             "",
+		LastAccess:                  time.Unix(0, 0),
+		CreatedAt:                   time.Unix(1779386771, 0),
+		UpdatedAt:                   time.Unix(1779386798, 0),
+		ApiKey:                      "api-secret-35",
+		ApiKeyNew:                   "",
+		ApiKeyViaUrl:                false,
+		PostProcessingCommand:       "",
+		PostProcessingEnvironment:   []string{},
+		PostProcessingClientAddress: "",
+		PostProcessingClientKeyB64:  "",
+		Profile:                     "",
+	}
 )
 
 func TestGetAllCerts(t *testing.T) {
@@ -116,9 +200,9 @@ func TestGetAllCerts(t *testing.T) {
 		expectedAtIndx    certificates.Certificate
 	}{
 		{pagination_sort.Query{}, 9, 9, 2, cert18},
-		{queryBuilderForTest(1, 1, "id", true), 9, 1, 0, cert26},
-		{queryBuilderForTest(3, 6, "servername", false), 9, 3, 1, cert27},
-		{queryBuilderForTest(4, 1, "accountname", true), 9, 4, 0, cert18},
+		{queryBuilderForTest(1, 1, "id", false), 9, 1, 0, cert26},
+		{queryBuilderForTest(3, 6, "servername", true), 9, 3, 1, cert27},
+		{queryBuilderForTest(4, 1, "accountname", false), 9, 4, 0, cert18},
 	}
 
 	// create testing service

@@ -48,7 +48,7 @@ func (fs *fakeStorage) GetOneKeyByName(name string) (*private_keys.Key, error) {
 	return c.FinalizedKey, nil
 }
 
-func (fs *fakeStorage) GetCertNewestValidOrderByName(certName string) (order orders.Order, err error) {
+func (fs *fakeStorage) GetCertNewestValidOrderByName(certName string) (order *orders.Order, err error) {
 	if certName == "test-a" {
 		pem := `-----BEGIN CERTIFICATE-----
 MIIBOzCB5qADAgECAgFvMA0GCSqGSIb3DQEBCwUAMB4xHDAaBgNVBAoTE0ludGVy
@@ -79,7 +79,7 @@ Af8wHQYDVR0OBBYEFH+dsDe3QdO7VwziDWsg7E7VScrtMA0GCSqGSIb3DQEBCwUA
 A0EAT/w/FWrwVzV6uau8H2qIhBuM+fbVAlVpVuvg5AxVwAOv+YhuTc83BTakfXgH
 8Joh9m0OL1x+zBvxoby5o9Xg3Q==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -131,7 +131,7 @@ Af8wHQYDVR0OBBYEFCqm2NbHYf7QY4LEPLZVa02U2lT9MA0GCSqGSIb3DQEBCwUA
 A0EAq7awvHcloElKaKXjHwnYADpmGHlzKxWXCYpbYewq+MWjkyNOz5+mtUPXR/Jk
 abU3C9xvwy61nVOjwhJpLlOSkA==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -183,7 +183,7 @@ Af8wHQYDVR0OBBYEFKBtmH4P8sXj3S55qI77ZL62ssufMA0GCSqGSIb3DQEBCwUA
 A0EATsMeVCPlMKlPADgnH6XLiL84ofGJNtUQ8YgO3EY2Jgpr0HELG1oSSizWNRes
 gGAROyiIETRshG2BbfFolQxEUw==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -235,7 +235,7 @@ Af8wHQYDVR0OBBYEFNfAVAINdRIo/WHyWX9CIkL9225SMA0GCSqGSIb3DQEBCwUA
 A0EAM3AWlFRDPeKM4k8QC6xRLUdVBiutj1FYzwq5WkqBh5f+vm2NNsv6v7l43KgT
 G/zUBlah2C64Lprd+EZW6xMQ7Q==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -287,7 +287,7 @@ Af8wHQYDVR0OBBYEFPggvDzOv1cAig6XMGB8mxeogmguMA0GCSqGSIb3DQEBCwUA
 A0EAEKXN9SngV8TnwoWVtZjHlZy3Y/kaY3vRfnRQB4cLeE6/UD4VshDFC9LbvH9P
 BcJ3umu+SsvpqDQvQagT/D/bZg==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -341,7 +341,7 @@ Af8wHQYDVR0OBBYEFINOrn3MmHKQROTZg3FtvVAHOQtlMA0GCSqGSIb3DQEBCwUA
 A0EAWtSaoEHPq0cseQUod1Bk/vnbidNcexOL6cqTOUivN+k4X+4ig/ClDT/fDm2x
 7qe+skSjMhpMSiOiMyw5PgvZ9w==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -396,7 +396,7 @@ Af8wHQYDVR0OBBYEFLPogQY9cmqJ2oYKbYDPjB1fBKvgMA0GCSqGSIb3DQEBCwUA
 A0EAdy9WLjVZ1N5Fwb7DbteJ6FpatKIUG2i8gc1dnmHOEuchTc9P07KfjVeWMa2d
 3yrTcq88EI0Rc3ItjF7Ao6d8gg==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -420,7 +420,7 @@ j1f1P6e7Khe0uXD3N+r34piMQT0WX0po2rf16x0i
 			}}, nil
 	}
 
-	return orders.Order{}, sql.ErrNoRows
+	return nil, sql.ErrNoRows
 }
 func (fs *fakeStorage) PutKeyLastAccess(keyId int, lastAccess time.Time) (err error) {
 	return errors.New("not implemented")

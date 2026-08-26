@@ -8,12 +8,11 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // GetAllValidCurrentOrders fetches each cert's most recent valid order, if the cert currently has a valid order.
 // This is used for a frontend dashboard.
-func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (ordersSlice []orders.Order, totalRowCount int, err error) {
+func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (ordersSlice []*orders.Order, totalRows int, _ error) {
 	// validate and set sort
 	sortField := q.SortField()
 	switch sortField {
@@ -84,19 +83,34 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (ordersS
 		LEFT JOIN private_keys ak on (ca.private_key_id = ak.id)
 		LEFT JOIN private_keys fk on (ao.finalized_key_id = fk.id)
 	WHERE 
-		ao.status = "valid"
-		AND
-		ao.known_revoked = 0
-		AND
-		ao.valid_to > $1
-		AND
-		ao.pem NOT NULL
-		AND
-		ao.certificate_id IS NOT NULL
-	GROUP BY
-		ao.certificate_id
-	HAVING
-		MAX(ao.created_at)
+			ao.id IN
+			/* ugly but it works to force id as the tiebreaker if created_at is equal */
+				(SELECT 
+					v.id
+				FROM
+					(SELECT
+						ao.id, ao.certificate_id, ao.created_at
+					FROM
+						acme_orders ao
+					WHERE
+						ao.status = "valid"
+						AND
+						ao.known_revoked = 0
+						AND
+						ao.valid_to > $1
+						AND
+						ao.pem NOT NULL
+						AND
+						ao.certificate_id IS NOT NULL
+					GROUP BY
+						ao.certificate_id, ao.created_at
+					HAVING
+						max(ao.id)
+					) as v
+				GROUP BY
+					v.certificate_id
+				HAVING
+					max(v.created_at))
 	ORDER BY
 		%s
 	LIMIT
@@ -108,7 +122,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (ordersS
 
 	// get records
 	rows, err := store.db.QueryContext(ctx, query,
-		time.Now().Unix(),
+		timeNow().Unix(),
 		q.Limit(),
 		q.Offset(),
 	)
@@ -116,9 +130,6 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (ordersS
 		return nil, 0, err
 	}
 	defer rows.Close()
-
-	// for total row count
-	var totalRows int
 
 	for rows.Next() {
 		var oneOrder orderDb
@@ -243,7 +254,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (ordersS
 }
 
 // GetOrdersByCert fetches all of the orders for a specified certificate ID
-func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (ordersSlice []orders.Order, totalRowCount int, err error) {
+func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (ordersSlice []*orders.Order, totalRows int, _ error) {
 	// validate and set sort
 	sortField := q.SortField()
 
@@ -258,8 +269,6 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 		sortField = "ao.status"
 	case "keyname":
 		sortField = "fk.name"
-	case "last_access":
-		sortField = "c.last_access"
 	default:
 		sortField = "ao.created_at"
 	}
@@ -336,9 +345,6 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 		return nil, 0, err
 	}
 	defer rows.Close()
-
-	// for total row count
-	var totalRows int
 
 	for rows.Next() {
 		var oneOrder orderDb
@@ -463,7 +469,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 }
 
 // GetAllIncompleteOrderIds returns an array of all of the incomplete orders in storage.
-func (store *Storage) GetAllIncompleteOrderIds() (orderIds []int, err error) {
+func (store *Storage) GetAllIncompleteOrderIds() (orderIds []int, _ error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -478,6 +484,8 @@ func (store *Storage) GetAllIncompleteOrderIds() (orderIds []int, err error) {
 		status = "ready"
 		OR
 		status = "processing"
+	ORDER BY
+		created_at DESC, id DESC
 	`
 
 	// qeuery db
@@ -504,7 +512,7 @@ func (store *Storage) GetAllIncompleteOrderIds() (orderIds []int, err error) {
 
 // GetNewestIncompleteCertOrderId returns the most recent incomplete order for a specified certId,
 // assuming there is one.
-func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, err error) {
+func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, _ error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -523,17 +531,15 @@ func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, e
 			OR
 			status = "processing"
 		)
-	GROUP BY
-		certificate_id
-	HAVING
-		MAX(created_at)
+	ORDER BY
+		created_at DESC, id DESC
 	`
 
 	row := store.db.QueryRowContext(ctx, query,
 		certId,
 	)
 
-	err = row.Scan(
+	err := row.Scan(
 		&orderId,
 	)
 	if err != nil {
@@ -545,7 +551,8 @@ func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, e
 
 // GetOrders fetches the Order for each ID in the orderIDs slice and returns the
 // slice of Order
-func (store *Storage) GetOrders(orderIDs []int) (ordersSlice []orders.Order, err error) {
+// TODO: Remove this?
+func (store *Storage) GetOrders(orderIDs []int) (ordersSlice []*orders.Order, _ error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -573,7 +580,7 @@ func (store *Storage) GetOrders(orderIDs []int) (ordersSlice []orders.Order, err
 		c.post_processing_client_address, c.post_processing_client_key, c.profile, 
 		
 		/* cert's key */
-		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ak.api_key_new, ck.api_key_disabled,
+		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new, ck.api_key_disabled,
 		ck.api_key_via_url,	ck.last_access, ck.created_at, ck.updated_at,
 
 		/* cert's account */
@@ -728,18 +735,22 @@ func (store *Storage) GetOrders(orderIDs []int) (ordersSlice []orders.Order, err
 		ordersSlice = append(ordersSlice, oneOrderConvert)
 	}
 
+	if len(ordersSlice) < 1 {
+		return nil, sql.ErrNoRows
+	}
+
 	return ordersSlice, nil
 }
 
 // GetOneOrder fetches a specific Order by ID
-func (store *Storage) GetOneOrder(orderID int) (order orders.Order, err error) {
+func (store *Storage) GetOneOrder(orderID int) (*orders.Order, error) {
 	result, err := store.GetOrders([]int{orderID})
 	if err != nil {
-		return orders.Order{}, err
+		return nil, err
 	}
 
 	if len(result) < 1 {
-		return orders.Order{}, sql.ErrNoRows
+		return nil, sql.ErrNoRows
 	}
 
 	return result[0], nil
@@ -747,18 +758,18 @@ func (store *Storage) GetOneOrder(orderID int) (order orders.Order, err error) {
 
 // GetCertNewestValidOrderById returns the most recent valid order for the specified
 // cert id
-func (store *Storage) GetCertNewestValidOrderById(certId int) (order orders.Order, err error) {
+func (store *Storage) GetCertNewestValidOrderById(certId int) (*orders.Order, error) {
 	return store.getCertNewestValidOrder(certId, "")
 }
 
 // GetCertNewestValidOrderByName returns the most recent valid order for the specified
 // cert name
-func (store *Storage) GetCertNewestValidOrderByName(certName string) (order orders.Order, err error) {
+func (store *Storage) GetCertNewestValidOrderByName(certName string) (*orders.Order, error) {
 	return store.getCertNewestValidOrder(-1, certName)
 }
 
 // getCertNewestValidOrder fetches the newest valid order for the specified cert
-func (store *Storage) getCertNewestValidOrder(certId int, certName string) (order orders.Order, err error) {
+func (store *Storage) getCertNewestValidOrder(certId int, certName string) (*orders.Order, error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -777,7 +788,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		c.post_processing_client_address, c.post_processing_client_key, c.profile,
 		
 		/* cert's key */
-		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ak.api_key_new, ck.api_key_disabled,
+		ck.id, ck.name, ck.description, ck.algorithm, ck.pem, ck.api_key, ck.api_key_new, ck.api_key_disabled,
 		ck.api_key_via_url,	ck.last_access, ck.created_at, ck.updated_at,
 
 		/* cert's account */
@@ -820,21 +831,19 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 			OR
 			c.name = $3
 		)
-	GROUP BY
-		certificate_id
-	HAVING
-		MAX(ao.created_at)
+	ORDER BY
+		ao.created_at DESC, ao.id DESC
 	`
 
 	row := store.db.QueryRowContext(ctx, query,
-		time.Now().Unix(),
+		timeNow().Unix(),
 		certId,
 		certName,
 	)
 
 	var oneOrder orderDb
 
-	err = row.Scan(
+	err := row.Scan(
 		&oneOrder.id,
 		&oneOrder.location,
 		&oneOrder.status,
@@ -936,12 +945,12 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (orde
 		&oneOrder.finalizedKey.updatedAt,
 	)
 	if err != nil {
-		return orders.Order{}, err
+		return nil, err
 	}
 
-	order, err = oneOrder.toOrder()
+	order, err := oneOrder.toOrder()
 	if err != nil {
-		return orders.Order{}, err
+		return nil, err
 	}
 
 	return order, nil

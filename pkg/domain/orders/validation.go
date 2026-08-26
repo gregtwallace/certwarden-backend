@@ -23,15 +23,15 @@ var (
 // getOrder returns the Order specified by the ids, so long as the Order belongs
 // to the Certificate.  An error is returned if the order doesn't exist or if the
 // order does not belong to the cert.
-func (service *Service) getOrder(certId, orderId int) (Order, *output.JsonError) {
+func (service *Service) getOrder(certId, orderId int) (*Order, *output.JsonError) {
 	// basic check
 	if !validation.IsIdExistingValidRange(certId) {
 		service.logger.Debug(errCertIdBad)
-		return Order{}, output.ErrorJsonErrValidationFailed(errCertIdBad)
+		return nil, output.ErrorJsonErrValidationFailed(errCertIdBad)
 	}
 	if !validation.IsIdExistingValidRange(orderId) {
 		service.logger.Debug(errOrderIdBad)
-		return Order{}, output.ErrorJsonErrValidationFailed(errOrderIdBad)
+		return nil, output.ErrorJsonErrValidationFailed(errOrderIdBad)
 	}
 
 	// get order from storage
@@ -40,17 +40,17 @@ func (service *Service) getOrder(certId, orderId int) (Order, *output.JsonError)
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return Order{}, output.ErrorJsonErrNotFound(fmt.Errorf("order id %d not found", orderId))
+			return nil, output.ErrorJsonErrNotFound(fmt.Errorf("order id %d not found", orderId))
 		} else {
 			service.logger.Error(err)
-			return Order{}, output.ErrorJsonErrStorageGeneric(err)
+			return nil, output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 
 	// check the cert id on the order matches the cert
 	if certId != order.Certificate.ID {
 		service.logger.Debug(errIdMismatch)
-		return Order{}, output.ErrorJsonErrValidationFailed(errIdMismatch)
+		return nil, output.ErrorJsonErrValidationFailed(errIdMismatch)
 	}
 
 	return order, nil
@@ -75,29 +75,29 @@ func (service *Service) isOrderRetryable(certId, orderId int) *output.JsonError 
 
 // isOrderRevocable verifies order belongs to cert and confirms the order
 // is in a state that can be revoked ('valid' and 'valid_to' < current time)
-func (service *Service) getOrderForRevocation(certId, orderId int) (Order, *output.JsonError) {
+func (service *Service) getOrderForRevocation(certId, orderId int) (*Order, *output.JsonError) {
 	order, err := service.getOrder(certId, orderId)
 	if err != nil {
-		return Order{}, err
+		return nil, err
 	}
 
 	// check order is in a state that can be revoked
 	// nil check
 	if order.ValidTo == nil {
-		return Order{}, output.ErrorJsonErrValidationFailed(errors.New("valid_to is nil"))
+		return nil, output.ErrorJsonErrValidationFailed(errors.New("valid_to is nil"))
 	}
 
 	// confirm order is valid, not already revoked, and not expired (time)
 	if order.Status != "valid" {
-		return Order{}, output.ErrorJsonErrValidationFailed(errors.New("order is not valid"))
+		return nil, output.ErrorJsonErrValidationFailed(errors.New("order is not valid"))
 	}
 
 	if order.KnownRevoked {
-		return Order{}, output.ErrorJsonErrValidationFailed(errors.New("order is already revoked"))
+		return nil, output.ErrorJsonErrValidationFailed(errors.New("order is already revoked"))
 	}
 
 	if !time.Now().Before(*order.ValidTo) {
-		return Order{}, output.ErrorJsonErrValidationFailed(errors.New("order is already past validto (i.e., it is expired)"))
+		return nil, output.ErrorJsonErrValidationFailed(errors.New("order is already past validto (i.e., it is expired)"))
 	}
 
 	return order, nil

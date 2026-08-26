@@ -26,20 +26,13 @@ func (store *Storage) PutAcmeAccountUpdate(payload *acme_accounts.UpdatePayload)
 		id = $8
 	`
 
-	// need special handling since created at could be null but needs to be converted to an int
-	var createdAtUnix *int64
-	if payload.CreatedAt != nil {
-		// convert to unix time for storage
-		createdAtUnix = new(payload.CreatedAt.Unix())
-	}
-
 	res, err := store.db.ExecContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.Status,
 		payload.Email,
 		payload.KID,
-		createdAtUnix,
+		timePointerToNullInt64(payload.CreatedAt),
 		payload.UpdatedAt.Unix(),
 		payload.ID,
 	)

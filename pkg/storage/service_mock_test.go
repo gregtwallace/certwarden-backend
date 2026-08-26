@@ -129,10 +129,10 @@ func openStorageWithTestData(t *testing.T, testName string) (*storage.Storage, e
 }
 
 // queryBuilderForTest generates a Query for use in tests
-func queryBuilderForTest(limit, offset int, sortField string, sortAsc bool) pagination_sort.Query {
-	sortDirText := "desc"
-	if sortAsc {
-		sortDirText = "asc"
+func queryBuilderForTest(limit, offset int, sortField string, sortDesc bool) pagination_sort.Query {
+	sortDirText := "asc"
+	if sortDesc {
+		sortDirText = "desc"
 	}
 
 	p := url.Values{
