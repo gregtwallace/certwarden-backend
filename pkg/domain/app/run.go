@@ -8,8 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"strconv"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -126,16 +124,8 @@ func run() (restart bool, exitCode int) {
 		// configure and launch http redirect server
 		if *app.config.EnableHttpRedirect {
 			redirectSrv = &http.Server{
-				Addr: app.config.httpServAddress(),
-				Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					// remove port (if present) to get request hostname alone (since changing port)
-					hostName, _, _ := strings.Cut(r.Host, ":")
-
-					// build redirect address
-					newAddr := "https://" + hostName + ":" + strconv.Itoa(*app.config.HttpsPort) + r.RequestURI
-
-					http.Redirect(w, r, newAddr, http.StatusTemporaryRedirect)
-				}),
+				Addr:         app.config.httpServAddress(),
+				Handler:      http.HandlerFunc(app.httpToHttpsRedirectHandler),
 				IdleTimeout:  httpServerIdleTimeout,
 				ReadTimeout:  httpServerReadTimeout,
 				WriteTimeout: httpServerWriteTimeout,

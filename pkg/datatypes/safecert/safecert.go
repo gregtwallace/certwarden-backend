@@ -6,7 +6,9 @@ import (
 	"crypto/x509"
 	"io"
 	"math/rand/v2"
+	"net"
 	"net/http"
+	"strings"
 	"sync"
 
 	"golang.org/x/crypto/ocsp"
@@ -60,6 +62,50 @@ func (sc *SafeCert) Read() *tls.Certificate {
 	}
 
 	return sc.cert
+}
+
+// ContainsHostname returns true if the certificate is valid for the specified hostname
+// (DNS or IP). This includes the subject CommonName as well.
+func (sc *SafeCert) ContainsHostname(hostname string) bool {
+	sc.mu.RLock()
+	defer sc.mu.RUnlock()
+
+	if sc.cert.Leaf == nil {
+		return false
+	}
+	leafPtr := sc.cert.Leaf
+
+	// check: common name
+	if leafPtr.Issuer.CommonName != "" && leafPtr.Issuer.CommonName == hostname {
+		return true
+	}
+
+	// dns names
+	for _, dnsname := range leafPtr.DNSNames {
+		if dnsname == hostname {
+			return true
+		}
+
+		// if dnsname is a wildcard, check for match
+		wildSuffix, isWild := strings.CutPrefix(dnsname, "*.")
+		if isWild {
+			if strings.HasSuffix(hostname, wildSuffix) {
+				return true
+			}
+		}
+	}
+
+	// ip addresses
+	ipAddr := net.ParseIP(hostname)
+	if ipAddr != nil {
+		for _, ip := range leafPtr.IPAddresses {
+			if ip.Equal(ipAddr) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
 // Update updates the certificate with the specified cert
