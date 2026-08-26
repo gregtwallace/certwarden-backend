@@ -76,7 +76,7 @@ func (store *Storage) PutOrderACME(payload *orders.UpdateAcmeOrderPayload) error
 }
 
 // PutOrderRenewalInfo updates the specified order ID with its renewal information object
-func (store *Storage) PutOrderRenewalInfo(payload orders.UpdateRenewalInfoPayload) error {
+func (store *Storage) PutOrderRenewalInfo(payload *orders.UpdateRenewalInfoPayload) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -197,7 +197,7 @@ func (store *Storage) PutOrderFinalizedKey(orderId, keyId int, updatedAt time.Ti
 
 // PutOrderPemData updates the specified order ID with the specified certificate data and ari
 // Todo: Refactor this to remove ARI
-func (store *Storage) PutOrderPemData(orderId int, payload orders.CertPayload) error {
+func (store *Storage) PutOrderPemData(orderId int, payload *orders.CertPayload) error {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 

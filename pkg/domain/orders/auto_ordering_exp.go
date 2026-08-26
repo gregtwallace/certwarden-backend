@@ -73,7 +73,7 @@ func (service *Service) orderExpiringCerts() {
 
 			// update storage if we have new ari
 			if newARI {
-				payload := UpdateRenewalInfoPayload{
+				payload := &UpdateRenewalInfoPayload{
 					OrderID:     orders[i].ID,
 					RenewalInfo: ari,
 					UpdatedAt:   time.Now(),

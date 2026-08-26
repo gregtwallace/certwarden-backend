@@ -235,7 +235,7 @@ func TestPostNewOrder(t *testing.T) {
 					t.Errorf("expected get order error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 				}
 
-				compareOrder(t, &ord, tc.expectedGetOrd)
+				compareOrder(t, ord, tc.expectedGetOrd)
 			}
 
 		})

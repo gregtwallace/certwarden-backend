@@ -34,7 +34,7 @@ type orderDb struct {
 	renewalInfo    sql.NullString
 }
 
-func (order *orderDb) toOrder() (orders.Order, error) {
+func (order *orderDb) toOrder() (*orders.Order, error) {
 	// handle if key is not null (id value would not be okay from coalesce if null)
 	var key *private_keys.Key
 	if order.finalizedKey.id >= 0 {
@@ -47,14 +47,14 @@ func (order *orderDb) toOrder() (orders.Order, error) {
 		acmeErr = new(acme.Error)
 		err := json.Unmarshal([]byte(order.err.String), acmeErr)
 		if err != nil {
-			return orders.Order{}, err
+			return nil, err
 		}
 	}
 
 	// convert cert
 	cert, err := order.certificate.toCertificate()
 	if err != nil {
-		return orders.Order{}, err
+		return nil, err
 	}
 
 	// renewal info
@@ -63,7 +63,7 @@ func (order *orderDb) toOrder() (orders.Order, error) {
 		ri = nil
 	}
 
-	return orders.Order{
+	return &orders.Order{
 		ID:             order.id,
 		Certificate:    *cert,
 		Location:       order.location,

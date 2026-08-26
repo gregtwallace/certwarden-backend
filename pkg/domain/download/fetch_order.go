@@ -13,11 +13,11 @@ import (
 // apiKey matches the requested cert. It also checks the apiKeyViaUrl property if the client is making
 // a request with the apiKey in the Url. includeKeyPEM controls if the key API key is also checked
 // and sensitive Private Key PEM data is included in the Order.
-func (service *Service) getCertNewestValidOrder(certName, apiKeyOrKeys string, apiKeyViaUrl, includeKeyPEM bool) (orders.Order, *output.JsonError) {
+func (service *Service) getCertNewestValidOrder(certName, apiKeyOrKeys string, apiKeyViaUrl, includeKeyPEM bool) (*orders.Order, *output.JsonError) {
 	// if apiKeyOrKeys is blank, definitely unauthorized
 	if apiKeyOrKeys == "" {
 		service.logger.Debug(errBlankApiKey)
-		return orders.Order{}, output.ErrJsonUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// get the cert's newest valid order from storage
@@ -27,11 +27,11 @@ func (service *Service) getCertNewestValidOrder(certName, apiKeyOrKeys string, a
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
 			// not yet authorized
-			return orders.Order{}, output.ErrorJsonErrNotFound(nil)
+			return nil, output.ErrorJsonErrNotFound(nil)
 		} else {
 			service.logger.Error(err)
 			// not yet authorized
-			return orders.Order{}, output.ErrorJsonErrStorageGeneric(nil)
+			return nil, output.ErrorJsonErrStorageGeneric(nil)
 		}
 	}
 
@@ -44,7 +44,7 @@ func (service *Service) getCertNewestValidOrder(certName, apiKeyOrKeys string, a
 	// if apiKey came from URL, and cert does not support this, error
 	if apiKeyViaUrl && !order.Certificate.ApiKeyViaUrl {
 		service.logger.Debug(errApiKeyFromUrlDisallowed)
-		return orders.Order{}, output.ErrJsonUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// verify cert apikey matches cert's cert apikey (new or old)
@@ -52,13 +52,13 @@ func (service *Service) getCertNewestValidOrder(certName, apiKeyOrKeys string, a
 	if (order.Certificate.ApiKey == "" || certApiKey != order.Certificate.ApiKey) &&
 		(order.Certificate.ApiKeyNew == "" || certApiKey != order.Certificate.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
-		return orders.Order{}, output.ErrJsonUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// pem cant be blank
 	if order.Pem == nil || *order.Pem == "" {
 		service.logger.Debug(errNoPem)
-		return orders.Order{}, output.ErrorJsonErrNotFound(errNoPem)
+		return nil, output.ErrorJsonErrNotFound(errNoPem)
 	}
 
 	// next steps depend on if we're also checking the key API key
@@ -66,7 +66,7 @@ func (service *Service) getCertNewestValidOrder(certName, apiKeyOrKeys string, a
 	if !includeKeyPEM {
 		// if not checking key API key, verify apiKeyOrKeys was only 1 key
 		if len(apiKeys) != 1 {
-			return orders.Order{}, output.ErrJsonUnauthorized
+			return nil, output.ErrJsonUnauthorized
 		}
 
 		// if only checking cert key, nuke key private data as a safety precaution
@@ -88,7 +88,7 @@ func (service *Service) getCertNewestValidOrder(certName, apiKeyOrKeys string, a
 
 	// error if not exactly 2 apiKeys
 	if len(apiKeys) != 2 {
-		return orders.Order{}, output.ErrJsonUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// check key API key
@@ -97,19 +97,19 @@ func (service *Service) getCertNewestValidOrder(certName, apiKeyOrKeys string, a
 	// confirm the private key is valid
 	if order.FinalizedKey == nil {
 		service.logger.Debug(errFinalizedKeyMissing)
-		return orders.Order{}, output.ErrorJsonErrNotFound(errFinalizedKeyMissing)
+		return nil, output.ErrorJsonErrNotFound(errFinalizedKeyMissing)
 	}
 
 	// if key api key is disabled via API, error
 	if order.FinalizedKey.ApiKeyDisabled {
 		service.logger.Debug(errApiDisabled)
-		return orders.Order{}, output.ErrJsonUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// if apiKey came from URL, and key does not support this, error
 	if apiKeyViaUrl && !order.FinalizedKey.ApiKeyViaUrl {
 		service.logger.Debug(errApiKeyFromUrlDisallowed)
-		return orders.Order{}, output.ErrJsonUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// validate the apiKey for the private key is correct (new or old)
@@ -117,7 +117,7 @@ func (service *Service) getCertNewestValidOrder(certName, apiKeyOrKeys string, a
 	if (order.FinalizedKey.ApiKey == "" || keyApiKey != order.FinalizedKey.ApiKey) &&
 		(order.FinalizedKey.ApiKeyNew == "" || keyApiKey != order.FinalizedKey.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
-		return orders.Order{}, output.ErrJsonUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// before return, update cert AND KEY last access, dont fail our though if this step fails, just log error

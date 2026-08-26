@@ -172,8 +172,8 @@ func (service *Service) DownloadPfxViaHeader(w http.ResponseWriter, r *http.Requ
 	legacy3DES := r.URL.Query().Has("3des")
 
 	// return pfx file to client
-	pfxPrivCert := pfxPrivateCertificateChain(order)
-	err := service.output.WritePfx(w, r, &pfxPrivCert, legacy3DES)
+	pfxPrivCert := (*pfxPrivateCertificateChain)(order)
+	err := service.output.WritePfx(w, r, pfxPrivCert, legacy3DES)
 	if err != nil {
 		return output.ErrorJsonErrInternal(err)
 	}
@@ -199,8 +199,8 @@ func (service *Service) DownloadPfxViaUrl(w http.ResponseWriter, r *http.Request
 	legacy3DES := r.URL.Query().Has("3des")
 
 	// return pfx file to client
-	pfxPrivCert := pfxPrivateCertificateChain(order)
-	err := service.output.WritePfx(w, r, &pfxPrivCert, legacy3DES)
+	pfxPrivCert := (*pfxPrivateCertificateChain)(order)
+	err := service.output.WritePfx(w, r, pfxPrivCert, legacy3DES)
 	if err != nil {
 		return output.ErrorJsonErrInternal(err)
 	}

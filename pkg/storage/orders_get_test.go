@@ -19,14 +19,14 @@ func TestGetAllValidCurrentOrders(t *testing.T) {
 		expectedResultLen int
 
 		testIndx       int
-		expectedAtIndx orders.Order
+		expectedAtIndx *orders.Order
 	}{
-		{pagination_sort.Query{}, 2, 2, 0, ord198},
-		{pagination_sort.Query{}, 2, 2, 1, ord203},
-		{queryBuilderForTest(1, 0, "subject", false), 2, 1, 0, ord203},
-		{queryBuilderForTest(1, 1, "subject", false), 2, 1, 0, ord198},
-		{queryBuilderForTest(30, 0, "last_access", false), 2, 2, 0, ord203},
-		{queryBuilderForTest(4, 0, "id", true), 2, 2, 1, ord203},
+		{pagination_sort.Query{}, 2, 2, 0, &ord198},
+		{pagination_sort.Query{}, 2, 2, 1, &ord203},
+		{queryBuilderForTest(1, 0, "subject", false), 2, 1, 0, &ord203},
+		{queryBuilderForTest(1, 1, "subject", false), 2, 1, 0, &ord198},
+		{queryBuilderForTest(30, 0, "last_access", false), 2, 2, 0, &ord203},
+		{queryBuilderForTest(4, 0, "id", true), 2, 2, 1, &ord203},
 	}
 
 	// create testing service
@@ -55,7 +55,7 @@ func TestGetAllValidCurrentOrders(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(ords))
 			}
 			if tc.testIndx <= len(ords)-1 {
-				compareOrder(t, &ords[tc.testIndx], &tc.expectedAtIndx)
+				compareOrder(t, ords[tc.testIndx], tc.expectedAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(ords))
 			}
@@ -71,13 +71,13 @@ func TestGetOrdersByCert(t *testing.T) {
 		expectedResultLen int
 
 		testIndx       int
-		expectedAtIndx orders.Order
+		expectedAtIndx *orders.Order
 	}{
-		{35, pagination_sort.Query{}, 2, 2, 0, ord204},
-		{28, pagination_sort.Query{}, 21, 21, 19, ord175},
-		{18, queryBuilderForTest(5, 0, "id", true), 31, 5, 0, ord203},
-		{18, queryBuilderForTest(5, 4, "valid_to", true), 31, 5, 0, ord203},
-		{33, queryBuilderForTest(300, 0, "status", false), 10, 10, 0, ord186},
+		{35, pagination_sort.Query{}, 2, 2, 0, &ord204},
+		{28, pagination_sort.Query{}, 21, 21, 19, &ord175},
+		{18, queryBuilderForTest(5, 0, "id", true), 31, 5, 0, &ord203},
+		{18, queryBuilderForTest(5, 4, "valid_to", true), 31, 5, 0, &ord203},
+		{33, queryBuilderForTest(300, 0, "status", false), 10, 10, 0, &ord186},
 	}
 
 	// create testing service
@@ -102,7 +102,7 @@ func TestGetOrdersByCert(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(ords))
 			}
 			if tc.testIndx <= len(ords)-1 {
-				compareOrder(t, &ords[tc.testIndx], &tc.expectedAtIndx)
+				compareOrder(t, ords[tc.testIndx], tc.expectedAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(ords))
 			}
@@ -173,13 +173,13 @@ func TestGetOrders(t *testing.T) {
 	testCases := []struct {
 		ids []int
 
-		expectedOrds []orders.Order
+		expectedOrds []*orders.Order
 		expectedErr  error
 	}{
-		{[]int{-1}, []orders.Order{}, sql.ErrNoRows},           // just one bad
-		{[]int{-1, 666}, []orders.Order{}, sql.ErrNoRows},      // just two bad
-		{[]int{666, 203}, []orders.Order{ord203}, nil},         // one bad, one good
-		{[]int{198, 203}, []orders.Order{ord198, ord203}, nil}, // two good
+		{[]int{-1}, nil, sql.ErrNoRows},                           // just one bad
+		{[]int{-1, 666}, nil, sql.ErrNoRows},                      // just two bad
+		{[]int{666, 203}, []*orders.Order{&ord203}, nil},          // one bad, one good
+		{[]int{198, 203}, []*orders.Order{&ord198, &ord203}, nil}, // two good
 	}
 
 	// create testing service
@@ -202,7 +202,7 @@ func TestGetOrders(t *testing.T) {
 			}
 
 			for i := range ords {
-				compareOrder(t, &ords[i], &tc.expectedOrds[i])
+				compareOrder(t, ords[i], tc.expectedOrds[i])
 			}
 
 		})
@@ -213,15 +213,15 @@ func TestGetOneOrder(t *testing.T) {
 	testCases := []struct {
 		id int
 
-		expectedOrd orders.Order
+		expectedOrd *orders.Order
 		expectedErr error
 	}{
-		{-1, orders.Order{}, sql.ErrNoRows},
-		{666, orders.Order{}, sql.ErrNoRows},
-		{203, ord203, nil},
-		{198, ord198, nil},
-		{99, ord99, nil}, // many nulls
-		{206, ord206, nil},
+		{-1, nil, sql.ErrNoRows},
+		{666, nil, sql.ErrNoRows},
+		{203, &ord203, nil},
+		{198, &ord198, nil},
+		{99, &ord99, nil}, // many nulls
+		{206, &ord206, nil},
 	}
 
 	// create testing service
@@ -238,7 +238,7 @@ func TestGetOneOrder(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareOrder(t, &ord, &tc.expectedOrd)
+			compareOrder(t, ord, tc.expectedOrd)
 		})
 	}
 }
@@ -247,17 +247,17 @@ func TestGetCertNewestValidOrderById(t *testing.T) {
 	testCases := []struct {
 		id int
 
-		expectedOrd orders.Order
+		expectedOrd *orders.Order
 		expectedErr error
 	}{
-		{-1, orders.Order{}, sql.ErrNoRows},
-		{666, orders.Order{}, sql.ErrNoRows},
-		{18, ord203, nil},                   // 18: newest is valid, case is wrong (also has a createdAt tie that must be broken by order.id)
-		{35, orders.Order{}, sql.ErrNoRows}, // 35: no valid order
-		{28, orders.Order{}, sql.ErrNoRows}, // 28: newest valid is expired
-		{31, orders.Order{}, sql.ErrNoRows}, // 31: all valid orders but expired
-		{33, ord198, nil},                   // 33: newest is valid but revoked, drop back to next newest valid
-		{26, orders.Order{}, sql.ErrNoRows}, // 26: newest valid is expired
+		{-1, nil, sql.ErrNoRows},
+		{666, nil, sql.ErrNoRows},
+		{18, &ord203, nil},       // 18: newest is valid, case is wrong (also has a createdAt tie that must be broken by order.id)
+		{35, nil, sql.ErrNoRows}, // 35: no valid order
+		{28, nil, sql.ErrNoRows}, // 28: newest valid is expired
+		{31, nil, sql.ErrNoRows}, // 31: all valid orders but expired
+		{33, &ord198, nil},       // 33: newest is valid but revoked, drop back to next newest valid
+		{26, nil, sql.ErrNoRows}, // 26: newest valid is expired
 	}
 
 	// create testing service
@@ -278,7 +278,7 @@ func TestGetCertNewestValidOrderById(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareOrder(t, &ord, &tc.expectedOrd)
+			compareOrder(t, ord, tc.expectedOrd)
 		})
 	}
 }
@@ -287,17 +287,17 @@ func TestGetCertNewestValidOrderByName(t *testing.T) {
 	testCases := []struct {
 		name string
 
-		expectedOrd orders.Order
+		expectedOrd *orders.Order
 		expectedErr error
 	}{
-		{"fake-bad-name", orders.Order{}, sql.ErrNoRows},
-		{"", orders.Order{}, sql.ErrNoRows},
-		{"serverDEFault", ord203, nil},                                                // 18: newest is valid, case is wrong
-		{"STAGING_persist--test005.test.example2.com", orders.Order{}, sql.ErrNoRows}, // 35: no valid order
-		{"a0.alias.test.example.com", orders.Order{}, sql.ErrNoRows},                  // 28: newest valid is expired
-		{"SomeSmallTest", orders.Order{}, sql.ErrNoRows},                              // 31: all valid orders but expired
-		{"STAGING_persist--test007.test.example2.com", ord198, nil},                   // 33: newest is valid but revoked, drop back to next newest valid
-		{"test008.test.example.com", orders.Order{}, sql.ErrNoRows},                   // 26: newest valid is expired
+		{"fake-bad-name", nil, sql.ErrNoRows},
+		{"", nil, sql.ErrNoRows},
+		{"serverDEFault", &ord203, nil},                                    // 18: newest is valid, case is wrong
+		{"STAGING_persist--test005.test.example2.com", nil, sql.ErrNoRows}, // 35: no valid order
+		{"a0.alias.test.example.com", nil, sql.ErrNoRows},                  // 28: newest valid is expired
+		{"SomeSmallTest", nil, sql.ErrNoRows},                              // 31: all valid orders but expired
+		{"STAGING_persist--test007.test.example2.com", &ord198, nil},       // 33: newest is valid but revoked, drop back to next newest valid
+		{"test008.test.example.com", nil, sql.ErrNoRows},                   // 26: newest valid is expired
 	}
 
 	// create testing service
@@ -318,7 +318,7 @@ func TestGetCertNewestValidOrderByName(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareOrder(t, &ord, &tc.expectedOrd)
+			compareOrder(t, ord, tc.expectedOrd)
 		})
 	}
 }

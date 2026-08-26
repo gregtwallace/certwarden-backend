@@ -51,8 +51,8 @@ func (service *Service) DownloadCertRootChainViaHeader(w http.ResponseWriter, r 
 	}
 
 	// return pem file to client
-	rootChain := rootChain(order)
-	service.output.WritePem(w, r, &rootChain)
+	rootChain := (*rootChain)(order)
+	service.output.WritePem(w, r, rootChain)
 
 	return nil
 }
@@ -75,8 +75,8 @@ func (service *Service) DownloadCertRootChainViaUrl(w http.ResponseWriter, r *ht
 	}
 
 	// return pem file to client
-	rootChain := rootChain(order)
-	service.output.WritePem(w, r, &rootChain)
+	rootChain := (*rootChain)(order)
+	service.output.WritePem(w, r, rootChain)
 
 	return nil
 }

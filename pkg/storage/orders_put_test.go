@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-// TODO: Refactor methods to use pointers
-
 // Useful for removing CR chars from pem
 // UPDATE acme_orders
 // SET
@@ -67,7 +65,7 @@ func TestPutOrderACME(t *testing.T) {
 		payload orders.UpdateAcmeOrderPayload
 
 		expectedPutErr error
-		expectedGetOrd orders.Order
+		expectedGetOrd *orders.Order
 		expectedGetErr error
 	}{
 		// invalid id (negative)
@@ -77,7 +75,7 @@ func TestPutOrderACME(t *testing.T) {
 				UpdatedAt: time.Unix(5555, 0),
 			},
 			storage.ErrWrongUpdateRowCount,
-			orders.Order{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// invalid id (positive)
@@ -87,7 +85,7 @@ func TestPutOrderACME(t *testing.T) {
 				UpdatedAt: time.Unix(4444, 0),
 			},
 			storage.ErrWrongUpdateRowCount,
-			orders.Order{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// all vals populated
@@ -109,7 +107,7 @@ func TestPutOrderACME(t *testing.T) {
 				UpdatedAt:      time.Unix(45533444, 0),
 			},
 			nil,
-			ord203updated,
+			&ord203updated,
 			nil,
 		},
 		// ACME Error value -> NULL; Expires value -> NULL
@@ -128,7 +126,7 @@ func TestPutOrderACME(t *testing.T) {
 				UpdatedAt:      time.Unix(433444, 0),
 			},
 			nil,
-			ord204updated,
+			&ord204updated,
 			nil,
 		},
 	}
@@ -151,7 +149,7 @@ func TestPutOrderACME(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareOrder(t, &ord, &tc.expectedGetOrd)
+			compareOrder(t, ord, tc.expectedGetOrd)
 		})
 	}
 }
@@ -188,15 +186,15 @@ func TestPutOrderRenewalInfo(t *testing.T) {
 
 	// test cases
 	testCases := []struct {
-		payload orders.UpdateRenewalInfoPayload
+		payload *orders.UpdateRenewalInfoPayload
 
 		expectedPutErr error
-		expectedGetOrd orders.Order
+		expectedGetOrd *orders.Order
 		expectedGetErr error
 	}{
 		// invalid id (negative)
 		{
-			orders.UpdateRenewalInfoPayload{
+			&orders.UpdateRenewalInfoPayload{
 				OrderID: -9,
 				RenewalInfo: &orders.RenewalInfo{
 					SuggestedWindow: struct {
@@ -213,12 +211,12 @@ func TestPutOrderRenewalInfo(t *testing.T) {
 			},
 
 			storage.ErrWrongUpdateRowCount,
-			orders.Order{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// invalid id (positive)
 		{
-			orders.UpdateRenewalInfoPayload{
+			&orders.UpdateRenewalInfoPayload{
 				OrderID: 1234,
 				RenewalInfo: &orders.RenewalInfo{
 					SuggestedWindow: struct {
@@ -235,12 +233,12 @@ func TestPutOrderRenewalInfo(t *testing.T) {
 			},
 
 			storage.ErrWrongUpdateRowCount,
-			orders.Order{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// has existing ARI
 		{
-			orders.UpdateRenewalInfoPayload{
+			&orders.UpdateRenewalInfoPayload{
 				OrderID: 203,
 				RenewalInfo: &orders.RenewalInfo{
 					SuggestedWindow: struct {
@@ -257,12 +255,12 @@ func TestPutOrderRenewalInfo(t *testing.T) {
 			},
 
 			nil,
-			ord203newARI,
+			&ord203newARI,
 			nil,
 		},
 		// has NULL ari
 		{
-			orders.UpdateRenewalInfoPayload{
+			&orders.UpdateRenewalInfoPayload{
 				OrderID: 204,
 				RenewalInfo: &orders.RenewalInfo{
 					SuggestedWindow: struct {
@@ -279,7 +277,7 @@ func TestPutOrderRenewalInfo(t *testing.T) {
 			},
 
 			nil,
-			ord204newARI,
+			&ord204newARI,
 			nil,
 		},
 	}
@@ -302,7 +300,7 @@ func TestPutOrderRenewalInfo(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareOrder(t, &ord, &tc.expectedGetOrd)
+			compareOrder(t, ord, tc.expectedGetOrd)
 		})
 	}
 }
@@ -322,7 +320,7 @@ func TestPutOrderStatusInvalid(t *testing.T) {
 		updatedAt time.Time
 
 		expectedPutErr error
-		expectedGetOrd orders.Order
+		expectedGetOrd *orders.Order
 		expectedGetErr error
 	}{
 		// invalid id (negative)
@@ -331,7 +329,7 @@ func TestPutOrderStatusInvalid(t *testing.T) {
 			time.Unix(265465487, 0),
 
 			storage.ErrWrongUpdateRowCount,
-			orders.Order{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// invalid id (positive)
@@ -340,7 +338,7 @@ func TestPutOrderStatusInvalid(t *testing.T) {
 			time.Unix(5435645, 0),
 
 			storage.ErrWrongUpdateRowCount,
-			orders.Order{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// set to 'invalid'
@@ -349,7 +347,7 @@ func TestPutOrderStatusInvalid(t *testing.T) {
 			time.Unix(125435555, 0),
 
 			nil,
-			ord203nowInvalid,
+			&ord203nowInvalid,
 			nil,
 		},
 		// already at 'invalid' state
@@ -358,7 +356,7 @@ func TestPutOrderStatusInvalid(t *testing.T) {
 			time.Unix(111135555, 0),
 
 			nil,
-			ord204newUpdatedAt,
+			&ord204newUpdatedAt,
 			nil,
 		},
 	}
@@ -381,7 +379,7 @@ func TestPutOrderStatusInvalid(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareOrder(t, &ord, &tc.expectedGetOrd)
+			compareOrder(t, ord, tc.expectedGetOrd)
 		})
 	}
 }
@@ -403,7 +401,7 @@ func TestPutOrderFinalizedKey(t *testing.T) {
 		updatedAt  time.Time
 
 		expectedPutErr error
-		expectedGetOrd orders.Order
+		expectedGetOrd *orders.Order
 		expectedGetErr error
 	}{
 		// invalid id (negative)
@@ -413,7 +411,7 @@ func TestPutOrderFinalizedKey(t *testing.T) {
 			time.Unix(265465487, 0),
 
 			storage.ErrWrongUpdateRowCount,
-			orders.Order{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// invalid id (positive)
@@ -423,7 +421,7 @@ func TestPutOrderFinalizedKey(t *testing.T) {
 			time.Unix(5435645, 0),
 
 			storage.ErrWrongUpdateRowCount,
-			orders.Order{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// valid order ID but invalid keyID
@@ -433,7 +431,7 @@ func TestPutOrderFinalizedKey(t *testing.T) {
 			time.Unix(5435555, 0),
 
 			helpers_test.NewTestErrorStringComp("FOREIGN KEY constraint failed"),
-			ord206,
+			&ord206,
 			nil,
 		},
 		// valid order ID & valid keyID (overwriting existing finalKeyID)
@@ -443,7 +441,7 @@ func TestPutOrderFinalizedKey(t *testing.T) {
 			time.Unix(25435555, 0),
 
 			nil,
-			ord203wKey58,
+			&ord203wKey58,
 			nil,
 		},
 		// valid order ID & valid keyID (overwriting NULL finalKeyID)
@@ -453,7 +451,7 @@ func TestPutOrderFinalizedKey(t *testing.T) {
 			time.Unix(11135555, 0),
 
 			nil,
-			ord204wKey62,
+			&ord204wKey62,
 			nil,
 		},
 	}
@@ -476,7 +474,7 @@ func TestPutOrderFinalizedKey(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareOrder(t, &ord, &tc.expectedGetOrd)
+			compareOrder(t, ord, tc.expectedGetOrd)
 		})
 	}
 }
@@ -512,40 +510,40 @@ func TestPutOrderPemData(t *testing.T) {
 	// test cases
 	testCases := []struct {
 		ordID   int
-		payload orders.CertPayload
+		payload *orders.CertPayload
 
 		expectedPutErr error
-		expectedGetOrd orders.Order
+		expectedGetOrd *orders.Order
 		expectedGetErr error
 	}{
 		// invalid id -2
 		{
 			-2,
-			orders.CertPayload{
+			&orders.CertPayload{
 				AcmeCert:    new(TestCertificate{}),
 				RenewalInfo: new(orders.RenewalInfo{}),
 				UpdatedAt:   time.Unix(2, 0),
 			},
 			storage.ErrWrongUpdateRowCount,
-			orders.Order{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// invalid id 444
 		{
 			444,
-			orders.CertPayload{
+			&orders.CertPayload{
 				AcmeCert:    new(TestCertificate{}),
 				RenewalInfo: new(orders.RenewalInfo{}),
 				UpdatedAt:   time.Unix(2, 0),
 			},
 			storage.ErrWrongUpdateRowCount,
-			orders.Order{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// ord has existing null values -> value
 		{
 			186,
-			orders.CertPayload{
+			&orders.CertPayload{
 				AcmeCert: new(TestCertificate{
 					pem:         "some data 1",
 					notBefore:   time.Unix(123456, 0),
@@ -566,13 +564,13 @@ func TestPutOrderPemData(t *testing.T) {
 				UpdatedAt: time.Unix(28888889, 0),
 			},
 			nil,
-			ord186updated,
+			&ord186updated,
 			nil,
 		},
 		// null payload as much as possible
 		{
 			203,
-			orders.CertPayload{
+			&orders.CertPayload{
 				AcmeCert: new(TestCertificate{
 					pem:         "some data 2",
 					notBefore:   time.Unix(223456, 0),
@@ -583,7 +581,7 @@ func TestPutOrderPemData(t *testing.T) {
 				UpdatedAt:   time.Unix(48888889, 0),
 			},
 			nil,
-			ord203updated,
+			&ord203updated,
 			nil,
 		},
 	}
@@ -606,7 +604,7 @@ func TestPutOrderPemData(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareOrder(t, &ord, &tc.expectedGetOrd)
+			compareOrder(t, ord, tc.expectedGetOrd)
 		})
 	}
 }
@@ -626,7 +624,7 @@ func TestPutOrderRevoke(t *testing.T) {
 		updatedAt time.Time
 
 		expectedPutErr error
-		expectedGetOrd orders.Order
+		expectedGetOrd *orders.Order
 		expectedGetErr error
 	}{
 		// invalid id -1
@@ -634,7 +632,7 @@ func TestPutOrderRevoke(t *testing.T) {
 			-1,
 			time.Unix(77755552, 0),
 			storage.ErrWrongUpdateRowCount,
-			orders.Order{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// invalid id 555
@@ -642,7 +640,7 @@ func TestPutOrderRevoke(t *testing.T) {
 			555,
 			time.Unix(76655552, 0),
 			storage.ErrWrongUpdateRowCount,
-			orders.Order{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// valid starting as known revoked false
@@ -650,7 +648,7 @@ func TestPutOrderRevoke(t *testing.T) {
 			204,
 			time.Unix(45345345, 0),
 			nil,
-			ord204nowRevoked,
+			&ord204nowRevoked,
 			nil,
 		},
 		// valid starting as known revoked true
@@ -658,7 +656,7 @@ func TestPutOrderRevoke(t *testing.T) {
 			206,
 			time.Unix(55663333, 0),
 			nil,
-			ord206newUpdatedAt,
+			&ord206newUpdatedAt,
 			nil,
 		},
 	}
@@ -681,7 +679,7 @@ func TestPutOrderRevoke(t *testing.T) {
 				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			compareOrder(t, &ord, &tc.expectedGetOrd)
+			compareOrder(t, ord, tc.expectedGetOrd)
 		})
 	}
 }
