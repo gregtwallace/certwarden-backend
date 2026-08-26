@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 // serverStatusResponse
@@ -86,12 +85,6 @@ func (app *Application) httpToHttpsRedirectHandler(w http.ResponseWriter, r *htt
 		hostName = "[" + hostName + "]"
 	}
 	newAddr := "https://" + hostName + ":" + strconv.Itoa(*app.config.HttpsPort)
-	if r.URL.Path != "" {
-		newAddr += "/" + strings.TrimPrefix(r.URL.Path, "/")
-	}
-	if r.URL.RawQuery != "" {
-		newAddr += "?" + strings.TrimPrefix(r.URL.RawQuery, "?")
-	}
 
 	http.Redirect(w, r, newAddr, http.StatusTemporaryRedirect)
 }

@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
-	"strings"
 	"testing"
 	"unicode"
 )
@@ -110,12 +109,6 @@ func TestAppHttpToHttpsRedirectHandler(t *testing.T) {
 			} else {
 				// expect ok
 				newAddr := "https://" + hostName + ":" + strconv.Itoa(*a.config.HttpsPort)
-				if r.URL.Path != "" {
-					newAddr += "/" + strings.TrimPrefix(r.URL.Path, "/")
-				}
-				if r.URL.RawQuery != "" {
-					newAddr += "?" + strings.TrimPrefix(r.URL.RawQuery, "?")
-				}
 				expectedBody = []byte(fmt.Sprintf("<a href=%q>Temporary Redirect</a>.", newAddr))
 			}
 
