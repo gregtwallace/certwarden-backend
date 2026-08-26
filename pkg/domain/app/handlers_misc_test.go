@@ -105,11 +105,11 @@ func TestAppHttpToHttpsRedirectHandler(t *testing.T) {
 
 			// expect error
 			if !tc[i].expectSuccess {
-				expectedBody = []byte(fmt.Sprintf("redirect failed: https hostname '%s' is not a part of the server's certificate", hostName))
+				expectedBody = fmt.Appendf(expectedBody, "redirect failed: https hostname '%s' is not a part of the server's certificate", hostName)
 			} else {
 				// expect ok
 				newAddr := "https://" + hostName + ":" + strconv.Itoa(*a.config.HttpsPort)
-				expectedBody = []byte(fmt.Sprintf("<a href=%q>Temporary Redirect</a>.", newAddr))
+				expectedBody = fmt.Appendf(expectedBody, "<a href=%q>Temporary Redirect</a>.", newAddr)
 			}
 
 			if !bytes.Equal(resDat, expectedBody) {
