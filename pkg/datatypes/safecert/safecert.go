@@ -70,7 +70,7 @@ func (sc *SafeCert) ContainsHostname(hostname string) bool {
 	sc.mu.RLock()
 	defer sc.mu.RUnlock()
 
-	if sc.cert.Leaf == nil {
+	if sc.cert == nil || sc.cert.Leaf == nil {
 		return false
 	}
 	leafPtr := sc.cert.Leaf
