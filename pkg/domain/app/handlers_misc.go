@@ -3,7 +3,10 @@ package app
 import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/storage"
+	"fmt"
+	"net"
 	"net/http"
+	"strconv"
 )
 
 // serverStatusResponse
@@ -46,4 +49,42 @@ func healthHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	w.WriteHeader(http.StatusNoContent)
 
 	return nil
+}
+
+// httpToHttpsRedirectHandler redirects the user from http to https. If the redirect target isn't
+// in the https certificate, 400 is returned instead
+func (app *Application) httpToHttpsRedirectHandler(w http.ResponseWriter, r *http.Request) {
+	// get hostname from http request
+	hostName, _, err := net.SplitHostPort(r.Host)
+	isRawV6 := false
+	if err != nil {
+		// if it failed, assume there is no port and use raw r.Host
+		hostName = r.Host
+		if len(hostName) > 1 && hostName[0] == '[' && hostName[len(hostName)-1:][0] == ']' {
+			hostName = hostName[1 : len(hostName)-1]
+			isRawV6 = true
+		}
+	}
+
+	// use https cert as the whitelist of permitted hostnames
+	if !app.httpsCert.ContainsHostname(hostName) {
+		// Invalid Redirect target -- write 400 (Bad Request)
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusBadRequest)
+
+		if isRawV6 {
+			hostName = "[" + hostName + "]"
+		}
+		//nolint:errcheck // don't care if this doesn't write, user errored out anyway
+		fmt.Fprintf(w, "redirect failed: https hostname '%s' is not a part of the server's certificate", hostName)
+		return
+	}
+
+	// build redirect address
+	if isRawV6 {
+		hostName = "[" + hostName + "]"
+	}
+	newAddr := "https://" + hostName + ":" + strconv.Itoa(*app.config.HttpsPort)
+
+	http.Redirect(w, r, newAddr, http.StatusTemporaryRedirect)
 }
