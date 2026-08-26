@@ -80,22 +80,20 @@ func (sc *SafeCert) ContainsHostname(hostname string) bool {
 		return true
 	}
 
-	// dns names
+	// check: dns names
 	for _, dnsname := range leafPtr.DNSNames {
 		if dnsname == hostname {
 			return true
 		}
 
-		// if dnsname is a wildcard, check for match
+		// wildcard? if so, check for match
 		wildSuffix, isWild := strings.CutPrefix(dnsname, "*.")
-		if isWild {
-			if strings.HasSuffix(hostname, wildSuffix) {
-				return true
-			}
+		if isWild && strings.HasSuffix(hostname, wildSuffix) {
+			return true
 		}
 	}
 
-	// ip addresses
+	// check: ip addresses
 	ipAddr := net.ParseIP(hostname)
 	if ipAddr != nil {
 		for _, ip := range leafPtr.IPAddresses {
