@@ -80,7 +80,7 @@ func (app *Application) httpToHttpsRedirectHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// build redirect address (clunky because of the way httptest sets `RequestURI`)
+	// build redirect address
 	if isRawV6 {
 		hostName = "[" + hostName + "]"
 	}
