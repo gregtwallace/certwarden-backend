@@ -36,7 +36,7 @@ func TestGetAllValidCurrentOrders(t *testing.T) {
 	}
 
 	// override timenow
-	revertToDefaultTimeNow := storage.SetTimeNow(time.Unix(1779991589, 0))
+	revertToDefaultTimeNow := storage.SetTimeNow(t, time.Unix(1779991589, 0))
 	t.Cleanup(revertToDefaultTimeNow)
 
 	// run tests
@@ -267,7 +267,7 @@ func TestGetCertNewestValidOrderById(t *testing.T) {
 	}
 
 	// override timenow
-	revertToDefaultTimeNow := storage.SetTimeNow(time.Unix(1779991589, 0))
+	revertToDefaultTimeNow := storage.SetTimeNow(t, time.Unix(1779991589, 0))
 	t.Cleanup(revertToDefaultTimeNow)
 
 	// run tests
@@ -307,7 +307,7 @@ func TestGetCertNewestValidOrderByName(t *testing.T) {
 	}
 
 	// override timenow
-	revertToDefaultTimeNow := storage.SetTimeNow(time.Unix(1779991589, 0))
+	revertToDefaultTimeNow := storage.SetTimeNow(t, time.Unix(1779991589, 0))
 	t.Cleanup(revertToDefaultTimeNow)
 
 	// run tests
