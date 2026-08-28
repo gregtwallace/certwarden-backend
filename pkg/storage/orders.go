@@ -17,10 +17,10 @@ type orderDb struct {
 	location       string
 	status         string
 	knownRevoked   bool
-	err            sql.NullString // stored as json object
+	acmeErr        sql.NullString // json: acme.Error
 	expires        sql.NullInt64
-	dnsIdentifiers jsonStringSlice // stored as json array
-	authorizations jsonStringSlice // stored as json array
+	dnsIdentifiers []byte // json: []string
+	authorizations []byte // json: []string
 	finalize       string
 	finalizedKey   keyDb
 	certificateUrl sql.NullString
@@ -42,13 +42,9 @@ func (order *orderDb) toOrder() (*orders.Order, error) {
 	}
 
 	// handle acme Error
-	var acmeErr *acme.Error
-	if order.err.Valid {
-		acmeErr = new(acme.Error)
-		err := json.Unmarshal([]byte(order.err.String), acmeErr)
-		if err != nil {
-			return nil, err
-		}
+	acmeErr, err := jsonStringToNullableStruct[acme.Error](nullStringToString(order.acmeErr))
+	if err != nil {
+		return nil, err
 	}
 
 	// convert cert
@@ -63,6 +59,19 @@ func (order *orderDb) toOrder() (*orders.Order, error) {
 		ri = nil
 	}
 
+	// slices
+	dnsIds := []string{}
+	err = json.Unmarshal(order.dnsIdentifiers, &dnsIds)
+	if err != nil {
+		return nil, err
+	}
+
+	authz := []string{}
+	err = json.Unmarshal(order.authorizations, &authz)
+	if err != nil {
+		return nil, err
+	}
+
 	return &orders.Order{
 		ID:             order.id,
 		Certificate:    *cert,
@@ -71,8 +80,8 @@ func (order *orderDb) toOrder() (*orders.Order, error) {
 		KnownRevoked:   order.knownRevoked,
 		Error:          acmeErr,
 		Expires:        nullInt64UnixToTime(order.expires),
-		DnsIdentifiers: order.dnsIdentifiers.toSlice(),
-		Authorizations: order.authorizations.toSlice(),
+		DnsIdentifiers: dnsIds,
+		Authorizations: authz,
 		Finalize:       order.finalize,
 		FinalizedKey:   key,
 		CertificateUrl: nullStringToString(order.certificateUrl),

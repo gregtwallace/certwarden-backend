@@ -237,7 +237,6 @@ func TestPostNewOrder(t *testing.T) {
 
 				compareOrder(t, ord, tc.expectedGetOrd)
 			}
-
 		})
 	}
 }

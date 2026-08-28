@@ -20,13 +20,20 @@ func (store *Storage) PutOrderACME(payload *orders.UpdateAcmeOrderPayload) error
 	}
 
 	// deal with error obj
-	var acmeErr *string
-	if payload.Error != nil {
-		ae, err := json.Marshal(payload.Error)
-		if err != nil {
-			return err
-		}
-		acmeErr = new(string(ae))
+	acmeErr, err := structToNullableJsonString(payload.Error)
+	if err != nil {
+		return err
+	}
+
+	// slices
+	dnsIds, err := sliceToJsonString(payload.DnsIds, false)
+	if err != nil {
+		return err
+	}
+
+	authz, err := sliceToJsonString(payload.Authorizations, false)
+	if err != nil {
+		return err
 	}
 
 	// update existing record
@@ -50,9 +57,9 @@ func (store *Storage) PutOrderACME(payload *orders.UpdateAcmeOrderPayload) error
 	res, err := store.db.ExecContext(ctx, query,
 		payload.Status,
 		expiresVal,
-		makeJsonStringSlice(payload.DnsIds, true),
+		dnsIds,
 		acmeErr,
-		makeJsonStringSlice(payload.Authorizations, true),
+		authz,
 		payload.Finalize,
 		payload.Profile,
 		payload.CertificateUrl,

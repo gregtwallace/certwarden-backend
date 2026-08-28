@@ -14,6 +14,22 @@ func (store *Storage) PostNewCert(payload *certificates.NewPayload) (*certificat
 	// don't check for in use in storage. main app business logic should
 	// take care of it
 
+	// slices
+	certExts, err := sliceToJsonString(payload.CSRExtraExtensions, false)
+	if err != nil {
+		return nil, err
+	}
+
+	subjAlts, err := sliceToJsonString(payload.SubjectAltNames, false)
+	if err != nil {
+		return nil, err
+	}
+
+	postProcEnv, err := sliceToJsonString(payload.PostProcessingEnvironment, false)
+	if err != nil {
+		return nil, err
+	}
+
 	// insert the new cert
 	query := `
 	INSERT INTO certificates (name, description, private_key_id, acme_account_id, subject, subject_alts, 
@@ -26,26 +42,26 @@ func (store *Storage) PostNewCert(payload *certificates.NewPayload) (*certificat
 	`
 
 	id := -1
-	err := store.db.QueryRowContext(ctx, query,
+	err = store.db.QueryRowContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.PrivateKeyID,
 		payload.AcmeAccountID,
 		payload.Subject,
-		makeJsonStringSlice(payload.SubjectAltNames, false),
+		subjAlts,
 		payload.Organization,
 		payload.OrganizationalUnit,
 		payload.Country,
 		payload.State,
 		payload.City,
-		makeJsonCertExtensionSlice(payload.CSRExtraExtensions, false),
+		certExts,
 		payload.PreferredRootCN,
 		payload.CreatedAt.Unix(),
 		payload.UpdatedAt.Unix(),
 		payload.ApiKey,
 		payload.ApiKeyViaUrl,
 		payload.PostProcessingCommand,
-		makeJsonStringSlice(payload.PostProcessingEnvironment, false),
+		postProcEnv,
 		payload.PostProcessingClientAddress,
 		payload.PostProcessingClientKeyB64,
 		payload.Profile,
