@@ -23,12 +23,16 @@ func (service *Service) GetPostProcessWorkStatus(w http.ResponseWriter, r *http.
 		orderIDs = append(orderIDs, mgrWaitingJob.orderID)
 	}
 
-	// lookup all orders in db
-	orders, err := service.storage.GetOrders(orderIDs)
-	if err != nil {
-		err = fmt.Errorf("orders: failed to convert post process jobs to order objects (%w)", err)
-		service.logger.Error(err)
-		return output.ErrorJsonErrInternal(err)
+	// lookup all orders in db, if any jobs exist
+	orders := []*Order{}
+	var err error
+	if len(orderIDs) > 0 {
+		orders, err = service.storage.GetOrders(orderIDs)
+		if err != nil {
+			err = fmt.Errorf("orders: failed to convert post process jobs to order objects (%w)", err)
+			service.logger.Error(err)
+			return output.ErrorJsonErrInternal(err)
+		}
 	}
 
 	// build working part of response
