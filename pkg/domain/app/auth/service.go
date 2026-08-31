@@ -54,10 +54,11 @@ type Config struct {
 		Enabled *bool `yaml:"enabled"`
 	} `yaml:"local"`
 	OIDC struct {
-		IssuerURL      string `yaml:"issuer_url"`
-		ClientID       string `yaml:"client_id"`
-		ClientSecret   string `yaml:"client_secret"`
-		APIRedirectURI string `yaml:"api_redirect_uri"`
+		IssuerURL       string `yaml:"issuer_url"`
+		ClientID        string `yaml:"client_id"`
+		ClientSecret    string `yaml:"client_secret"`
+		APIRedirectURI  string `yaml:"api_redirect_uri"`
+		SuperadminScope string `yaml:"superadmin_scope"`
 	} `yaml:"oidc"`
 }
 
@@ -77,6 +78,17 @@ type Service struct {
 		pendingSessions   *safemap.SafeMap[*oidcPendingSession]
 		oauth2Config      *oauth2.Config
 		idTokenVerifier   *oidc.IDTokenVerifier
+	}
+}
+
+func newOIDCOAuth2Config(cfg *Config, endpoint oauth2.Endpoint) *oauth2.Config {
+	return &oauth2.Config{
+		ClientID:     cfg.OIDC.ClientID,
+		ClientSecret: cfg.OIDC.ClientSecret,
+		RedirectURL:  cfg.OIDC.APIRedirectURI,
+
+		Endpoint: endpoint,
+		Scopes:   oidcScopes(cfg.OIDC.SuperadminScope),
 	}
 }
 
@@ -139,14 +151,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 			}
 
 			// oidc oauth2 config
-			service.oidc.oauth2Config = &oauth2.Config{
-				ClientID:     cfg.OIDC.ClientID,
-				ClientSecret: cfg.OIDC.ClientSecret,
-				RedirectURL:  cfg.OIDC.APIRedirectURI,
-
-				Endpoint: provider.Endpoint(),
-				Scopes:   oidcRequiredScopes,
-			}
+			service.oidc.oauth2Config = newOIDCOAuth2Config(cfg, provider.Endpoint())
 
 			// ensure redirect parses
 			_, err = url.Parse(service.oidc.oauth2Config.RedirectURL)

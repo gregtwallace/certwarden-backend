@@ -191,22 +191,12 @@ func (service *Service) OIDCGetCallback(w http.ResponseWriter, r *http.Request) 
 	// i.e., this is the AUTHORIZATION step
 	responseScopeString, hasScope := oidcStateObj.oauth2Token.Extra("scope").(string)
 	if hasScope {
-		responseScopes := strings.Split(responseScopeString, " ")
-		for _, requiredScope := range oidcRequiredScopes {
-			found := false
-			for _, responseScope := range responseScopes {
-				if requiredScope == responseScope {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				service.logger.Infof("client %s: oidc user '%s' required scope '%s' was not granted", r.RemoteAddr, oidcStateObj.oidcIDToken.Subject, requiredScope)
-				// redirect to frontend to try again
-				http.Redirect(w, r, oidcUnauthorizedErrorURL(oidcStateObj.callerRedirectUrl).String(), http.StatusFound)
-				return nil
-			}
+		missingScope := oidcMissingRequiredScope(responseScopeString, service.oidc.oauth2Config.Scopes)
+		if missingScope != "" {
+			service.logger.Infof("client %s: oidc user '%s' required scope '%s' was not granted", r.RemoteAddr, oidcStateObj.oidcIDToken.Subject, missingScope)
+			// redirect to frontend to try again
+			http.Redirect(w, r, oidcUnauthorizedErrorURL(oidcStateObj.callerRedirectUrl).String(), http.StatusFound)
+			return nil
 		}
 	}
 

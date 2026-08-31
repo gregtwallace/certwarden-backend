@@ -16,10 +16,35 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const oidcCertWardenScope = "certwarden:superadmin"
+const oidcDefaultSuperadminScope = "certwarden:superadmin"
 const oidcPendingSessionMinExp = 5 * time.Minute
 
-var oidcRequiredScopes = []string{oidc.ScopeOpenID, oidc.ScopeOfflineAccess, "profile", oidcCertWardenScope}
+func oidcScopes(superadminScope string) []string {
+	if superadminScope == "" {
+		superadminScope = oidcDefaultSuperadminScope
+	}
+
+	return []string{oidc.ScopeOpenID, oidc.ScopeOfflineAccess, "profile", superadminScope}
+}
+
+func oidcMissingRequiredScope(grantedScopes string, requiredScopes []string) string {
+	responseScopes := strings.Split(grantedScopes, " ")
+	for _, requiredScope := range requiredScopes {
+		found := false
+		for _, responseScope := range responseScopes {
+			if requiredScope == responseScope {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return requiredScope
+		}
+	}
+
+	return ""
+}
 
 // oidcPendingSession tracks various bits of information across the different steps of the OIDC
 // autentication and authorization flow
@@ -141,19 +166,9 @@ func (oef *oidcExtraFuncs) RefreshCheck() error {
 
 	// Validate the required scopes were granted
 	if t.Scope != "" {
-		responseScopes := strings.Split(t.Scope, " ")
-		for _, requiredScope := range oidcRequiredScopes {
-			found := false
-			for _, responseScope := range responseScopes {
-				if requiredScope == responseScope {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				return fmt.Errorf("oidc refresh failed, required scope '%s' was not granted", requiredScope)
-			}
+		missingScope := oidcMissingRequiredScope(t.Scope, oef.cfg.Scopes)
+		if missingScope != "" {
+			return fmt.Errorf("oidc refresh failed, required scope '%s' was not granted", missingScope)
 		}
 	}
 
