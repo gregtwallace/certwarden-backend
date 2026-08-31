@@ -74,10 +74,11 @@ type Service struct {
 		storage Storage
 	}
 	oidc struct {
-		ctxWithHttpClient context.Context
-		pendingSessions   *safemap.SafeMap[*oidcPendingSession]
-		oauth2Config      *oauth2.Config
-		idTokenVerifier   *oidc.IDTokenVerifier
+		ctxWithHttpClient           context.Context
+		pendingSessions             *safemap.SafeMap[*oidcPendingSession]
+		oauth2Config                *oauth2.Config
+		requiredAuthorizationScopes []string
+		idTokenVerifier             *oidc.IDTokenVerifier
 	}
 }
 
@@ -88,7 +89,7 @@ func newOIDCOAuth2Config(cfg *Config, endpoint oauth2.Endpoint) *oauth2.Config {
 		RedirectURL:  cfg.OIDC.APIRedirectURI,
 
 		Endpoint: endpoint,
-		Scopes:   oidcScopes(cfg.OIDC.SuperadminScope),
+		Scopes:   oidcRequestedScopes(cfg.OIDC.SuperadminScope),
 	}
 }
 
@@ -152,6 +153,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 			// oidc oauth2 config
 			service.oidc.oauth2Config = newOIDCOAuth2Config(cfg, provider.Endpoint())
+			service.oidc.requiredAuthorizationScopes = oidcRequiredAuthorizationScopes(cfg.OIDC.SuperadminScope)
 
 			// ensure redirect parses
 			_, err = url.Parse(service.oidc.oauth2Config.RedirectURL)

@@ -19,12 +19,20 @@ import (
 const oidcDefaultSuperadminScope = "certwarden:superadmin"
 const oidcPendingSessionMinExp = 5 * time.Minute
 
-func oidcScopes(superadminScope string) []string {
+func oidcSuperadminScope(superadminScope string) string {
 	if superadminScope == "" {
-		superadminScope = oidcDefaultSuperadminScope
+		return oidcDefaultSuperadminScope
 	}
 
-	return []string{oidc.ScopeOpenID, oidc.ScopeOfflineAccess, "profile", superadminScope}
+	return superadminScope
+}
+
+func oidcRequestedScopes(superadminScope string) []string {
+	return []string{oidc.ScopeOpenID, oidc.ScopeOfflineAccess, "profile", oidcSuperadminScope(superadminScope)}
+}
+
+func oidcRequiredAuthorizationScopes(superadminScope string) []string {
+	return []string{oidcSuperadminScope(superadminScope)}
 }
 
 func oidcMissingRequiredScope(grantedScopes string, requiredScopes []string) string {
@@ -44,6 +52,16 @@ func oidcMissingRequiredScope(grantedScopes string, requiredScopes []string) str
 	}
 
 	return ""
+}
+
+func oidcTokenResponseScope(token *oauth2.Token) (scope string, present, valid bool) {
+	scopeValue := token.Extra("scope")
+	if scopeValue == nil {
+		return "", false, true
+	}
+
+	scope, valid = scopeValue.(string)
+	return scope, true, valid
 }
 
 // oidcPendingSession tracks various bits of information across the different steps of the OIDC
@@ -93,10 +111,11 @@ type expectedToken struct {
 
 // oidcExtraFuncs implements session manager's extraFuncs interface
 type oidcExtraFuncs struct {
-	ctxWithHttpClient context.Context
-	cfg               *oauth2.Config
-	idTokenVerifier   *oidc.IDTokenVerifier
-	token             *expectedToken
+	ctxWithHttpClient           context.Context
+	cfg                         *oauth2.Config
+	requiredAuthorizationScopes []string
+	idTokenVerifier             *oidc.IDTokenVerifier
+	token                       *expectedToken
 
 	mu sync.Mutex
 }
@@ -166,7 +185,7 @@ func (oef *oidcExtraFuncs) RefreshCheck() error {
 
 	// Validate the required scopes were granted
 	if t.Scope != "" {
-		missingScope := oidcMissingRequiredScope(t.Scope, oef.cfg.Scopes)
+		missingScope := oidcMissingRequiredScope(t.Scope, oef.requiredAuthorizationScopes)
 		if missingScope != "" {
 			return fmt.Errorf("oidc refresh failed, required scope '%s' was not granted", missingScope)
 		}
