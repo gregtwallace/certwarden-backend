@@ -278,10 +278,7 @@ func TestPostNewCert(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "postnewcert")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "postnewcert")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newPayload.Name)), func(t *testing.T) {

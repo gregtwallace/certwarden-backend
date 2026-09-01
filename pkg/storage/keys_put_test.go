@@ -180,10 +180,7 @@ red-58
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putkeyupdate")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putkeyupdate")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
@@ -283,10 +280,7 @@ red-62
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putkeyapikey")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putkeyapikey")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
@@ -383,10 +377,7 @@ red-67
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putkeyapikeynew")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putkeyapikeynew")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {
@@ -501,10 +492,7 @@ red-62
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putkeylastaccess")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putkeylastaccess")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.keyId), func(t *testing.T) {

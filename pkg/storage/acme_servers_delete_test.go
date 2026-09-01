@@ -25,10 +25,7 @@ func TestServerInUse(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "serverinuse")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "serverinuse")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("server id: %d", tc.serverID), func(t *testing.T) {
@@ -61,10 +58,7 @@ func TestDeleteServer(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "deleteserver")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "deleteserver")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("server id: %d", tc.serverID), func(t *testing.T) {

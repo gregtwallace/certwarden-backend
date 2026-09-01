@@ -285,10 +285,7 @@ func TestPutDetailsCert(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putcertupdate")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putcertupdate")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
@@ -416,10 +413,7 @@ func TestPutCertApiKey(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putcertapikey")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putcertapikey")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.certId), func(t *testing.T) {
@@ -545,10 +539,7 @@ func TestCertApiKeyNew(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putkeyapikeynew")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putkeyapikeynew")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.certId), func(t *testing.T) {
@@ -679,10 +670,7 @@ func TestPutCertUpdatedAt(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putcertupdatedat")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putcertupdatedat")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.certId), func(t *testing.T) {
@@ -774,10 +762,7 @@ func TestPutCertClientKey(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putcertclientkey")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putcertclientkey")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.certId), func(t *testing.T) {
@@ -907,10 +892,7 @@ func TestPutCertLastAccess(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putcertlastaccess")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putcertlastaccess")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d)", tc.certId), func(t *testing.T) {

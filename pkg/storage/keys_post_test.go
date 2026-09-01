@@ -102,10 +102,7 @@ func TestPostNewKey(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "postnewkey")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "postnewkey")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("post name: %s", helpers_test.StringPointerToVal(tc.newKeyPayload.Name)), func(t *testing.T) {

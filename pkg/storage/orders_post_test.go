@@ -212,10 +212,7 @@ func TestPostNewOrder(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "postneworder")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "postneworder")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d: post order location: %s", i, tc.newPayload.Location), func(t *testing.T) {

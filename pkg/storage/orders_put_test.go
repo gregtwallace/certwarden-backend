@@ -132,10 +132,7 @@ func TestPutOrderACME(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putorderacme")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putorderacme")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d: order id: %d)", i, tc.payload.OrderID), func(t *testing.T) {
@@ -283,10 +280,7 @@ func TestPutOrderRenewalInfo(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putorderrenewalinfo")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putorderrenewalinfo")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d: order id: %d)", i, tc.payload.OrderID), func(t *testing.T) {
@@ -362,10 +356,7 @@ func TestPutOrderStatusInvalid(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putorderstatusinvalid")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putorderstatusinvalid")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d: order id: %d)", i, tc.ordID), func(t *testing.T) {
@@ -457,10 +448,7 @@ func TestPutOrderFinalizedKey(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putorderfinalizedkey")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putorderfinalizedkey")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d: order id: %d)", i, tc.ordID), func(t *testing.T) {
@@ -587,10 +575,7 @@ func TestPutOrderPemData(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putorderpemdata")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putorderpemdata")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d: order id: %d)", i, tc.ordID), func(t *testing.T) {
@@ -662,10 +647,7 @@ func TestPutOrderRevoke(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putrevokeorder")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putrevokeorder")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("%d: order id: %d)", i, tc.ordId), func(t *testing.T) {

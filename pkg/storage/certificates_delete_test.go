@@ -25,10 +25,7 @@ func TestDeleteCert(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "deletecert")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "deletecert")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.id), func(t *testing.T) {

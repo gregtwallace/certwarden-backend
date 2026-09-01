@@ -98,10 +98,7 @@ func TestGetAllAcmeAccounts(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getallacmeaccounts")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getallacmeaccounts")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedAcctAtIndx.Name), func(t *testing.T) {
@@ -140,10 +137,7 @@ func TestGetOneAccountById(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getoneaccountbyid")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getoneaccountbyid")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
@@ -171,10 +165,7 @@ func TestGetOneAccountByName(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getoneaccountbyname")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getoneaccountbyname")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
