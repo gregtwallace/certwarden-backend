@@ -44,7 +44,7 @@ func Do(ctx context.Context, db *sql.DB, logger *zap.SugaredLogger) error {
 
 	err := setupGoose(ctx, db)
 	if err != nil {
-		return fmt.Errorf("storage: failed to setup goose (%s)", err)
+		return fmt.Errorf("storage: failed to setup goose (%w)", err)
 	}
 
 	goose.SetBaseFS(embedMigrations)
