@@ -16,7 +16,7 @@ func insertDataV7(t *testing.T, db *sql.DB) {
 	q := `
 		INSERT INTO certificates
 		VALUES
-			(5, 5, 1, "cert5", "cert desc 5", "subj5.example.com",
+			(5, 5, 1, "cert5", "cert desc 5", "*.subj5.example.com",
 				'["alt5","alt15"]', "org5", "ou5", "countr5", "state5", "city5", "[some csr obj array5]", 'a root',
 				"apkey15", "apkey25",	0, "some cmd5", '["val here5","another val5"]', 'aaabbbccc5', 123455, 444445);
 	`
@@ -73,7 +73,7 @@ func validateDataV7(t *testing.T, db *sql.DB) {
 	q = `
 		SELECT COUNT(*) FROM certificates
 		WHERE id = 5 AND private_key_id = 5 AND acme_account_id = 1 AND name = 'cert5' AND description = 'cert desc 5' AND
-			subject = 'subj5.example.com' AND subject_alts = '["alt5","alt15"]' AND
+			subject = '*.subj5.example.com' AND subject_alts = '["alt5","alt15"]' AND
 			csr_org = 'org5' AND csr_ou = 'ou5' AND csr_country = 'countr5' AND csr_state = 'state5' AND csr_city = 'city5' AND
 			api_key = 'apkey15' AND api_key_new = 'apkey25' AND api_key_via_url = 0 AND created_at = 123455 AND updated_at = 444445 AND
 			post_processing_command = 'some cmd5' AND post_processing_environment = '["val here5","another val5"]' AND

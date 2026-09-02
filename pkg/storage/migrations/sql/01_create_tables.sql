@@ -1,5 +1,4 @@
 -- NOTE: Support for automatic migration from v0 to v1 has been dropped!
-
 -- ALSO NOTE: goose drops the use of pragma (as it is no longer needed and sqlite specific)
 
 -- CHANGES v0 to v1:
