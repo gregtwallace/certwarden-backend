@@ -20,4 +20,3 @@ UPDATE certificates
 UPDATE certificates
   SET name = 'legocerthub'
   WHERE name = 'serverdefault';
-

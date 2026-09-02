@@ -28,7 +28,9 @@ func insertDataV1(t *testing.T, db *sql.DB) {
 			(3, "key3", "some desc 3", "an-alg-3", "pemdata3", "apikey1233",
 				"apikeynew2343", 1, 0, 2223, 4443 ),
 			(4, "key4", "some desc 4", "an-alg-4", "pemdata4", "apikey1234",
-				"apikeynew2344", 1, 0, 2224, 4444 );
+				"apikeynew2344", 1, 0, 2224, 4444 ),
+			(5, "key5", "some desc 5", "an-alg-5", "pemdata5", "apikey1235",
+				"apikeynew2345", 1, 0, 2225, 4445 );
 	`
 
 	_, err := db.ExecContext(ctx, q)
