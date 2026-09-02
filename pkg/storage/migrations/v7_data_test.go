@@ -113,11 +113,6 @@ func validateDataV7(t *testing.T, db *sql.DB) {
 		t.Errorf("validatedatav7: failed to retrieve acme order 0 (row count expected 1 but got '%d')", count)
 	}
 
-	// new order with new val
-	// (1, 1, 1, "https://example.com/ord/1231", "invalid1", 1, 'some err obj', 12341,
-	// 	"alt11,alt21", "auth11,auth21", "example.com/final/1231", 1, "certurl1",
-	// 	"pem data here1", 1231, 3451, 'some root 1', 1111, 2221);
-
 	q = `
 		SELECT COUNT(*) FROM acme_orders
 		WHERE id = 1 AND acme_account_id = 1 AND certificate_id = 1 AND acme_location = 'https://example.com/ord/1231' AND 
