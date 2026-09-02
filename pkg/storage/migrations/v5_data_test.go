@@ -13,10 +13,11 @@ func insertDataV5(t *testing.T, db *sql.DB) {
 
 	//
 	// certificate -- with new attribute
+	// do NOT change name from 'legocerthub'
 	q := `
 		INSERT INTO certificates
 		VALUES
-			(4, 4, 1, "some cert 4", "cert desc 4", "subj4.example.com",
+			(4, 4, 1, "legocerthub", "cert desc 4", "subj4.example.com",
 				'["alt4","alt5"]', "org4", "ou4", "countr4", "state4", "city4", "[some csr obj array4]", "apkey14", "apkey24",
 				0, "some cmd4", '["val here4","another val4"]', 'aaabbbccc4', 123454, 444444);
 	`
@@ -57,7 +58,7 @@ func validateDataV5(t *testing.T, db *sql.DB) {
 	// new cert with new val
 	q = `
 		SELECT COUNT(*) FROM certificates
-		WHERE id = 4 AND private_key_id = 4 AND acme_account_id = 1 AND name = 'some cert 4' AND description = 'cert desc 4' AND
+		WHERE id = 4 AND private_key_id = 4 AND acme_account_id = 1 AND name = 'legocerthub' AND description = 'cert desc 4' AND
 			subject = 'subj4.example.com' AND subject_alts = '["alt4","alt5"]' AND
 			csr_org = 'org4' AND csr_ou = 'ou4' AND csr_country = 'countr4' AND csr_state = 'state4' AND csr_city = 'city4' AND
 			api_key = 'apkey14' AND api_key_new = 'apkey24' AND api_key_via_url = 0 AND created_at = 123454 AND updated_at = 444444 AND
