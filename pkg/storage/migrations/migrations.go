@@ -62,7 +62,6 @@ func setupGoose(ctx context.Context, db *sql.DB) error {
 	ctx, cancel := context.WithTimeout(ctx, migrateDBTimeout)
 	defer cancel()
 
-	// create sql transaction to roll back in the event an error occurs
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return err

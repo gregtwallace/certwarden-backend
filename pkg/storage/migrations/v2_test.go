@@ -11,7 +11,7 @@ import (
 )
 
 func TestDBVersion2(t *testing.T) {
-	thisTestFolder := tempFileStorage + "v2"
+	thisTestFolder := tempFileStorage + "migrate_v2"
 
 	// make temp data folder
 	helpers_test.MakeTempStorage(t, thisTestFolder)
@@ -31,7 +31,7 @@ func TestDBVersion2(t *testing.T) {
 		}
 	})
 
-	// setup prev version db
+	// setup empty db
 	ctx, cancel := context.WithTimeout(context.Background(), migrations.MigrateDBTimeout)
 	defer cancel()
 
@@ -40,10 +40,17 @@ func TestDBVersion2(t *testing.T) {
 		t.Fatalf("goose setup failed: %s", err)
 	}
 
+	// GO UP
+
+	validateDataV0(t, db)
+
 	err = goose.UpToContext(ctx, db, "sql", 1)
 	if err != nil {
 		t.Fatalf("goose failed to up migrate v0 -> v1: %s", err)
 	}
+
+	insertDataV1(t, db)
+	validateDataV1(t, db, false)
 
 	// run tests
 	err = goose.UpToContext(ctx, db, "sql", 2)
@@ -51,31 +58,23 @@ func TestDBVersion2(t *testing.T) {
 		t.Fatalf("goose failed to up migrate v1 -> v2: %s", err)
 	}
 
-	// validate attribute was dropped
-	q := `
-		SELECT challenge_method
-		FROM certificates
-		LIMIT 1
-	`
-	_, err = db.ExecContext(ctx, q)
-	if !helpers_test.ErrorsIs(err, helpers_test.NewTestErrorStringComp("no such column: challenge_method")) {
-		t.Errorf("v2 should not have certificates.challenge_method attribute (err was %s)", helpers_test.ErrorToVal(err))
-	}
+	insertDataV2(t, db)
+	validateDataV2(t, db, false)
 
-	// reverse
+	//
+	// REVERSE AND GO DOWN
+	//
 	err = goose.DownToContext(ctx, db, "sql", 1)
 	if err != nil {
 		t.Fatalf("goose failed to down migrate v2 -> v1: %s", err)
 	}
 
-	// validate attribute is back
-	q = `
-		SELECT challenge_method
-		FROM certificates
-		LIMIT 1
-	`
-	_, err = db.ExecContext(ctx, q)
-	if !helpers_test.ErrorsIs(err, nil) {
-		t.Errorf("v1 should have certificates.challenge_method attribute (but err was %s)", helpers_test.ErrorToVal(err))
+	validateDataV1(t, db, true)
+
+	err = goose.DownToContext(ctx, db, "sql", 0)
+	if err != nil {
+		t.Fatalf("goose failed to down migrate v1 -> v0: %s", err)
 	}
+
+	validateDataV0(t, db)
 }

@@ -11,7 +11,7 @@ import (
 )
 
 func TestDBVersion1(t *testing.T) {
-	thisTestFolder := tempFileStorage + "v1"
+	thisTestFolder := tempFileStorage + "migrate_v1"
 
 	// make temp data folder
 	helpers_test.MakeTempStorage(t, thisTestFolder)
@@ -31,7 +31,7 @@ func TestDBVersion1(t *testing.T) {
 		}
 	})
 
-	// run the tests
+	// setup empty db
 	ctx, cancel := context.WithTimeout(context.Background(), migrations.MigrateDBTimeout)
 	defer cancel()
 
@@ -40,14 +40,26 @@ func TestDBVersion1(t *testing.T) {
 		t.Fatalf("goose setup failed: %s", err)
 	}
 
+	// GO UP
+
+	validateDataV0(t, db)
+
 	err = goose.UpToContext(ctx, db, "sql", 1)
 	if err != nil {
 		t.Fatalf("goose failed to up migrate v0 -> v1: %s", err)
 	}
 
-	// reverse
+	insertDataV1(t, db)
+	validateDataV1(t, db, false)
+
+	//
+	// REVERSE AND GO DOWN
+	//
+
 	err = goose.DownToContext(ctx, db, "sql", 0)
 	if err != nil {
 		t.Fatalf("goose failed to down migrate v1 -> v0: %s", err)
 	}
+
+	validateDataV0(t, db)
 }

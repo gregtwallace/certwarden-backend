@@ -15,6 +15,7 @@
 
 -- +goose Up
 
+
 -- new data tables
 CREATE TABLE acme_servers (
 		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
@@ -159,8 +160,9 @@ INSERT INTO acme_servers
 
 -- insert default user/password (hash of default password isn't a secret)
 INSERT INTO
-		users (username, password_hash, created_at, updated_at)
+		users (id, username, password_hash, created_at, updated_at)
 	VALUES (
+		1, -- this was a goof in the past, but it is what it is
 		'admin',
 		'$2a$12$q2zn2nvyGIGC1BfpORWS6.Y.Q1n8.R0.U9RtHn31m6WbaTqHiSjpG',
 		strftime('%s', 'now'),
@@ -171,9 +173,9 @@ INSERT INTO
 
 -- +goose Down
 
-DROP TABLE acme_servers;
+DROP TABLE users;
 DROP TABLE acme_orders;	
 DROP TABLE certificates;
 DROP TABLE acme_accounts;
 DROP TABLE private_keys;
-DROP TABLE users;
+DROP TABLE acme_servers;
