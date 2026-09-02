@@ -9,7 +9,6 @@
 
 
 -- rename old tables
--- NOTE: orders is also copied due to the way FK from orders links to certificates
 ALTER TABLE acme_orders RENAME TO acme_orders_old;
 ALTER TABLE certificates RENAME TO certificates_old;
 
