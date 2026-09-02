@@ -22,7 +22,9 @@ func insertDataV1(t *testing.T, db *sql.DB) {
 			(0, "key0", "some desc", "an-alg", "pemdata", "apikey123",
 				"apikeynew234", 1, 1, 123, 456 ),
 			(1, "key1", "some desc 1", "an-alg-1", "pemdata1", "apikey1231",
-				"apikeynew2341", 0, 0, 111, 333 );
+				"apikeynew2341", 0, 0, 111, 333 ),
+			(2, "key2", "some desc 2", "an-alg-2", "pemdata2", "apikey1232",
+				"apikeynew2342", 1, 0, 222, 444 );
 	`
 
 	_, err := db.ExecContext(ctx, q)
@@ -52,7 +54,7 @@ func insertDataV1(t *testing.T, db *sql.DB) {
 		INSERT INTO certificates
 		VALUES
 			(0, 0, 0, "some cert", "cert desc", "chall-method-1", "subj.example.com",
-				"alt1, alt2", "org", "ou", "countr", "state", "city", "apkey1", "apkey2",
+				"alt1,alt2", "org", "ou", "countr", "state", "city", "apkey1", "apkey2",
 				1, 12345, 44444);
 	`
 
@@ -67,7 +69,7 @@ func insertDataV1(t *testing.T, db *sql.DB) {
 		INSERT INTO acme_orders
 		VALUES
 			(0, 0, 0, "https://example.com/ord/123", "invalid", 0, null, 1234,
-				"alt1, alt2", "auth1, auth2", "example.com/final/123", 0, "certurl",
+				"alt1,alt2", "auth1,auth2", "example.com/final/123", 0, "certurl",
 				"pem data here", 123, 345, 111, 222);
 	`
 
@@ -163,7 +165,7 @@ func validateDataV1(t *testing.T, db *sql.DB, cameDownFromNextVer bool) {
 	q = `
 		SELECT COUNT(*) FROM certificates
 		WHERE id = 0 AND private_key_id = 0 AND acme_account_id = 0 AND name = 'some cert' AND description = 'cert desc' AND 
-			challenge_method = $1 AND subject = 'subj.example.com' AND subject_alts = 'alt1, alt2' AND
+			challenge_method = $1 AND subject = 'subj.example.com' AND subject_alts = 'alt1,alt2' AND
 			csr_org = 'org' AND csr_ou = 'ou' AND csr_country = 'countr' AND csr_state = 'state' AND csr_city = 'city' AND 
 			api_key = 'apkey1' AND api_key_new = 'apkey2' AND api_key_via_url = 1 AND created_at = 12345 AND updated_at = 44444;
 	`
@@ -189,8 +191,8 @@ func validateDataV1(t *testing.T, db *sql.DB, cameDownFromNextVer bool) {
 	q = `
 		SELECT COUNT(*) FROM acme_orders
 		WHERE id = 0 AND acme_account_id = 0 AND certificate_id = 0 AND acme_location = 'https://example.com/ord/123' AND 
-			status = 'invalid' AND known_revoked = 0 AND error IS null AND expires = 1234 AND dns_identifiers = 'alt1, alt2' AND
-			authorizations = 'auth1, auth2' AND finalize = 'example.com/final/123' AND finalized_key_id = 0 AND
+			status = 'invalid' AND known_revoked = 0 AND error IS null AND expires = 1234 AND dns_identifiers = 'alt1,alt2' AND
+			authorizations = 'auth1,auth2' AND finalize = 'example.com/final/123' AND finalized_key_id = 0 AND
 			certificate_url = 'certurl' AND pem = 'pem data here' AND valid_from = 123 AND valid_to = 345 AND
 			created_at = 111 AND updated_at = 222;
 	`
