@@ -47,10 +47,10 @@ func validateDataV4(t *testing.T, db *sql.DB) {
 	count := -1
 	err := rows.Scan(&count)
 	if err != nil {
-		t.Fatalf("validatedatav3: failed to scan certificate 1 (%s)", err)
+		t.Fatalf("validatedatav4: failed to scan certificate 1 (%s)", err)
 	}
 	if count != 1 {
-		t.Errorf("validatedatav3: failed to retrieve certificate 1 (row count expected 1 but got '%d')", count)
+		t.Errorf("validatedatav4: failed to retrieve certificate 1 (row count expected 1 but got '%d')", count)
 	}
 
 	// new cert with new val

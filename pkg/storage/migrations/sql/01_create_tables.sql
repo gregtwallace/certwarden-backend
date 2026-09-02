@@ -18,13 +18,13 @@
 
 -- new data tables
 CREATE TABLE acme_servers (
-		id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-		name text NOT NULL UNIQUE COLLATE NOCASE,
-		description text NOT NULL,
-		directory_url text NOT NULL UNIQUE,
-		is_staging integer NOT NULL DEFAULT 0 CHECK(is_staging IN (0,1)),
-		created_at integer NOT NULL,
-		updated_at integer NOT NULL
+	id integer PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+	name text NOT NULL UNIQUE COLLATE NOCASE,
+	description text NOT NULL,
+	directory_url text NOT NULL UNIQUE,
+	is_staging integer NOT NULL DEFAULT 0 CHECK(is_staging IN (0,1)),
+	created_at integer NOT NULL,
+	updated_at integer NOT NULL
 );
 
 CREATE TABLE private_keys (
