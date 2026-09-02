@@ -12,8 +12,6 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-// TODO: TestSetupGoose (using new empty file && various versions of pragma)
-
 func TestDo(t *testing.T) {
 	// test empty file
 	t.Run("empty file", func(t *testing.T) {
