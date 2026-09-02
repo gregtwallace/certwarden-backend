@@ -27,7 +27,7 @@ func insertDataV3(t *testing.T, db *sql.DB) {
 	}
 }
 
-func validateDataV3(t *testing.T, db *sql.DB, cameDownFromNextVer bool) {
+func validateDataV3(t *testing.T, db *sql.DB) {
 	ctx, cancel := context.WithTimeout(context.Background(), migrations.MigrateDBTimeout)
 	defer cancel()
 

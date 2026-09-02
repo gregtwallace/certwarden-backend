@@ -10,8 +10,8 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
-func TestDBVersion3(t *testing.T) {
-	thisTestFolder := tempFileStorage + "migrate_v3"
+func TestDBVersion4(t *testing.T) {
+	thisTestFolder := tempFileStorage + "migrate_v4"
 
 	// make temp data folder
 	helpers_test.MakeTempStorage(t, thisTestFolder)
@@ -68,9 +68,24 @@ func TestDBVersion3(t *testing.T) {
 	insertDataV3(t, db)
 	validateDataV3(t, db)
 
+	err = goose.UpToContext(ctx, db, "sql", 4)
+	if err != nil {
+		t.Fatalf("goose failed to up migrate v3 -> v4: %s", err)
+	}
+
+	insertDataV4(t, db)
+	validateDataV4(t, db)
+
 	//
 	// REVERSE AND GO DOWN
 	//
+	err = goose.DownToContext(ctx, db, "sql", 3)
+	if err != nil {
+		t.Fatalf("goose failed to down migrate v4 -> v3: %s", err)
+	}
+
+	validateDataV3(t, db)
+
 	err = goose.DownToContext(ctx, db, "sql", 2)
 	if err != nil {
 		t.Fatalf("goose failed to down migrate v3 -> v2: %s", err)
