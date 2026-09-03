@@ -4,7 +4,9 @@
 -- Note: DB Schema doesn't actually change from 5 to 6.
 
 
+
 -- +goose Up
+
 
 
 -- rename cert
@@ -13,10 +15,12 @@ UPDATE certificates
   WHERE name = 'legocerthub';
 
 
+
 -- +goose Down
 
 
--- rename cert
+
+-- revert rename cert
 UPDATE certificates
   SET name = 'legocerthub'
   WHERE name = 'serverdefault';

@@ -12,7 +12,9 @@
 --     - Remove `is_staging` attribute
 
 
+
 -- +goose Up
+
 
 
 -- new data tables
@@ -132,6 +134,7 @@ CREATE TABLE users (
 	updated_at integer NOT NULL
 );
 
+
 -- insert default servers
 INSERT INTO acme_servers 
 		(id, name, description, directory_url, is_staging, created_at, updated_at)
@@ -157,6 +160,7 @@ INSERT INTO acme_servers
 		strftime('%s', 'now')
 );
 
+
 -- insert default user/password (hash of default password isn't a secret)
 INSERT INTO
 		users (id, username, password_hash, created_at, updated_at)
@@ -171,6 +175,8 @@ INSERT INTO
 
 
 -- +goose Down
+
+
 
 DROP TABLE users;
 DROP TABLE acme_orders;	
