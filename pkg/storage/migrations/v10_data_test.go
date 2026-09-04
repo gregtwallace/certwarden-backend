@@ -23,14 +23,14 @@ func insertDataV10(t *testing.T, db *sql.DB) {
 
 	_, err := db.ExecContext(ctx, q)
 	if err != nil {
-		t.Fatalf("insertdatav10: failed to insert certificate 7 (%s)", err)
+		t.Fatalf("insertdatav10: failed to insert certificate 8 (%s)", err)
 	}
 
 	// order -- with new attribute
 	q = `
 		INSERT INTO acme_orders
 		VALUES
-			(2, 0, 2, "https://example.com/ord/12322", "valid2", 0, 'some err obj2', 123412,
+			(2, 1, 2, "https://example.com/ord/12322", "valid2", 0, 'some err obj2', 123412,
 				'["alt112","alt212"]', '["auth112","auth212"]', "example.com/final/12312", 2, "certurl2",
 				"pem data here2", 12312, 34512, 'some root 2', 'profile x2', 11112, 22212);
 	`
@@ -117,7 +117,7 @@ func validateDataV10(t *testing.T, db *sql.DB) {
 	// new order with new val
 	q = `
 		SELECT COUNT(*) FROM acme_orders
-		WHERE id = 2 AND acme_account_id = 0 AND certificate_id = 2 AND acme_location = 'https://example.com/ord/12322' AND 
+		WHERE id = 2 AND acme_account_id = 1 AND certificate_id = 2 AND acme_location = 'https://example.com/ord/12322' AND 
 			status = 'valid2' AND known_revoked = 0 AND error = 'some err obj2' AND expires = 123412 AND
 			dns_identifiers = '["alt112","alt212"]' AND authorizations = '["auth112","auth212"]' AND
 			finalize = 'example.com/final/12312' AND finalized_key_id = 2 AND
@@ -129,9 +129,9 @@ func validateDataV10(t *testing.T, db *sql.DB) {
 	count = -1
 	err = rows.Scan(&count)
 	if err != nil {
-		t.Fatalf("validatedatav10: failed to scan acme order 1 (%s)", err)
+		t.Fatalf("validatedatav10: failed to scan acme order 2 (%s)", err)
 	}
 	if count != 1 {
-		t.Errorf("validatedatav10: failed to retrieve acme order 1 (row count expected 1 but got '%d')", count)
+		t.Errorf("validatedatav10: failed to retrieve acme order 2 (row count expected 1 but got '%d')", count)
 	}
 }

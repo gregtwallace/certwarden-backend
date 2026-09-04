@@ -65,7 +65,7 @@ type orderCertificateSummaryResponse struct {
 	Subject         string                      `json:"subject"`
 	SubjectAltNames []string                    `json:"subject_alts"`
 	ApiKeyViaUrl    bool                        `json:"api_key_via_url"`
-	LastAccess      int64                       `json:"last_access"`
+	LastAccess      *int64                      `json:"last_access"`
 }
 
 type orderAccountSummaryResponse struct {
@@ -113,6 +113,11 @@ func (order *Order) summaryResponse(service *Service) orderSummaryResponse {
 		validToUnix = &validToUnixVal
 	}
 
+	var la *int64
+	if order.Certificate.LastAccess != nil {
+		la = new(order.Certificate.LastAccess.Unix())
+	}
+
 	return orderSummaryResponse{
 		FulfillmentWorker: fulfillingWorker,
 		ID:                order.ID,
@@ -131,7 +136,7 @@ func (order *Order) summaryResponse(service *Service) orderSummaryResponse {
 			Subject:         order.Certificate.Subject,
 			SubjectAltNames: order.Certificate.SubjectAltNames,
 			ApiKeyViaUrl:    order.Certificate.ApiKeyViaUrl,
-			LastAccess:      order.Certificate.LastAccess.Unix(),
+			LastAccess:      la,
 		},
 		Status:         order.Status,
 		KnownRevoked:   order.KnownRevoked,

@@ -2,6 +2,7 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/helpers_test"
 	"testing"
 )
 
@@ -55,8 +56,9 @@ func compareKey(t *testing.T, key, expectedKey *private_keys.Key) {
 		t.Errorf("key: api key via url expected '%t' but got '%t'", expectedKey.ApiKeyViaUrl, key.ApiKeyViaUrl)
 	}
 
-	if !key.LastAccess.Equal(expectedKey.LastAccess) {
-		t.Errorf("key: last access expected '%s' but got '%s'", expectedKey.LastAccess.UTC(), key.LastAccess.UTC())
+	err := helpers_test.TimePointerEquals(key.LastAccess, expectedKey.LastAccess)
+	if err != nil {
+		t.Errorf("key: last access expected '%s' but got '%s'", helpers_test.TimeToVal(expectedKey.LastAccess), helpers_test.TimeToVal(key.LastAccess))
 	}
 
 	if !key.CreatedAt.Equal(expectedKey.CreatedAt) {

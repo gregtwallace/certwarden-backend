@@ -30,6 +30,61 @@ var (
 		RenewalInfo:    nil,
 	}
 
+	// valid finalized key but that key has a null last_access
+	ord150 = orders.Order{
+		ID:             150,
+		Certificate:    cert26,
+		Location:       "https://acme-staging-v02.api.letsencrypt.org/acme/order/red-1/red-150",
+		Status:         "valid",
+		KnownRevoked:   false,
+		Error:          nil,
+		Expires:        new(time.Unix(1743775603, 0)),
+		DnsIdentifiers: []string{"test008.test.example.com", "test009.test.example.com"},
+		Authorizations: []string{"https://acme-staging-v02.api.letsencrypt.org/acme/authz/red-1/r-1274/", "https://acme-staging-v02.api.letsencrypt.org/acme/authz/red-1/r-3704/"},
+		Finalize:       "",
+		FinalizedKey:   &key55,
+		CertificateUrl: new("https://acme-staging-v02.api.letsencrypt.org/acme/cert/red-150"),
+		Pem: new(`-----BEGIN CERTIFICATE-----
+red-150
+-----END CERTIFICATE-----
+
+-----BEGIN CERTIFICATE-----
+MIIEljCCAn6gAwIBAgIQRzEp1D1mDiVVv4b1zlB56jANBgkqhkiG9w0BAQsFADBm
+MQswCQYDVQQGEwJVUzEzMDEGA1UEChMqKFNUQUdJTkcpIEludGVybmV0IFNlY3Vy
+aXR5IFJlc2VhcmNoIEdyb3VwMSIwIAYDVQQDExkoU1RBR0lORykgUHJldGVuZCBQ
+ZWFyIFgxMB4XDTI0MDMxMzAwMDAwMFoXDTI3MDMxMjIzNTk1OVowUjELMAkGA1UE
+BhMCVVMxIDAeBgNVBAoTFyhTVEFHSU5HKSBMZXQncyBFbmNyeXB0MSEwHwYDVQQD
+ExgoU1RBR0lORykgUHNldWRvIFBsdW0gRTUwdjAQBgcqhkjOPQIBBgUrgQQAIgNi
+AATljbbcV+mqWZa3g+z0bDOuBpZOtbi48iK9rjLtPdRU0WsgVp53MW3nXFU6qVYV
+zEYaYd6PSmec0Tj3R5zEp5/F+cuOjTdh3AkTMzYm1tkflocPBN5APHYZ+76WxZad
+q+WjggEAMIH9MA4GA1UdDwEB/wQEAwIBhjAdBgNVHSUEFjAUBggrBgEFBQcDAgYI
+KwYBBQUHAwEwEgYDVR0TAQH/BAgwBgEB/wIBADAdBgNVHQ4EFgQU/EbRAUNfu3um
+PTBorhG64LxtydMwHwYDVR0jBBgwFoAUtfNl8v6wCpIf+zx980SgrGMlwxQwNgYI
+KwYBBQUHAQEEKjAoMCYGCCsGAQUFBzAChhpodHRwOi8vc3RnLXgxLmkubGVuY3Iu
+b3JnLzATBgNVHSAEDDAKMAgGBmeBDAECATArBgNVHR8EJDAiMCCgHqAchhpodHRw
+Oi8vc3RnLXgxLmMubGVuY3Iub3JnLzANBgkqhkiG9w0BAQsFAAOCAgEAAtCGn4iG
+cupruhkCTcoDqSIVTFgVR8JJ3GvGL7SYwIc4Fn0As66nQgnkATIzF5+gFb+CXEQD
+qR2Jo+R38OeT7lQ1rNDcaJcbY6hL8cNRku3QlcfdYODZ5pgTVH04gTZUJISZKLjD
+kMMcQIDZlF7iYqTvmHbn2ISSKorsJ3QKAvWhHwMoJtocSz3VeDJIep5QtbHnoXh1
+/dyDx7sp8RuhC0eO9ElTgDtiA2V6JxigLPzqcnibBBR4bFLGtMNE4EvOOD/Fkd0L
+hdGDbAMNd+O06n+b0rgmDvg75IgOV6fpDrdZFoiNfCckOEJh9v10uYt4pTc3B6lf
+zI/X3EWP1H4VJmsYuy+OA29jPeP831sAObZtd3RWv0LQPrMfx6FCmy4AaeYEMvul
+FrF6OX+JbssE+bn83F+sGEMZu/eVBwwKh3db7+2UduMdTOb8DePE3Aqlg9zofS8X
+9fJXrrp+PPrdQyvM3e8DxuioWa9GLG30yD9WD6WTlSiiOrdWGOzisWpW4shFoL8u
+0EfmeLVU4JVbauhOYZASQXABNeXewe9lqJWwfqaARYpRjyf+jRibn22H5NVK4Vog
+l55Iq1rUgjc8r493NaNrlNwG7va7Ztkch5lJ3oL/FEVlVSK4snTbgb0b5qjQz3SA
+i7rA/8QRZvOLnKNtdEUlDZNrzkZwHNluLGw=
+-----END CERTIFICATE-----
+`),
+		ValidFrom:   new(time.Unix(1743167317, 0)),
+		ValidTo:     new(time.Unix(1750943316, 0)),
+		CreatedAt:   time.Unix(1743170803, 0),
+		UpdatedAt:   time.Unix(1743170834, 0),
+		ChainRootCN: new("(STAGING) Pretend Pear X1"),
+		Profile:     nil,
+		RenewalInfo: nil,
+	}
+
 	ord175 = orders.Order{
 		ID:             175,
 		Certificate:    cert28,

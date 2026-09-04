@@ -13,7 +13,6 @@ var ErrOrderExists = errors.New("order location already in storage")
 // to storage. This is used when ACME returns info about an Order.
 type NewOrderAcmePayload struct {
 	CertId         int
-	AccountId      int
 	Status         string
 	KnownRevoked   bool
 	Expires        *time.Time
@@ -32,7 +31,6 @@ type NewOrderAcmePayload struct {
 func makeNewOrderAcmePayload(cert *certificates.Certificate, acmeResponse *acme.Order) NewOrderAcmePayload {
 	return NewOrderAcmePayload{
 		CertId:         cert.ID,
-		AccountId:      cert.Account.ID,
 		Status:         acmeResponse.Status,
 		KnownRevoked:   false,
 		Expires:        acmeResponse.Expires,

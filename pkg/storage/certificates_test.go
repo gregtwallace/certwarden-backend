@@ -3,6 +3,7 @@ package storage_test
 import (
 	"bytes"
 	"certwarden-backend/pkg/domain/certificates"
+	"certwarden-backend/pkg/helpers_test"
 	"slices"
 	"testing"
 )
@@ -110,8 +111,9 @@ func compareCertificate(t *testing.T, cert, expectedCert *certificates.Certifica
 		t.Errorf("certificate: preferred root cn expected '%s' but got '%s'", expectedCert.PreferredRootCN, cert.PreferredRootCN)
 	}
 
-	if !cert.LastAccess.Equal(expectedCert.LastAccess) {
-		t.Errorf("certificate: last access expected '%s' but got '%s'", expectedCert.LastAccess.UTC(), cert.LastAccess.UTC())
+	err := helpers_test.TimePointerEquals(cert.LastAccess, expectedCert.LastAccess)
+	if err != nil {
+		t.Errorf("certificate: last access expected '%s' but got '%s'", helpers_test.TimeToVal(expectedCert.LastAccess), helpers_test.TimeToVal(cert.LastAccess))
 	}
 
 	if !cert.CreatedAt.Equal(expectedCert.CreatedAt) {

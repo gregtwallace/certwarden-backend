@@ -71,7 +71,7 @@ func (store *Storage) GetAllValidCurrentOrders(q pagination_sort.Query) (ordersS
 		COALESCE(fk.id, -2), COALESCE(fk.name, 'null'), COALESCE(fk.description, 'null'), 
 		COALESCE(fk.algorithm, 'null'), COALESCE(fk.pem, 'null'), COALESCE(fk.api_key, 'null'), 
 		COALESCE(fk.api_key_new, 'null'), COALESCE(fk.api_key_disabled, false),
-		COALESCE(fk.api_key_via_url, false), COALESCE(fk.last_access, -2), COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2),
+		COALESCE(fk.api_key_via_url, false), fk.last_access, COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2),
 		
 		count(*) OVER() AS full_count
 	FROM
@@ -315,7 +315,7 @@ func (store *Storage) GetOrdersByCert(certId int, q pagination_sort.Query) (orde
 		COALESCE(fk.id, -2), COALESCE(fk.name, 'null'), COALESCE(fk.description, 'null'), 
 		COALESCE(fk.algorithm, 'null'), COALESCE(fk.pem, 'null'), COALESCE(fk.api_key, 'null'),
 		COALESCE(fk.api_key_new, 'null'), COALESCE(fk.api_key_disabled, false),
-		COALESCE(fk.api_key_via_url, false), COALESCE(fk.last_access, -2), COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2),
+		COALESCE(fk.api_key_via_url, false), fk.last_access, COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2),
 
 		count(*) OVER() AS full_count
 	FROM
@@ -599,7 +599,7 @@ func (store *Storage) GetOrders(orderIDs []int) (ordersSlice []*orders.Order, _ 
 		COALESCE(fk.id, -2), COALESCE(fk.name, 'null'), COALESCE(fk.description, 'null'), 
 		COALESCE(fk.algorithm, 'null'), COALESCE(fk.pem, 'null'), COALESCE(fk.api_key, 'null'),
 		COALESCE(fk.api_key_new, 'null'), COALESCE(fk.api_key_disabled, false), COALESCE(fk.api_key_via_url, false),
-		COALESCE(fk.last_access, -2), COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2)
+		fk.last_access, COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2)
 	FROM
 		acme_orders ao
 		LEFT JOIN certificates c on (ao.certificate_id = c.id)
@@ -807,7 +807,7 @@ func (store *Storage) getCertNewestValidOrder(certId int, certName string) (*ord
 		COALESCE(fk.id, -2), COALESCE(fk.name, 'null'), COALESCE(fk.description, 'null'), 
 		COALESCE(fk.algorithm, 'null'), COALESCE(fk.pem, 'null'), COALESCE(fk.api_key, 'null'),
 		COALESCE(fk.api_key_new, 'null'), COALESCE(fk.api_key_disabled, false), COALESCE(fk.api_key_via_url, false),
-		COALESCE(fk.last_access, -2), COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2)
+		fk.last_access, COALESCE(fk.created_at, -2), COALESCE(fk.updated_at, -2)
 	FROM
 		acme_orders ao
 		LEFT JOIN certificates c on (ao.certificate_id = c.id)

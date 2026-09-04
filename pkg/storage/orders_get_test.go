@@ -70,11 +70,14 @@ func TestGetOrdersByCert(t *testing.T) {
 		testIndx       int
 		expectedAtIndx *orders.Order
 	}{
+		{-1, pagination_sort.Query{}, 0, 0, 0, nil},
+		{1, pagination_sort.Query{}, 0, 0, 0, nil},
 		{35, pagination_sort.Query{}, 2, 2, 0, &ord204},
 		{28, pagination_sort.Query{}, 21, 21, 19, &ord175},
 		{18, queryBuilderForTest(5, 0, "id", true), 31, 5, 0, &ord203},
 		{18, queryBuilderForTest(5, 4, "valid_to", true), 31, 5, 0, &ord203},
 		{33, queryBuilderForTest(300, 0, "status", false), 10, 10, 0, &ord186},
+		{26, pagination_sort.Query{}, 7, 7, 1, &ord150},
 	}
 
 	// create testing service
@@ -82,7 +85,7 @@ func TestGetOrdersByCert(t *testing.T) {
 
 	// run tests
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("#%d (order id: %d)", i, tc.expectedAtIndx.ID), func(t *testing.T) {
+		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
 			ords, totalCt, err := store.GetOrdersByCert(tc.certId, tc.q)
 			if err != nil {
 				t.Errorf("get orders by cert failed: %s", err)
@@ -97,7 +100,7 @@ func TestGetOrdersByCert(t *testing.T) {
 			}
 			if tc.testIndx <= len(ords)-1 {
 				compareOrder(t, ords[tc.testIndx], tc.expectedAtIndx)
-			} else {
+			} else if len(ords) != 0 {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(ords))
 			}
 		})
@@ -168,6 +171,7 @@ func TestGetOrders(t *testing.T) {
 		{[]int{-1, 666}, nil, sql.ErrNoRows},                      // just two bad
 		{[]int{666, 203}, []*orders.Order{&ord203}, nil},          // one bad, one good
 		{[]int{198, 203}, []*orders.Order{&ord198, &ord203}, nil}, // two good
+		{[]int{150}, []*orders.Order{&ord150}, nil},               // finalized but key has null last_access
 	}
 
 	// create testing service
@@ -207,6 +211,7 @@ func TestGetOneOrder(t *testing.T) {
 		{198, &ord198, nil},
 		{99, &ord99, nil}, // many nulls
 		{206, &ord206, nil},
+		{150, &ord150, nil}, // finalized but key has null last_access
 	}
 
 	// create testing service

@@ -26,7 +26,7 @@ red-1
 		ApiKeyNew:      "",
 		ApiKeyDisabled: true,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(0, 0),
+		LastAccess:     nil,
 		CreatedAt:      time.Unix(1697142029, 0),
 		UpdatedAt:      time.Unix(1697142029, 0),
 	}
@@ -44,7 +44,7 @@ red-4
 		ApiKeyNew:      "new-key-4-here",
 		ApiKeyDisabled: false,
 		ApiKeyViaUrl:   true,
-		LastAccess:     time.Unix(12345678, 0),
+		LastAccess:     new(time.Unix(12345678, 0)),
 		CreatedAt:      time.Unix(1697142945, 0),
 		UpdatedAt:      time.Unix(1700593381, 0),
 	}
@@ -62,7 +62,7 @@ red-31
 		ApiKeyNew:      "key-api-new-key-31",
 		ApiKeyDisabled: false,
 		ApiKeyViaUrl:   true,
-		LastAccess:     time.Unix(1745952074, 0),
+		LastAccess:     new(time.Unix(1745952074, 0)),
 		CreatedAt:      time.Unix(1709327549, 0),
 		UpdatedAt:      time.Unix(1732748628, 0),
 	}
@@ -80,7 +80,7 @@ red-55
 		ApiKeyNew:      "",
 		ApiKeyDisabled: false,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(0, 0),
+		LastAccess:     nil,
 		CreatedAt:      time.Unix(1743170701, 0),
 		UpdatedAt:      time.Unix(0, 0),
 	}
@@ -98,7 +98,7 @@ red-56
 		ApiKeyNew:      "",
 		ApiKeyDisabled: false,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(0, 0),
+		LastAccess:     nil,
 		CreatedAt:      time.Unix(1743171060, 0),
 		UpdatedAt:      time.Unix(0, 0),
 	}
@@ -116,7 +116,7 @@ red-57
 		ApiKeyNew:      "",
 		ApiKeyDisabled: false,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(0, 0),
+		LastAccess:     nil,
 		CreatedAt:      time.Unix(1743173262, 0),
 		UpdatedAt:      time.Unix(0, 0),
 	}
@@ -134,7 +134,7 @@ red-58
 		ApiKeyNew:      "",
 		ApiKeyDisabled: true,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(0, 0),
+		LastAccess:     nil,
 		CreatedAt:      time.Unix(1743176647, 0),
 		UpdatedAt:      time.Unix(1751563349, 0),
 	}
@@ -152,7 +152,7 @@ red-61
 		ApiKeyNew:      "key-api-new-key-61",
 		ApiKeyDisabled: true,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(0, 0),
+		LastAccess:     nil,
 		CreatedAt:      time.Unix(1751561584, 0),
 		UpdatedAt:      time.Unix(1751561584, 0),
 	}
@@ -170,7 +170,7 @@ red-62
 		ApiKeyNew:      "key-api-new-key-62",
 		ApiKeyDisabled: false,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(1777555691, 0),
+		LastAccess:     new(time.Unix(1777555691, 0)),
 		CreatedAt:      time.Unix(1751738296, 0),
 		UpdatedAt:      time.Unix(1751738296, 0),
 	}
@@ -188,7 +188,7 @@ red-63
 		ApiKeyNew:      "",
 		ApiKeyDisabled: true,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(0, 0),
+		LastAccess:     nil,
 		CreatedAt:      time.Unix(1752254918, 0),
 		UpdatedAt:      time.Unix(1752254918, 0),
 	}
@@ -206,7 +206,7 @@ red-64
 		ApiKeyNew:      "",
 		ApiKeyDisabled: true,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(0, 0),
+		LastAccess:     nil,
 		CreatedAt:      time.Unix(1752258426, 0),
 		UpdatedAt:      time.Unix(1752258426, 0),
 	}
@@ -224,7 +224,7 @@ red-65
 		ApiKeyNew:      "",
 		ApiKeyDisabled: false,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(0, 0),
+		LastAccess:     nil,
 		CreatedAt:      time.Unix(1752262145, 0),
 		UpdatedAt:      time.Unix(1752262145, 0),
 	}
@@ -242,7 +242,7 @@ red-66
 		ApiKeyNew:      "",
 		ApiKeyDisabled: true,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(0, 0),
+		LastAccess:     nil,
 		CreatedAt:      time.Unix(1752266414, 0),
 		UpdatedAt:      time.Unix(1752266418, 0),
 	}
@@ -260,7 +260,7 @@ red-67
 		ApiKeyNew:      "",
 		ApiKeyDisabled: true,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(0, 0),
+		LastAccess:     nil,
 		CreatedAt:      time.Unix(1752418131, 0),
 		UpdatedAt:      time.Unix(1752418131, 0),
 	}
@@ -278,7 +278,7 @@ red-69
 		ApiKeyNew:      "",
 		ApiKeyDisabled: false,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(1777555692, 0),
+		LastAccess:     new(time.Unix(1777555692, 0)),
 		CreatedAt:      time.Unix(1775761592, 0),
 		UpdatedAt:      time.Unix(0, 0),
 	}
@@ -296,7 +296,7 @@ red-70
 		ApiKeyNew:      "",
 		ApiKeyDisabled: false,
 		ApiKeyViaUrl:   false,
-		LastAccess:     time.Unix(0, 0),
+		LastAccess:     nil,
 		CreatedAt:      time.Unix(1779386740, 0),
 		UpdatedAt:      time.Unix(0, 0),
 	}
@@ -312,6 +312,7 @@ func TestGetAllKeys(t *testing.T) {
 		expectedKeyAtIndx *private_keys.Key
 	}{
 		{pagination_sort.Query{}, 19, 19, 0, &key63},
+		{pagination_sort.Query{}, 19, 19, 17, &key55}, // last_access is null
 		{queryBuilderForTest(5, 15, "algorithm", false), 19, 4, 2, &key67},
 		{queryBuilderForTest(10, 0, "last_access", true), 19, 10, 2, &key31},
 	}
@@ -352,6 +353,7 @@ func TestGetOneKeyById(t *testing.T) {
 		{22, sql.ErrNoRows, nil},
 		{31, nil, &key31},
 		{67, nil, &key67},
+		{55, nil, &key55}, // last_access is null
 	}
 
 	// create testing service
@@ -379,6 +381,7 @@ func TestGetOneKeyByName(t *testing.T) {
 		{"fake-bad-name", sql.ErrNoRows, nil},
 		{"cerTWarden", nil, &key31},
 		{"_Another_TEST_Acct_le_Staging", nil, &key63}, // case is wrong
+		{"test008.test.example.com", nil, &key55},      // last_access is null
 	}
 
 	// create testing service
