@@ -22,7 +22,6 @@ func TestPostNewOrder(t *testing.T) {
 		{
 			orders.NewOrderAcmePayload{
 				CertId:         33,
-				AccountId:      1,
 				Status:         "pending",
 				KnownRevoked:   false,
 				Expires:        new(time.Unix(21241234123, 0)),
@@ -61,33 +60,31 @@ func TestPostNewOrder(t *testing.T) {
 			},
 			nil,
 		},
-		// duplicate location (case insensitive) // TODO: fix & uncomment
-		// {
-		// 	orders.NewOrderAcmePayload{
-		// 		CertId:         33,
-		// 		AccountId:      1,
-		// 		Status:         "pending",
-		// 		KnownRevoked:   false,
-		// 		Expires:        new(time.Unix(12345, 0)),
-		// 		DnsIds:         []string{"123.abc.example.com"},
-		// 		Error:          nil,
-		// 		Authorizations: []string{"abc.example.com/authz/1234"},
-		// 		Finalize:       "abc.example.com/finalize/1234",
-		// 		Profile:        nil,
-		// 		Location:       "https://acme-staging-v02.api.letsencrypt.org/acme/ORDER/red-1/rED-198",
-		// 		CreatedAt:      123456,
-		// 		UpdatedAt:      123456,
-		// 	},
-		// 	198,
-		// 	nil,
-		// 	&ord198,
-		// 	nil,
-		// },
+		// duplicate location (case insensitive) -- doesnt update, returns existing id and error
+		{
+			orders.NewOrderAcmePayload{
+				CertId:         33,
+				Status:         "pending",
+				KnownRevoked:   false,
+				Expires:        new(time.Unix(12345, 0)),
+				DnsIds:         []string{"123.abc.example.com"},
+				Error:          nil,
+				Authorizations: []string{"abc.example.com/authz/1234"},
+				Finalize:       "abc.example.com/finalize/1234",
+				Profile:        nil,
+				Location:       "https://acme-staging-v02.api.letsencrypt.org/acme/ORDER/red-1/rED-198",
+				CreatedAt:      123456,
+				UpdatedAt:      123456,
+			},
+			198,
+			orders.ErrOrderExists,
+			&ord198,
+			nil,
+		},
 		// duplicate location (same case)
 		{
 			orders.NewOrderAcmePayload{
 				CertId:         33,
-				AccountId:      1,
 				Status:         "pending",
 				KnownRevoked:   false,
 				Expires:        new(time.Unix(12345, 0)),
@@ -128,9 +125,8 @@ func TestPostNewOrder(t *testing.T) {
 		// bare minimum (new location)
 		{
 			orders.NewOrderAcmePayload{
-				CertId:    33,
-				AccountId: 1,
-				Location:  "https://acme-staging-v02.api.letsencrypt.org/acme/order/red-1/red-209",
+				CertId:   33,
+				Location: "https://acme-staging-v02.api.letsencrypt.org/acme/order/red-1/red-209",
 			},
 			209,
 			nil,
@@ -162,7 +158,6 @@ func TestPostNewOrder(t *testing.T) {
 		{
 			orders.NewOrderAcmePayload{
 				CertId:       35,
-				AccountId:    1,
 				Status:       "processing",
 				KnownRevoked: true,
 				Expires:      new(time.Unix(34555555, 0)),

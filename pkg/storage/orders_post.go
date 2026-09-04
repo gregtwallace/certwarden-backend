@@ -67,7 +67,6 @@ func (store *Storage) PostNewOrder(payload *orders.NewOrderAcmePayload) (newId i
 		acme_orders
 			(
 				certificate_id,
-				acme_account_id,
 				status,
 				known_revoked,
 				expires,
@@ -93,8 +92,7 @@ func (store *Storage) PostNewOrder(payload *orders.NewOrderAcmePayload) (newId i
 				$9,
 				$10,
 				$11,
-				$12,
-				$13
+				$12
 			)
 	RETURNING
 		id
@@ -102,7 +100,6 @@ func (store *Storage) PostNewOrder(payload *orders.NewOrderAcmePayload) (newId i
 
 	err = tx.QueryRowContext(ctx, query,
 		payload.CertId,
-		payload.AccountId,
 		payload.Status,
 		payload.KnownRevoked,
 		timePointerToNullInt64(payload.Expires),

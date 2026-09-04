@@ -40,13 +40,19 @@ func TestPutUserPasswordHash(t *testing.T) {
 			sql.ErrNoRows,
 		},
 		{
-			"uSEr2", // case is wrong TODO: make case insensitive
+			"uSEr2",
 			"newHAsh456",
 			time.Unix(12244224, 0),
-			-2,
-			storage.ErrWrongUpdateRowCount,
+			2,
 			nil,
-			sql.ErrNoRows,
+			&auth.User{
+				ID:           2,
+				Username:     "user2",
+				PasswordHash: "newHAsh456",
+				CreatedAt:    time.Unix(255111225, 0),
+				UpdatedAt:    time.Unix(12244224, 0),
+			},
+			nil,
 		},
 		{
 			"user4",

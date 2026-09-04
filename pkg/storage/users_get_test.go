@@ -42,7 +42,7 @@ func TestGetOneUserByName(t *testing.T) {
 		{"", nil, sql.ErrNoRows},
 		{"fake-bad-username", nil, sql.ErrNoRows},
 		{"admin", &user1, nil},
-		// {"AdMiN", user1, nil}, // case is wrong TODO: make case insensitive
+		{"AdMiN", &user1, nil},
 		{"user2", &user2, nil},
 		{"user4", &user4, nil},
 	}
