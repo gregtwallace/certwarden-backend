@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Funcs to transform sql types into correspoinding pointer type
+// Funcs to transform sql types into corresponding pointer type or vice versa
 
 // nullInt64UnixToTime converts a NullInt64 into an a time.Time pointer
 func nullInt64UnixToTime(nullInt sql.NullInt64) *time.Time {

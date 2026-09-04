@@ -206,10 +206,7 @@ func TestGetAllCerts(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getallcerts")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getallcerts")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedAtIndx.Name), func(t *testing.T) {
@@ -248,10 +245,7 @@ func TestGetOneCertById(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getonecertbyid")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getonecertbyid")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
@@ -279,10 +273,7 @@ func TestGetOneCertByName(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getonecertbyname")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getonecertbyname")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {

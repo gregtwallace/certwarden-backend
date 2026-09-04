@@ -317,10 +317,7 @@ func TestGetAllKeys(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getallkeys")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getallkeys")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedKeyAtIndx.Name), func(t *testing.T) {
@@ -358,10 +355,7 @@ func TestGetOneKeyById(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getonekeybyid")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getonekeybyid")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
@@ -388,10 +382,7 @@ func TestGetOneKeyByName(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getonekeybyname")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getonekeybyname")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
@@ -407,10 +398,7 @@ func TestGetOneKeyByName(t *testing.T) {
 
 func TestGetAvailableKeys(t *testing.T) {
 	// create testing service
-	store, err := openStorageWithTestData(t, "getavailablekeys")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getavailablekeys")
 
 	keys, err := store.GetAvailableKeys()
 	if err != nil {

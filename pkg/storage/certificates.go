@@ -2,6 +2,7 @@ package storage
 
 import (
 	"certwarden-backend/pkg/domain/certificates"
+	"encoding/json"
 	"time"
 )
 
@@ -14,13 +15,13 @@ type certificateDb struct {
 	certificateKeyDb            keyDb
 	certificateAccountDb        accountDb
 	subject                     string
-	subjectAltNames             jsonStringSlice // stored as json array
+	subjectAltNames             []byte // json: []string
 	organization                string
 	organizationalUnit          string
 	country                     string
 	state                       string
 	city                        string
-	csrExtraExtensions          jsonCertExtensionSlice
+	csrExtraExtensions          []byte // json: []certificates.CertExtension
 	preferredRootCN             string
 	lastAccess                  int64
 	createdAt                   int64
@@ -29,14 +30,28 @@ type certificateDb struct {
 	apiKeyNew                   string
 	apiKeyViaUrl                bool
 	postProcessingCommand       string
-	postProcessingEnvironment   jsonStringSlice // stored as json array
+	postProcessingEnvironment   []byte // json: []string
 	postProcessingClientAddress string
 	postProcessingClientKeyB64  string // base64 raw url encoded AES 256 key
 	profile                     string
 }
 
 func (cert *certificateDb) toCertificate() (*certificates.Certificate, error) {
-	certExt, err := cert.csrExtraExtensions.toCertExtensionSlice()
+	// slices
+	certExts := []certificates.CertExtension{}
+	err := json.Unmarshal(cert.csrExtraExtensions, &certExts)
+	if err != nil {
+		return nil, err
+	}
+
+	subjAlts := []string{}
+	err = json.Unmarshal(cert.subjectAltNames, &subjAlts)
+	if err != nil {
+		return nil, err
+	}
+
+	postProcEnv := []string{}
+	err = json.Unmarshal(cert.postProcessingEnvironment, &postProcEnv)
 	if err != nil {
 		return nil, err
 	}
@@ -48,13 +63,13 @@ func (cert *certificateDb) toCertificate() (*certificates.Certificate, error) {
 		Key:                         *cert.certificateKeyDb.toKey(),
 		Account:                     *cert.certificateAccountDb.toAccount(),
 		Subject:                     cert.subject,
-		SubjectAltNames:             cert.subjectAltNames.toSlice(),
+		SubjectAltNames:             subjAlts,
 		Organization:                cert.organization,
 		OrganizationalUnit:          cert.organizationalUnit,
 		Country:                     cert.country,
 		State:                       cert.state,
 		City:                        cert.city,
-		CSRExtraExtensions:          certExt,
+		CSRExtraExtensions:          certExts,
 		PreferredRootCN:             cert.preferredRootCN,
 		LastAccess:                  time.Unix(cert.lastAccess, 0),
 		CreatedAt:                   time.Unix(cert.createdAt, 0),
@@ -63,7 +78,7 @@ func (cert *certificateDb) toCertificate() (*certificates.Certificate, error) {
 		ApiKeyNew:                   cert.apiKeyNew,
 		ApiKeyViaUrl:                cert.apiKeyViaUrl,
 		PostProcessingCommand:       cert.postProcessingCommand,
-		PostProcessingEnvironment:   cert.postProcessingEnvironment.toSlice(),
+		PostProcessingEnvironment:   postProcEnv,
 		PostProcessingClientAddress: cert.postProcessingClientAddress,
 		PostProcessingClientKeyB64:  cert.postProcessingClientKeyB64,
 		Profile:                     cert.profile,

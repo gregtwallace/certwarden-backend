@@ -29,10 +29,7 @@ func TestAcmeAccountInUse(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "acmeaccountinuse")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "acmeaccountinuse")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.acctID), func(t *testing.T) {
@@ -65,10 +62,7 @@ func TestDeleteAcmeAccount(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "deleteacmeaccount")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "deleteacmeaccount")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.acctID), func(t *testing.T) {

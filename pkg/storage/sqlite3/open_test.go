@@ -42,7 +42,7 @@ func TestOpenDB1_Error1(t *testing.T) {
 	fakeApp := newFakeApp(t, "\000x")
 
 	// invalid from name, should cause stat error
-	_, _, _, err := OpenSqlite3Database(fakeApp)
+	_, _, err := OpenSqlite3Database(fakeApp)
 	if !errors.Is(err, errStatToFailed) {
 		t.Fatalf("open expected stat error of toFile but got '%s'", err)
 	}
@@ -53,7 +53,7 @@ func TestOpenDB2_Error2(t *testing.T) {
 	fakeApp := newFakeApp(t, "./test-opendb2/non-exist")
 
 	// invalid from name, should cause stat error
-	_, _, _, err := OpenSqlite3Database(fakeApp)
+	_, _, err := OpenSqlite3Database(fakeApp)
 	if !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("open expected error due to non-existent toFile path but got '%s'", err)
 	}
@@ -108,16 +108,11 @@ func TestOpenDB3_BothExist(t *testing.T) {
 	}
 
 	// do migration
-	db, isNew, onErrCleanup, err := OpenSqlite3Database(fakeApp)
+	db, onErrCleanup, err := OpenSqlite3Database(fakeApp)
 	if err != nil {
 		t.Fatalf("migration error '%s' but expected none", err)
 	}
 	t.Cleanup(onErrCleanup)
-
-	// shouldnt be new
-	if isNew {
-		t.Fatal("migration reported new db, but shouldnt be new")
-	}
 
 	// both exist, ensure new file wasn't overwritten
 	toFileContent, err := os.ReadFile("./test-opendb3/appdata.db")
@@ -196,16 +191,11 @@ func TestOpenDB4_OldPathDoesntExist(t *testing.T) {
 	}
 
 	// do migration
-	db, isNew, onErrCleanup, err := OpenSqlite3Database(fakeApp)
+	db, onErrCleanup, err := OpenSqlite3Database(fakeApp)
 	if err != nil {
 		t.Fatalf("migration error '%s' but expected none", err)
 	}
 	t.Cleanup(onErrCleanup)
-
-	// shouldnt be new
-	if isNew {
-		t.Fatal("migration reported new db, but shouldnt be new")
-	}
 
 	// ensure file wasn't modified
 	toFileContent, err := os.ReadFile("./test-opendb4/appdata.db")
@@ -295,16 +285,11 @@ func TestOpenDB5_OldPathExistsNewDoesnt(t *testing.T) {
 	})
 
 	// do migration
-	db, isNew, onErrCleanup, err := OpenSqlite3Database(fakeApp)
+	db, onErrCleanup, err := OpenSqlite3Database(fakeApp)
 	if err != nil {
 		t.Fatalf("migration error '%s' but expected none", err)
 	}
 	t.Cleanup(onErrCleanup)
-
-	// shouldnt be new
-	if isNew {
-		t.Fatal("migration reported new db, but shouldnt be new")
-	}
 
 	// ensure file was moved but wasn't modified
 	toFileContent, err := os.ReadFile("./test-opendb5/appdata.db")
@@ -395,16 +380,11 @@ func TestOpenDB6_NoFilesExist(t *testing.T) {
 	})
 
 	// do migration
-	db, isNew, onErrCleanup, err := OpenSqlite3Database(fakeApp)
+	db, onErrCleanup, err := OpenSqlite3Database(fakeApp)
 	if err != nil {
 		t.Fatalf("migration error '%s' but expected none", err)
 	}
 	t.Cleanup(onErrCleanup)
-
-	// should be new
-	if !isNew {
-		t.Fatal("migration reported not-new db, but should be new")
-	}
 
 	// ensure file was created
 	_, err = os.Stat("./test-opendb6/appdata.db")

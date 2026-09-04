@@ -66,10 +66,7 @@ func TestGetAllAcmeServers(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getallacmeservers")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getallacmeservers")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedServerAtIndx.Name), func(t *testing.T) {
@@ -108,10 +105,7 @@ func TestGetOneServerById(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getoneserverbyid")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getoneserverbyid")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
@@ -139,10 +133,7 @@ func TestGetOneServerByName(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getoneserverbyname")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getoneserverbyname")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {

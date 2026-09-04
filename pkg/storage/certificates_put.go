@@ -13,6 +13,22 @@ func (store *Storage) PutCertUpdate(payload *certificates.UpdatePayload) (*certi
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
+	// slices
+	certExts, err := sliceToJsonString(payload.CSRExtraExtensions, true)
+	if err != nil {
+		return nil, err
+	}
+
+	subjAlts, err := sliceToJsonString(payload.SubjectAltNames, true)
+	if err != nil {
+		return nil, err
+	}
+
+	postProcEnv, err := sliceToJsonString(payload.PostProcessingEnvironment, true)
+	if err != nil {
+		return nil, err
+	}
+
 	query := `
 		UPDATE
 			certificates
@@ -45,19 +61,19 @@ func (store *Storage) PutCertUpdate(payload *certificates.UpdatePayload) (*certi
 		payload.Name,
 		payload.Description,
 		payload.PrivateKeyId,
-		makeJsonStringSlice(payload.SubjectAltNames, true),
+		subjAlts,
 		payload.Organization,
 		payload.OrganizationalUnit,
 		payload.Country,
 		payload.State,
 		payload.City,
-		makeJsonCertExtensionSlice(payload.CSRExtraExtensions, true),
+		certExts,
 		payload.PreferredRootCN,
 		payload.ApiKey,
 		payload.ApiKeyNew,
 		payload.ApiKeyViaUrl,
 		payload.PostProcessingCommand,
-		makeJsonStringSlice(payload.PostProcessingEnvironment, true),
+		postProcEnv,
 		payload.PostProcessingClientAddress,
 		payload.PostProcessingClientKeyB64,
 		payload.Profile,

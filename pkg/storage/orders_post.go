@@ -4,7 +4,6 @@ import (
 	"certwarden-backend/pkg/domain/orders"
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 )
 
@@ -47,13 +46,20 @@ func (store *Storage) PostNewOrder(payload *orders.NewOrderAcmePayload) (newId i
 	}
 
 	// deal with error obj
-	var acmeErr *string
-	if payload.Error != nil {
-		ae, err := json.Marshal(payload.Error)
-		if err != nil {
-			return -2, err
-		}
-		acmeErr = new(string(ae))
+	acmeErr, err := structToNullableJsonString(payload.Error)
+	if err != nil {
+		return -2, err
+	}
+
+	// slices
+	dnsIds, err := sliceToJsonString(payload.DnsIds, false)
+	if err != nil {
+		return -2, err
+	}
+
+	authz, err := sliceToJsonString(payload.Authorizations, false)
+	if err != nil {
+		return -2, err
 	}
 
 	query = `
@@ -100,9 +106,9 @@ func (store *Storage) PostNewOrder(payload *orders.NewOrderAcmePayload) (newId i
 		payload.Status,
 		payload.KnownRevoked,
 		timePointerToNullInt64(payload.Expires),
-		makeJsonStringSlice(payload.DnsIds, false),
+		dnsIds,
 		acmeErr,
-		makeJsonStringSlice(payload.Authorizations, false),
+		authz,
 		payload.Finalize,
 		payload.Profile,
 		payload.Location,

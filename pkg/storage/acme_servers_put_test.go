@@ -128,10 +128,7 @@ func TestPutServerUpdate(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putserverupdate")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putserverupdate")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {

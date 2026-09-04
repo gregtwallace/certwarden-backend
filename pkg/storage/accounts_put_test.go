@@ -238,10 +238,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putacmeacctupdate")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putacmeacctupdate")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
@@ -368,10 +365,7 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "putacmeacctnewkey")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putacmeacctnewkey")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {

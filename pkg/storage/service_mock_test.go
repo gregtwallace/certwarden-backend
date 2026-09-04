@@ -55,34 +55,15 @@ func makeFakeApp(t *testing.T, appDataPath string) *fakeApp {
 
 // openStorageWithTestData makes a copy of the testing data db and then returns a storage service
 // that uses the copy; Cleanup() should be called at the end of the test
-func openStorageWithTestData(t *testing.T, testName string) (*storage.Storage, error) {
+func openStorageWithTestData(t *testing.T, testName string) *storage.Storage {
 	thisTestFolder := tempFileStorage + testName
 
 	// copy test data to temp appDataPath for tests to run
-	_, err := os.Stat(thisTestFolder)
-	if err == nil {
-		err := os.RemoveAll(thisTestFolder)
-		if err != nil {
-			t.Errorf("failed to delete '%s'", thisTestFolder)
-		}
-	} else if !helpers_test.ErrorsIs(err, os.ErrNotExist) {
-		return nil, err
-	}
-
-	err = os.MkdirAll(thisTestFolder, os.FileMode(0o777))
-	if err != nil {
-		return nil, err
-	}
-	t.Cleanup(func() {
-		err := os.RemoveAll(thisTestFolder)
-		if err != nil {
-			t.Errorf("failed to delete '%s'", thisTestFolder)
-		}
-	})
+	helpers_test.MakeTempStorage(t, thisTestFolder)
 
 	testDataF, err := os.Open(testDataDbFile)
 	if err != nil {
-		return nil, err
+		t.Fatalf("failed to open test data file '%s'", err)
 	}
 	t.Cleanup(func() {
 		err := testDataF.Close()
@@ -93,7 +74,7 @@ func openStorageWithTestData(t *testing.T, testName string) (*storage.Storage, e
 
 	testDataCopyF, err := os.Create(thisTestFolder + "/appdata.db")
 	if err != nil {
-		return nil, err
+		t.Fatalf("failed to create test data file copy '%s'", err)
 	}
 	t.Cleanup(func() {
 		err := testDataCopyF.Close()
@@ -104,19 +85,19 @@ func openStorageWithTestData(t *testing.T, testName string) (*storage.Storage, e
 
 	_, err = io.Copy(testDataCopyF, testDataF)
 	if err != nil {
-		return nil, err
+		t.Fatalf("failed to copy test data '%s'", err)
 	}
 
 	err = testDataCopyF.Sync()
 	if err != nil {
-		return nil, err
+		t.Fatalf("failed to sync test data '%s'", err)
 	}
 
 	fakeApp := makeFakeApp(t, thisTestFolder)
 
 	store, err := storage.OpenStorage(fakeApp)
 	if err != nil {
-		return nil, err
+		t.Fatalf("failed to open storage '%s'", err)
 	}
 	t.Cleanup(func() {
 		err := store.Close()
@@ -125,7 +106,7 @@ func openStorageWithTestData(t *testing.T, testName string) (*storage.Storage, e
 		}
 	})
 
-	return store, nil
+	return store
 }
 
 // queryBuilderForTest generates a Query for use in tests

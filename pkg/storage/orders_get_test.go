@@ -30,13 +30,10 @@ func TestGetAllValidCurrentOrders(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getallcerts")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getallcerts")
 
 	// override timenow
-	revertToDefaultTimeNow := storage.SetTimeNow(time.Unix(1779991589, 0))
+	revertToDefaultTimeNow := storage.SetTimeNow(t, time.Unix(1779991589, 0))
 	t.Cleanup(revertToDefaultTimeNow)
 
 	// run tests
@@ -81,10 +78,7 @@ func TestGetOrdersByCert(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getordersbycert")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getordersbycert")
 
 	// run tests
 	for i, tc := range testCases {
@@ -114,10 +108,7 @@ func TestGetAllIncompleteOrderIds(t *testing.T) {
 	expectedOrderIDs := []int{99, 98, 97, 96}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getallincompleteorderids")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getallincompleteorderids")
 
 	// run test
 	ordIDs, err := store.GetAllIncompleteOrderIds()
@@ -149,10 +140,7 @@ func TestGetNewestIncompleteCertOrderId(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getnewestincompletecertorderid")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getnewestincompletecertorderid")
 
 	// run tests
 	for i, tc := range testCases {
@@ -183,10 +171,7 @@ func TestGetOrders(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getorders")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getorders")
 
 	// run tests
 	for i, tc := range testCases {
@@ -225,10 +210,7 @@ func TestGetOneOrder(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getoneorder")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getoneorder")
 
 	// run tests
 	for i, tc := range testCases {
@@ -261,13 +243,10 @@ func TestGetCertNewestValidOrderById(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getcertnewestvalidorderbyid")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getcertnewestvalidorderbyid")
 
 	// override timenow
-	revertToDefaultTimeNow := storage.SetTimeNow(time.Unix(1779991589, 0))
+	revertToDefaultTimeNow := storage.SetTimeNow(t, time.Unix(1779991589, 0))
 	t.Cleanup(revertToDefaultTimeNow)
 
 	// run tests
@@ -301,13 +280,10 @@ func TestGetCertNewestValidOrderByName(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getcertnewestvalidorderbyname")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getcertnewestvalidorderbyname")
 
 	// override timenow
-	revertToDefaultTimeNow := storage.SetTimeNow(time.Unix(1779991589, 0))
+	revertToDefaultTimeNow := storage.SetTimeNow(t, time.Unix(1779991589, 0))
 	t.Cleanup(revertToDefaultTimeNow)
 
 	// run tests

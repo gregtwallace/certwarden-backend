@@ -27,10 +27,7 @@ func TestKeyInUse(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "keyinuse")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "keyinuse")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.keyID), func(t *testing.T) {
@@ -62,10 +59,7 @@ func TestDeleteKey(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "deletekey")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "deletekey")
 
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("id: %d", tc.keyID), func(t *testing.T) {

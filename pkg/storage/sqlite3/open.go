@@ -25,7 +25,7 @@ type App interface {
 }
 
 // OpenSqlite3Database
-func OpenSqlite3Database(app App) (_ *sql.DB, isNewDb bool, onErrCleanup func(), _ error) {
+func OpenSqlite3Database(app App) (_ *sql.DB, onErrCleanup func(), _ error) {
 	// full path and append options to the Dsn for connString
 	dbWithPath := app.GetDataStorageAppDataPath() + "/" + dbFilename
 
@@ -39,14 +39,14 @@ func OpenSqlite3Database(app App) (_ *sql.DB, isNewDb bool, onErrCleanup func(),
 		dbExists = false
 	} else if err != nil {
 		// any other error
-		return nil, false, func() {}, fmt.Errorf("sqlite3: failed to stat db (%w) (%w)", err, errStatToFailed)
+		return nil, func() {}, fmt.Errorf("sqlite3: failed to stat db (%w) (%w)", err, errStatToFailed)
 	}
 
 	// db doesn't exist, check old path
 	if !dbExists {
 		didMigrate, err := migrateDbFileLocation(oldFilePath+"/"+dbFilename, dbWithPath)
 		if err != nil {
-			return nil, false, func() {}, fmt.Errorf("sqlite3: db migration failed (%w)", err)
+			return nil, func() {}, fmt.Errorf("sqlite3: db migration failed (%w)", err)
 		}
 		if didMigrate {
 			// old db migrated
@@ -63,7 +63,7 @@ func OpenSqlite3Database(app App) (_ *sql.DB, isNewDb bool, onErrCleanup func(),
 		// create db file
 		err := os.WriteFile(dbWithPath, []byte{}, dbFileMode)
 		if err != nil {
-			return nil, false, func() {}, fmt.Errorf("sqlite3: failed to create new database file (%w)", err)
+			return nil, func() {}, fmt.Errorf("sqlite3: failed to create new database file (%w)", err)
 		}
 	}
 
@@ -77,7 +77,7 @@ func OpenSqlite3Database(app App) (_ *sql.DB, isNewDb bool, onErrCleanup func(),
 				logger.Errorf("sqlite3: failed to remove newly created db file (%s)", err)
 			}
 		}
-		return nil, false, func() {}, fmt.Errorf("sqlite3: failed to open database file (%w)", err)
+		return nil, func() {}, fmt.Errorf("sqlite3: failed to open database file (%w)", err)
 	}
 
 	// cleanup func for if there is a failure later
@@ -94,5 +94,5 @@ func OpenSqlite3Database(app App) (_ *sql.DB, isNewDb bool, onErrCleanup func(),
 		}
 	}
 
-	return db, newDbFile, onErrCleanup, nil
+	return db, onErrCleanup, nil
 }

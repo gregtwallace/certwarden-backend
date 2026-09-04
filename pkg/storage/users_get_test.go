@@ -48,10 +48,7 @@ func TestGetOneUserByName(t *testing.T) {
 	}
 
 	// create testing service
-	store, err := openStorageWithTestData(t, "getoneuserbyusername")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getoneuserbyusername")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.username), func(t *testing.T) {

@@ -76,10 +76,7 @@ func backupTestBattery(t *testing.T, store *storage.Storage, expectLocked bool) 
 
 func TestLockDBForBackup(t *testing.T) {
 	// create testing service
-	store, err := openStorageWithTestData(t, "lockdbforbackup")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "lockdbforbackup")
 
 	unlock, err := store.LockDBForBackup()
 	if err != nil {
