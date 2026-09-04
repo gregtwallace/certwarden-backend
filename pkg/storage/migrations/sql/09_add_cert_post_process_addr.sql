@@ -125,9 +125,7 @@ UPDATE certificates
   SET
     post_processing_client_address = subject
   WHERE
-    post_processing_client_key IS NOT NULL
-    AND
-    post_processing_client_key != ''
+    LENGTH(post_processing_client_key) > 0
     AND
     subject NOT LIKE '*%';
 
