@@ -3,6 +3,7 @@ package storage
 import (
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/domain/private_keys/key_crypto"
+	"database/sql"
 	"time"
 )
 
@@ -18,7 +19,7 @@ type keyDb struct {
 	apiKeyNew      string
 	apiKeyDisabled bool
 	apiKeyViaUrl   bool
-	lastAccess     int64
+	lastAccess     sql.NullInt64
 	createdAt      int64
 	updatedAt      int64
 }
@@ -36,7 +37,7 @@ func (key *keyDb) toKey() *private_keys.Key {
 		ApiKeyNew:      key.apiKeyNew,
 		ApiKeyDisabled: key.apiKeyDisabled,
 		ApiKeyViaUrl:   key.apiKeyViaUrl,
-		LastAccess:     time.Unix(key.lastAccess, 0),
+		LastAccess:     nullInt64UnixToTime(key.lastAccess),
 		CreatedAt:      time.Unix(key.createdAt, 0),
 		UpdatedAt:      time.Unix(key.updatedAt, 0),
 	}

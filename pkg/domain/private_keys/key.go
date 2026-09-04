@@ -18,7 +18,7 @@ type Key struct {
 	ApiKeyNew      string
 	ApiKeyDisabled bool
 	ApiKeyViaUrl   bool
-	LastAccess     time.Time
+	LastAccess     *time.Time
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }
@@ -32,10 +32,15 @@ type KeySummaryResponse struct {
 	Algorithm      key_crypto.Algorithm `json:"algorithm"`
 	ApiKeyDisabled bool                 `json:"api_key_disabled"`
 	ApiKeyViaUrl   bool                 `json:"api_key_via_url"`
-	LastAccess     int64                `json:"last_access"`
+	LastAccess     *int64               `json:"last_access"`
 }
 
 func (key *Key) SummaryResponse() KeySummaryResponse {
+	var la *int64
+	if key.LastAccess != nil {
+		la = new(key.LastAccess.Unix())
+	}
+
 	return KeySummaryResponse{
 		ID:             key.ID,
 		Name:           key.Name,
@@ -43,7 +48,7 @@ func (key *Key) SummaryResponse() KeySummaryResponse {
 		Algorithm:      key.Algorithm,
 		ApiKeyDisabled: key.ApiKeyDisabled,
 		ApiKeyViaUrl:   key.ApiKeyViaUrl,
-		LastAccess:     key.LastAccess.Unix(),
+		LastAccess:     la,
 	}
 }
 

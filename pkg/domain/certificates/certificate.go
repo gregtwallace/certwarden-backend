@@ -23,7 +23,7 @@ type Certificate struct {
 	City                        string
 	CSRExtraExtensions          []CertExtension
 	PreferredRootCN             string
-	LastAccess                  time.Time
+	LastAccess                  *time.Time
 	CreatedAt                   time.Time
 	UpdatedAt                   time.Time
 	ApiKey                      string
@@ -47,7 +47,7 @@ type certificateSummaryResponse struct {
 	Subject         string                            `json:"subject"`
 	SubjectAltNames []string                          `json:"subject_alts"`
 	ApiKeyViaUrl    bool                              `json:"api_key_via_url"`
-	LastAccess      int64                             `json:"last_access"`
+	LastAccess      *int64                            `json:"last_access"`
 }
 
 type certificateKeySummaryResponse struct {
@@ -69,6 +69,11 @@ type certificateAccountServerSummaryResponse struct {
 }
 
 func (cert *Certificate) summaryResponse() certificateSummaryResponse {
+	var la *int64
+	if cert.LastAccess != nil {
+		la = new(cert.LastAccess.Unix())
+	}
+
 	return certificateSummaryResponse{
 		ID:          cert.ID,
 		Name:        cert.Name,
@@ -90,7 +95,7 @@ func (cert *Certificate) summaryResponse() certificateSummaryResponse {
 		Subject:         cert.Subject,
 		SubjectAltNames: cert.SubjectAltNames,
 		ApiKeyViaUrl:    cert.ApiKeyViaUrl,
-		LastAccess:      cert.LastAccess.Unix(),
+		LastAccess:      la,
 	}
 }
 

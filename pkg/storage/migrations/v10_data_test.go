@@ -23,7 +23,7 @@ func insertDataV10(t *testing.T, db *sql.DB) {
 
 	_, err := db.ExecContext(ctx, q)
 	if err != nil {
-		t.Fatalf("insertdatav10: failed to insert certificate 7 (%s)", err)
+		t.Fatalf("insertdatav10: failed to insert certificate 8 (%s)", err)
 	}
 
 	// order -- with new attribute

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"certwarden-backend/pkg/domain/certificates"
+	"database/sql"
 	"encoding/json"
 	"time"
 )
@@ -23,7 +24,7 @@ type certificateDb struct {
 	city                        string
 	csrExtraExtensions          []byte // json: []certificates.CertExtension
 	preferredRootCN             string
-	lastAccess                  int64
+	lastAccess                  sql.NullInt64
 	createdAt                   int64
 	updatedAt                   int64
 	apiKey                      string
@@ -71,7 +72,7 @@ func (cert *certificateDb) toCertificate() (*certificates.Certificate, error) {
 		City:                        cert.city,
 		CSRExtraExtensions:          certExts,
 		PreferredRootCN:             cert.preferredRootCN,
-		LastAccess:                  time.Unix(cert.lastAccess, 0),
+		LastAccess:                  nullInt64UnixToTime(cert.lastAccess),
 		CreatedAt:                   time.Unix(cert.createdAt, 0),
 		UpdatedAt:                   time.Unix(cert.updatedAt, 0),
 		ApiKey:                      cert.apiKey,
