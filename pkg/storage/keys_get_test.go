@@ -312,6 +312,7 @@ func TestGetAllKeys(t *testing.T) {
 		expectedKeyAtIndx *private_keys.Key
 	}{
 		{pagination_sort.Query{}, 19, 19, 0, &key63},
+		{pagination_sort.Query{}, 19, 19, 17, &key55}, // last_access is null
 		{queryBuilderForTest(5, 15, "algorithm", false), 19, 4, 2, &key67},
 		{queryBuilderForTest(10, 0, "last_access", true), 19, 10, 2, &key31},
 	}
@@ -352,6 +353,7 @@ func TestGetOneKeyById(t *testing.T) {
 		{22, sql.ErrNoRows, nil},
 		{31, nil, &key31},
 		{67, nil, &key67},
+		{55, nil, &key55}, // last_access is null
 	}
 
 	// create testing service
@@ -379,6 +381,7 @@ func TestGetOneKeyByName(t *testing.T) {
 		{"fake-bad-name", sql.ErrNoRows, nil},
 		{"cerTWarden", nil, &key31},
 		{"_Another_TEST_Acct_le_Staging", nil, &key63}, // case is wrong
+		{"test008.test.example.com", nil, &key55},      // last_access is null
 	}
 
 	// create testing service
