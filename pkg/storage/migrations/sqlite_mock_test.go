@@ -21,11 +21,11 @@ type gooseLogger struct {
 
 // implement goose.Logger
 func (gl *gooseLogger) Fatalf(format string, v ...any) {
-	gl.logger.Fatalf(format, v)
+	gl.logger.Fatalf(format, v...)
 }
 
 func (gl *gooseLogger) Printf(format string, v ...any) {
-	gl.logger.Infof(format, v)
+	gl.logger.Infof(format, v...)
 }
 
 // make app
