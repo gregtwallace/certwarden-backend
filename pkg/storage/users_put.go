@@ -36,7 +36,7 @@ func (store *Storage) PutUserPasswordHash(username, passwordHash string, updated
 		return -2, err
 	}
 	if rowsAffected != 1 {
-		return -2, errorWrongUpdateRowCount(1, rowsAffected)
+		return -2, errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	// get updated key to return

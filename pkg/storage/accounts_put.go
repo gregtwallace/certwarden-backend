@@ -46,7 +46,7 @@ func (store *Storage) PutAcmeAccountUpdate(payload *acme_accounts.UpdatePayload)
 		return nil, err
 	}
 	if rowsAffected != 1 {
-		return nil, errorWrongUpdateRowCount(1, rowsAffected)
+		return nil, errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	// get updated account to return
@@ -88,7 +88,7 @@ func (store *Storage) PutAcmeAccountNewKey(payload *acme_accounts.RolloverKeyPay
 		return nil, err
 	}
 	if rowsAffected != 1 {
-		return nil, errorWrongUpdateRowCount(1, rowsAffected)
+		return nil, errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	// get updated account to return
