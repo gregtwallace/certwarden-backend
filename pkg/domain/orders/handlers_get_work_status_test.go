@@ -50,7 +50,7 @@ func TestIdleWorkStatusHandlersReturnEmptyStatus(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			response := httptest.NewRecorder()
-			request := httptest.NewRequest(http.MethodGet, "/status", nil)
+			request := httptest.NewRequest(http.MethodGet, "/status", http.NoBody)
 
 			if errJSON := test.handler(response, request); errJSON != nil {
 				t.Fatalf("idle status returned an error: %v", errJSON)
