@@ -167,9 +167,11 @@ func TestGetOrders(t *testing.T) {
 		expectedOrds []*orders.Order
 		expectedErr  error
 	}{
-		{[]int{-1}, nil, sql.ErrNoRows},                           // just one bad
-		{[]int{-1, 666}, nil, sql.ErrNoRows},                      // just two bad
-		{[]int{666, 203}, []*orders.Order{&ord203}, nil},          // one bad, one good
+		{[]int{}, nil, sql.ErrNoRows},                             // nothing requested
+		{[]int{-1}, nil, sql.ErrNoRows},                           // just one, but its bad
+		{[]int{-1, 666}, nil, sql.ErrNoRows},                      // two bad
+		{[]int{666, 203}, nil, storage.ErrWrongRowCount},          // one bad, one good
+		{[]int{203}, []*orders.Order{&ord203}, nil},               // one good
 		{[]int{198, 203}, []*orders.Order{&ord198, &ord203}, nil}, // two good
 		{[]int{150}, []*orders.Order{&ord150}, nil},               // finalized but key has null last_access
 	}
