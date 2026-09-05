@@ -735,22 +735,25 @@ func (store *Storage) GetOrders(orderIDs []int) (ordersSlice []*orders.Order, _ 
 		ordersSlice = append(ordersSlice, oneOrderConvert)
 	}
 
+	// no result if < 1
 	if len(ordersSlice) < 1 {
 		return nil, sql.ErrNoRows
+	}
+
+	// wrong result (i.e., some don't exist if length is wrong)
+	if len(ordersSlice) != len(orderIDs) {
+		return nil, errorWrongRowCount(int64(len(orderIDs)), int64(len(ordersSlice)))
 	}
 
 	return ordersSlice, nil
 }
 
 // GetOneOrder fetches a specific Order by ID
+// TODO: Untangle this from GetOrders (when its removed)
 func (store *Storage) GetOneOrder(orderID int) (*orders.Order, error) {
 	result, err := store.GetOrders([]int{orderID})
 	if err != nil {
 		return nil, err
-	}
-
-	if len(result) < 1 {
-		return nil, sql.ErrNoRows
 	}
 
 	return result[0], nil

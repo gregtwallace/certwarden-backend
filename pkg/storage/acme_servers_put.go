@@ -42,7 +42,7 @@ func (store *Storage) PutServerUpdate(payload *acme_servers.UpdatePayload) (*acm
 		return nil, err
 	}
 	if rowsAffected != 1 {
-		return nil, errorWrongUpdateRowCount(1, rowsAffected)
+		return nil, errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	// get updated server to return

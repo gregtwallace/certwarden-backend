@@ -9,10 +9,15 @@ import (
 // sql error types
 
 var (
-	ErrInUse               = errors.New("record in use")
-	ErrWrongUpdateRowCount = errors.New("wrong record update row count")
+	ErrInUse                 = errors.New("record in use")
+	ErrWrongRowCount         = errors.New("got wrong row count")
+	ErrWrongAffectedRowCount = errors.New("wrong affected row count")
 )
 
-func errorWrongUpdateRowCount(expected, got int64) error {
-	return fmt.Errorf("%w (expected: '%d', got: '%d')", ErrWrongUpdateRowCount, expected, got)
+func errorWrongRowCount(expectedCount, gotCount int64) error {
+	return fmt.Errorf("%w (expected: '%d', got: '%d')", ErrWrongRowCount, expectedCount, gotCount)
+}
+
+func errorWrongAffectedRowCount(expected, got int64) error {
+	return fmt.Errorf("%w (expected: '%d', got: '%d')", ErrWrongAffectedRowCount, expected, got)
 }
