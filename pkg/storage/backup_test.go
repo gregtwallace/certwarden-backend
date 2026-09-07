@@ -17,10 +17,9 @@ func backupCheckErrOK(t *testing.T, err error, expectLockErr bool) {
 		if !helpers_test.ErrorsIs(err, expectedErr) {
 			t.Errorf("err expected '%s' but got '%s'", expectedErr, helpers_test.ErrorToVal(err))
 		}
-	} else {
-		if err != nil {
-			t.Errorf("err expected '%s' but got '%s'", helpers_test.ErrorToVal(nil), helpers_test.ErrorToVal(err))
-		}
+
+	} else if err != nil {
+		t.Errorf("err expected '%s' but got '%s'", helpers_test.ErrorToVal(nil), helpers_test.ErrorToVal(err))
 	}
 }
 
