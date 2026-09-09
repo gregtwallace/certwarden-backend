@@ -23,7 +23,7 @@ var (
 // getAccount returns the Account for the specified account id.
 func (service *Service) getAccount(id int) (*Account, *output.JsonError) {
 	// if id is not in valid range, it is definitely not valid
-	if !validation.IsIdExistingValidRange(id) {
+	if !validation.IsValidIDValue(id) {
 		service.logger.Debug(ErrIdBad)
 		return nil, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
@@ -51,7 +51,7 @@ func (service *Service) getAccount(id int) (*Account, *output.JsonError) {
 // is already in use by the specified id.
 func (service *Service) nameValid(accountName string, accountId *int) bool {
 	// basic check
-	if !validation.NameValid(accountName) {
+	if !validation.IsValidName(accountName) {
 		return false
 	}
 
