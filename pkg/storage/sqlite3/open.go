@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 const dbFilename = "appdata.db"
@@ -68,7 +68,7 @@ func OpenSqlite3Database(app App) (_ *sql.DB, onErrCleanup func(), _ error) {
 	}
 
 	// open db
-	db, err := sql.Open("sqlite3", dbWithPath+"?"+dbOptions.Encode())
+	db, err := sql.Open("sqlite", dbWithPath+"?"+dbOptions.Encode())
 	if err != nil {
 		// if db file is new, delete it on error
 		if newDbFile {
