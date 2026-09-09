@@ -7,6 +7,7 @@ Options:
  SELFHOSTDNS_USERNAME Username
  SELFHOSTDNS_PASSWORD Password
  SELFHOSTDNS_MAP Subdomain name
+ SELFHOSTDNS_UPDATE_URL API url. Optional. Default "https://account.selfhost.de/cgi-bin/api.pl"
 Issues: github.com/acmesh-official/acme.sh/issues/4291
 Author: Marvin Edeler
 '
@@ -18,9 +19,11 @@ dns_selfhost_add() {
   _debug fulldomain "$fulldomain"
   _debug txtvalue "$txt"
 
-  SELFHOSTDNS_UPDATE_URL="https://selfhost.de/cgi-bin/api.pl"
+  DEFAULT_SELFHOSTDNS_UPDATE_URL="https://account.selfhost.de/cgi-bin/api.pl"
 
   # Get values, but don't save until we successfully validated
+  SELFHOSTDNS_UPDATE_URL="${SELFHOSTDNS_UPDATE_URL:-$(_readaccountconf_mutable SELFHOSTDNS_UPDATE_URL)}"
+  SELFHOSTDNS_UPDATE_URL="${SELFHOSTDNS_UPDATE_URL:-$DEFAULT_SELFHOSTDNS_UPDATE_URL}"
   SELFHOSTDNS_USERNAME="${SELFHOSTDNS_USERNAME:-$(_readaccountconf_mutable SELFHOSTDNS_USERNAME)}"
   SELFHOSTDNS_PASSWORD="${SELFHOSTDNS_PASSWORD:-$(_readaccountconf_mutable SELFHOSTDNS_PASSWORD)}"
   # These values are domain dependent, so read them from there
@@ -82,6 +85,11 @@ dns_selfhost_add() {
     else
       SELFHOSTDNS_MAP_LAST_USED_INTERNAL="$SELFHOSTDNS_MAP_LAST_USED_INTERNAL $newLastUsedRidForDomainEntry"
     fi
+  fi
+
+  # Save api url if different from default
+  if [ "$DEFAULT_SELFHOSTDNS_UPDATE_URL" != "$SELFHOSTDNS_UPDATE_URL" ]; then
+    _saveaccountconf_mutable SELFHOSTDNS_UPDATE_URL "$SELFHOSTDNS_UPDATE_URL"
   fi
 
   # Now that we know the values are good, save them

@@ -21,7 +21,7 @@ IONOS_TXT_TTL=60 # minimum accepted by API
 IONOS_TXT_PRIO=10
 
 dns_ionos_add() {
-  fulldomain=$1
+  fulldomain="$(echo "$1" | _lower_case)"
   txtvalue=$2
 
   if ! _ionos_init; then
@@ -39,7 +39,7 @@ dns_ionos_add() {
 }
 
 dns_ionos_rm() {
-  fulldomain=$1
+  fulldomain="$(echo "$1" | _lower_case)"
   txtvalue=$2
 
   if ! _ionos_init; then
@@ -151,7 +151,7 @@ _ionos_rest() {
 
   if [ "$method" != "GET" ]; then
     export _H2="Accept: application/json"
-    export _H3="Content-Type: application/json"
+    export _H3=
 
     _response="$(_post "$data" "$IONOS_API$route" "" "$method" "application/json")"
   else
