@@ -34,11 +34,11 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 	}
 
 	// basic check
-	if !validation.IsIdExistingValidRange(certId) {
+	if !validation.IsValidIDValue(certId) {
 		service.logger.Debug(errCertIdBad)
 		return output.ErrorJsonErrValidationFailed(errCertIdBad)
 	}
-	if !validation.IsIdExistingValidRange(orderId) {
+	if !validation.IsValidIDValue(orderId) {
 		service.logger.Debug(errOrderIdBad)
 		return output.ErrorJsonErrValidationFailed(errOrderIdBad)
 	}

@@ -16,7 +16,7 @@ var (
 // getAcmeServer returns the Server for the specified id or an error.
 func (service *Service) getServer(acmeServerId int) (*Server, *output.JsonError) {
 	// basic check
-	if !validation.IsIdExistingValidRange(acmeServerId) {
+	if !validation.IsValidIDValue(acmeServerId) {
 		service.logger.Debug(ErrIdBad)
 		return nil, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
@@ -61,7 +61,7 @@ func (service *Service) AcmeServerValid(acmeServerId int) bool {
 // is already in use by the specified id.
 func (service *Service) nameValid(serverName string, serverId *int) bool {
 	// basic character/length check
-	if !validation.NameValid(serverName) {
+	if !validation.IsValidName(serverName) {
 		return false
 	}
 

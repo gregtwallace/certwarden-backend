@@ -1,13 +1,15 @@
-package validation
+package validation_test
 
 import (
+	"certwarden-backend/pkg/validation"
+	"fmt"
 	"strconv"
 	"testing"
 )
 
 // valid domains
 var validDomains = []string{
-	"test.greg.co",
+	"test.greg",
 	"domain.com",
 	"aNoThER.oRG",
 	"my.some.another.com.co",
@@ -60,124 +62,134 @@ var invalidPorts = []int{
 func TestValidation_DomainValid(t *testing.T) {
 	// test valid domains
 	for _, domain := range validDomains {
-		// wildcard on (no wildcard tests though)
-		valid := DomainValid(domain, true)
-		if !valid {
-			t.Errorf("valid domain name test case '%s' returned invalid", domain)
-		}
+		t.Run(fmt.Sprintf("valid domain: %q", domain), func(t *testing.T) {
+			// wildcard on (no wildcard tests though)
+			valid := validation.DomainValid(domain, true)
+			if !valid {
+				t.Errorf("valid domain name test case '%s' returned invalid", domain)
+			}
 
-		// wildcard off (no wildcard tests though)
-		valid = DomainValid(domain, false)
-		if !valid {
-			t.Errorf("valid domain name test case '%s' returned invalid", domain)
-		}
+			// wildcard off (no wildcard tests though)
+			valid = validation.DomainValid(domain, false)
+			if !valid {
+				t.Errorf("valid domain name test case '%s' returned invalid", domain)
+			}
 
-		// test with wild card + valid domain + wildcard ok on
-		domain = "*." + domain
+			// test with wild card + valid domain + wildcard ok on
+			domain = "*." + domain
 
-		valid = DomainValid(domain, true)
-		if !valid {
-			t.Errorf("valid domain name wildcard test case '%s' returned invalid", domain)
-		}
+			valid = validation.DomainValid(domain, true)
+			if !valid {
+				t.Errorf("valid domain name wildcard test case '%s' returned invalid", domain)
+			}
 
-		// test with wild card + valid domain + wildcard ok NOT on
-		valid = DomainValid(domain, false)
-		// should NOT be valid since support is off
-		if valid {
-			t.Errorf("valid domain name wildcard test case with wildcard off '%s' returned valid", domain)
-		}
+			// test with wild card + valid domain + wildcard ok NOT on
+			valid = validation.DomainValid(domain, false)
+			// should NOT be valid since support is off
+			if valid {
+				t.Errorf("valid domain name wildcard test case with wildcard off '%s' returned valid", domain)
+			}
+		})
 	}
 
 	// test invalid domains
 	for _, domain := range invalidDomains {
-		// wildcard on (no wildcard tests though)
-		valid := DomainValid(domain, true)
-		if valid {
-			t.Errorf("invalid domain name test case '%s' returned valid", domain)
-		}
+		t.Run(fmt.Sprintf("invalid domain: %q", domain), func(t *testing.T) {
+			// wildcard on (no wildcard tests though)
+			valid := validation.DomainValid(domain, true)
+			if valid {
+				t.Errorf("invalid domain name test case '%s' returned valid", domain)
+			}
 
-		// wildcard off (no wildcard tests though)
-		valid = DomainValid(domain, false)
-		if valid {
-			t.Errorf("invalid domain name test case '%s' returned valid", domain)
-		}
+			// wildcard off (no wildcard tests though)
+			valid = validation.DomainValid(domain, false)
+			if valid {
+				t.Errorf("invalid domain name test case '%s' returned valid", domain)
+			}
 
-		// test with wild card + invalid domain + wildcard ok on
-		domain = "*." + domain
+			// test with wild card + invalid domain + wildcard ok on
+			domain = "*." + domain
 
-		valid = DomainValid(domain, true)
-		if valid {
-			t.Errorf("invalid domain name wildcard test case '%s' returned valid", domain)
-		}
+			valid = validation.DomainValid(domain, true)
+			if valid {
+				t.Errorf("invalid domain name wildcard test case '%s' returned valid", domain)
+			}
 
-		// test with wild card + invalid domain + wildcard ok NOT on
-		valid = DomainValid(domain, false)
-		if valid {
-			t.Errorf("invalid domain name wildcard test case '%s' returned valid", domain)
-		}
+			// test with wild card + invalid domain + wildcard ok NOT on
+			valid = validation.DomainValid(domain, false)
+			if valid {
+				t.Errorf("invalid domain name wildcard test case '%s' returned valid", domain)
+			}
+		})
 	}
-
 }
 
 func TestValidation_DomainPortValid(t *testing.T) {
 	// test valid domains
 	for _, domain := range validDomains {
-		// test them without a port component
-		valid := DomainAndPortValid(domain)
-		if !valid {
-			t.Errorf("valid domain name wildcard test case '%s' returned invalid", domain)
-		}
+		t.Run(fmt.Sprintf("valid domain: %q", domain), func(t *testing.T) {
 
-		// valid ports
-		for _, port := range validPorts {
-			testStr := domain + ":" + strconv.Itoa(port)
-			valid := DomainAndPortValid(testStr)
+			// test them without a port component
+			valid := validation.DomainAndPortValid(domain)
 			if !valid {
-				t.Errorf("valid domain and port test case '%s' returned invalid", testStr)
+				t.Errorf("valid domain name wildcard test case '%s' returned invalid", domain)
 			}
-		}
 
-		// invalid ports
-		for _, port := range invalidPorts {
-			testStr := domain + ":" + strconv.Itoa(port)
-			valid := DomainAndPortValid(testStr)
-			if valid {
-				t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+			// valid ports
+			for _, port := range validPorts {
+				testStr := domain + ":" + strconv.Itoa(port)
+				valid := validation.DomainAndPortValid(testStr)
+				if !valid {
+					t.Errorf("valid domain and port test case '%s' returned invalid", testStr)
+				}
 			}
-		}
+
+			// invalid ports
+			for _, port := range invalidPorts {
+				testStr := domain + ":" + strconv.Itoa(port)
+				valid := validation.DomainAndPortValid(testStr)
+				if valid {
+					t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+				}
+			}
+		})
 	}
 
 	// test invalid domains
 	for _, domain := range invalidDomains {
-		// valid ports
-		for _, port := range validPorts {
-			testStr := domain + ":" + strconv.Itoa(port)
-			valid := DomainAndPortValid(testStr)
-			if valid {
-				t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+		t.Run(fmt.Sprintf("invalid domain: %q", domain), func(t *testing.T) {
+			// valid ports
+			for _, port := range validPorts {
+				testStr := domain + ":" + strconv.Itoa(port)
+				valid := validation.DomainAndPortValid(testStr)
+				if valid {
+					t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+				}
 			}
-		}
 
-		// invalid ports
-		for _, port := range invalidPorts {
-			testStr := domain + ":" + strconv.Itoa(port)
-			valid := DomainAndPortValid(testStr)
-			if valid {
-				t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+			// invalid ports
+			for _, port := range invalidPorts {
+				testStr := domain + ":" + strconv.Itoa(port)
+				valid := validation.DomainAndPortValid(testStr)
+				if valid {
+					t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+				}
 			}
-		}
+		})
 	}
 
 	// couple tests with extra colons
-	testStr := "example.com::5055"
-	valid := DomainAndPortValid(testStr)
-	if valid {
-		t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
-	}
+	t.Run("extra colons", func(t *testing.T) {
+		testStr := "example.com::5055"
+		valid := validation.DomainAndPortValid(testStr)
+		if valid {
+			t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+		}
 
-	testStr = "example.com:test.com:5055"
-	valid = DomainAndPortValid(testStr)
-	if valid {
-		t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
-	}
+		testStr = "example.com:test.com:5055"
+		valid = validation.DomainAndPortValid(testStr)
+		if valid {
+			t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+		}
+	})
 }
