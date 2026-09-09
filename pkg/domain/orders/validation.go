@@ -25,11 +25,11 @@ var (
 // order does not belong to the cert.
 func (service *Service) getOrder(certId, orderId int) (*Order, *output.JsonError) {
 	// basic check
-	if !validation.IsIdExistingValidRange(certId) {
+	if !validation.IsValidIDValue(certId) {
 		service.logger.Debug(errCertIdBad)
 		return nil, output.ErrorJsonErrValidationFailed(errCertIdBad)
 	}
-	if !validation.IsIdExistingValidRange(orderId) {
+	if !validation.IsValidIDValue(orderId) {
 		service.logger.Debug(errOrderIdBad)
 		return nil, output.ErrorJsonErrValidationFailed(errOrderIdBad)
 	}

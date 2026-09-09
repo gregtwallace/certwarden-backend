@@ -75,14 +75,14 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	// keep track if new key will be generated and saved
 	generatedKeyPem := ""
 	// if new key id specified
-	if validation.IsIdNew(*payload.PrivateKeyID) {
+	if validation.IsNewID(*payload.PrivateKeyID) {
 		// confirm algorithm is specified
 		if payload.NewKeyAlgorithmValue == nil || *payload.NewKeyAlgorithmValue == "" {
 			service.logger.Debug(ErrKeyAlgorithmNone)
 			return output.ErrorJsonErrValidationFailed(ErrKeyAlgorithmNone)
 		}
 		// confirm name is valid for a new key
-		if payload.Name == nil || !service.keys.NameValid(*payload.Name, nil) {
+		if payload.Name == nil || !service.keys.IsValidName(*payload.Name, nil) {
 			service.logger.Debug(ErrKeyNameBad)
 			return output.ErrorJsonErrValidationFailed(ErrKeyNameBad)
 		}

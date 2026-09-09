@@ -74,7 +74,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) *o
 	}
 
 	// if id is new, provide some info
-	if validation.IsIdNew(id) {
+	if validation.IsNewID(id) {
 		return service.GetNewAccountOptions(w, r)
 	}
 
