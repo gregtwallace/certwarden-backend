@@ -127,62 +127,69 @@ func TestValidation_DomainValid(t *testing.T) {
 func TestValidation_DomainPortValid(t *testing.T) {
 	// test valid domains
 	for _, domain := range validDomains {
-		// test them without a port component
-		valid := validation.DomainAndPortValid(domain)
-		if !valid {
-			t.Errorf("valid domain name wildcard test case '%s' returned invalid", domain)
-		}
+		t.Run(fmt.Sprintf("valid domain: %q", domain), func(t *testing.T) {
 
-		// valid ports
-		for _, port := range validPorts {
-			testStr := domain + ":" + strconv.Itoa(port)
-			valid := validation.DomainAndPortValid(testStr)
+			// test them without a port component
+			valid := validation.DomainAndPortValid(domain)
 			if !valid {
-				t.Errorf("valid domain and port test case '%s' returned invalid", testStr)
+				t.Errorf("valid domain name wildcard test case '%s' returned invalid", domain)
 			}
-		}
 
-		// invalid ports
-		for _, port := range invalidPorts {
-			testStr := domain + ":" + strconv.Itoa(port)
-			valid := validation.DomainAndPortValid(testStr)
-			if valid {
-				t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+			// valid ports
+			for _, port := range validPorts {
+				testStr := domain + ":" + strconv.Itoa(port)
+				valid := validation.DomainAndPortValid(testStr)
+				if !valid {
+					t.Errorf("valid domain and port test case '%s' returned invalid", testStr)
+				}
 			}
-		}
+
+			// invalid ports
+			for _, port := range invalidPorts {
+				testStr := domain + ":" + strconv.Itoa(port)
+				valid := validation.DomainAndPortValid(testStr)
+				if valid {
+					t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+				}
+			}
+		})
 	}
 
 	// test invalid domains
 	for _, domain := range invalidDomains {
-		// valid ports
-		for _, port := range validPorts {
-			testStr := domain + ":" + strconv.Itoa(port)
-			valid := validation.DomainAndPortValid(testStr)
-			if valid {
-				t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+		t.Run(fmt.Sprintf("invalid domain: %q", domain), func(t *testing.T) {
+			// valid ports
+			for _, port := range validPorts {
+				testStr := domain + ":" + strconv.Itoa(port)
+				valid := validation.DomainAndPortValid(testStr)
+				if valid {
+					t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+				}
 			}
-		}
 
-		// invalid ports
-		for _, port := range invalidPorts {
-			testStr := domain + ":" + strconv.Itoa(port)
-			valid := validation.DomainAndPortValid(testStr)
-			if valid {
-				t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+			// invalid ports
+			for _, port := range invalidPorts {
+				testStr := domain + ":" + strconv.Itoa(port)
+				valid := validation.DomainAndPortValid(testStr)
+				if valid {
+					t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+				}
 			}
-		}
+		})
 	}
 
 	// couple tests with extra colons
-	testStr := "example.com::5055"
-	valid := validation.DomainAndPortValid(testStr)
-	if valid {
-		t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
-	}
+	t.Run("extra colons", func(t *testing.T) {
+		testStr := "example.com::5055"
+		valid := validation.DomainAndPortValid(testStr)
+		if valid {
+			t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+		}
 
-	testStr = "example.com:test.com:5055"
-	valid = validation.DomainAndPortValid(testStr)
-	if valid {
-		t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
-	}
+		testStr = "example.com:test.com:5055"
+		valid = validation.DomainAndPortValid(testStr)
+		if valid {
+			t.Errorf("invalid domain and port test case '%s' returned valid", testStr)
+		}
+	})
 }

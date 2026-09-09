@@ -115,7 +115,7 @@ func TestValidation_RetryAfterValid(t *testing.T) {
 		})
 	}
 
-	// invalid format
+	// invalid formats
 	for i, invalidFormatString := range retryAfterInvalidFormatTests {
 		t.Run(fmt.Sprintf("%d: invalid time format %q", i, invalidFormatString), func(t *testing.T) {
 			parsedVal, err := validation.ParseRetryAfter(invalidFormatString)
