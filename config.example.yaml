@@ -77,6 +77,9 @@
     # the idp provides your client id and secret
     'client_id': 'abcdABCD'
     'client_secret': '123456'
+    # the scope required for superadmin access; defaults to `certwarden:superadmin`
+    # Some providers require the exact, fully-qualified resource scope.
+    'superadmin_scope': 'certwarden:superadmin'
     # the redirect url should be the BACKEND host, with the path:
     # `/certwarden/api/v1/app/auth/oidc/callback`
     'api_redirect_uri': 'https://cw.example.com:4055/certwarden/api/v1/app/auth/oidc/callback'
