@@ -16,10 +16,24 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const oidcCertWardenScope = "certwarden:superadmin"
 const oidcPendingSessionMinExp = 5 * time.Minute
 
-var oidcRequiredScopes = []string{oidc.ScopeOpenID, oidc.ScopeOfflineAccess, "profile", oidcCertWardenScope}
+var oidcCertWardenScope string
+var oidcRequiredScopes []string
+
+// setOIDCScopes sets the appropriate scopes based on the issuer URL
+func setOIDCScopes(issuerURL string, appURI string) {
+	// Default scope format for all providers
+	oidcCertWardenScope = "certwarden:superadmin"
+
+	// For Microsoft Entra ID, the scope format requires the full application URI prefix
+	if strings.Contains(issuerURL, "login.microsoftonline.com") && appURI != "" {
+		oidcCertWardenScope = fmt.Sprintf("%s/certwarden:superadmin", appURI)
+	}
+
+	// Set the required scopes array
+	oidcRequiredScopes = []string{oidc.ScopeOpenID, oidc.ScopeOfflineAccess, "profile", oidcCertWardenScope}
+}
 
 // oidcPendingSession tracks various bits of information across the different steps of the OIDC
 // autentication and authorization flow
