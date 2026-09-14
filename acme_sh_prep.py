@@ -55,9 +55,9 @@ with tempfile.TemporaryDirectory() as tempdir:
 
   # path traversal check
   temp_as_path = Path(tempdir).resolve()
-  src_root_as_path = Path(path_src_root).resolve()
+  path_src_root = Path(path_src_root).resolve()
 
-  if not src_root_as_path.is_relative_to(temp_as_path):
+  if not path_src_root.is_relative_to(temp_as_path):
     print("Security Error: Path traversal attempt detected.")
     exit(-5)
 
