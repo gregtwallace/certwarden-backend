@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+import argparse
+import os.path
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import tarfile
+
+# Usage
+# python3 ./build_release.py [--gitrequired]
+
+# if the gitrequired flag is used, the script will abort if it fails to get the current
+# git commit
+
+# Assumptions:
+# Backend source is cloned into [root]/[src]/certwarden-backend
+
+# target strings must be in the format:
+#   `GOOS_GOARCH`
+# see: https://github.com/golang/go/blob/master/src/internal/syslist/syslist.go
+# or unofficially: https://gist.github.com/asukakenji/f15ba7e588ac42795f421b48b8aede63
+targets = [
+   "windows_amd64",
+   "linux_amd64",
+   "linux_arm64",
+   "darwin_amd64",
+   "darwin_arm64",
+   "freebsd_amd64",
+   "freebsd_arm64",
+]
+
+
+##
+### Helper Functions
+##
+
+# Function to get current commit hash without needing git executable or lib
+# Modified version of: https://stackoverflow.com/a/68215738/7572076
+def get_commit():
+  git_folder = Path('./.git')
+  head_content = Path(git_folder, 'HEAD').read_text().split('\n')[0]
+  commitRegex = re.compile(r"^[a-fA-F0-9]{40}$")
+
+  # HEAD references another file in ref
+  if head_content.startswith("ref: "):
+    head_name = head_content.split(' ')[-1]
+    head_ref = Path(git_folder,head_name)
+    ref_file_content = head_ref.read_text().replace('\n','')
+
+    if re.match(commitRegex, ref_file_content):
+      return ref_file_content
+
+  # HEAD has a commit in it (such as for a tag)
+  if re.match(commitRegex, head_content):
+    return head_content
+
+  return ""
+
+
+##
+### Main Script
+##
+
+print("initializing certwarden-backend build script")
+
+# define paths
+path_src_backend = os.path.dirname(os.path.realpath(__file__))
+path_src = Path(__file__).parents[1]
+path_root = Path(__file__).parents[2]
+
+path_output = os.path.join(path_root, "_out", "backend")
+path_release = os.path.join(path_output, "_release")
+
+# parse args
+parser = argparse.ArgumentParser()
+parser.add_argument('--gitrequired', action='store_true')
+args = parser.parse_args()
+
+# get version number
+versionString = ""
+versionPattern = re.compile(r"appVersion = \"([0-9]+\.[0-9]+\.[0-9]+)\"")
+
+with open(os.path.join(path_src_backend, 'pkg', 'domain', 'app', 'app.go')) as appGoFile:
+  for line in appGoFile:
+    match = re.search(versionPattern, line)
+    if match != None:
+      versionString = match.group(1)
+      break
+
+if versionString == "":
+  print("aborting: failed to parse version number")
+  exit(-1)
+
+# try to get hash
+gitHead = get_commit()
+if gitHead != "":
+  versionString += "_(" + gitHead[:7] + ")"
+else:
+  print("failed to get git hash")
+  if args.gitrequired:
+    print("aborting: git hash is required by --gitrequired")
+    exit(-1)
+
+#
+print("building certwarden-backend version", versionString)
+
+# recreate paths
+if os.path.exists(path_output):
+  print("build output directory already exists, removing it")
+  shutil.rmtree(path_output)
+os.makedirs(path_output)
+
+# loop through and build all targets
+for target in targets:
+  print("building certwarden-backend for target:", target, "...")
+
+  # environment vars
+  split = target.split("_")
+  GOOS = split[0]
+  GOARCH = split[1]
+  os.environ["GOOS"] = GOOS
+  os.environ["GOARCH"] = GOARCH
+  os.environ["CGO_ENABLED"] = "0"
+
+  # send build product to GOOS_GOARCH subfolders
+  targetOutDir = os.path.join(path_output, target)
+  if not os.path.exists(targetOutDir):
+    os.makedirs(targetOutDir)
+
+  # special case for windows to add file extensions
+  extension = ""
+  if GOOS.lower() == "windows":
+    extension = ".exe"
+
+  # build binary
+  subprocess.run(["go", "build", "-o", f"{targetOutDir}/certwarden{extension}", "./cmd/api-server"])
+
+  # copy other important files for release
+  shutil.copy("config.default.yaml", targetOutDir)
+  shutil.copy("config.example.yaml", targetOutDir)
+  shutil.copy("config.changelog.md", targetOutDir)
+  shutil.copy("README.md", targetOutDir)
+  shutil.copy("LICENSE.md", targetOutDir)
+  if gitHead:
+    with open(targetOutDir + "/HEAD-backend", "a") as f:
+      f.write(gitHead)
+  if GOOS.lower() == "windows":
+    shutil.copytree(os.path.join(path_src_backend, 'scripts', 'windows'), os.path.join(targetOutDir, "scripts"))
+  else:
+    shutil.copytree(os.path.join(path_src_backend, 'scripts', 'other'), os.path.join(targetOutDir, "scripts"))
+
+  # compress release file
+  # special case for windows & mac to use zip format
+  if GOOS.lower() == "windows" or GOOS.lower() == "darwin":
+    shutil.make_archive(f"{path_release}/certwarden-backend-{versionString}_{target}", "zip", targetOutDir)
+  else:
+    # for others, use gztar and set permissions on the files
+
+    # filter for setting permissions
+    def set_permissions(tarinfo):
+      if tarinfo.name == "certwarden":
+        tarinfo.mode = 0o0755
+      else:
+        tarinfo.mode = 0o0644
+      return tarinfo
+
+    # make tar
+    with tarfile.open(f"{path_release}/certwarden-{versionString}_{target}.tar.gz", "w:gz") as tar:
+        for file in os.listdir(targetOutDir):
+          tar.add(os.path.join(targetOutDir, file), arcname=file, recursive=True, filter=set_permissions)
+
+print("exiting certwarden-backend build script")
