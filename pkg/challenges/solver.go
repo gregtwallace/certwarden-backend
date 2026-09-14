@@ -100,7 +100,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	// valid or invalid state.
 
 	// inform ACME that the challenge is ready
-	challenge, err = acmeService.InstructServerToValidateChallenge(challenge.Url, key)
+	err = acmeService.DoChallengeValidation(challenge.Url, key)
 	if err != nil {
 		return err
 	}
@@ -109,16 +109,17 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	time.Sleep(7 * time.Second)
 
 	// monitor challenge status using exponential backoff
+	challengeURL := challenge.Url
 	challCheckFunc := func() error {
 		// get challenge
-		challenge, err = acmeService.GetChallenge(challenge.Url, key)
+		challenge, err := acmeService.GetChallenge(challengeURL, key)
 		if err != nil {
 			return err
 		}
 
 		// log error if invalid
 		if challenge.Status == "invalid" {
-			service.logger.Infof("challenges: challenge %s status invalid; acme error: %s", challenge.Url, challenge.Error)
+			service.logger.Infof("challenges: challenge %q status invalid; acme error: %q", challengeURL, challenge.Error)
 		}
 
 		// done if Status has reached a final status
@@ -127,7 +128,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		}
 
 		// not a final status
-		return fmt.Errorf("challenge %s status (%s) not a final status", challenge.Status, challenge.Url)
+		return fmt.Errorf("challenge %q status (%q) not a final status", challenge.Status, challengeURL)
 	}
 
 	// notify: info log challenge checks
