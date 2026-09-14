@@ -40,7 +40,7 @@ targets = [
 def get_commit():
   git_folder = Path('./.git')
   head_content = Path(git_folder, 'HEAD').read_text().split('\n')[0]
-  commitRegex = re.compile(r"^[a-fA-F0-9]{40}$")
+  commit_regex = re.compile(r"^[a-fA-F0-9]{40}$")
 
   # HEAD references another file in ref
   if head_content.startswith("ref: "):
@@ -48,11 +48,11 @@ def get_commit():
     head_ref = Path(git_folder,head_name)
     ref_file_content = head_ref.read_text().replace('\n','')
 
-    if re.match(commitRegex, ref_file_content):
+    if re.match(commit_regex, ref_file_content):
       return ref_file_content
 
   # HEAD has a commit in it (such as for a tag)
-  if re.match(commitRegex, head_content):
+  if re.match(commit_regex, head_content):
     return head_content
 
   return ""
@@ -79,7 +79,7 @@ args = parser.parse_args()
 
 # get version number
 versionString = ""
-versionPattern = re.compile(r"appVersion = \"([0-9]+\.[0-9]+\.[0-9]+)\"")
+versionPattern = re.compile(r"appVersion = \"(\d+\.\d+\.\d+)\"")
 
 with open(os.path.join(path_src_backend, 'pkg', 'domain', 'app', 'app.go')) as appGoFile:
   for line in appGoFile:

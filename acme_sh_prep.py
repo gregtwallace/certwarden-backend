@@ -19,7 +19,7 @@ import zipfile
 
 # don't change pathing without also updating: `pkg/challenges/providers/dns01acmesh/cmd.go`
 path_out_acmesh_root = os.path.join("scripts", "other", "acme.sh")
-path_out_acmesh_dnsapi = os.path.join("scripts", "other", "acme.sh", "dnsapi_cw")
+path_out_acmesh_dnsapi = os.path.join(path_out_acmesh_root, "dnsapi_cw")
 
 ###
 ###
