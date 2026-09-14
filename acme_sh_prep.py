@@ -10,6 +10,7 @@
 import argparse
 import io
 import os
+from pathlib import Path
 import shutil
 import tempfile
 import urllib.request
@@ -51,6 +52,14 @@ with tempfile.TemporaryDirectory() as tempdir:
   ## Validation
 
   path_src_root = os.path.join(tempdir, f"acme.sh-{args.tag}")
+
+  # path traversal check
+  temp_as_path = Path(tempdir).resolve()
+  src_root_as_path = Path(path_src_root).resolve()
+
+  if not src_root_as_path.is_relative_to(temp_as_path):
+    print("Security Error: Path traversal attempt detected.")
+    exit(-5)
 
   # verify acme.sh main script exists
   path_src_acmesh_root_script = os.path.join(path_src_root, "acme.sh")
