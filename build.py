@@ -69,7 +69,7 @@ path_src_backend = os.path.dirname(os.path.realpath(__file__))
 path_src = Path(__file__).parents[1]
 path_root = Path(__file__).parents[2]
 
-path_output = os.path.join(path_root, "_out", "backend")
+path_output = os.path.join(path_root, "_cw_out", "backend")
 
 # parse args
 parser = argparse.ArgumentParser()
