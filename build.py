@@ -125,15 +125,15 @@ os.environ["CGO_ENABLED"] = "0"
 # send build product to GOOS_GOARCH subfolders
 # path traversal check
 path_output = Path(path_output).resolve()
-target_out_dir = Path(os.path.join(path_output, target)).resolve()
+path_target_out = Path(os.path.join(path_output, target)).resolve()
 
-if not target_out_dir.is_relative_to(path_output):
+if not path_target_out.is_relative_to(path_output):
   print("Security Error: Path traversal attempt detected.")
   exit(-5)
 
 
-if not os.path.exists(target_out_dir):
-  os.makedirs(target_out_dir)
+if not os.path.exists(path_target_out):
+  os.makedirs(path_target_out)
 
 # special case for windows to add file extensions
 extension = ""
@@ -141,23 +141,23 @@ if GOOS.lower() == "windows":
   extension = ".exe"
 
 # build binary
-result = subprocess.run(["go", "build", "-o", f"{target_out_dir}/certwarden{extension}", "./cmd/api-server"], cwd=path_src_backend)
+result = subprocess.run(["go", "build", "-o", f"{path_target_out}/certwarden{extension}", "./cmd/api-server"], cwd=path_src_backend)
 if result.returncode != 0:
   print(f"build certwarden-backend target '{target}' failed")
   exit(-2)
 
 # copy other important files for release
-shutil.copy(os.path.join(path_src_backend, "config.default.yaml"), target_out_dir)
-shutil.copy(os.path.join(path_src_backend, "config.example.yaml"), target_out_dir)
-shutil.copy(os.path.join(path_src_backend, "config.changelog.md"), target_out_dir)
-shutil.copy(os.path.join(path_src_backend, "README.md"), target_out_dir)
-shutil.copy(os.path.join(path_src_backend, "LICENSE.md"), target_out_dir)
+shutil.copy(os.path.join(path_src_backend, "config.default.yaml"), path_target_out)
+shutil.copy(os.path.join(path_src_backend, "config.example.yaml"), path_target_out)
+shutil.copy(os.path.join(path_src_backend, "config.changelog.md"), path_target_out)
+shutil.copy(os.path.join(path_src_backend, "README.md"), path_target_out)
+shutil.copy(os.path.join(path_src_backend, "LICENSE.md"), path_target_out)
 if gitHead:
-  with open(target_out_dir + "/HEAD-backend", "a") as f:
+  with open(os.path.join(path_target_out, "HEAD-backend"), "a") as f:
     f.write(gitHead)
 if GOOS.lower() == "windows":
-  shutil.copytree(os.path.join(path_src_backend, 'scripts', 'windows'), os.path.join(target_out_dir, "scripts"))
+  shutil.copytree(os.path.join(path_src_backend, 'scripts', 'windows'), os.path.join(path_target_out, "scripts"))
 else:
-  shutil.copytree(os.path.join(path_src_backend, 'scripts', 'other'), os.path.join(target_out_dir, "scripts"))
+  shutil.copytree(os.path.join(path_src_backend, 'scripts', 'other'), os.path.join(path_target_out, "scripts"))
 
 print("exiting certwarden-backend build script")
