@@ -12,9 +12,14 @@ import (
 
 var errChallengeRetriesExhausted = errors.New("challenges: solving failed: challenge failed to move to final state (timeout)")
 
-// Solve accepts an ACME identifier and a slice of challenges and then solves the challenge using a provider
-// for the specific domain. If no provider exists or solving otherwise fails, an error is returned.
-func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, key acme.AccountKey, acmeService *acme.Service) (err error) {
+// Solve resolves an authorization to a finalized state by selecting a challenge and using a provider
+// to solve that challenge. If no provider exists or solving otherwise fails, an error is returned.
+func (service *Service) Solve(authURL string, auth acme.Authorization, key acme.AccountKey, acmeService *acme.Service) (err error) {
+	// decompose auth into pieces (to avoid more extensive refactor for now)
+	// TODO: Refactor
+	identifier := auth.Identifier
+	challenges := auth.Challenges
+
 	// confirm Type is correct (only dns is supported)
 	if identifier.Type != acme.IdentifierTypeDns {
 		return fmt.Errorf("challenges: acme identifier is type (%s); only 'dns' is supported", string(identifier.Type))
@@ -30,13 +35,13 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	challengeType := provider.AcmeChallengeType()
-	challenge, err := acme.SelectChallenge(challengeType, challenges)
+	selectedChall, err := acme.SelectChallenge(challengeType, challenges)
 	if err != nil {
 		return fmt.Errorf("challenges: error selecting challenge (%w)", err)
 	}
 
 	// vars for provision/deprovision
-	token := challenge.Token
+	token := selectedChall.Token
 	keyAuth, err := key.KeyAuthorization(token)
 	if err != nil {
 		return fmt.Errorf("challenges: failed to make key auth (%w)", err)
@@ -96,11 +101,11 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	}
 
 	// Below this point is to inform ACME the challenge is ready to be validated
-	// by the server and to subsequently monitor the challenge to be moved to the
+	// by the server and to subsequently monitor the authorization to be moved to the
 	// valid or invalid state.
 
 	// inform ACME that the challenge is ready
-	err = acmeService.DoChallengeValidation(challenge.Url, key)
+	err = acmeService.DoChallengeValidation(selectedChall.Url, key)
 	if err != nil {
 		return err
 	}
@@ -108,27 +113,28 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	// sleep a little before first check
 	time.Sleep(7 * time.Second)
 
-	// monitor challenge status using exponential backoff
-	challengeURL := challenge.Url
+	// monitor auth status using exponential backoff
+	// RFC 8555 s. 7.5.1 states to poll the authorization after telling the ACME server
+	// the client is ready for challenge validation
 	challCheckFunc := func() error {
 		// get challenge
-		challenge, err := acmeService.GetChallenge(challengeURL, key)
+		authoriz, err := acmeService.GetAuth(authURL, key)
 		if err != nil {
 			return err
 		}
 
 		// log error if invalid
-		if challenge.Status == "invalid" {
-			service.logger.Infof("challenges: challenge %q status invalid; acme error: %q", challengeURL, challenge.Error)
+		if authoriz.Status == "invalid" {
+			service.logger.Infof("challenges: authorization %q status invalid", authURL)
 		}
 
 		// done if Status has reached a final status
-		if challenge.Status == "valid" || challenge.Status == "invalid" {
+		if authoriz.Status == "valid" || authoriz.Status == "invalid" {
 			return nil
 		}
 
 		// not a final status
-		return fmt.Errorf("challenge %q status (%q) not a final status", challenge.Status, challengeURL)
+		return fmt.Errorf("challenge %q status (%q) not a final status", authoriz.Status, authURL)
 	}
 
 	// notify: info log challenge checks
