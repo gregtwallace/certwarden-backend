@@ -4,18 +4,24 @@ import (
 	"certwarden-backend/pkg/domain/acme_servers"
 	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/storage"
+	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 )
 
 // backupCheckErrOK triggers an error on t if err does not match the expected err
-// Note: this includes deadline expiration as a lock error
+// Note: this includes deadline expiration as a lock error. With the DSN busy
+// timeout (sqlite3.dbOptions) a write blocked by the backup's SHARED lock waits
+// for the lock instead of failing immediately, so it surfaces either as the
+// busy error (busy timeout elapsed first) or as the storage query deadline
+// (dbTimeout elapsed first) — both mean "the write was blocked".
 func backupCheckErrOK(t *testing.T, err error, expectLockErr bool) {
 	if expectLockErr {
 		expectedErr := helpers_test.NewTestErrorStringComp("database is locked")
-		if !helpers_test.ErrorsIs(err, expectedErr) {
-			t.Errorf("err expected '%s' but got '%s'", expectedErr, helpers_test.ErrorToVal(err))
+		if !helpers_test.ErrorsIs(err, expectedErr) && !errors.Is(err, context.DeadlineExceeded) {
+			t.Errorf("err expected '%s' or '%s' but got '%s'", expectedErr, context.DeadlineExceeded, helpers_test.ErrorToVal(err))
 		}
 
 	} else if err != nil {

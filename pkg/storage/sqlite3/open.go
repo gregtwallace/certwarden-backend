@@ -17,6 +17,12 @@ const dbFileMode = 0o600
 
 var dbOptions = url.Values{
 	"_fk": []string{"true"}, // enforce foreign key constraints
+	// busy timeout (ms): wait for a lock instead of failing immediately with
+	// SQLITE_BUSY ("database is locked"). github.com/mattn/go-sqlite3 applied
+	// 5000 ms by default; modernc.org/sqlite applies none unless set here.
+	// Backups hold a SHARED lock while the data dir is zipped and every
+	// download updates last_access, so concurrent writes are routine.
+	"_busy_timeout": []string{"5000"},
 }
 
 type App interface {
