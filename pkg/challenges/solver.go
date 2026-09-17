@@ -14,7 +14,7 @@ var errChallengeRetriesExhausted = errors.New("challenges: solving failed: chall
 
 // Solve resolves an authorization to a finalized state by selecting a challenge and using a provider
 // to solve that challenge. If no provider exists or solving otherwise fails, an error is returned.
-func (service *Service) Solve(authURL string, auth acme.Authorization, key acme.AccountKey, acmeService *acme.Service) (err error) {
+func (service *Service) Solve(authURL string, auth *acme.Authorization, key acme.AccountKey, acmeService *acme.Service) (err error) {
 	// decompose auth into pieces (to avoid more extensive refactor for now)
 	// TODO: Refactor
 	identifier := auth.Identifier

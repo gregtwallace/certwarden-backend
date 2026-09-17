@@ -103,7 +103,7 @@ func (service *Service) fulfillAuth(authUrl string, key acme.AccountKey, acmeSer
 
 	// call solver if auth is 'pending' (i.e., needs solving)
 	if auth.Status == "pending" {
-		err = service.challenges.Solve(authUrl, auth, key, acmeService)
+		err = service.challenges.Solve(authUrl, &auth, key, acmeService)
 		// return error if couldn't solve
 		if err != nil {
 			return err
