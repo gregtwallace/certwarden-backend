@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -58,6 +59,16 @@ type Config struct {
 		ClientID       string `yaml:"client_id"`
 		ClientSecret   string `yaml:"client_secret"`
 		APIRedirectURI string `yaml:"api_redirect_uri"`
+		// Scopes overrides the scopes requested from, and required of, the
+		// IdP. Empty = the upstream default (which includes the custom
+		// certwarden:superadmin scope). IdPs that cannot issue custom scopes
+		// (e.g. Cloudflare Access) need this, and then AUTHORIZATION no
+		// longer comes from that scope: use AllowedEmails and/or the IdP's
+		// own access policy.
+		Scopes []string `yaml:"scopes"`
+		// AllowedEmails, if non-empty, restricts OIDC login to ID tokens whose
+		// verified email claim is in this list (case-insensitive).
+		AllowedEmails []string `yaml:"allowed_emails"`
 	} `yaml:"oidc"`
 }
 
@@ -77,6 +88,8 @@ type Service struct {
 		pendingSessions   *safemap.SafeMap[*oidcPendingSession]
 		oauth2Config      *oauth2.Config
 		idTokenVerifier   *oidc.IDTokenVerifier
+		requiredScopes    []string
+		allowedEmails     map[string]struct{}
 	}
 }
 
@@ -146,6 +159,24 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 				Endpoint: provider.Endpoint(),
 				Scopes:   oidcRequiredScopes,
+			}
+
+			// scope override (see Config.OIDC.Scopes)
+			service.oidc.requiredScopes = oidcRequiredScopes
+			if len(cfg.OIDC.Scopes) > 0 {
+				service.oidc.requiredScopes = cfg.OIDC.Scopes
+				service.oidc.oauth2Config.Scopes = cfg.OIDC.Scopes
+				service.logger.Infof("auth: oidc scopes overridden by config: %s", strings.Join(cfg.OIDC.Scopes, " "))
+			}
+
+			// optional email allow-list (see Config.OIDC.AllowedEmails)
+			if len(cfg.OIDC.AllowedEmails) > 0 {
+				service.oidc.allowedEmails = make(map[string]struct{}, len(cfg.OIDC.AllowedEmails))
+				for _, e := range cfg.OIDC.AllowedEmails {
+					service.oidc.allowedEmails[strings.ToLower(strings.TrimSpace(e))] = struct{}{}
+				}
+			} else if len(cfg.OIDC.Scopes) > 0 {
+				service.logger.Warn("auth: oidc scopes overridden without allowed_emails; authorization relies entirely on the idp's access policy")
 			}
 
 			// ensure redirect parses
