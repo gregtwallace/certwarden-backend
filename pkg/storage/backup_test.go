@@ -20,9 +20,9 @@ import (
 // (dbTimeout elapsed first) — both mean "the write was blocked".
 func backupCheckErrOK(t *testing.T, err error, expectLockErr bool) {
 	if expectLockErr {
-		expectedErr := helpers_test.NewTestErrorStringComp("database is locked")
-		if !helpers_test.ErrorsIs(err, expectedErr) && !errors.Is(err, context.DeadlineExceeded) {
-			t.Errorf("err expected '%s' or '%s' but got '%s'", expectedErr, context.DeadlineExceeded, helpers_test.ErrorToVal(err))
+		dbLockedErr := helpers_test.NewTestErrorStringComp("database is locked")
+		if !helpers_test.ErrorsIs(err, dbLockedErr) && !errors.Is(err, context.DeadlineExceeded) {
+			t.Errorf("err expected '%s' or '%s' but got '%s'", dbLockedErr, context.DeadlineExceeded, helpers_test.ErrorToVal(err))
 		}
 
 	} else if err != nil {
