@@ -4,18 +4,25 @@ import (
 	"certwarden-backend/pkg/domain/acme_servers"
 	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/storage"
+	"context"
+	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 )
 
 // backupCheckErrOK triggers an error on t if err does not match the expected err
-// Note: this includes deadline expiration as a lock error
+// Note: this includes deadline expiration as a lock error. With the DSN busy
+// timeout (sqlite3.dbOptions) a write blocked by the backup's SHARED lock waits
+// for the lock instead of failing immediately, so it surfaces either as the
+// busy error (busy timeout elapsed first) or as the storage query deadline
+// (dbTimeout elapsed first) — both mean "the write was blocked".
 func backupCheckErrOK(t *testing.T, err error, expectLockErr bool) {
 	if expectLockErr {
-		expectedErr := helpers_test.NewTestErrorStringComp("database is locked")
-		if !helpers_test.ErrorsIs(err, expectedErr) {
-			t.Errorf("err expected '%s' but got '%s'", expectedErr, helpers_test.ErrorToVal(err))
+		dbLockedErr := helpers_test.NewTestErrorStringComp("database is locked")
+		if !helpers_test.ErrorsIs(err, dbLockedErr) && !errors.Is(err, context.DeadlineExceeded) {
+			t.Errorf("err expected '%s' or '%s' but got '%s'", dbLockedErr, context.DeadlineExceeded, helpers_test.ErrorToVal(err))
 		}
 
 	} else if err != nil {
@@ -25,29 +32,43 @@ func backupCheckErrOK(t *testing.T, err error, expectLockErr bool) {
 
 // backupTestBattery is the group of tests run both while db is locked and while it is unlocked
 func backupTestBattery(t *testing.T, store *storage.Storage, expectLocked bool) {
+	wg := sync.WaitGroup{}
+
 	lockedStateTxt := "unlocked"
 	if expectLocked {
 		lockedStateTxt = "locked"
 	}
 
 	// read only
-	t.Run(fmt.Sprintf("%s: get all acme accounts", lockedStateTxt), func(t *testing.T) {
+	wg.Add(1)
+	go t.Run(fmt.Sprintf("%s: get all acme accounts", lockedStateTxt), func(t *testing.T) {
 		_, _, err := store.GetAllAcmeAccounts(queryBuilderForTest(5, 0, "", false))
 		backupCheckErrOK(t, err, false)
+
+		wg.Done()
 	})
 
-	t.Run(fmt.Sprintf("%s: get one key by id", lockedStateTxt), func(t *testing.T) {
+	wg.Add(1)
+	go t.Run(fmt.Sprintf("%s: get one key by id", lockedStateTxt), func(t *testing.T) {
 		_, err := store.GetOneKeyById(62)
 		backupCheckErrOK(t, err, false)
+
+		wg.Done()
 	})
+
+	wg.Wait()
 
 	// trying to write
-	t.Run(fmt.Sprintf("%s: put key api key", lockedStateTxt), func(t *testing.T) {
+	wg.Add(1)
+	go t.Run(fmt.Sprintf("%s: put key api key", lockedStateTxt), func(t *testing.T) {
 		err := store.PutKeyApiKey(1, "xyz", time.Unix(123, 0))
 		backupCheckErrOK(t, err, expectLocked)
+
+		wg.Done()
 	})
 
-	t.Run(fmt.Sprintf("%s: put acme server update", lockedStateTxt), func(t *testing.T) {
+	wg.Add(1)
+	go t.Run(fmt.Sprintf("%s: put acme server update", lockedStateTxt), func(t *testing.T) {
 		payload := acme_servers.UpdatePayload{
 			ID:        1,
 			UpdatedAt: time.Unix(6323444, 0),
@@ -55,7 +76,11 @@ func backupTestBattery(t *testing.T, store *storage.Storage, expectLocked bool) 
 
 		_, err := store.PutServerUpdate(&payload)
 		backupCheckErrOK(t, err, expectLocked)
+
+		wg.Done()
 	})
+
+	wg.Wait()
 }
 
 func TestLockDBForBackup(t *testing.T) {

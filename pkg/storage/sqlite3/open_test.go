@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -418,5 +419,40 @@ func TestOpenDB6_NoFilesExist(t *testing.T) {
 	err = db.PingContext(ctx)
 	if err == nil || !strings.Contains(err.Error(), "database is closed") {
 		t.Fatalf("expected database closed error but got '%s'", err)
+	}
+}
+
+// opened db must have the busy timeout from dbOptions applied (modernc.org/sqlite
+// has 0 default) and set to 5000 ms
+func TestOpenDB_BusyTimeout(t *testing.T) {
+	dataPath := t.TempDir()
+	fakeApp := newFakeApp(t, dataPath)
+
+	db, cleanup, err := OpenSqlite3Database(fakeApp)
+	if err != nil {
+		t.Fatalf("open failed (%s)", err)
+	}
+	t.Cleanup(cleanup)
+
+	var busyTimeout int
+	err = db.QueryRowContext(context.Background(), "PRAGMA busy_timeout").Scan(&busyTimeout)
+	if err != nil {
+		t.Fatalf("failed to read busy_timeout (%s)", err)
+	}
+
+	// hardcode to 5000 ms (so if its changed the test fails until the test is also updated)
+	const want = "5000"
+	if got := strconv.Itoa(busyTimeout); got != want {
+		t.Fatalf("busy_timeout: want %s ms, got %s ms", want, got)
+	}
+
+	// foreign keys must still be on (both options are applied on the same connection)
+	var fk int
+	err = db.QueryRowContext(context.Background(), "PRAGMA foreign_keys").Scan(&fk)
+	if err != nil {
+		t.Fatalf("failed to read foreign_keys (%s)", err)
+	}
+	if fk != 1 {
+		t.Fatalf("foreign_keys: want 1, got %d", fk)
 	}
 }
