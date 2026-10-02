@@ -440,10 +440,8 @@ func TestOpenDB_BusyTimeout(t *testing.T) {
 		t.Fatalf("failed to read busy_timeout (%s)", err)
 	}
 
-	want := dbOptions.Get("_busy_timeout")
-	if want == "" {
-		t.Fatal("dbOptions is missing _busy_timeout")
-	}
+	// hardcode to 5000 ms (so if its changed the test fails until the test is also updated)
+	const want = "5000"
 	if got := strconv.Itoa(busyTimeout); got != want {
 		t.Fatalf("busy_timeout: want %s ms, got %s ms", want, got)
 	}
