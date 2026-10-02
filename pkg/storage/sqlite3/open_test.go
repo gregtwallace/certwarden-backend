@@ -423,7 +423,7 @@ func TestOpenDB6_NoFilesExist(t *testing.T) {
 }
 
 // opened db must have the busy timeout from dbOptions applied (modernc.org/sqlite
-// has no default, unlike mattn/go-sqlite3 which defaulted to 5000 ms)
+// has 0 default) and set to 5000 ms
 func TestOpenDB_BusyTimeout(t *testing.T) {
 	dataPath := t.TempDir()
 	fakeApp := newFakeApp(t, dataPath)
