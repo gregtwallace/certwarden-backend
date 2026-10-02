@@ -80,6 +80,15 @@
     # the redirect url should be the BACKEND host, with the path:
     # `/certwarden/api/v1/app/auth/oidc/callback`
     'api_redirect_uri': 'https://cw.example.com:4055/certwarden/api/v1/app/auth/oidc/callback'
+    # (optional) override the scopes requested from and required of the idp;
+    # default: openid, offline_access, profile, certwarden:superadmin. Use this
+    # when the idp cannot issue the custom certwarden:superadmin scope. When
+    # overridden, that scope no longer authorizes users, so also set
+    # allowed_emails and/or restrict access with the idp's own policy.
+    #'scopes': ['openid', 'offline_access', 'profile', 'email']
+    # (optional) only allow ID tokens whose verified email claim is listed
+    # (case-insensitive); requires the idp to provide the email claim
+    #'allowed_emails': ['admin@example.com']
 
 # Cert Warden update checking functionality to alert you when new versions are available
 'updater':

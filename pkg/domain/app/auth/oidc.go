@@ -71,6 +71,7 @@ type oidcExtraFuncs struct {
 	ctxWithHttpClient context.Context
 	cfg               *oauth2.Config
 	idTokenVerifier   *oidc.IDTokenVerifier
+	requiredScopes    []string
 	token             *expectedToken
 
 	mu sync.Mutex
@@ -142,7 +143,7 @@ func (oef *oidcExtraFuncs) RefreshCheck() error {
 	// Validate the required scopes were granted
 	if t.Scope != "" {
 		responseScopes := strings.Split(t.Scope, " ")
-		for _, requiredScope := range oidcRequiredScopes {
+		for _, requiredScope := range oef.requiredScopes {
 			found := false
 			for _, responseScope := range responseScopes {
 				if requiredScope == responseScope {
@@ -194,4 +195,27 @@ func (service *Service) startOidcCleanerService(ctx context.Context, wg *sync.Wa
 			service.oidc.pendingSessions.DeleteFunc(deleteFunc)
 		}
 	}()
+}
+
+// oidcEmailAllowed reports whether the ID token passes the optional
+// allowed_emails list; with no list configured every verified token passes.
+func (service *Service) oidcEmailAllowed(idToken *oidc.IDToken) bool {
+	if len(service.oidc.allowedEmails) == 0 {
+		return true
+	}
+
+	var claims struct {
+		Email         string `json:"email"`
+		EmailVerified *bool  `json:"email_verified"`
+	}
+	if err := idToken.Claims(&claims); err != nil || claims.Email == "" {
+		return false
+	}
+	// an explicit email_verified=false is never accepted
+	if claims.EmailVerified != nil && !*claims.EmailVerified {
+		return false
+	}
+
+	_, ok := service.oidc.allowedEmails[strings.ToLower(claims.Email)]
+	return ok
 }

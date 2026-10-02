@@ -185,6 +185,13 @@ func (service *Service) OIDCGetCallback(w http.ResponseWriter, r *http.Request) 
 		return nil
 	}
 
+	// optional email allow-list (AUTHORIZATION when scopes are overridden)
+	if !service.oidcEmailAllowed(oidcStateObj.oidcIDToken) {
+		service.logger.Infof("client %s: oidc user '%s' email not in allowed_emails", r.RemoteAddr, oidcStateObj.oidcIDToken.Subject)
+		http.Redirect(w, r, oidcUnauthorizedErrorURL(oidcStateObj.callerRedirectUrl).String(), http.StatusFound)
+		return nil
+	}
+
 	// Validate the required scopes were granted - https://datatracker.ietf.org/doc/html/rfc6749#section-3.3
 	// if the scope is omitted, spec requires scope to exactly match the request (i.e., scope was accepted and
 	// validation here isn't needed)
@@ -192,7 +199,7 @@ func (service *Service) OIDCGetCallback(w http.ResponseWriter, r *http.Request) 
 	responseScopeString, hasScope := oidcStateObj.oauth2Token.Extra("scope").(string)
 	if hasScope {
 		responseScopes := strings.Split(responseScopeString, " ")
-		for _, requiredScope := range oidcRequiredScopes {
+		for _, requiredScope := range service.oidc.requiredScopes {
 			found := false
 			for _, responseScope := range responseScopes {
 				if requiredScope == responseScope {
@@ -262,10 +269,10 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 		service.logger.Errorf("client %s: login failed oidc state's id_token did not assert to string", r.RemoteAddr)
 		return output.ErrJsonUnauthorized
 	}
+	// RFC 6749 3.3: an omitted scope means it was granted exactly as requested
 	scopeStr, ok := oidcStateObj.oauth2Token.Extra("scope").(string)
 	if !ok {
-		service.logger.Errorf("client %s: login failed oidc state's scope did not assert to string", r.RemoteAddr)
-		return output.ErrJsonUnauthorized
+		scopeStr = strings.Join(service.oidc.requiredScopes, " ")
 	}
 
 	// make extra func obj
@@ -273,6 +280,7 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 		ctxWithHttpClient: service.oidc.ctxWithHttpClient,
 		cfg:               service.oidc.oauth2Config,
 		idTokenVerifier:   service.oidc.idTokenVerifier,
+		requiredScopes:    service.oidc.requiredScopes,
 		token: &expectedToken{
 			AccessToken:  oidcStateObj.oauth2Token.AccessToken,
 			RefreshToken: oidcStateObj.oauth2Token.RefreshToken,
