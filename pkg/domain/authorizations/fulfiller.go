@@ -103,13 +103,16 @@ func (service *Service) fulfillAuth(authUrl string, key acme.AccountKey, acmeSer
 
 	// call solver if auth is 'pending' (i.e., needs solving)
 	if auth.Status == "pending" {
-		err = service.challenges.Solve(auth.Identifier, auth.Challenges, key, acmeService)
+		err = service.challenges.Solve(authUrl, &auth, key, acmeService)
 		// return error if couldn't solve
 		if err != nil {
 			return err
 		}
 
 		// PaG the authorization again (to confirm state after solve attempt)
+		// TODO: Refactor as this is now a duplicate call after Solve. Can't just straight remove it
+		// without other changes as this will mess up the finalizeation check below (which can't be
+		// skipped with the current architecture.)
 		auth, err = acmeService.GetAuth(authUrl, key)
 		if err != nil {
 			return err
