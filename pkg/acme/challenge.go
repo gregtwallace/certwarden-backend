@@ -1,7 +1,6 @@
 package acme
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -29,16 +28,6 @@ type Challenge struct {
 	IssuerDomainNames []string `json:"issuer-domain-names,omitempty"`
 }
 
-// Account response decoder
-func unmarshalChallenge(jsonResp json.RawMessage) (chall Challenge, err error) {
-	err = json.Unmarshal(jsonResp, &chall)
-	if err != nil {
-		return Challenge{}, err
-	}
-
-	return chall, nil
-}
-
 // DoChallengeValidation posts a an empty object to the challenge URL which informs
 // ACME that the challenge is ready to be validated
 // Note: per rfc8555 s. 7.5.1 "The server provides a 200 (OK) response with the updated challenge
@@ -52,21 +41,4 @@ func (service *Service) DoChallengeValidation(challengeUrl string, accountKey Ac
 	}
 
 	return nil
-}
-
-// GetChallenge does a POST-as-GET to fetch the current state of the given challenge URL
-func (service *Service) GetChallenge(challengeUrl string, key AccountKey) (chall Challenge, err error) {
-	// POST-as-GET
-	jsonResp, _, err := service.PostAsGet(challengeUrl, key)
-	if err != nil {
-		return Challenge{}, err
-	}
-
-	// unmarshal response
-	chall, err = unmarshalChallenge(jsonResp)
-	if err != nil {
-		return Challenge{}, err
-	}
-
-	return chall, nil
 }
