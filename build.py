@@ -86,33 +86,33 @@ def parse_os_target(os_target):
 
   # split and return
   split = os_target.split("_")
-  GOOS = split[0]
-  GOARCH = split[1]
+  goos = split[0]
+  goarch = split[1]
 
-  return GOOS, GOARCH
+  return goos, goarch
 
 ##
 #### Build Script
 ##
 
-def build(GOOS, GOARCH, git_required):
+def build(goos, goarch, git_required):
   # get version number
   version_string = get_backend_version()
   
   # try to get hash
-  gitHead = get_commit()
-  if gitHead != "":
-    version_string += "_(" + gitHead[:7] + ")"
+  git_head = get_commit()
+  if git_head != "":
+    version_string += "_(" + git_head[:7] + ")"
   else:
     print("failed to get git hash")
     if git_required:
       print("aborting: git hash is required by --gitrequired")
       exit(-1)
 
-  print(f"preparing to build certwarden-backend version '{version_string}' for target '{GOOS}_{GOARCH}'")
+  print(f"preparing to build certwarden-backend version '{version_string}' for target '{goos}_{goarch}'")
 
-  os.environ["GOOS"] = GOOS
-  os.environ["GOARCH"] = GOARCH
+  os.environ["GOOS"] = goos
+  os.environ["GOARCH"] = goarch
   os.environ["CGO_ENABLED"] = "0"
 
   # create out path
@@ -142,10 +142,10 @@ def build(GOOS, GOARCH, git_required):
   shutil.copy(os.path.join(PATH_SRC, "config.changelog.md"), path_output)
   shutil.copy(os.path.join(PATH_SRC, "README.md"), path_output)
   shutil.copy(os.path.join(PATH_SRC, "LICENSE.md"), path_output)
-  if gitHead:
+  if git_head:
     with open(os.path.join(path_output, "HEAD-backend"), "a") as f:
-      f.write(gitHead)
-  if GOOS.lower() == "windows":
+      f.write(git_head)
+  if goos.lower() == "windows":
     shutil.copytree(os.path.join(PATH_SRC, 'scripts', 'windows'), os.path.join(path_output, "scripts"))
   else:
     shutil.copytree(os.path.join(PATH_SRC, 'scripts', 'other'), os.path.join(path_output, "scripts"))
@@ -166,10 +166,10 @@ def main():
   args = parser.parse_args()
 
   # build environment vars
-  GOOS, GOARCH = parse_os_target(args.target)
+  goos, goarch = parse_os_target(args.target)
 
   # do build
-  build(GOOS, GOARCH, args.gitrequired)
+  build(goos, goarch, args.gitrequired)
 
   print("exiting certwarden-backend build script")
 
