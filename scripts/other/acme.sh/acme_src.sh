@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-VER=3.1.2
+VER=3.1.6
 
 PROJECT_NAME="acme.sh"
 
@@ -59,18 +59,20 @@ DEFAULT_OPENSSL_BIN="openssl"
 VTYPE_HTTP="http-01"
 VTYPE_DNS="dns-01"
 VTYPE_ALPN="tls-alpn-01"
+VTYPE_DNS_PERSIST="dns-persist-01"
 
 ID_TYPE_DNS="dns"
 ID_TYPE_IP="ip"
 
 LOCAL_ANY_ADDRESS="0.0.0.0"
 
-DEFAULT_RENEW=60
+DEFAULT_RENEW="${DEFAULT_RENEW:-30}"
 
 NO_VALUE="no"
 
 W_DNS="dns"
 W_ALPN="alpn"
+W_DNS_PERSIST="dns_persist"
 DNS_ALIAS_PREFIX="="
 
 MODE_STATELESS="stateless"
@@ -250,6 +252,13 @@ _dlg_versions() {
     socat -V 2>&1
   else
     _debug "socat doesn't exist."
+    if _exists "python3"; then
+      python3 -V 2>&1
+    elif _exists "python2"; then
+      python2 -V 2>&1
+    elif _exists "python"; then
+      python -V 2>&1
+    fi
   fi
 }
 
@@ -588,11 +597,6 @@ if [ "$(printf '\x41')" != 'A' ]; then
   _URGLY_PRINTF=1
 fi
 
-_ESCAPE_XARGS=""
-if _exists xargs && [ "$(printf %s '\\x41' | xargs printf)" = 'A' ]; then
-  _ESCAPE_XARGS=1
-fi
-
 _h2b() {
   if _exists xxd; then
     if _contains "$(xxd --help 2>&1)" "assumes -c30"; then
@@ -611,17 +615,8 @@ _h2b() {
   jc=""
   _debug2 _URGLY_PRINTF "$_URGLY_PRINTF"
   if [ -z "$_URGLY_PRINTF" ]; then
-    if [ "$_ESCAPE_XARGS" ] && _exists xargs; then
-      _debug2 "xargs"
-      echo "$hex" | _upper_case | sed 's/\([0-9A-F]\{2\}\)/\\\\\\x\1/g' | xargs printf
-    else
-      for h in $(echo "$hex" | _upper_case | sed 's/\([0-9A-F]\{2\}\)/ \1/g'); do
-        if [ -z "$h" ]; then
-          break
-        fi
-        printf "\x$h%s"
-      done
-    fi
+    # shellcheck disable=SC2059
+    printf "$(echo "$hex" | _upper_case | sed 's/\([0-9A-F]\{2\}\)/\\x\1/g')"
   else
     for c in $(echo "$hex" | _upper_case | sed 's/\([0-9A-F]\)/ \1/g'); do
       if [ -z "$ic" ]; then
@@ -923,6 +918,15 @@ _json_decode() {
   echo "$_j_str"
 }
 
+#extract the authorization URLs from an order response on stdin, as a
+#comma-separated list. The entries are quoted URL strings and a quote cannot
+#occur inside a URL, so the first '"]' is always the end of the array. A
+#char-class scan would stop early on the brackets of an IPv6 host
+#(https://[2001:db8::1]/...). Outputs nothing if the field is missing.
+_authorizations_from_order() {
+  sed -n 's/.*"authorizations" *: *\[//p' | sed 's/" *\].*//' | tr -d '" '
+}
+
 #options file
 _sed_i() {
   options="$1"
@@ -1020,6 +1024,24 @@ _checkcert() {
   fi
 }
 
+#file
+_enddate() {
+  _cf="$1"
+  _res="$(${ACME_OPENSSL_BIN:-openssl} x509 -noout -enddate -in "$_cf")"
+  if [ "$?" != "0" ] || [ -z "$_res" ]; then
+    return 1
+  fi
+
+  case "$_res" in
+  notAfter=*)
+    echo "${_res#notAfter=}"
+    ;;
+  *)
+    return 1
+    ;;
+  esac
+}
+
 #Usage: hashalg  [outputhex]
 #Output Base64-encoded digest
 _digest() {
@@ -1031,7 +1053,7 @@ _digest() {
 
   outputhex="$2"
 
-  if [ "$alg" = "sha256" ] || [ "$alg" = "sha1" ] || [ "$alg" = "md5" ]; then
+  if [ "$alg" = "sha3-256" ] || [ "$alg" = "sha256" ] || [ "$alg" = "sha1" ] || [ "$alg" = "md5" ]; then
     if [ "$outputhex" ]; then
       ${ACME_OPENSSL_BIN:-openssl} dgst -"$alg" -hex | cut -d = -f 2 | tr -d ' '
     else
@@ -1042,6 +1064,25 @@ _digest() {
     return 1
   fi
 
+}
+
+#Usage: certpath hashalg
+#Output certificate fingerprint without colons
+_fingerprint() {
+  cert="$1"
+  alg="$2"
+  if [ -z "$alg" ]; then
+    _usage "Usage: _fingerprint certpath hashalg"
+    return 1
+  fi
+
+  if [ "$alg" = "sha256" ] || [ "$alg" = "sha1" ] || [ "$alg" = "md5" ]; then
+    # openssl prints "SHA1 Fingerprint=AA:BB:CC:..."; strip prefix and colons.
+    ${ACME_OPENSSL_BIN:-openssl} x509 -in "$cert" -noout -fingerprint -"$alg" | sed 's/.*=//; s/://g'
+  else
+    _err "$alg is not supported yet"
+    return 1
+  fi
 }
 
 #Usage: hashalg  secret_hex  [outputhex]
@@ -1147,6 +1188,11 @@ _createkey() {
   length="$1"
   f="$2"
   _debug2 "_createkey for file:$f"
+  if ! _exists "${ACME_OPENSSL_BIN:-openssl}"; then
+    _err "Please install openssl first. ACME_OPENSSL_BIN=$ACME_OPENSSL_BIN"
+    _err "We need openssl to generate keys."
+    return 1
+  fi
   eccname="$length"
   if _startswith "$length" "ec-"; then
     length=$(printf "%s" "$length" | cut -d '-' -f 2-100)
@@ -1169,6 +1215,7 @@ _createkey() {
 
   _debug "Using length $length"
 
+  _new_key_file=""
   if ! [ -e "$f" ]; then
     if ! touch "$f" >/dev/null 2>&1; then
       _f_path="$(dirname "$f")"
@@ -1182,6 +1229,7 @@ _createkey() {
       return 1
     fi
     chmod 600 "$f"
+    _new_key_file="1"
   fi
 
   if _isEccKey "$length"; then
@@ -1190,6 +1238,10 @@ _createkey() {
       echo "$_opkey" >"$f"
     else
       _err "Error encountered for ECC key named $eccname"
+      #do not leave an empty file behind, or the next run would treat the key as existing
+      if [ "$_new_key_file" ]; then
+        rm -f "$f"
+      fi
       return 1
     fi
   else
@@ -1202,6 +1254,10 @@ _createkey() {
       echo "$_opkey" >"$f"
     else
       _err "Error encountered for RSA key of length $length"
+      #do not leave an empty file behind, or the next run would treat the key as existing
+      if [ "$_new_key_file" ]; then
+        rm -f "$f"
+      fi
       return 1
     fi
   fi
@@ -1251,6 +1307,23 @@ _idn() {
 }
 
 #_createcsr  cn  san_list  keyfile csrfile conf acmeValidationv1 extendedUsage
+#cn
+#The x509 Common Name is limited to 64 characters (RFC 5280 ub-common-name,
+#enforced by openssl in ASN1_mbstring_ncopy), and an IP address or an empty
+#name is not usable as CN either. When this rejects the name, _createcsr
+#omits CN from the CSR subject and the CA takes the identifiers from the
+#subjectAltName extension (issue 4867).
+_is_valid_cn() {
+  _cn_v="$1"
+  if [ -z "$_cn_v" ] || [ "${#_cn_v}" -gt 64 ]; then
+    return 1
+  fi
+  if _isIP "$_cn_v"; then
+    return 1
+  fi
+  return 0
+}
+
 _createcsr() {
   _debug _createcsr
   domain="$1"
@@ -1314,16 +1387,16 @@ _createcsr() {
   _csr_cn="$(_idn "$domain")"
   _debug2 _csr_cn "$_csr_cn"
   if _contains "$(uname -a)" "MINGW"; then
-    if _isIP "$_csr_cn"; then
-      ${ACME_OPENSSL_BIN:-openssl} req -new -sha256 -key "$csrkey" -subj "//O=$PROJECT_NAME" -config "$csrconf" -out "$csr"
-    else
+    if _is_valid_cn "$_csr_cn"; then
       ${ACME_OPENSSL_BIN:-openssl} req -new -sha256 -key "$csrkey" -subj "//CN=$_csr_cn" -config "$csrconf" -out "$csr"
+    else
+      ${ACME_OPENSSL_BIN:-openssl} req -new -sha256 -key "$csrkey" -subj "//O=$PROJECT_NAME" -config "$csrconf" -out "$csr"
     fi
   else
-    if _isIP "$_csr_cn"; then
-      ${ACME_OPENSSL_BIN:-openssl} req -new -sha256 -key "$csrkey" -subj "/O=$PROJECT_NAME" -config "$csrconf" -out "$csr"
-    else
+    if _is_valid_cn "$_csr_cn"; then
       ${ACME_OPENSSL_BIN:-openssl} req -new -sha256 -key "$csrkey" -subj "/CN=$_csr_cn" -config "$csrconf" -out "$csr"
+    else
+      ${ACME_OPENSSL_BIN:-openssl} req -new -sha256 -key "$csrkey" -subj "/O=$PROJECT_NAME" -config "$csrconf" -out "$csr"
     fi
   fi
 }
@@ -1349,7 +1422,9 @@ _readSubjectFromCSR() {
     _usage "_readSubjectFromCSR mycsr.csr"
     return 1
   fi
-  ${ACME_OPENSSL_BIN:-openssl} req -noout -in "$_csrfile" -subject | tr ',' "\n" | _egrep_o "CN *=.*" | cut -d = -f 2 | cut -d / -f 1 | tr -d ' \n'
+  # -config /dev/null: reading a CSR needs no config, but a missing default
+  # openssl.cnf is fatal on some systems (e.g. NetBSD does not install one)
+  ${ACME_OPENSSL_BIN:-openssl} req -noout -in "$_csrfile" -subject -config /dev/null | tr ',' "\n" | _egrep_o "CN *=.*" | cut -d = -f 2 | cut -d / -f 1 | tr -d ' \n'
 }
 
 #_csrfile
@@ -1364,16 +1439,17 @@ _readSubjectAltNamesFromCSR() {
   _csrsubj="$(_readSubjectFromCSR "$_csrfile")"
   _debug _csrsubj "$_csrsubj"
 
-  _dnsAltnames="$(${ACME_OPENSSL_BIN:-openssl} req -noout -text -in "$_csrfile" | grep "^ *DNS:.*" | tr -d ' \n')"
+  _dnsAltnames="$(${ACME_OPENSSL_BIN:-openssl} req -noout -text -in "$_csrfile" -config /dev/null | grep "^ *DNS:.*" | tr -d ' \n')"
   _debug _dnsAltnames "$_dnsAltnames"
 
-  if _contains "$_dnsAltnames," "DNS:$_csrsubj,"; then
+  # escape the wildcard '*' so it is not taken as a regex operator by grep/sed below
+  _escapedAltnames="$(echo "$_dnsAltnames" | tr '*' '#')"
+  _debug _escapedAltnames "$_escapedAltnames"
+  _escapedSubject="$(echo "$_csrsubj" | tr '*' '#')"
+  _debug _escapedSubject "$_escapedSubject"
+  if _contains "$_escapedAltnames," "DNS:$_escapedSubject,"; then
     _debug "AltNames contains subject"
-    _excapedAlgnames="$(echo "$_dnsAltnames" | tr '*' '#')"
-    _debug _excapedAlgnames "$_excapedAlgnames"
-    _escapedSubject="$(echo "$_csrsubj" | tr '*' '#')"
-    _debug _escapedSubject "$_escapedSubject"
-    _dnsAltnames="$(echo "$_excapedAlgnames," | sed "s/DNS:$_escapedSubject,//g" | tr '#' '*' | sed "s/,\$//g")"
+    _dnsAltnames="$(echo "$_escapedAltnames," | sed "s/DNS:$_escapedSubject,//g" | tr '#' '*' | sed "s/,\$//g")"
     _debug _dnsAltnames "$_dnsAltnames"
   else
     _debug "AltNames doesn't contain subject"
@@ -1390,7 +1466,7 @@ _readKeyLengthFromCSR() {
     return 1
   fi
 
-  _outcsr="$(${ACME_OPENSSL_BIN:-openssl} req -noout -text -in "$_csrfile")"
+  _outcsr="$(${ACME_OPENSSL_BIN:-openssl} req -noout -text -in "$_csrfile" -config /dev/null)"
   _debug2 _outcsr "$_outcsr"
   if _contains "$_outcsr" "Public Key Algorithm: id-ecPublicKey"; then
     _debug "ECC CSR"
@@ -1406,39 +1482,57 @@ _readKeyLengthFromCSR() {
   fi
 }
 
+#port
+#Reads a netstat or ss listing on stdin, prints the lines that show a socket
+#listening on port.
+#Linux and windows print the local address as "addr:port", aix, macos, the
+#bsds and solaris print it as "addr.port", so both separators must match.
+#The state is "LISTEN" nearly everywhere, "LISTENING" on windows and lower
+#case "listen" on haiku, hence the substring match and the -i.
+_filter_listen_port() {
+  _flp_port="$1"
+  if [ -z "$_flp_port" ]; then
+    return
+  fi
+  grep -i "LISTEN" | grep "[:.]$_flp_port "
+}
+
+#port
 _ss() {
   _port="$1"
 
   if _exists "ss"; then
     _debug "Using: ss"
-    ss -ntpl 2>/dev/null | grep ":$_port "
+    ss -ntpl 2>/dev/null | _filter_listen_port "$_port"
     return 0
   fi
 
-  if [ "$(uname)" = "AIX" ]; then
-    _debug "Using: AIX netstat"
-    netstat -an | grep "^tcp" | grep "LISTEN" | grep "\.$_port "
+  #aix, macos and the bsds have no "-p protocol" socket listing that works on
+  #all of them: on netbsd "-p" is "Show statistics about protocol" instead
+  #(netstat(1), NetBSD 10.1). Their default display does show "the state of
+  #all sockets" with -a, so use that and keep only the tcp lines.
+  case "$(uname)" in
+  AIX | Darwin | DragonFly | *BSD*)
+    _debug "Using: AIX/BSD netstat"
+    netstat -an | grep "^tcp" | _filter_listen_port "$_port"
     return 0
-  fi
+    ;;
+  esac
 
   if _exists "netstat"; then
     _debug "Using: netstat"
     if netstat -help 2>&1 | grep "\-p proto" >/dev/null; then
       #for windows version netstat tool
-      netstat -an -p tcp | grep "LISTENING" | grep ":$_port "
+      netstat -an -p tcp | _filter_listen_port "$_port"
+    elif netstat -help 2>&1 | grep -- '-P protocol' >/dev/null; then
+      #for solaris
+      netstat -an -P tcp | _filter_listen_port "$_port"
+    elif netstat -help 2>&1 | grep "\-p" >/dev/null; then
+      #for full linux
+      netstat -ntpl | _filter_listen_port "$_port"
     else
-      if netstat -help 2>&1 | grep "\-p protocol" >/dev/null; then
-        netstat -an -p tcp | grep LISTEN | grep ":$_port "
-      elif netstat -help 2>&1 | grep -- '-P protocol' >/dev/null; then
-        #for solaris
-        netstat -an -P tcp | grep "\.$_port " | grep "LISTEN"
-      elif netstat -help 2>&1 | grep "\-p" >/dev/null; then
-        #for full linux
-        netstat -ntpl | grep ":$_port "
-      else
-        #for busybox (embedded linux; no pid support)
-        netstat -ntl 2>/dev/null | grep ":$_port "
-      fi
+      #for busybox (embedded linux; no pid support)
+      netstat -ntl 2>/dev/null | _filter_listen_port "$_port"
     fi
     return 0
   fi
@@ -1466,7 +1560,23 @@ _toPkcs() {
     ${ACME_OPENSSL_BIN:-openssl} pkcs12 -export -out "$_cpfx" -inkey "$_ckey" -in "$_ccert" -certfile "$_cca"
   fi
   if [ "$?" = "0" ]; then
-    _savedomainconf "Le_PFXPassword" "$pfxPassword"
+    _savedomainconf "Le_PFXPassword" "$pfxPassword" "base64"
+  fi
+
+}
+
+_toPkcs8() {
+  _cpkcs8="$1"
+  _ckey="$2"
+  pkcs8Password="$3"
+
+  if [ "$pkcs8Password" ]; then
+    ${ACME_OPENSSL_BIN:-openssl} pkcs8 -topk8 -inform PEM -outform PEM -v2 aes256 -passout "pass:$pkcs8Password" -in "$_ckey" -out "$_cpkcs8"
+  else
+    ${ACME_OPENSSL_BIN:-openssl} pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in "$_ckey" -out "$_cpkcs8"
+  fi
+  if [ "$?" = "0" ]; then
+    _savedomainconf "Le_PKCS8Password" "$pkcs8Password" "base64"
   fi
 
 }
@@ -1492,20 +1602,21 @@ toPkcs() {
 
 }
 
-#domain [isEcc]
+#domain [password] [isEcc]
 toPkcs8() {
   domain="$1"
+  pkcs8Password="$2"
 
   if [ -z "$domain" ]; then
-    _usage "Usage: $PROJECT_ENTRY --to-pkcs8 --domain <domain.tld> [--ecc]"
+    _usage "Usage: $PROJECT_ENTRY --to-pkcs8 --domain <domain.tld> [--password <password>] [--ecc]"
     return 1
   fi
 
-  _isEcc="$2"
+  _isEcc="$3"
 
   _initpath "$domain" "$_isEcc"
 
-  ${ACME_OPENSSL_BIN:-openssl} pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in "$CERT_KEY_PATH" -out "$CERT_PKCS8_PATH"
+  _toPkcs8 "$CERT_PKCS8_PATH" "$CERT_KEY_PATH" "$pkcs8Password"
 
   if [ "$?" = "0" ]; then
     _info "Success, $CERT_PKCS8_PATH"
@@ -1606,6 +1717,7 @@ createCSR() {
   domain="$1"
   domainlist="$2"
   _isEcc="$3"
+  _csreku="$4"
 
   _initpath "$domain" "$_isEcc"
 
@@ -1619,7 +1731,7 @@ createCSR() {
     _err "Please create it first."
     return 1
   fi
-  _createcsr "$domain" "$domainlist" "$CERT_KEY_PATH" "$CSR_PATH" "$DOMAIN_SSL_CONF"
+  _createcsr "$domain" "$domainlist" "$CERT_KEY_PATH" "$CSR_PATH" "$DOMAIN_SSL_CONF" "" "$_csreku"
 
 }
 
@@ -1838,20 +1950,170 @@ _date2time() {
   if gdate -u -d "$(echo "$1" | tr -d "Z" | tr "T" ' ')" +"%s" 2>/dev/null; then
     return
   fi
-  #Omnios
-  if python3 -c "import datetime; print(int(datetime.datetime.strptime(\"$1\", \"%Y-%m-%d %H:%M:%S\").replace(tzinfo=datetime.timezone.utc).timestamp()))" 2>/dev/null; then
+  #Omnios. Pass the date as argv (sys.argv[1]) instead of interpolating it into
+  #the -c program text, so a quote in the input cannot inject Python code.
+  if python3 -c "import datetime,sys; print(int(datetime.datetime.strptime(sys.argv[1], \"%Y-%m-%d %H:%M:%S\").replace(tzinfo=datetime.timezone.utc).timestamp()))" "$1" 2>/dev/null; then
     return
   fi
   #Omnios
-  if python3 -c "import datetime; print(int(datetime.datetime.strptime(\"$1\", \"%Y-%m-%dT%H:%M:%SZ\").replace(tzinfo=datetime.timezone.utc).timestamp()))" 2>/dev/null; then
+  if python3 -c "import datetime,sys; print(int(datetime.datetime.strptime(sys.argv[1], \"%Y-%m-%dT%H:%M:%SZ\").replace(tzinfo=datetime.timezone.utc).timestamp()))" "$1" 2>/dev/null; then
     return
   fi
   _err "Cannot parse _date2time $1"
   return 1
 }
 
+#support the output format of openssl -enddate:
+#     Apr 01 08:10:33 2022 GMT   to   1641283833
+_ssldate2time() {
+  #Linux
+  if date -u -d "$1" +"%s" 2>/dev/null; then
+    return
+  fi
+  #Solaris
+  if gdate -u -d "$1" +"%s" 2>/dev/null; then
+    return
+  fi
+  #Mac/BSD
+  if date -j -f "%b %d %T %Y %Z" "$1" +"%s" 2>/dev/null; then
+    return
+  fi
+  _err "Cannot parse _ssldate2time $1"
+  return 1
+}
+
+#support the IMF-fixdate form of an HTTP-date, the one a Retry-After header
+#carries; it is always GMT:
+#     Sun, 06 Nov 1994 08:49:37 GMT   to   784111777
+#Computed in shell arithmetic rather than through date(1): GNU, BSD and
+#busybox date each want a different invocation for this form, and %a/%b are
+#locale lookups. The day count is the civil-to-days formula, exact for every
+#Gregorian date from 1970 on. Prints nothing and fails on any other input.
+_httpdate2time() {
+  _hdt="$1"
+  case "$_hdt" in
+  [A-Za-z][A-Za-z][A-Za-z]", "[0-9][0-9]" "[A-Za-z][A-Za-z][A-Za-z]" "[0-9][0-9][0-9][0-9]" "[0-9][0-9]:[0-9][0-9]:[0-9][0-9]" GMT") ;;
+  *)
+    return 1
+    ;;
+  esac
+  #the shell reads a leading zero as octal, so strip it before any arithmetic
+  _hdt_d="$(echo "$_hdt" | cut -d ' ' -f 2 | sed 's/^0*\([0-9]\)/\1/')"
+  _hdt_y="$(echo "$_hdt" | cut -d ' ' -f 4)"
+  _hdt_tm="$(echo "$_hdt" | cut -d ' ' -f 5)"
+  _hdt_H="$(echo "$_hdt_tm" | cut -d : -f 1 | sed 's/^0*\([0-9]\)/\1/')"
+  _hdt_M="$(echo "$_hdt_tm" | cut -d : -f 2 | sed 's/^0*\([0-9]\)/\1/')"
+  _hdt_S="$(echo "$_hdt_tm" | cut -d : -f 3 | sed 's/^0*\([0-9]\)/\1/')"
+  case "$(echo "$_hdt" | cut -d ' ' -f 3 | _lower_case)" in
+  jan) _hdt_m=1 ;;
+  feb) _hdt_m=2 ;;
+  mar) _hdt_m=3 ;;
+  apr) _hdt_m=4 ;;
+  may) _hdt_m=5 ;;
+  jun) _hdt_m=6 ;;
+  jul) _hdt_m=7 ;;
+  aug) _hdt_m=8 ;;
+  sep) _hdt_m=9 ;;
+  oct) _hdt_m=10 ;;
+  nov) _hdt_m=11 ;;
+  dec) _hdt_m=12 ;;
+  *)
+    return 1
+    ;;
+  esac
+  if [ "$_hdt_y" -lt 1970 ] || [ "$_hdt_d" -lt 1 ] || [ "$_hdt_d" -gt 31 ] || [ "$_hdt_H" -gt 23 ] || [ "$_hdt_M" -gt 59 ] || [ "$_hdt_S" -gt 60 ]; then
+    return 1
+  fi
+  #years start in March so the leap day is the last day of the year
+  if [ "$_hdt_m" -le 2 ]; then
+    _hdt_y="$((_hdt_y - 1))"
+    _hdt_mp="$((_hdt_m + 9))"
+  else
+    _hdt_mp="$((_hdt_m - 3))"
+  fi
+  _hdt_era="$((_hdt_y / 400))"
+  _hdt_yoe="$((_hdt_y - _hdt_era * 400))"
+  _hdt_doy="$(((153 * _hdt_mp + 2) / 5 + _hdt_d - 1))"
+  _hdt_doe="$((_hdt_yoe * 365 + _hdt_yoe / 4 - _hdt_yoe / 100 + _hdt_doy))"
+  _hdt_days="$((_hdt_era * 146097 + _hdt_doe - 719468))"
+  echo "$((_hdt_days * 86400 + _hdt_H * 3600 + _hdt_M * 60 + _hdt_S))"
+}
+
 _utc_date() {
   date -u "+%Y-%m-%d %H:%M:%S"
+}
+
+#Usage: _calc_next_renew_time createtime renewaldays [endtime]
+#Prints createtime + renewaldays*86400 - 86400, capped so it never passes
+#the certificate expiry: with short-lived certs (internal CAs, upcoming
+#CA/B SC-081 47-day maximum) a fixed RenewalDays would otherwise schedule
+#the renewal after notAfter and leave an expired cert in place.
+#The cap is one day before endtime, or one hour before for certs whose
+#lifetime is 24 hours or less, mirroring the --valid-to scheduling.
+_calc_next_renew_time() {
+  _cnrt_create="$1"
+  _cnrt_days="$2"
+  _cnrt_end="$3"
+  _cnrt_next=$(_math "$_cnrt_create" + "$_cnrt_days" \* 24 \* 60 \* 60 - 86400)
+  if [ -z "$_cnrt_end" ]; then
+    printf "%s" "$_cnrt_next"
+    return 0
+  fi
+  if [ "$(_math "$_cnrt_end" - "$_cnrt_create")" -gt 86400 ]; then
+    _cnrt_cap=$(_math "$_cnrt_end" - 86400)
+  else
+    _cnrt_cap=$(_math "$_cnrt_end" - 3600)
+  fi
+  if [ "$_cnrt_next" -gt "$_cnrt_cap" ]; then
+    _cnrt_next="$_cnrt_cap"
+  fi
+  printf "%s" "$_cnrt_next"
+}
+
+#Usage: _calc_validto_renew_time notaftertime renewaldays now
+#Prints the next renew time for a cert issued with a relative --valid-to.
+#A negative renewaldays is anchored to the expiry: notaftertime +
+#renewaldays*86400. Otherwise the cert renews one day before the expiry,
+#or one hour before for certs whose lifetime is 24 hours or less.
+_calc_validto_renew_time() {
+  _cvrt_end="$1"
+  _cvrt_days="$2"
+  _cvrt_now="$3"
+  if [ "$_cvrt_days" ] && [ "$_cvrt_days" -lt 0 ]; then
+    _math "$_cvrt_end" + "$_cvrt_days" \* 24 \* 60 \* 60
+    return 0
+  fi
+  if [ "$(_math "$_cvrt_end" - "$_cvrt_now")" -gt 86400 ]; then
+    _math "$_cvrt_end" - 86400
+  else
+    _math "$_cvrt_end" - 3600
+  fi
+}
+
+#Usage: _calc_ari_renew_time aristarttime ariendtime now currenttime pinned
+#Prints the renew time to take from the CA's ARI suggestedWindow, or nothing
+#when the window must be ignored. The point inside the window is derived from
+#the current time rather than its start, so renewals spread out across the
+#network instead of all firing at the same instant.
+#A schedule the user pinned with --days or --valid-to only yields to a window
+#that is EARLIER than what the user asked for: the CA can still pull an urgent
+#renewal forward, but it can never push a pinned renewal back.
+_calc_ari_renew_time() {
+  _cart_start="$1"
+  _cart_end="$2"
+  _cart_now="$3"
+  _cart_current="$4"
+  _cart_pinned="$5"
+  if [ -z "$_cart_start" ] || [ -z "$_cart_end" ] || [ "$_cart_end" -le "$_cart_start" ]; then
+    return 0
+  fi
+  _cart_window=$(_math "$_cart_end" - "$_cart_start")
+  _cart_offset=$(_math "$_cart_now" % "$_cart_window")
+  _cart_next=$(_math "$_cart_start" + "$_cart_offset")
+  if [ "$_cart_pinned" ] && [ "$_cart_current" ] && [ "$_cart_next" -ge "$_cart_current" ]; then
+    return 0
+  fi
+  printf "%s" "$_cart_next"
 }
 
 _mktemp() {
@@ -2090,6 +2352,99 @@ _post() {
   return $_ret
 }
 
+# bodyfile  url [needbase64] [POST|PUT|DELETE] [ContentType]
+#_post with the body read from a file instead of a variable. A shell variable
+#drops NUL bytes, so a binary upload (a PKCS#12 bundle in a multipart form)
+#has to travel as a file: curl reads it with --data-binary @file, wget with
+#--post-file (--body-file for the other methods). The content type is always
+#sent explicitly, defaulting to what both tools would send on their own for
+#a raw body, because wget treats an empty --header as "drop every header
+#given so far" and a bare -H "" cannot be left in the argument list.
+_post_file() {
+  _pf_bodyfile="$1"
+  _post_url="$2"
+  needbase64="$3"
+  httpmethod="$4"
+  _postContentType="$5"
+
+  if [ -z "$httpmethod" ]; then
+    httpmethod="POST"
+  fi
+  if [ ! -f "$_pf_bodyfile" ]; then
+    _err "The body file does not exist: $_pf_bodyfile"
+    return 1
+  fi
+  _debug $httpmethod
+  _debug "_post_url" "$_post_url"
+  _debug2 "_pf_bodyfile" "$_pf_bodyfile"
+  _debug2 "_postContentType" "$_postContentType"
+
+  _pf_cthdr="Content-Type: ${_postContentType:-application/x-www-form-urlencoded}"
+
+  _inithttp
+
+  if [ "$_ACME_CURL" ] && [ "${ACME_USE_WGET:-0}" = "0" ]; then
+    _CURL="$_ACME_CURL"
+    if [ "$HTTPS_INSECURE" ]; then
+      _CURL="$_CURL --insecure  "
+    fi
+    _debug "_CURL" "$_CURL"
+    if [ "$needbase64" ]; then
+      response="$($_CURL --user-agent "$USER_AGENT" -X $httpmethod -H "$_pf_cthdr" -H "$_H1" -H "$_H2" -H "$_H3" -H "$_H4" -H "$_H5" --data-binary "@$_pf_bodyfile" "$_post_url" | _base64)"
+    else
+      response="$($_CURL --user-agent "$USER_AGENT" -X $httpmethod -H "$_pf_cthdr" -H "$_H1" -H "$_H2" -H "$_H3" -H "$_H4" -H "$_H5" --data-binary "@$_pf_bodyfile" "$_post_url")"
+    fi
+    _ret="$?"
+    if [ "$_ret" != "0" ]; then
+      _err "Please refer to https://curl.haxx.se/libcurl/c/libcurl-errors.html for error code: $_ret"
+      if [ "$DEBUG" ] && [ "$DEBUG" -ge "2" ]; then
+        _err "Here is the curl dump log:"
+        _err "$(cat "$_CURL_DUMP")"
+      fi
+    fi
+  elif [ "$_ACME_WGET" ]; then
+    _WGET="$_ACME_WGET"
+    if [ "$HTTPS_INSECURE" ]; then
+      _WGET="$_WGET --no-check-certificate "
+    fi
+    _debug "_WGET" "$_WGET"
+    if [ "$needbase64" ]; then
+      if [ "$httpmethod" = "POST" ]; then
+        response="$($_WGET -S -O - --user-agent="$USER_AGENT" --header "$_H5" --header "$_H4" --header "$_H3" --header "$_H2" --header "$_H1" --header "$_pf_cthdr" --post-file="$_pf_bodyfile" "$_post_url" 2>"$HTTP_HEADER" | _base64)"
+      else
+        response="$($_WGET -S -O - --user-agent="$USER_AGENT" --header "$_H5" --header "$_H4" --header "$_H3" --header "$_H2" --header "$_H1" --header "$_pf_cthdr" --method $httpmethod --body-file="$_pf_bodyfile" "$_post_url" 2>"$HTTP_HEADER" | _base64)"
+      fi
+    else
+      if [ "$httpmethod" = "POST" ]; then
+        response="$($_WGET -S -O - --user-agent="$USER_AGENT" --header "$_H5" --header "$_H4" --header "$_H3" --header "$_H2" --header "$_H1" --header "$_pf_cthdr" --post-file="$_pf_bodyfile" "$_post_url" 2>"$HTTP_HEADER")"
+      else
+        response="$($_WGET -S -O - --user-agent="$USER_AGENT" --header "$_H5" --header "$_H4" --header "$_H3" --header "$_H2" --header "$_H1" --header "$_pf_cthdr" --method $httpmethod --body-file="$_pf_bodyfile" "$_post_url" 2>"$HTTP_HEADER")"
+      fi
+    fi
+    _ret="$?"
+    if [ "$_ret" = "8" ]; then
+      _ret=0
+      _debug "wget returned 8 as the server returned a 'Bad Request' response. Let's process the response later."
+    fi
+    if [ "$_ret" != "0" ]; then
+      _err "Please refer to https://www.gnu.org/software/wget/manual/html_node/Exit-Status.html for error code: $_ret"
+    fi
+    if _contains "$_WGET" " -d "; then
+      # Demultiplex wget debug output
+      cat "$HTTP_HEADER" >&2
+      _sed_i '/^[^ ][^ ]/d; /^ *$/d' "$HTTP_HEADER"
+    fi
+    # remove leading whitespaces from header to match curl format
+    _sed_i 's/^  //g' "$HTTP_HEADER"
+  else
+    _ret="$?"
+    _err "Neither curl nor wget have been found, cannot make $httpmethod request."
+  fi
+  _debug "_ret" "$_ret"
+  printf "%s" "$response"
+  return $_ret
+}
+
 # url getheader timeout
 _get() {
   _debug GET
@@ -2182,6 +2537,103 @@ _tail_c() {
   tail -c "$1" 2>/dev/null || tail -"$1"c
 }
 
+#code
+#Is this status the CA's front end failing rather than its ACME
+#implementation answering? 502 and 504 mean the proxy could not reach the
+#backend or gave up waiting for it, 503 that it is overloaded. The body of
+#those is the proxy's html, not problem+json, so no ACME status can be read
+#out of it and a caller looking for one abandons an order that is fine.
+#Anything else, a 500 from the ACME implementation included, is a real
+#answer and must be passed through to the caller.
+_is_gateway_error() {
+  case "$1" in
+  502 | 503 | 504) return 0 ;;
+  esac
+  return 1
+}
+
+#response
+#Does the CA say the order cannot be finalized yet? By the time acme.sh
+#finalizes, every authorization is valid, and an order becomes ready as
+#soon as they all are -- so this is the CA's own state lagging, not a
+#refusal. A struggling CA lags: ZeroSSL answered this on 2026-08-31 forty
+#seconds after the authorization went valid, in the middle of the 502s it
+#was serving that morning. Waiting is the answer, not abandoning an order
+#whose challenges have all passed.
+_is_order_not_ready() {
+  case "$1" in
+  *acme:error:orderNotReady*) return 0 ;;
+  esac
+  return 1
+}
+
+#response
+#Does the CA's answer to a revokeCert mean the certificate is revoked? An
+#empty body is the plain success. urn:ietf:params:acme:error:alreadyRevoked
+#is "The request specified a certificate to be revoked that has already been
+#revoked" (RFC 8555 sec 6.7), which is what a user sees when a retry follows
+#a request the CA did carry out but could not answer: the gateway ate the
+#reply, not the revocation. Either way the certificate is revoked, which is
+#what was asked for, so do not report a failure and do not go on to try the
+#domain key for a certificate that is already gone.
+#Match the error type, not the bare word: claiming a revocation that did not
+#happen is far worse than missing one, so a body that merely mentions the
+#name must not count.
+_is_revoked_response() {
+  if [ -z "$1" ]; then
+    return 0
+  fi
+  case "$1" in
+  *acme:error:alreadyRevoked*) return 0 ;;
+  esac
+  return 1
+}
+
+#attempt
+#Seconds to wait before retry number <attempt>, for the cases where the CA
+#gave us no Retry-After to go by. A flat two seconds let the whole twenty
+#attempt budget burn out in forty eight seconds, which is shorter than the
+#gateway outages a CA really has: ZeroSSL answered 502 and 504 for over a
+#minute at a time through August 2026, so every renewal that started during
+#one of those died instead of waiting it out. Backing off spends the same
+#twenty attempts over about six minutes, which is still far below the ten
+#minutes at which a Retry-After is read as the CA refusing outright.
+_retry_backoff_sec() {
+  case "$1" in
+  1) echo 2 ;;
+  2) echo 5 ;;
+  3) echo 10 ;;
+  *) echo 20 ;;
+  esac
+}
+
+#Reads response headers from stdin and prints the Retry-After value as a
+#number of seconds from now. The header carries either delay-seconds, printed
+#as is, or an HTTP-date (HARICA sends one on a processing order, Pebble too),
+#converted with _httpdate2time and turned into a delay against the local
+#clock. A date already in the past, or a value in neither form, prints
+#nothing, so the caller falls back to its own delay. Cutting a date at the
+#first colon used to leave "Thu,13Aug202612" behind, and every numeric test
+#on it then errored with "integer expression expected".
+_retryafter_seconds() {
+  _ras_v="$(tr -d '\r' | grep -i "^Retry-After *:" | _head_n 1 | cut -d : -f 2- | sed 's/^ *//; s/ *$//')"
+  if [ -z "$_ras_v" ]; then
+    return 0
+  fi
+  case "$_ras_v" in
+  *[!0-9]*)
+    _ras_t="$(_httpdate2time "$_ras_v")" || return 0
+    _ras_d="$((_ras_t - $(_time)))"
+    if [ "$_ras_d" -gt 0 ]; then
+      echo "$_ras_d"
+    fi
+    ;;
+  *)
+    echo "$_ras_v"
+    ;;
+  esac
+}
+
 # url  payload needbase64  keyfile
 _send_signed_request() {
   url=$1
@@ -2245,8 +2697,9 @@ _send_signed_request() {
     nonce="$_CACHED_NONCE"
     _debug2 nonce "$nonce"
     if [ -z "$nonce" ]; then
-      _info "Could not get nonce, let's try again."
-      _sleep 2
+      _sleep_nonce_sec="$(_retry_backoff_sec "$_request_retry_times")"
+      _info "Could not get nonce, let's try again. Sleeping for $_sleep_nonce_sec seconds."
+      _sleep "$_sleep_nonce_sec"
       continue
     fi
 
@@ -2304,14 +2757,14 @@ _send_signed_request() {
         _debug3 _body "$_body"
       fi
 
-      _retryafter=$(echo "$responseHeaders" | grep -i "^Retry-After *: *[0-9]\+ *" | cut -d : -f 2 | tr -d ' ' | tr -d '\r')
-      if [ "$code" = '503' ]; then
+      _retryafter=$(echo "$responseHeaders" | _retryafter_seconds)
+      if _is_gateway_error "$code"; then
         _sleep_overload_retry_sec=$_retryafter
         if [ -z "$_sleep_overload_retry_sec" ]; then
-          _sleep_overload_retry_sec=5
+          _sleep_overload_retry_sec="$(_retry_backoff_sec "$_request_retry_times")"
         fi
         if [ $_sleep_overload_retry_sec -le 600 ]; then
-          _info "It seems the CA server is currently overloaded, let's wait and retry. Sleeping for $_sleep_overload_retry_sec seconds."
+          _info "The CA server answered $code, let's wait and retry. Sleeping for $_sleep_overload_retry_sec seconds."
           _sleep $_sleep_overload_retry_sec
           continue
         else
@@ -2338,6 +2791,15 @@ _send_signed_request() {
 
 }
 
+#Reads a value from stdin, prints it escaped for use as the replacement text
+#of a sed s command delimited by '|'. The backslash must go first: a bare one
+#starts an escape sequence and backslash-digit is a backreference, both make
+#sed error out. Then '&' (the whole-match reference) and the '|' delimiter.
+#https://github.com/acmesh-official/acme.sh/issues/7213
+_sed_escape_rhs() {
+  sed -e 's/\\/\\\\/g' -e 's/&/\\&/g' -e 's/|/\\|/g'
+}
+
 #setopt "file"  "opt"  "="  "value" [";"]
 _setopt() {
   __conf="$1"
@@ -2351,35 +2813,52 @@ _setopt() {
   fi
   if [ ! -f "$__conf" ]; then
     touch "$__conf"
+    chmod 600 "$__conf"
   fi
+  __nl="
+"
+  case "$__val" in
+  *"$__nl"*)
+    #the conf format is line based and the file is sourced by the shell, so a
+    #value holding a line break cannot be represented in it (it would also
+    #make the replace sed below fail with an unterminated 's' command)
+    _err "The value of '$__opt' contains a line break, it cannot be saved to $__conf."
+    return 1
+    ;;
+  esac
   if [ -n "$(_tail_c 1 <"$__conf")" ]; then
     echo >>"$__conf"
   fi
 
   if grep -n "^$__opt$__sep" "$__conf" >/dev/null; then
     _debug3 OK
-    if _contains "$__val" "&"; then
-      __val="$(echo "$__val" | sed 's/&/\\&/g')"
-    fi
-    if _contains "$__val" "|"; then
-      __val="$(echo "$__val" | sed 's/|/\\|/g')"
-    fi
+    __val="$(printf -- "%s\n" "$__val" | _sed_escape_rhs)"
     text="$(cat "$__conf")"
-    printf -- "%s\n" "$text" | sed "s|^$__opt$__sep.*$|$__opt$__sep$__val$__end|" >"$__conf"
+    #capture first, write only on success: redirecting sed straight into the
+    #conf file truncates it before sed runs, so a failing sed (e.g. on an
+    #unescaped special character in the value) wiped the whole conf (#2426)
+    if __text="$(printf -- "%s\n" "$text" | sed "s|^$__opt$__sep.*$|$__opt$__sep$__val$__end|")"; then
+      printf -- "%s\n" "$__text" >"$__conf"
+    else
+      _err "Cannot save '$__opt' to $__conf."
+      return 1
+    fi
 
   elif grep -n "^#$__opt$__sep" "$__conf" >/dev/null; then
-    if _contains "$__val" "&"; then
-      __val="$(echo "$__val" | sed 's/&/\\&/g')"
-    fi
-    if _contains "$__val" "|"; then
-      __val="$(echo "$__val" | sed 's/|/\\|/g')"
-    fi
+    __val="$(printf -- "%s\n" "$__val" | _sed_escape_rhs)"
     text="$(cat "$__conf")"
-    printf -- "%s\n" "$text" | sed "s|^#$__opt$__sep.*$|$__opt$__sep$__val$__end|" >"$__conf"
+    if __text="$(printf -- "%s\n" "$text" | sed "s|^#$__opt$__sep.*$|$__opt$__sep$__val$__end|")"; then
+      printf -- "%s\n" "$__text" >"$__conf"
+    else
+      _err "Cannot save '$__opt' to $__conf."
+      return 1
+    fi
 
   else
     _debug3 APP
-    echo "$__opt$__sep$__val$__end" >>"$__conf"
+    #printf, not echo: dash's builtin echo interprets backslash escapes in
+    #the value and would corrupt it
+    printf -- "%s\n" "$__opt$__sep$__val$__end" >>"$__conf"
   fi
   _debug3 "$(grep -n "^$__opt$__sep" "$__conf")"
 }
@@ -2407,7 +2886,9 @@ _clear_conf() {
   _sdkey="$2"
   if [ "$_c_c_f" ]; then
     _conf_data="$(cat "$_c_c_f")"
-    echo "$_conf_data" | sed "/^$_sdkey *=.*$/d" >"$_c_c_f"
+    #printf, not echo: dash's builtin echo interprets backslash escapes and
+    #would corrupt saved values that contain them on every rewrite
+    printf -- "%s\n" "$_conf_data" | sed "/^$_sdkey *=.*$/d" >"$_c_c_f"
   else
     _err "Config file is empty, cannot clear"
   fi
@@ -2480,6 +2961,13 @@ _savedeployconf() {
 }
 
 #key
+_cleardeployconf() {
+  _cleardomainconf "SAVED_$1"
+  #remove later
+  _cleardomainconf "$1"
+}
+
+#key
 _getdeployconf() {
   _rac_key="$1"
   _rac_value="$(eval echo \$"$_rac_key")"
@@ -2546,6 +3034,21 @@ _clearcaconf() {
   _clear_conf "$CA_CONF" "$1"
 }
 
+#Starts a socat listener in the background, the pid is set to _socat_pid.
+#It uses the content, _content_len, _NC and _SOCAT_ERR of _startserver.
+#options
+_startsocat() {
+  _socat_opts="$1"
+  _debug "_NC" "$_NC $_socat_opts"
+  $_NC $_socat_opts SYSTEM:"sleep 1; \
+echo 'HTTP/1.0 200 OK'; \
+echo 'Content-Length\: $_content_len'; \
+echo ''; \
+printf '%s' '$content';" 2>>"$_SOCAT_ERR" &
+  _socat_pid="$!"
+  _debug "_socat_pid" "$_socat_pid"
+}
+
 # content localaddress
 _startserver() {
   content="$1"
@@ -2559,41 +3062,107 @@ _startserver() {
   _debug Le_Listen_V4 "$Le_Listen_V4"
   _debug Le_Listen_V6 "$Le_Listen_V6"
 
-  _NC="socat"
-  if [ "$Le_Listen_V6" ]; then
-    _NC="$_NC -6"
-    SOCAT_OPTIONS=TCP6-LISTEN
-  elif [ "$Le_Listen_V4" ]; then
-    _NC="$_NC -4"
-    SOCAT_OPTIONS=TCP4-LISTEN
+  _serverproc_v6=""
+  if _exists "socat"; then
+    _NC="socat"
+    SOCAT_OPTIONS6=""
+    if [ "$Le_Listen_V6" ] && [ -z "$Le_Listen_V4" ]; then
+      _NC="$_NC -6"
+      SOCAT_OPTIONS=TCP6-LISTEN
+    elif [ "$Le_Listen_V4" ] && [ -z "$Le_Listen_V6" ]; then
+      _NC="$_NC -4"
+      SOCAT_OPTIONS=TCP4-LISTEN
+    elif [ "$ncaddr" ]; then
+      #a single local address belongs to a single family, let socat pick it
+      SOCAT_OPTIONS=TCP-LISTEN
+    else
+      #listen on both ipv4 and ipv6, with one socket for each family:
+      #ipv4-mapped ipv6 addresses are not available everywhere.
+      SOCAT_OPTIONS=TCP4-LISTEN
+      SOCAT_OPTIONS6=TCP6-LISTEN
+    fi
+
+    if [ "$DEBUG" ] && [ "$DEBUG" -gt "1" ]; then
+      _NC="$_NC -d -d -v"
+    fi
+
+    SOCAT_OPTIONS=$SOCAT_OPTIONS:$Le_HTTPPort,crlf,reuseaddr,fork
+    if [ "$SOCAT_OPTIONS6" ]; then
+      #ipv6only keeps this socket from colliding with the ipv4 one
+      SOCAT_OPTIONS6=$SOCAT_OPTIONS6:$Le_HTTPPort,crlf,reuseaddr,fork,ipv6only=1
+    fi
+
+    #Adding bind to local-address
+    if [ "$ncaddr" ]; then
+      SOCAT_OPTIONS="$SOCAT_OPTIONS,bind=${ncaddr}"
+    fi
+
+    _content_len="$(printf "%s" "$content" | wc -c)"
+    _debug _content_len "$_content_len"
+    export _SOCAT_ERR="$(_mktemp)"
+    _startsocat "$SOCAT_OPTIONS"
+    serverproc="$_socat_pid"
+    if [ "$SOCAT_OPTIONS6" ]; then
+      #best effort, the host may have no ipv6 support at all
+      _startsocat "$SOCAT_OPTIONS6"
+      _serverproc_v6="$_socat_pid"
+    fi
   else
-    SOCAT_OPTIONS=TCP-LISTEN
+    _PYTHON=""
+    if _exists "python3"; then
+      _PYTHON="python3"
+    elif _exists "python2"; then
+      _PYTHON="python2"
+    elif _exists "python"; then
+      _PYTHON="python"
+    fi
+    if [ "$_PYTHON" ]; then
+      _debug "Using python: $_PYTHON"
+      #a comma separated list of addresses to listen on, one socket for each
+      _BIND_ADDR="0.0.0.0,::"
+      if [ "$Le_Listen_V6" ] && [ -z "$Le_Listen_V4" ]; then
+        _BIND_ADDR="::"
+      elif [ "$Le_Listen_V4" ] && [ -z "$Le_Listen_V6" ]; then
+        _BIND_ADDR="0.0.0.0"
+      fi
+      if [ "$ncaddr" ]; then
+        _BIND_ADDR="$ncaddr"
+      fi
+      _debug "_BIND_ADDR" "$_BIND_ADDR"
+      export _SOCAT_ERR="$(_mktemp)"
+      $_PYTHON -c "import socket,sys,select
+res='HTTP/1.0 200 OK\r\nContent-Length: '+str(len(sys.argv[3]))+'\r\n\r\n'+sys.argv[3]
+ads=sys.argv[2].split(',')
+ls=[]
+for ad in ads:
+ try:
+  sk=socket.socket(socket.AF_INET6 if ':' in ad else socket.AF_INET,socket.SOCK_STREAM)
+  sk.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+  if ':' in ad and len(ads)>1:
+   sk.setsockopt(socket.IPPROTO_IPV6,socket.IPV6_V6ONLY,1)
+  sk.bind((ad,int(sys.argv[1])))
+  sk.listen(5)
+  ls.append(sk)
+ except Exception:
+  sys.stderr.write(str(sys.exc_info()[1])+'\n')
+if not ls:
+ sys.exit(1)
+while True:
+ for sk in select.select(ls,[],[])[0]:
+  c,a=sk.accept()
+  c.sendall(res.encode() if hasattr(res, 'encode') else res)
+  c.close()" "$Le_HTTPPort" "$_BIND_ADDR" "$content" 2>"$_SOCAT_ERR" &
+      serverproc="$!"
+      _NC="$_PYTHON"
+    else
+      _err "Please install socat or python first for standalone mode."
+      return 1
+    fi
   fi
 
-  if [ "$DEBUG" ] && [ "$DEBUG" -gt "1" ]; then
-    _NC="$_NC -d -d -v"
-  fi
-
-  SOCAT_OPTIONS=$SOCAT_OPTIONS:$Le_HTTPPort,crlf,reuseaddr,fork
-
-  #Adding bind to local-address
-  if [ "$ncaddr" ]; then
-    SOCAT_OPTIONS="$SOCAT_OPTIONS,bind=${ncaddr}"
-  fi
-
-  _content_len="$(printf "%s" "$content" | wc -c)"
-  _debug _content_len "$_content_len"
-  _debug "_NC" "$_NC $SOCAT_OPTIONS"
-  export _SOCAT_ERR="$(_mktemp)"
-  $_NC $SOCAT_OPTIONS SYSTEM:"sleep 1; \
-echo 'HTTP/1.0 200 OK'; \
-echo 'Content-Length\: $_content_len'; \
-echo ''; \
-printf '%s' '$content';" 2>"$_SOCAT_ERR" &
-  serverproc="$!"
   if [ -f "$_SOCAT_ERR" ]; then
     if grep "Permission denied" "$_SOCAT_ERR" >/dev/null; then
-      _err "socat: $(cat $_SOCAT_ERR)"
+      _err "$_NC: $(cat $_SOCAT_ERR)"
       _err "Can not listen for user: $(whoami)"
       _err "Maybe try with root again?"
       rm -f "$_SOCAT_ERR"
@@ -2605,6 +3174,11 @@ printf '%s' '$content';" 2>"$_SOCAT_ERR" &
 _stopserver() {
   pid="$1"
   _debug "pid" "$pid"
+  if [ "$_serverproc_v6" ]; then
+    _debug "_serverproc_v6" "$_serverproc_v6"
+    kill $_serverproc_v6 >/dev/null 2>&1
+    _serverproc_v6=""
+  fi
   if [ -z "$pid" ]; then
     rm -f "$_SOCAT_ERR"
     return
@@ -2678,9 +3252,11 @@ _starttlsserver() {
 
   _debug Le_Listen_V4 "$Le_Listen_V4"
   _debug Le_Listen_V6 "$Le_Listen_V6"
-  if [ "$Le_Listen_V4" ]; then
+  #openssl s_server binds a single socket, so both options together can only
+  #mean: do not force a family, same as when neither of them is given.
+  if [ "$Le_Listen_V4" ] && [ -z "$Le_Listen_V6" ]; then
     __S_OPENSSL="$__S_OPENSSL -4"
-  elif [ "$Le_Listen_V6" ]; then
+  elif [ "$Le_Listen_V6" ] && [ -z "$Le_Listen_V4" ]; then
     __S_OPENSSL="$__S_OPENSSL -6"
   fi
 
@@ -2746,13 +3322,44 @@ __initHome() {
     _debug "Using default home: $DEFAULT_INSTALL_HOME"
     LE_WORKING_DIR="$DEFAULT_INSTALL_HOME"
   fi
+  # Convert a relative --home to an absolute path: later code cd's around
+  # (e.g. installOnline extracts and enters the archive dir), where a
+  # relative path would point into the wrong directory.
+  # https://github.com/acmesh-official/acme.sh/issues/6477
+  case "$LE_WORKING_DIR" in
+  /*) ;;
+  *)
+    if [ -d "$LE_WORKING_DIR" ]; then
+      LE_WORKING_DIR="$(cd "$LE_WORKING_DIR" && pwd)"
+    fi
+    ;;
+  esac
   export LE_WORKING_DIR
 
   if [ -z "$LE_CONFIG_HOME" ]; then
     LE_CONFIG_HOME="$LE_WORKING_DIR"
   fi
+  case "$LE_CONFIG_HOME" in
+  /*) ;;
+  *)
+    if [ -d "$LE_CONFIG_HOME" ]; then
+      LE_CONFIG_HOME="$(cd "$LE_CONFIG_HOME" && pwd)"
+    fi
+    ;;
+  esac
   _debug "Using config home: $LE_CONFIG_HOME"
   export LE_CONFIG_HOME
+
+  # Paths with whitespace break the unquoted $_CURL/$_WGET command expansion,
+  # so fail early with a clear error instead of a cryptic curl/wget failure.
+  # https://github.com/acmesh-official/acme.sh/issues/2163
+  case "$LE_WORKING_DIR$LE_CONFIG_HOME" in
+  *" "*)
+    _err "The --home or --config-home path can not contain spaces: '$LE_WORKING_DIR'"
+    _err "Please install $PROJECT_NAME to a path without spaces."
+    exit 1
+    ;;
+  esac
 
   _DEFAULT_ACCOUNT_CONF_PATH="$LE_CONFIG_HOME/account.conf"
 
@@ -2783,6 +3390,7 @@ _clearAPI() {
   ACME_REVOKE_CERT=""
   ACME_NEW_NONCE=""
   ACME_AGREEMENT=""
+  ACME_RENEWAL_INFO=""
 }
 
 #server
@@ -2827,6 +3435,9 @@ _initAPI() {
     ACME_AGREEMENT=$(echo "$response" | _egrep_o 'termsOfService" *: *"[^"]*"' | cut -d '"' -f 3)
     export ACME_AGREEMENT
 
+    ACME_RENEWAL_INFO=$(echo "$response" | _egrep_o 'renewalInfo" *: *"[^"]*"' | cut -d '"' -f 3)
+    export ACME_RENEWAL_INFO
+
     _debug "ACME_KEY_CHANGE" "$ACME_KEY_CHANGE"
     _debug "ACME_NEW_AUTHZ" "$ACME_NEW_AUTHZ"
     _debug "ACME_NEW_ORDER" "$ACME_NEW_ORDER"
@@ -2834,6 +3445,7 @@ _initAPI() {
     _debug "ACME_REVOKE_CERT" "$ACME_REVOKE_CERT"
     _debug "ACME_AGREEMENT" "$ACME_AGREEMENT"
     _debug "ACME_NEW_NONCE" "$ACME_NEW_NONCE"
+    _debug "ACME_RENEWAL_INFO" "$ACME_RENEWAL_INFO"
     if [ "$ACME_NEW_ACCOUNT" ] && [ "$ACME_NEW_ORDER" ]; then
       return 0
     fi
@@ -2844,6 +3456,11 @@ _initAPI() {
     return 0
   fi
   _err "Cannot init API for $_api_server"
+  if [ "$_api_server" = "$CA_ZEROSSL" ]; then
+    _info "$(__green "If this host is IPv6-only: ZeroSSL currently has no IPv6 endpoint.")"
+    _info "$(__green "Try another CA, e.g.: $PROJECT_ENTRY --set-default-ca --server letsencrypt")"
+    _info "See: $(__green "https://github.com/acmesh-official/acme.sh/issues/6872")"
+  fi
   return 1
 }
 
@@ -3274,9 +3891,14 @@ _setNginx() {
   fi
 
   echo "$NGINX_START
-location ~ \"^/\.well-known/acme-challenge/([-_a-zA-Z0-9]+)\$\" {
-  default_type text/plain;
-  return 200 \"\$1.$_thumbpt\";
+location ^~ /.well-known/acme-challenge/ {
+  # the ^~ prefix wins over regex-skipping blocks like \"location ^~ /\",
+  # the nested regex location still captures the token as \$1
+  location ~ \"^/\.well-known/acme-challenge/([-_a-zA-Z0-9]+)\$\" {
+    default_type text/plain;
+    return 200 \"\$1.$_thumbpt\";
+  }
+  return 404;
 }
 #NGINX_START
 " >>"$FOUND_REAL_NGINX_CONF"
@@ -3420,7 +4042,7 @@ _restoreNginx() {
   done
 
   _info "Reloading nginx"
-  if ! nginx -s reload >/dev/null; then
+  if ! nginx -s reload >/dev/null 2>&1; then
     _err "An error occurred while reloading nginx, please open an issue on $PROJECT."
     return 1
   fi
@@ -3552,9 +4174,9 @@ _on_before_issue() {
     fi
   fi
 
-  if _hasfield "$_chk_web_roots" "$NO_VALUE"; then
-    if ! _exists "socat"; then
-      _err "Please install socat tools first."
+  if _hasfield "$_chk_web_roots" "$NO_VALUE" && [ "$_chk_web_roots" = "$NO_VALUE" ]; then
+    if ! _exists "socat" && ! _exists "python" && ! _exists "python2" && ! _exists "python3"; then
+      _err "Please install socat or python tools first."
       return 1
     fi
   fi
@@ -3607,6 +4229,11 @@ _on_before_issue() {
       netprc="$(echo "$_netprc" | grep "$_checkaddr")"
       if [ -z "$netprc" ]; then
         netprc="$(echo "$_netprc" | grep "$LOCAL_ANY_ADDRESS:$_checkport")"
+      fi
+      if [ -z "$netprc" ]; then
+        #aix, macos, the bsds and solaris print the wildcard local address as
+        #"*.port", not "0.0.0.0:port", and it blocks $_checkaddr just the same
+        netprc="$(echo "$_netprc" | grep " [*][:.]$_checkport ")"
       fi
       if [ "$netprc" ]; then
         _err "$netprc"
@@ -3724,10 +4351,10 @@ _on_issue_success() {
 #account_key_length   eab-kid  eab-hmac-key
 registeraccount() {
   _account_key_length="$1"
-  _eab_id="$2"
+  _eab_kid="$2"
   _eab_hmac_key="$3"
   _initpath
-  _regAccount "$_account_key_length" "$_eab_id" "$_eab_hmac_key"
+  _regAccount "$_account_key_length" "$_eab_kid" "$_eab_hmac_key"
 }
 
 __calcAccountKeyHash() {
@@ -3736,6 +4363,16 @@ __calcAccountKeyHash() {
 
 __calc_account_thumbprint() {
   printf "%s" "$jwk" | tr -d ' ' | _digest "sha256" | _url_replace
+}
+
+#Reads a comma- or space-separated email list from stdin and prints
+#the ACME contact list items: "mailto:a@example.com","mailto:b@example.com"
+_mailto_contacts() {
+  _mc_out=""
+  for _mc_m in $(tr ',' ' '); do
+    _mc_out="$_mc_out,\"mailto:$_mc_m\""
+  done
+  echo "$_mc_out" | cut -c 2-
 }
 
 _getAccountEmail() {
@@ -3757,14 +4394,14 @@ _getAccountEmail() {
 _regAccount() {
   _initpath
   _reg_length="$1"
-  _eab_id="$2"
+  _eab_kid="$2"
   _eab_hmac_key="$3"
   _debug3 _regAccount "$_regAccount"
   _initAPI
 
   mkdir -p "$CA_DIR"
 
-  if [ ! -f "$ACCOUNT_KEY_PATH" ]; then
+  if [ ! -s "$ACCOUNT_KEY_PATH" ]; then
     if ! _create_account_key "$_reg_length"; then
       _err "Error creating account key."
       return 1
@@ -3774,13 +4411,13 @@ _regAccount() {
   if ! _calcjwk "$ACCOUNT_KEY_PATH"; then
     return 1
   fi
-  if [ "$_eab_id" ] && [ "$_eab_hmac_key" ]; then
-    _savecaconf CA_EAB_KEY_ID "$_eab_id"
+  if [ "$_eab_kid" ] && [ "$_eab_hmac_key" ]; then
+    _savecaconf CA_EAB_KEY_ID "$_eab_kid"
     _savecaconf CA_EAB_HMAC_KEY "$_eab_hmac_key"
   fi
-  _eab_id=$(_readcaconf "CA_EAB_KEY_ID")
+  _eab_kid=$(_readcaconf "CA_EAB_KEY_ID")
   _eab_hmac_key=$(_readcaconf "CA_EAB_HMAC_KEY")
-  _secure_debug3 _eab_id "$_eab_id"
+  _secure_debug3 _eab_kid "$_eab_kid"
   _secure_debug3 _eab_hmac_key "$_eab_hmac_key"
   _email="$(_getAccountEmail)"
   if [ "$_email" ]; then
@@ -3788,7 +4425,7 @@ _regAccount() {
   fi
 
   if [ "$ACME_DIRECTORY" = "$CA_ZEROSSL" ]; then
-    if [ -z "$_eab_id" ] || [ -z "$_eab_hmac_key" ]; then
+    if [ -z "$_eab_kid" ] || [ -z "$_eab_hmac_key" ]; then
       _info "No EAB credentials found for ZeroSSL, let's obtain them"
       if [ -z "$_email" ]; then
         _info "$(__green "$PROJECT_NAME is using ZeroSSL as default CA now.")"
@@ -3797,17 +4434,19 @@ _regAccount() {
         _info "See: $(__green "$_ZEROSSL_WIKI")"
         return 1
       fi
-      _eabresp=$(_post "email=$_email" $_ZERO_EAB_ENDPOINT)
+      #the ZeroSSL EAB endpoint takes a single address, use the first one
+      _eab_email="$(echo "$_email" | tr ',' ' ' | awk '{print $1}')"
+      _eabresp=$(_post "email=$_eab_email" $_ZERO_EAB_ENDPOINT)
       if [ "$?" != "0" ]; then
         _debug2 "$_eabresp"
         _err "Cannot get EAB credentials from ZeroSSL."
         return 1
       fi
       _secure_debug2 _eabresp "$_eabresp"
-      _eab_id="$(echo "$_eabresp" | tr ',}' '\n\n' | grep '"eab_kid"' | cut -d : -f 2 | tr -d '"')"
-      _secure_debug2 _eab_id "$_eab_id"
-      if [ -z "$_eab_id" ]; then
-        _err "Cannot resolve _eab_id"
+      _eab_kid="$(echo "$_eabresp" | tr ',}' '\n\n' | grep '"eab_kid"' | cut -d : -f 2 | tr -d '"')"
+      _secure_debug2 _eab_kid "$_eab_kid"
+      if [ -z "$_eab_kid" ]; then
+        _err "Cannot resolve _eab_kid"
         return 1
       fi
       _eab_hmac_key="$(echo "$_eabresp" | tr ',}' '\n\n' | grep '"eab_hmac_key"' | cut -d : -f 2 | tr -d '"')"
@@ -3816,12 +4455,12 @@ _regAccount() {
         _err "Cannot resolve _eab_hmac_key"
         return 1
       fi
-      _savecaconf CA_EAB_KEY_ID "$_eab_id"
+      _savecaconf CA_EAB_KEY_ID "$_eab_kid"
       _savecaconf CA_EAB_HMAC_KEY "$_eab_hmac_key"
     fi
   fi
-  if [ "$_eab_id" ] && [ "$_eab_hmac_key" ]; then
-    eab_protected="{\"alg\":\"HS256\",\"kid\":\"$_eab_id\",\"url\":\"${ACME_NEW_ACCOUNT}\"}"
+  if [ "$_eab_kid" ] && [ "$_eab_hmac_key" ]; then
+    eab_protected="{\"alg\":\"HS256\",\"kid\":\"$_eab_kid\",\"url\":\"${ACME_NEW_ACCOUNT}\"}"
     _debug3 eab_protected "$eab_protected"
 
     eab_protected64=$(printf "%s" "$eab_protected" | _base64 | _url_replace)
@@ -3835,6 +4474,10 @@ _regAccount() {
 
     key_hex="$(_durl_replace_base64 "$_eab_hmac_key" | _dbase64 | _hex_dump | tr -d ' ')"
     _debug3 key_hex "$key_hex"
+    if [ -z "$key_hex" ]; then
+      _err "Cannot base64-decode the eab-hmac-key. Please check the value, and your openssl version."
+      return 1
+    fi
 
     eab_signature=$(printf "%s" "$eab_sign_t" | _hmac sha256 $key_hex | _base64 | _url_replace)
     _debug3 eab_signature "$eab_signature"
@@ -3843,7 +4486,7 @@ _regAccount() {
     _debug3 externalBinding "$externalBinding"
   fi
   if [ "$_email" ]; then
-    email_sg="\"contact\": [\"mailto:$_email\"], "
+    email_sg="\"contact\": [$(echo "$_email" | _mailto_contacts)], "
   fi
   regjson="{$email_sg\"termsOfServiceAgreed\": true$externalBinding}"
 
@@ -3879,7 +4522,7 @@ _regAccount() {
     fi
     _savecaconf "ACCOUNT_URL" "$_accUri"
   else
-    ACCOUNT_URL="$(_readcaconf ACCOUNT_URL)"
+    _accUri="$(_readcaconf ACCOUNT_URL)"
   fi
   export ACCOUNT_URL="$_accUri"
 
@@ -3887,7 +4530,9 @@ _regAccount() {
   _debug "Calc CA_KEY_HASH" "$CA_KEY_HASH"
   _savecaconf CA_KEY_HASH "$CA_KEY_HASH"
 
-  if [ "$code" = '403' ]; then
+  #RFC 8555 sec 7.3.6 requires 401 for requests from a deactivated account,
+  #but Boulder (Let's Encrypt) historically returns 403. Accept both.
+  if [ "$code" = '403' ] || [ "$code" = '401' ]; then
     _err "It seems that the account key has been deactivated, please use a new account key."
     return 1
   fi
@@ -3921,7 +4566,7 @@ updateaccount() {
   _email="$(_getAccountEmail)"
 
   if [ "$_email" ]; then
-    updjson='{"contact": ["mailto:'$_email'"]}'
+    updjson='{"contact": ['$(echo "$_email" | _mailto_contacts)']}'
   else
     updjson='{"contact": []}'
   fi
@@ -3931,6 +4576,12 @@ updateaccount() {
   if [ "$code" = '200' ]; then
     echo "$response" >"$ACCOUNT_JSON_PATH"
     _info "Account update success for $_accUri."
+    # persist the effective mailbox like _regAccount does; otherwise
+    # "--update-account -m new@..." updates the CA but the local conf
+    # keeps showing the old address (issue 4673)
+    if [ "$_email" ]; then
+      _savecaconf "CA_EMAIL" "$_email"
+    fi
 
     ACCOUNT_THUMBPRINT="$(__calc_account_thumbprint)"
     _info "ACCOUNT_THUMBPRINT" "$ACCOUNT_THUMBPRINT"
@@ -3938,6 +4589,93 @@ updateaccount() {
     _info "An error occurred and the account was not updated."
     return 1
   fi
+}
+
+#Implement account key rollover
+updateaccountkey() {
+  _length="$1"
+  _initpath
+
+  if [ ! -f "$ACCOUNT_KEY_PATH" ]; then
+    _err "Account key not found at: $ACCOUNT_KEY_PATH"
+    return 1
+  fi
+  ACCOUNT_KEY_PATH_NEW="$ACCOUNT_KEY_PATH.new"
+
+  _accUri=$(_readcaconf "ACCOUNT_URL")
+  _debug _accUri "$_accUri"
+
+  if [ -z "$_accUri" ]; then
+    _err "The account URL is empty, please run '--update-account' first to update the account info, then try again."
+    return 1
+  fi
+  if ! _calcjwk "$ACCOUNT_KEY_PATH"; then
+    return 1
+  fi
+  _inner_payload="{\"account\": \"$_accUri\", \"oldKey\": $jwk}"
+
+  _initAPI
+  if [ -z "$ACME_KEY_CHANGE" ]; then
+    _err "Server does not expose keyChange url."
+    return 1
+  fi
+
+  _url="$ACME_KEY_CHANGE"
+  if _createkey "$_length" "$ACCOUNT_KEY_PATH_NEW"; then
+    _info "New account key creation OK."
+  else
+    _err "New account key creation error."
+    return 1
+  fi
+
+  if ! _calcjwk "$ACCOUNT_KEY_PATH_NEW"; then
+    rm -f "$ACCOUNT_KEY_PATH_NEW"
+    return 1
+  fi
+  _inner_protected="{\"url\": \"${_url}$JWK_HEADERPLACE_PART2, \"jwk\": $jwk"'}'
+  _inner_protected64="$(printf "%s" "$_inner_protected" | _base64 | _url_replace)"
+  _inner_payload64="$(printf "%s" "$_inner_payload" | _base64 | _url_replace)"
+  if ! _inner_sig_t="$(printf "%s" "$_inner_protected64.$_inner_payload64" | _sign "$ACCOUNT_KEY_PATH_NEW" "sha256")"; then
+    _err "Sign request failed."
+    rm -f "$ACCOUNT_KEY_PATH_NEW"
+    return 1
+  fi
+  _debug3 _inner_sig_t "$_inner_sig_t"
+
+  _inner_sig="$(printf "%s" "$_inner_sig_t" | _url_replace)"
+  _debug3 _inner_sig "$_inner_sig"
+
+  _body="{\"protected\": \"$_inner_protected64\", \"payload\": \"$_inner_payload64\", \"signature\": \"$_inner_sig\"}"
+
+  if ! _send_signed_request "$_url" "$_body" "" "$ACCOUNT_KEY_PATH"; then
+    _err "Error rotating account key: $response."
+    rm -f "$ACCOUNT_KEY_PATH_NEW"
+    return 1
+  fi
+
+  if [ "$code" = '200' ]; then
+    echo "$response" >"$ACCOUNT_JSON_PATH"
+    mv -f "$ACCOUNT_KEY_PATH_NEW" "$ACCOUNT_KEY_PATH"
+    _info "Account key rotation success for $_accUri."
+  elif [ "$code" = "409" ]; then
+    _err "An existing account is using the new key"
+    rm -f "$ACCOUNT_KEY_PATH_NEW"
+    return 1
+  else
+    _err "Account key rollover error: $response"
+    rm -f "$ACCOUNT_KEY_PATH_NEW"
+    return 1
+  fi
+
+  __CACHED_JWK_KEY_FILE=""
+  _calcjwk "$ACCOUNT_KEY_PATH"
+
+  ACCOUNT_THUMBPRINT="$(__calc_account_thumbprint)"
+  _info "ACCOUNT_THUMBPRINT" "$ACCOUNT_THUMBPRINT"
+
+  CA_KEY_HASH="$(__calcAccountKeyHash)"
+  _debug "Calc CA_KEY_HASH" "$CA_KEY_HASH"
+  _savecaconf CA_KEY_HASH "$CA_KEY_HASH"
 }
 
 #Implement deactivate account
@@ -3967,7 +4705,8 @@ deactivateaccount() {
   if _send_signed_request "$_accUri" "$_djson" && _contains "$response" '"deactivated"'; then
     _info "Successfully deactivated account $_accUri."
     _accid=$(echo "$response" | _egrep_o "\"id\" *: *[^,]*," | cut -d : -f 2 | tr -d ' ,')
-  elif [ "$code" = "403" ]; then
+  elif [ "$code" = "403" ] || [ "$code" = "401" ]; then
+    #RFC 8555 sec 7.3.6: 401 from a deactivated account; Boulder returns 403
     _info "The account is already deactivated."
     _accid=$(_getfield "$_accUri" "999" "/")
   else
@@ -3991,6 +4730,134 @@ deactivateaccount() {
       rm -f "$ACCOUNT_KEY_PATH"
     fi
   fi
+}
+
+#domain
+#Print the Validation Domain Name where the persistent TXT record must be
+#published: the "_validation-persist" label prepended to the domain being
+#validated (draft-ietf-acme-dns-persist-01 sec 4).
+#A wildcard identifier is validated by the record at its base domain, so the
+#leading "*." label is dropped: the wildcard scope comes from 'policy=wildcard'
+#in the record value, not from a "*" label in the record name (sec 5.1, 10.2).
+_dns_persist_txt_name() {
+  _dpt_domain="$1"
+  if _startswith "$_dpt_domain" "*."; then
+    _dpt_domain="$(echo "$_dpt_domain" | sed 's/^\*\.//')"
+  fi
+  if [ -z "$_dpt_domain" ]; then
+    return 1
+  fi
+  echo "_validation-persist.$_dpt_domain"
+}
+
+#domain  wildcard  ca_name  days
+#Print the TXT record(s) the user must add to enable persistent DNS validation
+#per draft-ietf-acme-dns-persist-01.
+makednspersistvalue() {
+  _mdpv_domain="$1"
+  _mdpv_wildcard="$2"
+  _mdpv_ca_name="$3"
+  _mdpv_days="$4"
+
+  if [ -z "$_mdpv_domain" ]; then
+    _err "Please specify a domain with -d."
+    return 1
+  fi
+
+  _txt_name="$(_dns_persist_txt_name "$_mdpv_domain")"
+  if [ -z "$_txt_name" ]; then
+    _err "Invalid domain: $_mdpv_domain"
+    return 1
+  fi
+  _debug _txt_name "$_txt_name"
+
+  #A wildcard identifier can only be issued if the record carries
+  #'policy=wildcard', so don't print a record that is guaranteed to fail.
+  if _startswith "$_mdpv_domain" "*." && [ "$_mdpv_wildcard" != "1" ]; then
+    _info "$_mdpv_domain is a wildcard domain, adding 'policy=wildcard' automatically."
+    _mdpv_wildcard="1"
+  fi
+
+  if [ -n "$_mdpv_days" ]; then
+    case "$_mdpv_days" in
+    '' | *[!0-9]*)
+      _err "--dns-persist-days must be a positive integer, got: $_mdpv_days"
+      return 1
+      ;;
+    esac
+    if [ "$_mdpv_days" -lt 1 ]; then
+      _err "--dns-persist-days must be at least 1."
+      return 1
+    fi
+  fi
+
+  _initpath
+
+  _accUri="$(_readcaconf ACCOUNT_URL)"
+  if [ -z "$_accUri" ]; then
+    _info "No account is registered for $ACME_DIRECTORY yet, registering one now..."
+    if ! _regAccount "$DEFAULT_ACCOUNT_KEY_LENGTH"; then
+      _err "Cannot register account."
+      return 1
+    fi
+    _accUri="$(_readcaconf ACCOUNT_URL)"
+  fi
+
+  if [ -z "$_accUri" ]; then
+    _err "Cannot determine the ACME account URL."
+    return 1
+  fi
+  _debug "Account URL" "$_accUri"
+
+  _txt_suffix="; accounturi=$_accUri"
+  if [ "$_mdpv_wildcard" = "1" ]; then
+    _txt_suffix="$_txt_suffix; policy=wildcard"
+  fi
+  if [ -n "$_mdpv_days" ]; then
+    _persist_until=$(_math "$(_time)" + "$_mdpv_days" \* 86400)
+    _txt_suffix="$_txt_suffix; persistUntil=$_persist_until"
+    _info "persistUntil set to $(__green "$(_time2str "$_persist_until")") ($_mdpv_days days from now)"
+  fi
+
+  if [ -n "$_mdpv_ca_name" ]; then
+    _info ""
+    _info "Add the following DNS TXT record to enable persistent DNS validation:"
+    _info ""
+    _info "$(printf 'TXT persist domain:%s' "$(__green "$_txt_name")")"
+    _info "$(printf 'TXT persist value :%s' "$(__green "\"$_mdpv_ca_name$_txt_suffix\"")")"
+    _info ""
+    return 0
+  fi
+
+  _info "Fetching ACME directory: $ACME_DIRECTORY"
+  _dir_resp="$(_get "$ACME_DIRECTORY" "" 30)"
+  if [ "$?" != "0" ] || [ -z "$_dir_resp" ]; then
+    _err "Cannot fetch ACME directory: $ACME_DIRECTORY"
+    return 1
+  fi
+  _dir_resp="$(echo "$_dir_resp" | _json_decode)"
+  _debug2 _dir_resp "$_dir_resp"
+
+  _caa_array="$(echo "$_dir_resp" | tr -d ' \r\n\t' | _egrep_o '"caaIdentities":\[[^]]*\]')"
+  _debug2 _caa_array "$_caa_array"
+  _caaids="$(echo "$_caa_array" | sed 's/.*\[//' | sed 's/\].*//' | tr ',' '\n' | tr -d '"')"
+  _debug2 _caaids "$_caaids"
+
+  if [ -z "$_caaids" ]; then
+    _err "The directory does not include 'caaIdentities'. Please specify --dns-persist-ca-name explicitly."
+    return 1
+  fi
+
+  _info ""
+  _info "Add ANY ONE of the following DNS TXT records to enable persistent DNS validation."
+  _info "(You only need to add one; pick whichever issuer identity you prefer.)"
+  for _id in $_caaids; do
+    [ -z "$_id" ] && continue
+    _info ""
+    _info "$(printf 'TXT persist domain:%s' "$(__green "$_txt_name")")"
+    _info "$(printf 'TXT persist value :%s' "$(__green "\"$_id$_txt_suffix\"")")"
+  done
+  _info ""
 }
 
 # domain folder  file
@@ -4342,16 +5209,25 @@ _match_issuer() {
 
 #ip
 _isIPv4() {
-  for seg in $(echo "$1" | tr '.' ' '); do
-    _debug2 seg "$seg"
-    if [ "$(echo "$seg" | tr -d '[0-9]')" ]; then
-      #not all number
+  #splitting must not glob: a "*" segment would match files in cwd
+  set -f
+  _ipv4_saved_ifs="$IFS"
+  IFS='.'
+  # shellcheck disable=SC2086
+  set -- $1
+  IFS="$_ipv4_saved_ifs"
+  set +f
+  if [ $# -ne 4 ]; then
+    return 1
+  fi
+  for _ipv4_seg in "$@"; do
+    _debug2 _ipv4_seg "$_ipv4_seg"
+    case "$_ipv4_seg" in
+    *[!0-9]* | "") return 1 ;;
+    esac
+    if [ "${#_ipv4_seg}" -gt 3 ] || [ "$_ipv4_seg" -gt 255 ]; then
       return 1
     fi
-    if [ $seg -ge 0 ] && [ $seg -lt 256 ]; then
-      continue
-    fi
-    return 1
   done
   return 0
 }
@@ -4450,11 +5326,18 @@ issue() {
   if [ -z "$_ACME_IS_RENEW" ]; then
     _initpath "$_main_domain" "$_key_length"
     mkdir -p "$DOMAIN_PATH"
-  elif ! _hasfield "$_web_roots" "$W_DNS"; then
+  elif [ -z "$Le_Vlist" ]; then
+    # Whether the saved order is resumed is decided by Le_Vlist below, so key
+    # this on Le_Vlist too. With no pending order to resume a new one is
+    # created, and a stale order link from the previous issuance must not be
+    # reused. https://github.com/acmesh-official/acme.sh/issues/3635
     Le_OrderFinalize=""
     Le_LinkOrder=""
-    Le_LinkCert=""
   fi
+  # Per-run state only: it is set after finalize and never read back from the
+  # saved domain conf. Carrying it over would make a run that gives up while
+  # the order is still 'processing' download the previous certificate again.
+  Le_LinkCert=""
 
   if _hasfield "$_web_roots" "$W_DNS" && [ -z "$FORCE_DNS_MANUAL" ]; then
     _err "$_DNS_MANUAL_ERROR"
@@ -4464,8 +5347,8 @@ issue() {
   if [ -f "$DOMAIN_CONF" ]; then
     Le_NextRenewTime=$(_readdomainconf Le_NextRenewTime)
     _debug Le_NextRenewTime "$Le_NextRenewTime"
-    if [ -z "$FORCE" ] && [ "$Le_NextRenewTime" ] && [ "$(_time)" -lt "$Le_NextRenewTime" ]; then
-      _valid_to_saved=$(_readdomainconf Le_Valid_to)
+    if [ -z "$FORCE" ] && [ -z "$_ari_should_renew" ] && [ "$Le_NextRenewTime" ] && [ "$(_time)" -lt "$Le_NextRenewTime" ]; then
+      _valid_to_saved=$(_readdomainconf Le_Valid_To)
       if [ "$_valid_to_saved" ] && ! _startswith "$_valid_to_saved" "+"; then
         _info "The domain is set to be valid to: $_valid_to_saved"
         _info "It cannot be renewed automatically"
@@ -4516,6 +5399,13 @@ issue() {
   else
     _cleardomainconf "Le_ChallengeAlias"
   fi
+  # Save Le_DNSSleep unconditionally here: the save inside the dns_entries
+  # branch is skipped when all authorizations are already valid (e.g. issuing
+  # the ECC twin of a just-issued RSA cert), which left the setting out of
+  # that cert's conf. https://github.com/acmesh-official/acme.sh/issues/6986
+  if [ "$Le_DNSSleep" ]; then
+    _savedomainconf "Le_DNSSleep" "$Le_DNSSleep"
+  fi
   if [ "$_preferred_chain" ]; then
     _savedomainconf "Le_Preferred_Chain" "$_preferred_chain" "base64"
   else
@@ -4545,7 +5435,7 @@ issue() {
   _debug2 _saved_account_key_hash "$_saved_account_key_hash"
 
   if [ -z "$ACCOUNT_URL" ] || [ -z "$_saved_account_key_hash" ] || [ "$_saved_account_key_hash" != "$(__calcAccountKeyHash)" ]; then
-    if ! _regAccount "$_accountkeylength"; then
+    if ! _regAccount "$_accountkeylength" "$_eab_kid" "$_eab_hmac_key"; then
       _on_issue_err "$_post_hook"
       return 1
     fi
@@ -4674,12 +5564,44 @@ issue() {
     if [ "$_certificate_profile" ]; then
       _newOrderObj="$_newOrderObj,\"profile\": \"$_certificate_profile\""
     fi
+
+    # RFC 9773 Section 5: include "replaces" only when this is an actual
+    # renewal (--renew path), the CA advertises renewalInfo, and a prior
+    # cert exists. --issue (even with --force) is not a renewal per RFC 9773
+    # which speaks of "a clear predecessor certificate" issued by this CA.
+    # NO_ARI=1 (env, account.conf, or ca.conf) disables ARI entirely, so the
+    # "replaces" field is also omitted.
+    _replaces_certID=""
+    if [ "$NO_ARI" = "1" ]; then
+      _debug "NO_ARI=1, omitting ARI 'replaces' field from newOrder"
+    elif [ "$_ACME_IS_RENEW" = "1" ] && [ "$ACME_RENEWAL_INFO" ] && [ -f "$CERT_PATH" ]; then
+      _replaces_certID="$(_getARICertID "$CERT_PATH")"
+      _debug "Adding ARI replaces" "$_replaces_certID"
+    fi
+
     _debug "STEP 1, Ordering a Certificate"
-    if ! _send_signed_request "$ACME_NEW_ORDER" "$_newOrderObj}"; then
+    _newOrderReplacesObj="$_newOrderObj"
+    if [ "$_replaces_certID" ]; then
+      _newOrderReplacesObj="$_newOrderObj,\"replaces\": \"$_replaces_certID\""
+    fi
+    if ! _send_signed_request "$ACME_NEW_ORDER" "$_newOrderReplacesObj}"; then
       _err "Error creating new order."
       _clearup
       _on_issue_err "$_post_hook"
       return 1
+    fi
+    # RFC 9773 Section 5 only defines the "alreadyReplaced" error, but real CAs
+    # (Let's Encrypt) may also reject with a malformed error if the prior cert
+    # was issued by a different issuer / different CA. Retry without "replaces"
+    # whenever the failure mentions ARI or the replaces field.
+    if [ "$_replaces_certID" ] && { _contains "$response" "alreadyReplaced" || _contains "$response" "urn:ietf:params:acme:error:malformed" || _contains "$response" "'replaces'" || _contains "$response" "ARI"; }; then
+      _info "ARI 'replaces' rejected by CA, retrying newOrder without 'replaces'."
+      if ! _send_signed_request "$ACME_NEW_ORDER" "$_newOrderObj}"; then
+        _err "Error creating new order."
+        _clearup
+        _on_issue_err "$_post_hook"
+        return 1
+      fi
     fi
     if _contains "$response" "invalid"; then
       if echo "$response" | _normalizeJson | grep '"status":"invalid"' >/dev/null 2>&1; then
@@ -4704,8 +5626,11 @@ issue() {
 
     #for dns manual mode
     _savedomainconf "Le_OrderFinalize" "$Le_OrderFinalize"
+    #the second invocation must poll this order, not the one the previous cert came from
+    _savedomainconf "Le_LinkOrder" "$Le_LinkOrder"
+    _cleardomainconf "Le_LinkCert"
 
-    _authorizations_seg="$(echo "$response" | _json_decode | _egrep_o '"authorizations" *: *\[[^\[]*\]' | cut -d '[' -f 2 | tr -d ']' | tr -d '"')"
+    _authorizations_seg="$(echo "$response" | _json_decode | _authorizations_from_order)"
     _debug2 _authorizations_seg "$_authorizations_seg"
     if [ -z "$_authorizations_seg" ]; then
       _err "_authorizations_seg not found."
@@ -4771,7 +5696,9 @@ $_authorizations_map"
 
       vtype="$VTYPE_HTTP"
       #todo, v2 wildcard force to use dns
-      if _startswith "$_currentRoot" "$W_DNS"; then
+      if [ "$_currentRoot" = "$W_DNS_PERSIST" ]; then
+        vtype="$VTYPE_DNS_PERSIST"
+      elif _startswith "$_currentRoot" "$W_DNS"; then
         vtype="$VTYPE_DNS"
       fi
 
@@ -4814,7 +5741,7 @@ $_authorizations_map"
       fi
 
       # Fix for empty error objects in response which mess up the original code, adapted from fix suggested here: https://github.com/acmesh-official/acme.sh/issues/4933#issuecomment-1870499018
-      entry="$(echo "$response" | sed s/'"error":{}'/'"error":null'/ | _egrep_o '[^\{]*"type":"'$vtype'"[^\}]*')"
+      entry="$(echo "$response" | sed s/'"error":{}'/'"error":null'/ | _egrep_o '[^{]*"type":"'$vtype'"[^}]*')"
       _debug entry "$entry"
 
       if [ -z "$keyauthorization" -a -z "$entry" ]; then
@@ -4829,18 +5756,7 @@ $_authorizations_map"
       fi
 
       if [ -z "$keyauthorization" ]; then
-        token="$(echo "$entry" | _egrep_o '"token":"[^"]*' | cut -d : -f 2 | tr -d '"')"
-        _debug token "$token"
-
-        if [ -z "$token" ]; then
-          _err "Cannot get domain token $entry"
-          _clearup
-          _on_issue_err "$_post_hook"
-          return 1
-        fi
-
         uri="$(echo "$entry" | _egrep_o '"url":"[^"]*' | cut -d '"' -f 4 | _head_n 1)"
-
         _debug uri "$uri"
 
         if [ -z "$uri" ]; then
@@ -4849,8 +5765,26 @@ $_authorizations_map"
           _on_issue_err "$_post_hook"
           return 1
         fi
-        keyauthorization="$token.$thumbprint"
-        _debug keyauthorization "$keyauthorization"
+
+        if [ "$vtype" = "$VTYPE_DNS_PERSIST" ]; then
+          # dns-persist-01 challenges have no token; the TXT record is
+          # provisioned out-of-band. Use a non-empty placeholder so the
+          # downstream code does not treat this entry as already verified.
+          keyauthorization="$VTYPE_DNS_PERSIST"
+          _debug keyauthorization "$keyauthorization"
+        else
+          token="$(echo "$entry" | _egrep_o '"token":"[^"]*' | cut -d : -f 2 | tr -d '"')"
+          _debug token "$token"
+
+          if [ -z "$token" ]; then
+            _err "Cannot get domain token $entry"
+            _clearup
+            _on_issue_err "$_post_hook"
+            return 1
+          fi
+          keyauthorization="$token.$thumbprint"
+          _debug keyauthorization "$keyauthorization"
+        fi
       fi
 
       dvlist="$d$sep$keyauthorization$sep$uri$sep$vtype$sep$_currentRoot$sep$_authz_url"
@@ -4886,6 +5820,8 @@ $_authorizations_map"
         fi
         _d_alias="$(_getfield "$_challenge_alias" "$_alias_index")"
         test "$_d_alias" = "$NO_VALUE" && _d_alias=""
+        # strip the trailing dot of a fully-qualified alias domain
+        _d_alias="${_d_alias%.}"
         _alias_index="$(_math "$_alias_index" + 1)"
         _debug "_d_alias" "$_d_alias"
         if [ "$_d_alias" ]; then
@@ -5080,6 +6016,8 @@ $_authorizations_map"
         fi
       fi
     elif [ "$vtype" = "$VTYPE_ALPN" ]; then
+      _ncaddr="$(_getfield "$_local_addr" "$_ncIndex")"
+      _ncIndex="$(_math $_ncIndex + 1)"
       acmevalidationv1="$(printf "%s" "$keyauthorization" | _digest "sha256" "hex")"
       _debug acmevalidationv1 "$acmevalidationv1"
       if ! _starttlsserver "$d" "" "$Le_TLSPort" "$keyauthorization" "$_ncaddr" "$acmevalidationv1"; then
@@ -5135,7 +6073,7 @@ $_authorizations_map"
       status=$(echo "$response" | _egrep_o '"status":"[^"]*' | cut -d : -f 2 | tr -d '"')
       _debug2 status "$status"
       if _contains "$status" "invalid"; then
-        error="$(echo "$response" | _egrep_o '"error":\{[^\}]*')"
+        error="$(echo "$response" | _egrep_o '"error":[{][^}]*')"
         _debug2 error "$error"
         errordetail="$(echo "$error" | _egrep_o '"detail": *"[^"]*' | cut -d '"' -f 4)"
         _debug2 errordetail "$errordetail"
@@ -5147,7 +6085,12 @@ $_authorizations_map"
         if [ "$DEBUG" ]; then
           if [ "$vtype" = "$VTYPE_HTTP" ]; then
             _debug "Debug: GET token URL."
-            _get "http://$d/.well-known/acme-challenge/$token" "" 1
+            if _isIPv6 "$d"; then
+              host="[$d]"
+            else
+              host="$d"
+            fi
+            _get "http://$host/.well-known/acme-challenge/$token" "" 1
           fi
         fi
         _clearupwebbroot "$_currentRoot" "$removelevel" "$token"
@@ -5188,7 +6131,7 @@ $_authorizations_map"
         _on_issue_err "$_post_hook" "$vlist"
         return 1
       fi
-      _retryafter=$(echo "$responseHeaders" | grep -i "^Retry-After *: *[0-9]\+ *" | cut -d : -f 2 | tr -d ' ' | tr -d '\r')
+      _retryafter=$(echo "$responseHeaders" | _retryafter_seconds)
       _sleep_overload_retry_sec=$_retryafter
       if [ "$_sleep_overload_retry_sec" ]; then
         if [ $_sleep_overload_retry_sec -le 600 ]; then
@@ -5211,11 +6154,25 @@ $_authorizations_map"
 
   _info "Let's finalize the order."
   _info "Le_OrderFinalize" "$Le_OrderFinalize"
-  if ! _send_signed_request "${Le_OrderFinalize}" "{\"csr\": \"$der\"}"; then
-    _err "Signing failed."
-    _on_issue_err "$_post_hook"
-    return 1
-  fi
+  _finalize_retry=0
+  MAX_FINALIZE_RETRY_TIMES=10
+  while [ "$_finalize_retry" -lt "$MAX_FINALIZE_RETRY_TIMES" ]; do
+    _finalize_retry=$(_math "$_finalize_retry" + 1)
+    if ! _send_signed_request "${Le_OrderFinalize}" "{\"csr\": \"$der\"}"; then
+      _err "Signing failed."
+      _on_issue_err "$_post_hook"
+      return 1
+    fi
+    if [ "$code" = "200" ]; then
+      break
+    fi
+    if ! _is_order_not_ready "$response"; then
+      break
+    fi
+    _finalize_wait_sec="$(_retry_backoff_sec "$_finalize_retry")"
+    _info "The order is not ready to be finalized yet, waiting $_finalize_wait_sec seconds. ($_finalize_retry/$MAX_FINALIZE_RETRY_TIMES)"
+    _sleep "$_finalize_wait_sec"
+  done
   if [ "$code" != "200" ]; then
     _err "Signing failed. Finalize code was not 200."
     _err "$response"
@@ -5244,9 +6201,9 @@ $_authorizations_map"
       break
     elif _contains "$response" "\"ready\""; then
       _info "Order status is 'ready', let's sleep and retry."
-      _retryafter=$(echo "$responseHeaders" | grep -i "^Retry-After *:" | cut -d : -f 2 | tr -d ' ' | tr -d '\r')
+      _retryafter=$(echo "$responseHeaders" | _retryafter_seconds)
       _debug "_retryafter" "$_retryafter"
-      if [ "$_retryafter" ]; then
+      if [ "$_retryafter" ] && [ $_retryafter -gt 0 ]; then
         _info "Sleeping for $_retryafter seconds then retrying"
         _sleep $_retryafter
       else
@@ -5254,9 +6211,9 @@ $_authorizations_map"
       fi
     elif _contains "$response" "\"processing\""; then
       _info "Order status is 'processing', let's sleep and retry."
-      _retryafter=$(echo "$responseHeaders" | grep -i "^Retry-After *:" | cut -d : -f 2 | tr -d ' ' | tr -d '\r')
+      _retryafter=$(echo "$responseHeaders" | _retryafter_seconds)
       _debug "_retryafter" "$_retryafter"
-      if [ "$_retryafter" ]; then
+      if [ "$_retryafter" ] && [ $_retryafter -gt 0 ]; then
         _info "Sleeping for $_retryafter seconds then retrying"
         _sleep $_retryafter
       else
@@ -5285,6 +6242,11 @@ $_authorizations_map"
     _link_cert_retry="$(_math $_link_cert_retry + 1)"
   done
 
+  # cover case where the final poll returned 'valid'
+  if [ -z "$Le_LinkCert" ] && _contains "$response" "\"status\":\"valid\""; then
+    Le_LinkCert="$(echo "$response" | _egrep_o '"certificate" *: *"[^"]*"' | cut -d '"' -f 4)"
+  fi
+
   if [ -z "$Le_LinkCert" ]; then
     _err "Signing failed. Could not get Le_LinkCert, and stopped retrying after reaching the retry limit."
     _err "$response"
@@ -5300,7 +6262,14 @@ $_authorizations_map"
     return 1
   fi
 
-  echo "$response" >"$CERT_PATH"
+  if ! _contains "$response" "$BEGIN_CERT"; then
+    response="$(echo "$response" | _dbase64 "multiline" | tr -d '\0' | _normalizeJson)"
+    _err "Signing failed: $(echo "$response" | _egrep_o '"detail":"[^"]*"')"
+    _on_issue_err "$_post_hook"
+    return 1
+  fi
+
+  echo "$response" | _strip_blank_lines >"$CERT_PATH"
   _split_cert_chain "$CERT_PATH" "$CERT_FULLCHAIN_PATH" "$CA_CERT_PATH"
   if [ -z "$_preferred_chain" ]; then
     _preferred_chain=$(_readcaconf DEFAULT_PREFERRED_CHAIN)
@@ -5319,10 +6288,15 @@ $_authorizations_map"
           _err "$response"
           continue
         fi
+
+        if ! _contains "$response" "$BEGIN_CERT"; then
+          _debug2 "Skipping alternate cert link due to unexpected response format."
+          continue
+        fi
         _relcert="$CERT_PATH.alt"
         _relfullchain="$CERT_FULLCHAIN_PATH.alt"
         _relca="$CA_CERT_PATH.alt"
-        echo "$response" >"$_relcert"
+        echo "$response" | _strip_blank_lines >"$_relcert"
         _split_cert_chain "$_relcert" "$_relfullchain" "$_relca"
         if [ "$DEBUG" ]; then
           _debug "rel chain issuers: " "$(_get_chain_issuers "$_relfullchain")"
@@ -5382,10 +6356,16 @@ $_authorizations_map"
   Le_CertCreateTimeStr=$(_time2str "$Le_CertCreateTime")
   _savedomainconf "Le_CertCreateTimeStr" "$Le_CertCreateTimeStr"
 
-  if [ -z "$Le_RenewalDays" ] || [ "$Le_RenewalDays" -lt "0" ]; then
+  # Le_RenewalDays is only written to the domain conf when the user actually
+  # passed --days; the default schedule is never saved. That is what makes the
+  # presence of the value a reliable "the user pinned this" flag, here and on
+  # every later renewal check.
+  if [ -z "$Le_RenewalDays" ]; then
     Le_RenewalDays="$DEFAULT_RENEW"
+    _ari_pinned=""
   else
     _savedomainconf "Le_RenewalDays" "$Le_RenewalDays"
+    _ari_pinned="1"
   fi
 
   if [ "$CA_BUNDLE" ]; then
@@ -5406,12 +6386,17 @@ $_authorizations_map"
     _clearaccountconf "HTTPS_INSECURE"
   fi
 
-  if [ "$Le_Listen_V4" ]; then
-    _savedomainconf "Le_Listen_V4" "$Le_Listen_V4"
-    _cleardomainconf Le_Listen_V6
-  elif [ "$Le_Listen_V6" ]; then
-    _savedomainconf "Le_Listen_V6" "$Le_Listen_V6"
-    _cleardomainconf Le_Listen_V4
+  if [ "$Le_Listen_V4" ] || [ "$Le_Listen_V6" ]; then
+    if [ "$Le_Listen_V4" ]; then
+      _savedomainconf "Le_Listen_V4" "$Le_Listen_V4"
+    else
+      _cleardomainconf Le_Listen_V4
+    fi
+    if [ "$Le_Listen_V6" ]; then
+      _savedomainconf "Le_Listen_V6" "$Le_Listen_V6"
+    else
+      _cleardomainconf Le_Listen_V6
+    fi
   fi
 
   if [ "$Le_ForceNewDomainKey" = "1" ]; then
@@ -5427,33 +6412,101 @@ $_authorizations_map"
       _info "It cannot be renewed automatically"
       _info "See: $_VALIDITY_WIKI"
     else
-      _now=$(_time)
-      _debug2 "_now" "$_now"
-      _lifetime=$(_math $Le_NextRenewTime - $_now)
-      _debug2 "_lifetime" "$_lifetime"
-      if [ $_lifetime -gt 86400 ]; then
-        #if lifetime is logner than one day, it will renew one day before
-        Le_NextRenewTime=$(_math $Le_NextRenewTime - 86400)
-        Le_NextRenewTimeStr=$(_time2str "$Le_NextRenewTime")
-      else
-        #if lifetime is less than 24 hours, it will renew one hour before
-        Le_NextRenewTime=$(_math $Le_NextRenewTime - 3600)
-        Le_NextRenewTimeStr=$(_time2str "$Le_NextRenewTime")
-      fi
+      Le_NextRenewTime=$(_calc_validto_renew_time "$Le_NextRenewTime" "$Le_RenewalDays" "$(_time)")
+      Le_NextRenewTimeStr=$(_time2str "$Le_NextRenewTime")
     fi
+  elif [ "$Le_RenewalDays" -lt "0" ]; then
+    _enddate_value=$(_enddate "$CERT_PATH")
+    if [ "$?" != "0" ] || [ -z "$_enddate_value" ]; then
+      _err "Failed to get certificate end date for $CERT_PATH"
+      return 1
+    fi
+
+    _endtime=$(_ssldate2time "$_enddate_value")
+    if [ "$?" != "0" ] || [ -z "$_endtime" ]; then
+      _err "Cannot parse _enddate_value: $_enddate_value"
+      return 1
+    fi
+    Le_NextRenewTime=$(_math "$_endtime" + "$Le_RenewalDays" \* 24 \* 60 \* 60)
+    Le_NextRenewTimeStr=$(_time2str "$Le_NextRenewTime")
   else
-    Le_NextRenewTime=$(_math "$Le_CertCreateTime" + "$Le_RenewalDays" \* 24 \* 60 \* 60)
-    Le_NextRenewTime=$(_math "$Le_NextRenewTime" - 86400)
+    _endtime_for_cap=""
+    _enddate_value=$(_enddate "$CERT_PATH")
+    if [ "$?" = "0" ] && [ "$_enddate_value" ]; then
+      _endtime_for_cap=$(_ssldate2time "$_enddate_value")
+    fi
+    Le_NextRenewTime=$(_calc_next_renew_time "$Le_CertCreateTime" "$Le_RenewalDays" "$_endtime_for_cap")
     Le_NextRenewTimeStr=$(_time2str "$Le_NextRenewTime")
   fi
+
+  # RFC 9773 ARI: if the CA exposes renewalInfo, take Le_NextRenewTime from
+  # the suggestedWindow. This gives the CA control over renewal scheduling and
+  # disperses renewals across the network so all clients don't hit the CA at
+  # the same instant.
+  # An explicit --days or --valid-to wins over the window, except when the CA
+  # wants the cert renewed EARLIER than the user asked for: an urgent renewal
+  # must still get through. A fixed-date --valid-to opts out entirely, because
+  # there the cert is pinned to an expiry and is not renewed automatically at
+  # all -- letting ARI pull it forward would change that, not just its timing.
+  # Set NO_ARI=1 (env, account.conf, or ca.conf) to opt out and fall back to
+  # the legacy time-based renewal calculation.
+  if [ "$_notAfter" ]; then
+    _ari_pinned="1"
+  fi
+  if [ "$NO_ARI" = "1" ]; then
+    _debug "NO_ARI=1, skipping ARI suggestedWindow override"
+  elif [ "$_valid_to" ] && ! _startswith "$_valid_to" "+"; then
+    _debug "Fixed --valid-to, skipping ARI suggestedWindow override"
+  elif [ "$ACME_RENEWAL_INFO" ] && [ -f "$CERT_PATH" ]; then
+    _ari_resp_new="$(_get_ARI "$CERT_PATH")"
+    _debug2 "_ari_resp_new" "$_ari_resp_new"
+    _ari_start_new="$(echo "$_ari_resp_new" | _egrep_o '"start" *: *"[^"]*' | sed 's/.*"//')"
+    _ari_end_new="$(echo "$_ari_resp_new" | _egrep_o '"end" *: *"[^"]*' | sed 's/.*"//')"
+    if [ "$_ari_start_new" ] && [ "$_ari_end_new" ]; then
+      _ari_start_t_new="$(_date2time "$(echo "$_ari_start_new" | sed 's/\.[0-9]*//')")"
+      _ari_end_t_new="$(_date2time "$(echo "$_ari_end_new" | sed 's/\.[0-9]*//')")"
+      _ari_next_new="$(_calc_ari_renew_time "$_ari_start_t_new" "$_ari_end_t_new" "$(_time)" "$Le_NextRenewTime" "$_ari_pinned")"
+      if [ "$_ari_next_new" ]; then
+        Le_NextRenewTime="$_ari_next_new"
+        Le_NextRenewTimeStr=$(_time2str "$Le_NextRenewTime")
+        _info "ARI suggestedWindow: $(__green "$_ari_start_new") to $(__green "$_ari_end_new")"
+        _info "Next renewal time picked from ARI window: $(__green "$Le_NextRenewTimeStr")"
+      elif [ "$_ari_pinned" ]; then
+        _info "ARI suggestedWindow: $(__green "$_ari_start_new") to $(__green "$_ari_end_new")"
+        _info "It is later than the renewal time you asked for, keeping: $(__green "$Le_NextRenewTimeStr")"
+      fi
+    fi
+  fi
+
+  # Warn when the scheduled renewal falls after the cert has already expired,
+  # e.g. a 1-day cert from an internal CA combined with the default 30-day
+  # schedule, which computes from the creation date and never looks at
+  # notAfter. Skip the warning for a fixed-date --valid-to: there
+  # Le_NextRenewTime equals the expiry by design and the non-renewable state
+  # was already reported above. https://github.com/acmesh-official/acme.sh/issues/6917
+  if [ -z "$_valid_to" ] || _startswith "$_valid_to" "+"; then
+    _renew_chk_enddate="$(_enddate "$CERT_PATH")"
+    _renew_chk_endtime="$(_ssldate2time "$_renew_chk_enddate")"
+    if [ "$Le_NextRenewTime" ] && [ "$_renew_chk_endtime" ] && [ "$Le_NextRenewTime" -ge "$_renew_chk_endtime" ]; then
+      _info "$(__red "WARNING: the cert expires at $_renew_chk_enddate, BEFORE the next scheduled renewal time $Le_NextRenewTimeStr.")"
+      _info "$(__red "The cert will already be expired when the renewal runs. If your CA issues short-lived certs, use a negative --days value (e.g. --days -1) to renew relative to the expiry time.")"
+    fi
+  fi
+
   _savedomainconf "Le_NextRenewTimeStr" "$Le_NextRenewTimeStr"
   _savedomainconf "Le_NextRenewTime" "$Le_NextRenewTime"
 
   #convert to pkcs12
+  Le_PFXPassword="$(_readdomainconf Le_PFXPassword)"
   if [ "$Le_PFXPassword" ]; then
     _toPkcs "$CERT_PFX_PATH" "$CERT_KEY_PATH" "$CERT_PATH" "$CA_CERT_PATH" "$Le_PFXPassword"
   fi
-  export CERT_PFX_PATH
+
+  #convert to pkcs8
+  Le_PKCS8Password="$(_readdomainconf Le_PKCS8Password)"
+  if [ "$Le_PKCS8Password" ]; then
+    _toPkcs8 "$CERT_PKCS8_PATH" "$CERT_KEY_PATH" "$Le_PKCS8Password"
+  fi
 
   if [ "$_real_cert$_real_key$_real_ca$_reload_cmd$_real_fullchain" ]; then
     _savedomainconf "Le_RealCertPath" "$_real_cert"
@@ -5473,6 +6526,18 @@ $_authorizations_map"
 }
 
 #in_out_cert   out_fullchain   out_ca
+#Reads a PEM chain from stdin, prints it without the blank lines.
+#Some CAs (Let's Encrypt) separate the certificates of a chain with a blank
+#line, others (ZeroSSL) don't. The blank lines are valid PEM (RFC 7468), but
+#some devices and APIs reject them, so the certs are stored back to back.
+#https://github.com/acmesh-official/acme.sh/issues/1940
+_strip_blank_lines() {
+  #spell out space and tab: Solaris sed treats [[:space:]] as a literal
+  #bracket set and silently stops matching the blank lines
+  _sbl_tab="$(printf '\t')"
+  sed "/^[ $_sbl_tab]*\$/d"
+}
+
 _split_cert_chain() {
   _certf="$1"
   _fullchainf="$2"
@@ -5501,7 +6566,7 @@ renew() {
   _debug "_renewServer" "$_renewServer"
 
   _initpath "$Le_Domain" "$_isEcc"
-
+  _info "Renew: $Le_Domain"
   _set_level=${NOTIFY_LEVEL:-$NOTIFY_LEVEL_DEFAULT}
   _info "$(__green "Renewing: '$Le_Domain'")"
   if [ ! -f "$DOMAIN_CONF" ]; then
@@ -5516,21 +6581,30 @@ renew() {
   . "$DOMAIN_CONF"
   _debug Le_API "$Le_API"
 
-  case "$Le_API" in
-  "$CA_LETSENCRYPT_V2_TEST")
-    _info "Switching back to $CA_LETSENCRYPT_V2"
-    Le_API="$CA_LETSENCRYPT_V2"
-    ;;
-  "$CA_GOOGLE_TEST")
-    _info "Switching back to $CA_GOOGLE"
-    Le_API="$CA_GOOGLE"
-    ;;
-  esac
+  #don't switch it back
+  #  case "$Le_API" in
+  #  "$CA_LETSENCRYPT_V2_TEST")
+  #    _info "Switching back to $CA_LETSENCRYPT_V2"
+  #    Le_API="$CA_LETSENCRYPT_V2"
+  #    ;;
+  #  "$CA_GOOGLE_TEST")
+  #    _info "Switching back to $CA_GOOGLE"
+  #    Le_API="$CA_GOOGLE"
+  #    ;;
+  #  esac
 
   if [ "$_server" ]; then
     Le_API="$_server"
   fi
   _info "Renewing using Le_API=$Le_API"
+
+  # Honor --local-address given on the renew/renewAll command line: it overrides
+  # the value saved at issue time (and gets re-saved by issue() below), so certs
+  # issued before the machine gained multiple addresses can still be renewed.
+  # https://github.com/acmesh-official/acme.sh/issues/7009
+  if [ "$_local_address" ]; then
+    Le_LocalAddress="$_local_address"
+  fi
 
   _clearAPI
   _clearCA
@@ -5540,7 +6614,91 @@ renew() {
   _debug2 "initpath again."
   _initpath "$Le_Domain" "$_isEcc"
 
+  # ARI (RFC 9773): fetch the CA's suggestedWindow on every renewal check.
+  # If the window has started, renew now even if Le_NextRenewTime is in the future.
+  # Le_RenewalDays and Le_Valid_To are only in the domain conf when the user
+  # passed --days or --valid-to, so their presence is what pins the schedule.
+  # A pinned schedule still yields to a window that is EARLIER than it, so the
+  # CA can pull an urgent renewal forward. A fixed-date --valid-to opts out
+  # entirely: that cert is not renewed automatically at all.
+  # Set NO_ARI=1 (env, account.conf, or ca.conf) to opt out and use only
+  # Le_NextRenewTime for the renewal decision.
+  _ari_pinned=""
+  if [ "$Le_RenewalDays" ] || [ "$Le_Valid_To" ]; then
+    _ari_pinned="1"
+  fi
+  if [ "$NO_ARI" = "1" ]; then
+    _debug "NO_ARI=1, skipping ARI suggestedWindow check"
+  elif [ "$Le_Valid_To" ] && ! _startswith "$Le_Valid_To" "+"; then
+    _debug "Fixed --valid-to, skipping ARI suggestedWindow check"
+  elif [ -z "$FORCE" ] && [ -f "$CERT_PATH" ]; then
+    if _initAPI && [ "$ACME_RENEWAL_INFO" ]; then
+      _ari_resp="$(_get_ARI "$CERT_PATH")"
+      _debug2 "_ari_resp" "$_ari_resp"
+      _ari_start="$(echo "$_ari_resp" | _egrep_o '"start" *: *"[^"]*' | sed 's/.*"//')"
+      _ari_end="$(echo "$_ari_resp" | _egrep_o '"end" *: *"[^"]*' | sed 's/.*"//')"
+      _debug "ARI suggestedWindow.start" "$_ari_start"
+      _debug "ARI suggestedWindow.end" "$_ari_end"
+      if [ "$_ari_start" ] && [ "$_ari_end" ]; then
+        _ari_start_t="$(_date2time "$(echo "$_ari_start" | sed 's/\.[0-9]*//')")"
+        _ari_end_t="$(_date2time "$(echo "$_ari_end" | sed 's/\.[0-9]*//')")"
+        _ari_explanation_url="$(echo "$_ari_resp" | _egrep_o '"explanationURL" *: *"[^"]*' | sed 's/.*"//')"
+        _debug "_ari_start_t" "$_ari_start_t"
+        _debug "_ari_end_t" "$_ari_end_t"
+        _debug "_ari_explanation_url" "$_ari_explanation_url"
+        _debug "Le_NextRenewTime" "$Le_NextRenewTime"
+        # Update ARI if needed
+        if [ "$_ari_start_t" ] && [ "$_ari_end_t" ] && [ "$Le_NextRenewTime" ] && [ "$_ari_end_t" -gt "$_ari_start_t" ] && ([ "$Le_NextRenewTime" -lt "$_ari_start_t" ] || [ "$Le_NextRenewTime" -gt "$_ari_end_t" ]); then
+          _ari_next="$(_calc_ari_renew_time "$_ari_start_t" "$_ari_end_t" "$(_time)" "$Le_NextRenewTime" "$_ari_pinned")"
+          if [ "$_ari_next" ]; then
+            _ari_old_time_str="$Le_NextRenewTimeStr"
+            _info "Current renewal time: $(__green "$_ari_old_time_str")"
+            Le_NextRenewTime="$_ari_next"
+            Le_NextRenewTimeStr=$(_time2str "$Le_NextRenewTime")
+            _info "ARI suggestedWindow: $(__green "$_ari_start") to $(__green "$_ari_end")"
+            _info "Updating renewal time picked from ARI window: $(__green "$Le_NextRenewTimeStr")"
+            _savedomainconf Le_NextRenewTime "$Le_NextRenewTime"
+            _savedomainconf Le_NextRenewTimeStr "$Le_NextRenewTimeStr"
+          else
+            _debug "ARI wants a later renewal than --days/--valid-to asked for, keeping $Le_NextRenewTimeStr"
+          fi
+        fi
+        if [ "$Le_NextRenewTime" ] && [ "$(_time)" -ge "$Le_NextRenewTime" ]; then
+          _info "ARI suggested renewal has passed ($(__green "$Le_NextRenewTimeStr")), proceeding with renewal."
+          if [ "$_ari_explanation_url" ]; then
+            _info "For more information on this renewal: $(__green "$_ari_explanation_url")"
+          fi
+        fi
+      fi
+    fi
+  fi
+
   if [ -z "$FORCE" ] && [ "$Le_NextRenewTime" ] && [ "$(_time)" -lt "$Le_NextRenewTime" ]; then
+    _renew_retry_fixed=""
+    res="0"
+    _ensure_install "$Le_Domain"
+    res="$?"
+    if [ "$Le_DeployHook" ] && [ "$res" = "0" ]; then
+      _ensure_deploy "$Le_Domain"
+      res="$?"
+    fi
+    if [ "$res" != "0" ]; then
+      if [ -z "$_ACME_IN_RENEWALL" ]; then
+        if [ $_set_level -ge $NOTIFY_LEVEL_ERROR ]; then
+          _send_notify "Renew $Le_Domain error" "There is an error." "$NOTIFY_HOOK" 1
+        fi
+      fi
+      return 1
+    fi
+    if [ "$_renew_retry_fixed" ]; then
+      _info "Install/deploy retry succeeded, no renewal is needed."
+      if [ -z "$_ACME_IN_RENEWALL" ]; then
+        if [ $_set_level -ge $NOTIFY_LEVEL_RENEW ]; then
+          _send_notify "Renew $Le_Domain success" "Good, the cert install/deploy retry succeeded." "$NOTIFY_HOOK" 0
+        fi
+      fi
+      return 0
+    fi
     _info "Skipping. Next renewal time is: $(__green "$Le_NextRenewTimeStr")"
     _info "Add '$(__red '--force')' to force renewal."
     if [ -z "$_ACME_IN_RENEWALL" ]; then
@@ -5563,6 +6721,10 @@ renew() {
   Le_RenewHook="$(_readdomainconf Le_RenewHook)"
   Le_Preferred_Chain="$(_readdomainconf Le_Preferred_Chain)"
   Le_Certificate_Profile="$(_readdomainconf Le_Certificate_Profile)"
+  Le_Valid_From="$(_readdomainconf Le_Valid_From)"
+  Le_Valid_To="$(_readdomainconf Le_Valid_To)"
+  Le_ExtKeyUse="$(_readdomainconf Le_ExtKeyUse)"
+
   # When renewing from an old version, the empty Le_Keylength means 2048.
   # Note, do not use DEFAULT_DOMAIN_KEY_LENGTH as that value may change over
   # time but an empty value implies 2048 specifically.
@@ -5579,11 +6741,8 @@ renew() {
   fi
   issue "$Le_Webroot" "$Le_Domain" "$Le_Alt" "$Le_Keylength" "$Le_RealCertPath" "$Le_RealKeyPath" "$Le_RealCACertPath" "$Le_ReloadCmd" "$Le_RealFullChainPath" "$Le_PreHook" "$Le_PostHook" "$Le_RenewHook" "$Le_LocalAddress" "$Le_ChallengeAlias" "$Le_Preferred_Chain" "$Le_Valid_From" "$Le_Valid_To" "$Le_Certificate_Profile" "$Le_ExtKeyUse"
   res="$?"
-  if [ "$res" != "0" ]; then
-    return "$res"
-  fi
 
-  if [ "$Le_DeployHook" ]; then
+  if [ "$Le_DeployHook" ] && [ "$res" = "0" ]; then
     _deploy "$Le_Domain" "$Le_DeployHook"
     res="$?"
   fi
@@ -5623,7 +6782,11 @@ renewAll() {
   _set_level=${NOTIFY_LEVEL:-$NOTIFY_LEVEL_DEFAULT}
   _debug "_set_level" "$_set_level"
   export _ACME_IN_RENEWALL=1
-  for di in "${CERT_HOME}"/*.*/; do
+  if ! [ -d "$CERT_HOME" ]; then
+    _err "$CERT_HOME is not a directory, please check your configuration."
+    return 1
+  fi
+  for di in "${CERT_HOME}"/*.* "${CERT_HOME}"/*:*; do
     _debug di "$di"
     if ! [ -d "$di" ]; then
       _debug "Not a directory, skipping: $di"
@@ -5631,12 +6794,19 @@ renewAll() {
     fi
     d=$(basename "$di")
     _debug d "$d"
+    _d_ari="$di.ari"
+    _debug _d_ari "$_d_ari"
     (
       if _endswith "$d" "$ECC_SUFFIX"; then
         _isEcc=$(echo "$d" | cut -d "$ECC_SEP" -f 2)
         d=$(echo "$d" | cut -d "$ECC_SEP" -f 1)
       fi
       renew "$d" "$_isEcc" "$_server"
+      rc="$?"
+      if [ "$rc" = "0" ] && [ "$_ari_explanation_url" ]; then
+        echo "$_ari_explanation_url" >"$_d_ari"
+      fi
+      return $rc
     )
     rc="$?"
     _debug "Return code: $rc"
@@ -5651,8 +6821,13 @@ renewAll() {
           _send_notify "Renew $d success" "Good, the cert is renewed." "$NOTIFY_HOOK" 0
         fi
       fi
+      _renewal_explanation=""
+      if [ -f "$_d_ari" ]; then
+        _renewal_explanation=" ($(cat "$_d_ari"))"
+        rm -f "$_d_ari"
+      fi
 
-      _success_msg="${_success_msg}    $d
+      _success_msg="${_success_msg}    $d$_renewal_explanation
 "
     elif [ "$rc" = "$RENEW_SKIP" ]; then
       if [ $_error_level -gt $NOTIFY_LEVEL_SKIP ]; then
@@ -5721,6 +6896,9 @@ ${_skipped_msg}
     fi
   fi
 
+  if [ "$_TREAT_SKIP_AS_SUCCESS" ] && [ "$_ret" = "$RENEW_SKIP" ]; then
+    _ret=0
+  fi
   return "$_ret"
 }
 
@@ -5744,6 +6922,10 @@ signcsr() {
   _local_addr="${11}"
   _challenge_alias="${12}"
   _preferred_chain="${13}"
+  _valid_f="${14}"
+  _valid_t="${15}"
+  _cert_prof="${16}"
+  _en_key_usage="${17}"
 
   _csrsubj=$(_readSubjectFromCSR "$_csrfile")
   if [ "$?" != "0" ]; then
@@ -5787,7 +6969,7 @@ signcsr() {
   _info "Copying CSR to: $CSR_PATH"
   cp "$_csrfile" "$CSR_PATH"
 
-  issue "$_csrW" "$_csrsubj" "$_csrdomainlist" "$_csrkeylength" "$_real_cert" "$_real_key" "$_real_ca" "$_reload_cmd" "$_real_fullchain" "$_pre_hook" "$_post_hook" "$_renew_hook" "$_local_addr" "$_challenge_alias" "$_preferred_chain"
+  issue "$_csrW" "$_csrsubj" "$_csrdomainlist" "$_csrkeylength" "$_real_cert" "$_real_key" "$_real_ca" "$_reload_cmd" "$_real_fullchain" "$_pre_hook" "$_post_hook" "$_renew_hook" "$_local_addr" "$_challenge_alias" "$_preferred_chain" "$_valid_f" "$_valid_t" "$_cert_prof" "$_en_key_usage"
 
 }
 
@@ -5840,7 +7022,8 @@ list() {
     if [ -z "$_domain" ]; then
       printf "%s\n" "Main_Domain${_sep}KeyLength${_sep}SAN_Domains${_sep}Profile${_sep}CA${_sep}Created${_sep}Renew"
     fi
-    for di in "${CERT_HOME}"/*.*/; do
+    for di in "${CERT_HOME}"/*.* "${CERT_HOME}"/*:*; do
+      [ -d "$di" ] || continue
       d=$(basename "$di")
       _debug d "$d"
       (
@@ -5887,7 +7070,7 @@ list_profiles() {
   fi
 
   normalized_response=$(echo "$response" | _normalizeJson)
-  profiles_json=$(echo "$normalized_response" | _egrep_o '"profiles" *: *\{[^\}]*\}')
+  profiles_json=$(echo "$normalized_response" | _egrep_o '"profiles" *: *[{][^}]*[}]')
 
   if [ -z "$profiles_json" ]; then
     _info "The CA '$_l_server_name' does not publish certificate profiles via its directory endpoint."
@@ -5949,6 +7132,45 @@ _deploy() {
       _info "$(__green Success)"
     fi
   done
+
+  _deploy_success_time="$(_time)"
+  _savedomainconf "Le_DeploySuccessTime" "$_deploy_success_time"
+  _savedomainconf "Le_DeploySuccessTimeStr" "$(_time2str "$_deploy_success_time")"
+}
+
+_ensure_deploy() {
+  _d="$1"
+  if [ -z "$Le_DeployHook" ]; then
+    return 0
+  fi
+  if [ -z "$Le_CertCreateTime" ]; then
+    return 0
+  fi
+
+  _deploy_success_time="$(_readdomainconf Le_DeploySuccessTime)"
+  if [ -z "$_deploy_success_time" ]; then
+    _debug "Le_DeploySuccessTime is empty, skip deploy retry check."
+    return 0
+  fi
+  case "$_deploy_success_time$Le_CertCreateTime" in
+  *[!0-9]*)
+    _debug "Le_DeploySuccessTime or Le_CertCreateTime is not a number, skip deploy retry check."
+    return 0
+    ;;
+  esac
+
+  if [ "$_deploy_success_time" -lt "$Le_CertCreateTime" ]; then
+    _info "The cert was created after the last successful deploy, retrying deploy hooks."
+    if _deploy "$_d" "$Le_DeployHook"; then
+      _info "Deploy retry succeeded."
+      _renew_retry_fixed=1
+      return 0
+    fi
+    _err "Deploy retry failed."
+    return 1
+  fi
+
+  return 0
 }
 
 #domain hooks
@@ -5969,7 +7191,13 @@ deploy() {
   fi
 
   _debug2 DOMAIN_CONF "$DOMAIN_CONF"
-  . "$DOMAIN_CONF"
+  # The cert dir may exist without a domain conf (e.g. the conf was deleted, or
+  # the cert was placed here manually). Deploy can still proceed using env-provided
+  # settings, and _savedomainconf below will recreate the conf, so only source it
+  # when present instead of failing on a missing file.
+  if [ -f "$DOMAIN_CONF" ]; then
+    . "$DOMAIN_CONF"
+  fi
 
   _savedomainconf Le_DeployHook "$_hooks"
 
@@ -6102,9 +7330,54 @@ _installcert() {
       _info "$(__green "Reload successful")"
     else
       _err "Reload error for: $_main_domain"
+      return 1
     fi
   fi
 
+  _installcert_success_time="$(_time)"
+  _savedomainconf "Le_InstallCertSuccessTime" "$_installcert_success_time"
+  _savedomainconf "Le_InstallCertSuccessTimeStr" "$(_time2str "$_installcert_success_time")"
+}
+
+_ensure_install() {
+  _d="$1"
+  if [ -z "$Le_CertCreateTime" ]; then
+    return 0
+  fi
+
+  _real_cert="$(_readdomainconf Le_RealCertPath)"
+  _real_key="$(_readdomainconf Le_RealKeyPath)"
+  _real_ca="$(_readdomainconf Le_RealCACertPath)"
+  _reload_cmd="$(_readdomainconf Le_ReloadCmd)"
+  _real_fullchain="$(_readdomainconf Le_RealFullChainPath)"
+  if [ -z "$_real_cert$_real_key$_real_ca$_reload_cmd$_real_fullchain" ]; then
+    return 0
+  fi
+
+  _installcert_success_time="$(_readdomainconf Le_InstallCertSuccessTime)"
+  if [ -z "$_installcert_success_time" ]; then
+    _debug "Le_InstallCertSuccessTime is empty, skip install retry check."
+    return 0
+  fi
+  case "$_installcert_success_time$Le_CertCreateTime" in
+  *[!0-9]*)
+    _debug "Le_InstallCertSuccessTime or Le_CertCreateTime is not a number, skip install retry check."
+    return 0
+    ;;
+  esac
+
+  if [ "$_installcert_success_time" -lt "$Le_CertCreateTime" ]; then
+    _info "The cert was created after the last successful install, retrying install cert."
+    if _installcert "$_d" "$_real_cert" "$_real_key" "$_real_ca" "$_real_fullchain" "$_reload_cmd"; then
+      _info "Install cert retry succeeded."
+      _renew_retry_fixed=1
+      return 0
+    fi
+    _err "Install cert retry failed."
+    return 1
+  fi
+
+  return 0
 }
 
 __read_password() {
@@ -6124,6 +7397,7 @@ _install_win_taskscheduler() {
   _lesh="$1"
   _centry="$2"
   _randomminute="$3"
+  _randomhour="$4"
   if ! _exists cygpath; then
     _err "cygpath not found"
     return 1
@@ -6150,8 +7424,10 @@ _install_win_taskscheduler() {
   _info "$PROJECT_NAME will not save your password."
   _info "Please input your Windows password for: $(__green "$_myname")"
   _password="$(__read_password)"
-  #SCHTASKS.exe '/create' '/SC' 'DAILY' '/TN' "$_WINDOWS_SCHEDULER_NAME" '/F' '/ST' "00:$_randomminute" '/RU' "$_myname" '/RP' "$_password" '/TR' "$_winbash -l -c '$_lesh --cron --home \"$LE_WORKING_DIR\" $_centry'" >/dev/null
-  echo SCHTASKS.exe '/create' '/SC' 'DAILY' '/TN' "$_WINDOWS_SCHEDULER_NAME" '/F' '/ST' "00:$_randomminute" '/RU' "$_myname" '/RP' "$_password" '/TR' "\"$_winbash -l -c '$_lesh --cron --home \"$LE_WORKING_DIR\" $_centry'\"" | cmd.exe >/dev/null
+  #schtasks.exe /ST requires the HH:mm format, so the minute must be zero-padded (issue 4950)
+  _st_minute="$(printf "%02d" "$_randomminute")"
+  #SCHTASKS.exe '/create' '/SC' 'DAILY' '/TN' "$_WINDOWS_SCHEDULER_NAME" '/F' '/ST' "00:$_st_minute" '/RU' "$_myname" '/RP' "$_password" '/TR' "$_winbash -l -c '$_lesh --cron --home \"$LE_WORKING_DIR\" $_centry'" >/dev/null
+  echo SCHTASKS.exe '/create' '/SC' 'DAILY' '/TN' "$_WINDOWS_SCHEDULER_NAME" '/F' '/ST' "00:$_st_minute" '/RU' "$_myname" '/RP' "$_password" '/TR' "\"$_winbash -l -c '$_lesh --cron --home \"$LE_WORKING_DIR\" $_centry'\"" | cmd.exe >/dev/null
   echo
 
 }
@@ -6167,6 +7443,30 @@ _uninstall_win_taskscheduler() {
     _info "Removing $_WINDOWS_SCHEDULER_NAME"
     echo SCHTASKS /delete /f /tn "$_WINDOWS_SCHEDULER_NAME" | cmd.exe >/dev/null
   fi
+}
+
+#binpath
+#Reads a crontab listing from stdin, prints it without the acme.sh cron
+#entries that call binpath.
+_filter_cron_bin() {
+  _fcb_bin="$1"
+  if [ -z "$_fcb_bin" ]; then
+    cat
+    return
+  fi
+  #a case pattern with a quoted variable matches binpath literally, which
+  #grep cannot do portably: Solaris /usr/bin/grep has no -F, and as a regex
+  #the dot of ~/.acme.sh would stand for any character
+  while IFS= read -r _fcb_line || [ -n "$_fcb_line" ]; do
+    case "$_fcb_line" in
+    *"$_fcb_bin --cron"*)
+      _debug3 "Dropping cron entry" "$_fcb_line"
+      ;;
+    *)
+      echo "$_fcb_line"
+      ;;
+    esac
+  done
 }
 
 #confighome
@@ -6193,7 +7493,7 @@ installcronjob() {
   fi
   _t=$(_time)
   random_minute=$(_math $_t % 60)
-  random_hour=$(_math $_t / 60 % 24)
+  random_hour=$(_math $_t / 60 % 6)
 
   if ! _exists "$_CRONTAB" && _exists "fcrontab"; then
     _CRONTAB="fcrontab"
@@ -6202,7 +7502,7 @@ installcronjob() {
   if ! _exists "$_CRONTAB"; then
     if _exists cygpath && _exists schtasks.exe; then
       _info "It seems you are on Windows, let's install the Windows scheduler task."
-      if _install_win_taskscheduler "$lesh" "$_c_entry" "$random_minute"; then
+      if _install_win_taskscheduler "$lesh" "$_c_entry" "$random_minute" "$random_hour"; then
         _info "Successfully installed Windows scheduler task."
         return 0
       else
@@ -6216,15 +7516,60 @@ installcronjob() {
     return 1
   fi
   _info "Installing cron job"
-  if ! $_CRONTAB -l | grep "$PROJECT_ENTRY --cron"; then
+  _cron_entry="$random_minute $random_hour,$(_math "$random_hour" + 6),$(_math "$random_hour" + 12),$(_math "$random_hour" + 18) * * * $lesh --cron --home \"$LE_WORKING_DIR\" $_c_entry> /dev/null"
+  _cron_entries="$($_CRONTAB -l 2>/dev/null)"
+  if [ "$?" != "0" ]; then
+    #when the user has no crontab yet, crontab -l also exits non-zero;
+    #only that case may proceed with an empty list. Any other listing
+    #failure must abort: piping an incomplete list back into 'crontab -'
+    #would wipe the user's existing cron jobs (issue 3079)
+    _cron_list_err="$($_CRONTAB -l 2>&1 >/dev/null)"
+    #separate greps: BRE alternation \| is a GNU extension and Solaris
+    #grep takes only a single -e pattern
+    if echo "$_cron_list_err" | grep -i "no crontab" >/dev/null ||
+      echo "$_cron_list_err" | grep -i "no fcrontab" >/dev/null ||
+      echo "$_cron_list_err" | grep -i "can't open" >/dev/null; then
+      _cron_entries=""
+    else
+      _err "Can not list the current cron jobs: $_cron_list_err"
+      _err "Refusing to install the cron job, that could wipe your existing cron jobs."
+      _err "Please add this cron job manually:"
+      _err "$_cron_entry"
+      return 1
+    fi
+  fi
+  #An entry that calls LE_WORKING_DIR/PROJECT_ENTRY is dead once that copy is
+  #gone: ACME_PACKAGED installs never write it, and the package manager
+  #removes it when it takes over. The entry below would then keep the install
+  #from adding a working one and cron would fail silently every day, so drop
+  #the stale entries first.
+  _cron_stale=""
+  if [ ! -f "$LE_WORKING_DIR/$PROJECT_ENTRY" ] && [ "$_cron_entries" ]; then
+    _cron_kept="$(echo "$_cron_entries" | _filter_cron_bin "\"$LE_WORKING_DIR\"/$PROJECT_ENTRY")"
+    if [ "$_cron_kept" != "$_cron_entries" ]; then
+      _info "Removing the cron job that calls the missing $LE_WORKING_DIR/$PROJECT_ENTRY"
+      _cron_entries="$_cron_kept"
+      _cron_stale=1
+    fi
+  fi
+  #>/dev/null: grep would print the matching crontab line to the console
+  _cron_add=""
+  if ! echo "$_cron_entries" | grep "$PROJECT_ENTRY --cron" >/dev/null; then
+    _cron_add=1
+  fi
+  if [ "$_cron_add" ] || [ "$_cron_stale" ]; then
     if _exists uname && uname -a | grep SunOS >/dev/null; then
       _CRONTAB_STDIN="$_CRONTAB --"
     else
       _CRONTAB_STDIN="$_CRONTAB -"
     fi
-    $_CRONTAB -l | {
-      cat
-      echo "$random_minute $random_hour * * * $lesh --cron --home \"$LE_WORKING_DIR\" $_c_entry> /dev/null"
+    {
+      if [ "$_cron_entries" ]; then
+        echo "$_cron_entries"
+      fi
+      if [ "$_cron_add" ]; then
+        echo "$_cron_entry"
+      fi
     } | $_CRONTAB_STDIN
   fi
   if [ "$?" != "0" ]; then
@@ -6329,7 +7674,7 @@ revoke() {
 
   _info "Trying account key first."
   if _send_signed_request "$uri" "$data" "" "$ACCOUNT_KEY_PATH"; then
-    if [ -z "$response" ]; then
+    if _is_revoked_response "$response"; then
       _info "Successfully revoked."
       rm -f "$CERT_PATH"
       cat "$CERT_KEY_PATH" >"$CERT_KEY_PATH.revoked"
@@ -6344,7 +7689,7 @@ revoke() {
   if [ -f "$CERT_KEY_PATH" ]; then
     _info "Trying domain key."
     if _send_signed_request "$uri" "$data" "" "$CERT_KEY_PATH"; then
-      if [ -z "$response" ]; then
+      if _is_revoked_response "$response"; then
         _info "Successfully revoked."
         rm -f "$CERT_PATH"
         cat "$CERT_KEY_PATH" >"$CERT_KEY_PATH.revoked"
@@ -6420,7 +7765,7 @@ _deactivate() {
     _err "Cannot get new order for domain."
     return 1
   fi
-  _authorizations_seg="$(echo "$response" | _egrep_o '"authorizations" *: *\[[^\]*\]' | cut -d '[' -f 2 | tr -d ']' | tr -d '"')"
+  _authorizations_seg="$(echo "$response" | _json_decode | _authorizations_from_order)"
   _debug2 _authorizations_seg "$_authorizations_seg"
   if [ -z "$_authorizations_seg" ]; then
     _err "_authorizations_seg not found."
@@ -6453,7 +7798,7 @@ _deactivate() {
     _debug "Trigger validation."
     vtype="$(_getIdType "$_d_domain")"
     # Fix for empty error objects in response which mess up the original code, adapted from fix suggested here: https://github.com/acmesh-official/acme.sh/issues/4933#issuecomment-1870499018
-    entry="$(echo "$response" | sed s/'"error":{}'/'"error":null'/ | _egrep_o '[^\{]*"type":"'$vtype'"[^\}]*')"
+    entry="$(echo "$response" | sed s/'"error":{}'/'"error":null'/ | _egrep_o '[^{]*"type":"'$vtype'"[^}]*')"
     _debug entry "$entry"
     if [ -z "$entry" ]; then
       _err "$d: Cannot get domain token"
@@ -6537,6 +7882,62 @@ deactivate() {
   done
 }
 
+#reads the output of "openssl x509 -text" from stdin, prints the hex AKI
+#the value is on the line right after the extension header; "grep -A" is not
+#portable (Solaris /usr/bin/grep: "illegal option -- A"), so select from the
+#header to EOF and keep the second line of that range
+_extractAKI() {
+  sed -n '/X509v3 Authority Key Identifier/,$p' | _head_n 2 | _tail_n 1 | tr -d ': ' | sed "s/keyid//"
+}
+
+#cert
+_getAKI() {
+  _cert="$1"
+  ${ACME_OPENSSL_BIN:-openssl} x509 -in "$_cert" -text -noout | _extractAKI
+}
+
+#cert
+_getSerial() {
+  _cert="$1"
+  ${ACME_OPENSSL_BIN:-openssl} x509 -in "$_cert" -serial -noout | cut -d = -f 2
+}
+
+#cert
+#Compute the ARI/replaces certID for a cert: base64url(AKI).base64url(Serial)
+#per RFC 9773 Section 4.1.
+_getARICertID() {
+  _cert="$1"
+  _aki=$(_getAKI "$_cert")
+  _ser=$(_getSerial "$_cert")
+  _debug2 "_aki" "$_aki"
+  _debug2 "_ser" "$_ser"
+
+  # RFC 9773 Section 4.1 requires the DER-encoded INTEGER value bytes of
+  # serialNumber. When the high bit of the first byte is set (>= 0x80) DER
+  # prepends a 0x00 sign byte to keep the integer positive; openssl's hex
+  # output strips that, so add it back. Boulder (LE) accepts either form,
+  # but Sectigo (ZeroSSL) is strict and rejects newOrder with HTTP 401
+  # "replaces field does not identify a certificate" if the byte is missing.
+  case "$_ser" in
+  [89aAbBcCdDeEfF]*) _ser="00$_ser" ;;
+  esac
+
+  _akiurl="$(echo "$_aki" | _h2b | _base64 | _url_replace)"
+  _debug2 "_akiurl" "$_akiurl"
+  _serurl="$(echo "$_ser" | _h2b | _base64 | _url_replace)"
+  _debug2 "_serurl" "$_serurl"
+
+  printf "%s.%s" "$_akiurl" "$_serurl"
+}
+
+#cert
+_get_ARI() {
+  _cert="$1"
+  _ari_certID="$(_getARICertID "$_cert")"
+  _ARI_URL="$ACME_RENEWAL_INFO/$_ari_certID"
+  _get "$_ARI_URL"
+}
+
 # Detect profile file if not specified as environment variable
 _detect_profile() {
   if [ -n "$PROFILE" -a -f "$PROFILE" ]; then
@@ -6585,6 +7986,7 @@ _initconf() {
 #NO_TIMESTAMP=1
 
     " >"$ACCOUNT_CONF_PATH"
+    chmod 600 "$ACCOUNT_CONF_PATH"
   fi
 }
 
@@ -6620,10 +8022,10 @@ _precheck() {
     return 1
   fi
 
-  if ! _exists "socat"; then
-    _err "It is recommended to install socat first."
-    _err "We use socat for the standalone server, which is used for standalone mode."
-    _err "If you don't want to use standalone mode, you may ignore this warning."
+  if ! _exists "socat" && ! _exists "python" && ! _exists "python2" && ! _exists "python3"; then
+    _info "It is recommended to install socat or python first."
+    _info "We use socat or python for the standalone server, which is used for standalone mode."
+    _info "If you don't want to use standalone mode, you may ignore this warning."
   fi
 
   return 0
@@ -6647,6 +8049,15 @@ _installalias() {
   _c_home="$1"
   _initpath
 
+  _alias_bin="$LE_WORKING_DIR/$PROJECT_ENTRY"
+  if [ ! -f "$_alias_bin" ]; then
+    #ACME_PACKAGED install: no copy in LE_WORKING_DIR, alias the current script
+    _script="$(_readlink "$_SCRIPT_")"
+    if [ -f "$_script" ]; then
+      _alias_bin="$_script"
+    fi
+  fi
+
   _envfile="$LE_WORKING_DIR/$PROJECT_ENTRY.env"
   if [ "$_upgrading" ] && [ "$_upgrading" = "1" ]; then
     echo "$(cat "$_envfile")" | sed "s|^LE_WORKING_DIR.*$||" >"$_envfile"
@@ -6664,7 +8075,11 @@ _installalias() {
   else
     _sed_i "/^export LE_CONFIG_HOME/d" "$_envfile"
   fi
-  _setopt "$_envfile" "alias $PROJECT_ENTRY" "=" "\"$LE_WORKING_DIR/$PROJECT_ENTRY$_c_entry\""
+  _setopt "$_envfile" "alias $PROJECT_ENTRY" "=" "\"$_alias_bin$_c_entry\""
+  if [ -f "$LE_WORKING_DIR/$PROJECT_ENTRY.completion" ]; then
+    #the completion file does nothing when sourced by a non-bash shell
+    _setopt "$_envfile" ". \"$LE_WORKING_DIR/$PROJECT_ENTRY.completion\""
+  fi
 
   _profile="$(_detect_profile)"
   if [ "$_profile" ]; then
@@ -6687,7 +8102,7 @@ _installalias() {
     else
       _sed_i "/^setenv LE_CONFIG_HOME/d" "$_cshfile"
     fi
-    _setopt "$_cshfile" "alias $PROJECT_ENTRY" " " "\"$LE_WORKING_DIR/$PROJECT_ENTRY$_c_entry\""
+    _setopt "$_cshfile" "alias $PROJECT_ENTRY" " " "\"$_alias_bin$_c_entry\""
     _setopt "$_csh_profile" "source \"$_cshfile\""
   fi
 
@@ -6699,7 +8114,7 @@ _installalias() {
     if [ "$_c_home" ]; then
       _setopt "$_cshfile" "setenv LE_CONFIG_HOME" " " "\"$LE_CONFIG_HOME\""
     fi
-    _setopt "$_cshfile" "alias $PROJECT_ENTRY" " " "\"$LE_WORKING_DIR/$PROJECT_ENTRY$_c_entry\""
+    _setopt "$_cshfile" "alias $PROJECT_ENTRY" " " "\"$_alias_bin$_c_entry\""
     _setopt "$_tcsh_profile" "source \"$_cshfile\""
   fi
 
@@ -6773,25 +8188,38 @@ install() {
     chmod 700 "$LE_CONFIG_HOME"
   fi
 
-  cp "$PROJECT_ENTRY" "$LE_WORKING_DIR/" && chmod +x "$LE_WORKING_DIR/$PROJECT_ENTRY"
+  if [ "$ACME_PACKAGED" ]; then
+    #the script and its hooks are managed by a system package manager,
+    #do not copy them into LE_WORKING_DIR. https://github.com/acmesh-official/acme.sh/issues/7135
+    _info "ACME_PACKAGED is set, skipping the script copy."
+  else
+    cp "$PROJECT_ENTRY" "$LE_WORKING_DIR/" && chmod +x "$LE_WORKING_DIR/$PROJECT_ENTRY"
 
-  if [ "$?" != "0" ]; then
-    _err "Installation failed, cannot copy $PROJECT_ENTRY"
-    return 1
+    if [ "$?" != "0" ]; then
+      _err "Installation failed, cannot copy $PROJECT_ENTRY"
+      return 1
+    fi
+
+    _info "Installed to $LE_WORKING_DIR/$PROJECT_ENTRY"
+
+    if [ -f "$PROJECT_ENTRY.completion" ]; then
+      cp "$PROJECT_ENTRY.completion" "$LE_WORKING_DIR/"
+      _debug "Installed bash completion to $LE_WORKING_DIR/$PROJECT_ENTRY.completion"
+    fi
   fi
-
-  _info "Installed to $LE_WORKING_DIR/$PROJECT_ENTRY"
 
   if [ "$_ACME_IN_CRON" != "1" ] && [ -z "$_noprofile" ]; then
     _installalias "$_c_home"
   fi
 
-  for subf in $_SUB_FOLDERS; do
-    if [ -d "$subf" ]; then
-      mkdir -p "$LE_WORKING_DIR/$subf"
-      cp "$subf"/* "$LE_WORKING_DIR"/"$subf"/
-    fi
-  done
+  if [ -z "$ACME_PACKAGED" ]; then
+    for subf in $_SUB_FOLDERS; do
+      if [ -d "$subf" ]; then
+        mkdir -p "$LE_WORKING_DIR/$subf"
+        cp "$subf"/* "$LE_WORKING_DIR"/"$subf"/
+      fi
+    done
+  fi
 
   if [ ! -f "$ACCOUNT_CONF_PATH" ]; then
     _initconf
@@ -6803,6 +8231,12 @@ install() {
 
   if [ "$_DEFAULT_CERT_HOME" != "$CERT_HOME" ]; then
     _saveaccountconf "CERT_HOME" "$CERT_HOME"
+    # Create the custom cert home now instead of on first issuance, so the
+    # user can see --install honored it.
+    # https://github.com/acmesh-official/acme.sh/issues/4756
+    if [ ! -d "$CERT_HOME" ]; then
+      mkdir -p "$CERT_HOME"
+    fi
   fi
 
   if [ "$_DEFAULT_ACCOUNT_KEY_PATH" != "$ACCOUNT_KEY_PATH" ]; then
@@ -6813,7 +8247,7 @@ install() {
     installcronjob "$_c_home"
   fi
 
-  if [ -z "$NO_DETECT_SH" ]; then
+  if [ -z "$NO_DETECT_SH" ] && [ -z "$ACME_PACKAGED" ]; then
     #Modify shebang
     if _exists bash; then
       _bash_path="$(bash -c "command -v bash 2>/dev/null")"
@@ -6838,7 +8272,9 @@ install() {
   if [ "$_accountemail" ]; then
     _saveaccountconf "ACCOUNT_EMAIL" "$_accountemail"
   fi
-  _saveaccountconf "UPGRADE_HASH" "$(_getUpgradeHash)"
+  if [ -z "$ACME_PACKAGED" ]; then
+    _saveaccountconf "UPGRADE_HASH" "$(_getUpgradeHash)"
+  fi
   _info OK
 }
 
@@ -6852,7 +8288,12 @@ uninstall() {
 
   _uninstallalias
 
-  rm -f "$LE_WORKING_DIR/$PROJECT_ENTRY"
+  if [ -z "$ACME_PACKAGED" ]; then
+    #don't remove the script when it is managed by a system package manager,
+    #LE_WORKING_DIR may point to the packaged files
+    rm -f "$LE_WORKING_DIR/$PROJECT_ENTRY"
+    rm -f "$LE_WORKING_DIR/$PROJECT_ENTRY.completion"
+  fi
   _info "The keys and certs are in \"$(__green "$LE_CONFIG_HOME")\". You can remove them by yourself."
 
 }
@@ -6888,21 +8329,26 @@ cron() {
   _initpath
   _info "$(__green "===Starting cron===")"
   if [ "$AUTO_UPGRADE" = "1" ]; then
-    export LE_WORKING_DIR
-    (
-      if ! upgrade; then
-        _err "Cron: Upgrade failed!"
-        return 1
+    if [ "$ACME_PACKAGED" ]; then
+      _info "ACME_PACKAGED is set, skipping the auto upgrade."
+    else
+      export LE_WORKING_DIR
+      (
+        if ! upgrade; then
+          _err "Cron: Upgrade failed!"
+          return 1
+        fi
+      )
+      . "$LE_WORKING_DIR/$PROJECT_ENTRY" >/dev/null
+
+      if [ -t 1 ]; then
+        __INTERACTIVE="1"
       fi
-    )
-    . "$LE_WORKING_DIR/$PROJECT_ENTRY" >/dev/null
 
-    if [ -t 1 ]; then
-      __INTERACTIVE="1"
+      _info "Automatically upgraded to: $VER"
     fi
-
-    _info "Automatically upgraded to: $VER"
   fi
+  _TREAT_SKIP_AS_SUCCESS="1"
   renewAll
   _ret="$?"
   _ACME_IN_CRON=""
@@ -6949,6 +8395,14 @@ _send_notify() {
       continue
     fi
     if ! (
+      # The dns/deploy hooks export _H1.._H5 in the main process, so the
+      # values are inherited here. Clear them: a stale Authorization header
+      # from another service must not leak into the notify request.
+      export _H1=""
+      export _H2=""
+      export _H3=""
+      export _H4=""
+      export _H5=""
       if ! . "$_n_hook_file"; then
         _err "Error loading file $_n_hook_file. Please check your API file and try again."
         return 1
@@ -7066,8 +8520,11 @@ Commands:
   -ccr, --create-csr       Create CSR, professional use.
   --create-domain-key      Create an domain private key, professional use.
   --update-account         Update account info.
+  --update-account-key     Rotate account key.
   --register-account       Register account key.
   --deactivate-account     Deactivate the account.
+  --make-dns-persist-value Print the DNS TXT record(s) to enable persistent DNS validation
+                           (draft-ietf-acme-dns-persist-01). Use with -d <domain>.
   --create-account-key     Create an account private key, professional use.
   --install-cronjob        Install the cron job to renew certs, you don't need to call this. The 'install' command can automatically install the cron job.
   --uninstall-cronjob      Uninstall the cron job. The 'uninstall' command can do this automatically.
@@ -7115,15 +8572,33 @@ Parameters:
   --dns [dns_hook]                  Use dns manual mode or dns api. Defaults to manual mode when argument is omitted.
                                       See: $_DNS_API_WIKI
 
+  --dns-persist                     Use dns-persist-01 validation (draft-ietf-acme-dns-persist-01).
+                                      Requires the persistent _validation-persist TXT record to already
+                                      exist. Use '--make-dns-persist-value' to print the value to add.
+
   --dnssleep <seconds>              The time in seconds to wait for all the txt records to propagate in dns api mode.
                                       It's not necessary to use this by default, $PROJECT_NAME polls dns status by DOH automatically.
-  -k, --keylength <bits>            Specifies the domain key length: 2048, 3072, 4096, 8192 or ec-256, ec-384, ec-521.
-  -ak, --accountkeylength <bits>    Specifies the account key length: 2048, 3072, 4096
+  -k, --keylength <bits>            Specifies the domain key length: 2048, 3072, 4096, 8192 or ec-256 (default), ec-384, ec-521.
+  -ak, --accountkeylength <bits>    Specifies the account key length: 2048, 3072, 4096, 8192 or ec-256 (default), ec-384, ec-521.
   --log [file]                      Specifies the log file. Defaults to \"$DEFAULT_LOG_FILE\" if argument is omitted.
   --log-level <1|2>                 Specifies the log level, default is $DEFAULT_LOG_LEVEL.
   --syslog <0|3|6|7>                Syslog level, 0: disable syslog, 3: error, 6: info, 7: debug.
   --eab-kid <eab_key_id>            Key Identifier for External Account Binding.
   --eab-hmac-key <eab_hmac_key>     HMAC key for External Account Binding.
+
+  --dns-persist-wildcard            Used with '--make-dns-persist-value'. Adds 'policy=wildcard' to the
+                                      generated TXT record so the issuer is also authorized for wildcards
+                                      and subdomains (draft-ietf-acme-dns-persist-01). It is implied when
+                                      the domain given to -d is a wildcard (e.g. '*.example.com'); the
+                                      record itself is always published at the base domain.
+  --dns-persist-ca-name <name>      Used with '--make-dns-persist-value'. Use the given CA identity domain
+                                      (e.g. 'ssl.com') as the issuer-domain-name in the TXT record. If
+                                      omitted, the identities are read from the ACME directory's
+                                      'caaIdentities' field and one record is printed per identity.
+  --dns-persist-days <N>            Used with '--make-dns-persist-value'. Add a 'persistUntil' field to
+                                      the TXT record so the record self-expires N days from now (the CA
+                                      will refuse new validations against the record after that time).
+                                      If omitted, the record has no expiry.
 
 
   These parameters are to install the cert to nginx/Apache or any other server after issue/renew a cert:
@@ -7143,13 +8618,17 @@ Parameters:
   --config-home <directory>         Specifies the home dir to save all the configurations.
   --useragent <string>              Specifies the user agent string. it will be saved for future use too.
   -m, --email <email>               Specifies the account email, only valid for the '--install' and '--update-account' command.
+                                      Multiple emails can be given as a comma-separated list: 'a@example.com,b@example.com'
   --accountkey <file>               Specifies the account key path, only valid for the '--install' command.
   --days <ndays>                    Specifies the days to renew the cert when using '--issue' command. The default value is $DEFAULT_RENEW days.
+                                      A negative value renews that many days before the cert expiry.
+                                      Negative values could be used to specify a number of days relative to the expiration date of the certificate.
   --httpport <port>                 Specifies the standalone listening port. Only valid if the server is behind a reverse proxy or load balancer.
   --tlsport <port>                  Specifies the standalone tls listening port. Only valid if the server is behind a reverse proxy or load balancer.
   --local-address <ip>              Specifies the standalone/tls server listening address, in case you have multiple ip addresses.
   --listraw                         Only used for '--list' command, list the certs in raw format.
   -se, --stop-renew-on-error        Only valid for '--renew-all' command. Stop if one cert has error in renewal.
+  --treat-skip-as-success           Only valid for '--renew-all' command. Treat skipped certs as success, return 0 instead of $RENEW_SKIP.
   --insecure                        Do not check the server certificate, in some devices, the api server's certificate may not be trusted.
   --ca-bundle <file>                Specifies the path to the CA certificate bundle to verify api server's certificate.
   --ca-path <directory>             Specifies directory containing CA certificates in PEM format, used by wget or curl.
@@ -7169,8 +8648,9 @@ Parameters:
   --ocsp, --ocsp-must-staple        Generate OCSP-Must-Staple extension.
   --always-force-new-domain-key     Generate new domain key on renewal. Otherwise, the domain key is not changed by default.
   --auto-upgrade [0|1]              Valid for '--upgrade' command, indicating whether to upgrade automatically in future. Defaults to 1 if argument is omitted.
-  --listen-v4                       Force standalone/tls server to listen at ipv4.
-  --listen-v6                       Force standalone/tls server to listen at ipv6.
+  --listen-v4                       Force standalone/tls server to listen at ipv4 only.
+                                      By default the standalone server listens on both ipv4 and ipv6.
+  --listen-v6                       Force standalone/tls server to listen at ipv6 only.
   --request-v4                      Force client requests to use ipv4 to connect to the CA server.
   --request-v6                      Force client requests to use ipv6 to connect to the CA server.
   --openssl-bin <file>              Specifies a custom openssl bin location.
@@ -7192,13 +8672,17 @@ Parameters:
   --revoke-reason <0-10>            The reason for revocation, can be used in conjunction with the '--revoke' command.
                                       See: $_REVOKE_WIKI
 
-  --password <password>             Add a password to exported pfx file. Use with --to-pkcs12.
+  --password <password>             Add a password to the exported pfx or pkcs8 file. Use with '--to-pkcs12' or '--to-pkcs8'.
 
 
 "
 }
 
 installOnline() {
+  if [ "$ACME_PACKAGED" ]; then
+    _err "ACME_PACKAGED is set: acme.sh is managed by the system package manager, please use it to upgrade."
+    return 1
+  fi
   _info "Installing from online archive."
 
   _branch="$BRANCH"
@@ -7222,7 +8706,9 @@ installOnline() {
 
     cd "$PROJECT_NAME-$_branch"
     chmod +x $PROJECT_ENTRY
-    if ./$PROJECT_ENTRY --install "$@"; then
+    ./$PROJECT_ENTRY --install "$@"
+    _install_rc="$?"
+    if [ "$_install_rc" = "0" ]; then
       _info "Install success!"
     fi
 
@@ -7230,6 +8716,9 @@ installOnline() {
 
     rm -rf "$PROJECT_NAME-$_branch"
     rm -f "$localname"
+    # Propagate the install result so a failed upgrade is not reported as
+    # success. https://github.com/acmesh-official/acme.sh/issues/6477
+    exit "$_install_rc"
   )
 }
 
@@ -7251,6 +8740,10 @@ _getUpgradeHash() {
 }
 
 upgrade() {
+  if [ "$ACME_PACKAGED" ]; then
+    _err "ACME_PACKAGED is set: acme.sh is managed by the system package manager, please use it to upgrade."
+    exit 1
+  fi
   if (
     _initpath
     [ -z "$FORCE" ] && [ "$(_getUpgradeHash)" = "$(_readaccountconf "UPGRADE_HASH")" ] && _info "Already up to date!" && exit 0
@@ -7322,9 +8815,16 @@ _checkSudo() {
       return 0
     fi
     if [ -n "$SUDO_COMMAND" ]; then
-      #it's a normal user doing "sudo su", or `sudo -i` or `sudo -s`, or `sudo su acmeuser1`
-      _endswith "$SUDO_COMMAND" /bin/su || _contains "$SUDO_COMMAND" "/bin/su " || grep "^$SUDO_COMMAND\$" /etc/shells >/dev/null 2>&1
-      return $?
+      #The SUDO_* env vars are often inherited into shells that were not
+      #started as `sudo acme.sh` at all (e.g. `sudo su - user`, or
+      #`sudo pct enter <VID>` on Proxmox, which copies them into the
+      #container). Only warn when sudo was used to run acme.sh itself;
+      #anything else means the sudo happened further up and is fine.
+      #https://github.com/acmesh-official/acme.sh/issues/6400
+      if _contains "$SUDO_COMMAND" "$PROJECT_ENTRY"; then
+        return 1
+      fi
+      return 0
     fi
     #otherwise
     return 1
@@ -7494,6 +8994,9 @@ _process() {
   _valid_to=""
   _certificate_profile=""
   _extended_key_usage=""
+  _dns_persist_wildcard=""
+  _dns_persist_ca_name=""
+  _dns_persist_days=""
   while [ ${#} -gt 0 ]; do
     case "${1}" in
 
@@ -7582,11 +9085,28 @@ _process() {
     --update-account | --updateaccount)
       _CMD="updateaccount"
       ;;
+    --update-account-key | --updateaccountkey)
+      _CMD="updateaccountkey"
+      ;;
     --register-account | --registeraccount)
       _CMD="registeraccount"
       ;;
     --deactivate-account)
       _CMD="deactivateaccount"
+      ;;
+    --make-dns-persist-value | --makednspersistvalue)
+      _CMD="makednspersistvalue"
+      ;;
+    --dns-persist-wildcard | --dnspersistwildcard)
+      _dns_persist_wildcard="1"
+      ;;
+    --dns-persist-ca-name | --dnspersistcaname)
+      _dns_persist_ca_name="$2"
+      shift
+      ;;
+    --dns-persist-days | --dnspersistdays)
+      _dns_persist_days="$2"
+      shift
       ;;
     --set-notify)
       _CMD="setnotify"
@@ -7629,6 +9149,9 @@ _process() {
 
     -f | --force)
       FORCE="1"
+      ;;
+    --treat-skip-as-success | --treatskipassuccess)
+      _TREAT_SKIP_AS_SUCCESS="1"
       ;;
     --staging | --test)
       STAGE="1"
@@ -7722,6 +9245,14 @@ _process() {
         wvalue="$2"
         shift
       fi
+      if [ -z "$_webroot" ]; then
+        _webroot="$wvalue"
+      else
+        _webroot="$_webroot,$wvalue"
+      fi
+      ;;
+    --dns-persist)
+      wvalue="$W_DNS_PERSIST"
       if [ -z "$_webroot" ]; then
         _webroot="$wvalue"
       else
@@ -8094,6 +9625,22 @@ _process() {
 
   _debug2 LE_WORKING_DIR "$LE_WORKING_DIR"
 
+  # --valid-to pins the cert lifetime, so a creation-anchored (positive)
+  # --days schedule can not apply and is rejected. A negative --days is
+  # anchored to the expiry and composes with a relative --valid-to: the
+  # cert renews that many days before the expiry.
+  if [ "$_days" ] && [ "$_valid_to" ]; then
+    if ! _startswith "$_valid_to" "+"; then
+      _err "--days can not be used together with a fixed-date --valid-to: such a cert can not be renewed automatically."
+      return 1
+    fi
+    if ! _startswith "$_days" "-"; then
+      _err "A positive --days can not be used together with --valid-to, the renewal time is derived from the expiry time."
+      _err "Use a negative --days to renew that many days before the expiry, or omit --days to renew 1 day before the expiry."
+      return 1
+    fi
+  fi
+
   if [ "$DEBUG" ]; then
     version
     if [ "$_server" ]; then
@@ -8112,7 +9659,7 @@ _process() {
     deploy "$_domain" "$_deploy_hook" "$_ecc"
     ;;
   signcsr)
-    signcsr "$_csr" "$_webroot" "$_cert_file" "$_key_file" "$_ca_file" "$_reloadcmd" "$_fullchain_file" "$_pre_hook" "$_post_hook" "$_renew_hook" "$_local_address" "$_challenge_alias" "$_preferred_chain"
+    signcsr "$_csr" "$_webroot" "$_cert_file" "$_key_file" "$_ca_file" "$_reloadcmd" "$_fullchain_file" "$_pre_hook" "$_post_hook" "$_renew_hook" "$_local_address" "$_challenge_alias" "$_preferred_chain" "$_valid_from" "$_valid_to" "$_certificate_profile" "$_extended_key_usage"
     ;;
   showcsr)
     showcsr "$_csr" "$_domain"
@@ -8141,8 +9688,14 @@ _process() {
   updateaccount)
     updateaccount
     ;;
+  updateaccountkey)
+    updateaccountkey "$_accountkeylength"
+    ;;
   deactivateaccount)
     deactivateaccount
+    ;;
+  makednspersistvalue)
+    makednspersistvalue "$_domain" "$_dns_persist_wildcard" "$_dns_persist_ca_name" "$_dns_persist_days"
     ;;
   list)
     list "$_listraw" "$_domain"
@@ -8157,7 +9710,7 @@ _process() {
     toPkcs "$_domain" "$_password" "$_ecc"
     ;;
   toPkcs8)
-    toPkcs8 "$_domain" "$_ecc"
+    toPkcs8 "$_domain" "$_password" "$_ecc"
     ;;
   createAccountKey)
     createAccountKey "$_accountkeylength"
@@ -8166,7 +9719,7 @@ _process() {
     createDomainKey "$_domain" "$_keylength"
     ;;
   createCSR)
-    createCSR "$_domain" "$_altdomains" "$_ecc"
+    createCSR "$_domain" "$_altdomains" "$_ecc" "$_extended_key_usage"
     ;;
   setnotify)
     setnotify "$_notify_hook" "$_notify_level" "$_notify_mode" "$_notify_source"

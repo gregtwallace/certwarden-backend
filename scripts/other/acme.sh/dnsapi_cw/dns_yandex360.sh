@@ -154,7 +154,7 @@ _check_variables() {
       org_response="$(echo "$org_response" | _normalizeJson)"
       YANDEX360_ORG_ID=$(
         echo "$org_response" |
-          _egrep_o '"id":[[:space:]]*[0-9]+' |
+          _egrep_o '"id":[ ]*[0-9]+' |
           cut -d':' -f2
       )
       _debug 'Automatically retrieved YANDEX360_ORG_ID' "$YANDEX360_ORG_ID"
@@ -221,7 +221,7 @@ _get_token() {
 
   interval=$(
     echo "$response" |
-      _egrep_o '"interval":[[:space:]]*[0-9]+' |
+      _egrep_o '"interval":[ ]*[0-9]+' |
       cut -d':' -f2
   )
   _debug 'Polling interval' "$interval"
