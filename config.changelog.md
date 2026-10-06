@@ -27,6 +27,12 @@ take advantage of.
 
 ## Log
 
+### [Unreleased]
+
+- Add optional `auth.oidc.superadmin_scope` to override the scope required for
+  OIDC superadmin access. This is not a breaking change and does not increment
+  `config_version`; an omitted or empty value defaults to `certwarden:superadmin`.
+
 ### [v0.14.1] - 2023.10.17
 
 - 2023.10.23
