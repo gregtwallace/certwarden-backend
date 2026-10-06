@@ -124,7 +124,7 @@ def build(goos, goarch, git_required):
 
   # special case for windows to add file extensions
   extension = ""
-  if GOOS.lower() == "windows":
+  if goos.lower() == "windows":
     extension = ".exe"
 
   # do build
