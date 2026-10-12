@@ -69,4 +69,5 @@ else # Using the new method.
 
   # restart service
   systemctl start certwarden
+  cleanup
 fi
