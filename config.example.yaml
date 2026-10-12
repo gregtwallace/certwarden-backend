@@ -80,6 +80,9 @@
     # the redirect url should be the BACKEND host, with the path:
     # `/certwarden/api/v1/app/auth/oidc/callback`
     'api_redirect_uri': 'https://cw.example.com:4055/certwarden/api/v1/app/auth/oidc/callback'
+    # application URI - required for Microsoft Entra ID,
+    # this should match your application's 'Application ID URI'
+    'app_uri': 'api://12345678-1234-1234-1234-123456789abc'
 
 # Cert Warden update checking functionality to alert you when new versions are available
 'updater':
