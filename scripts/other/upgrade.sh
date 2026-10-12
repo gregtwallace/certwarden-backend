@@ -29,32 +29,31 @@ if [ "$PWD" != "$install_path/scripts" ]; then
 
   # restart service
   systemctl start certwarden
-else
+else # Using the new method.
   # The following segment was obtained from https://mywiki.wooledge.org/BashFAQ/062
   # Generate a temp directory to download the release.
   tempdir=""
   cleanup() { test "$tempdir" && rm -rf -- "$tempdir"; }
   trap cleanup EXIT HUP INT TERM    # makes so the function runs even if the script is killed
-  tempdir=$(mktemp -d -- "${TMPDIR:-/tmp}/XXXXXXXXXXXXXX") ||
+  tempdir=$(mktemp -d -- "${TMPDIR:-/tmp}/tmpXXXXXXXXXXXXXX") ||
     { echo 'Error creating a temporary directory' >&2; exit 1; }
   cd "$tempdir" || exit 1
-
   # Get release link
-  release_link="$(curl -s https://api.github.com/repos/gregtwallace/certwarden/releases\?per_page\=1 | grep -E '"html_url": ".*releases\/tag.*",' | grep -E '"https:\/\/.*"' -o)"
-
-  # next lines from https://askubuntu.com/questions/89995/bash-remove-first-and-last-characters-from-a-string
-  release_link="$(echo "$release_link" | cut -d '"' -f 2)"
+  #The release_link line does the following:
+  # 1. get the information about the lastest release of any kind. 2. Grab only the line with the release link.
+  # 3. Remove unnessesary info (the variable name) 4. remove the quotes at the start and end.
+  # 5. replace tag by download in the link.
+  release_link="$(curl -s https://api.github.com/repos/gregtwallace/certwarden/releases\?per_page\=1 | grep -E '"html_url": ".*releases\/tag.*",' | grep -E '"https:\/\/.*"' -o | cut -d '"' -f 2 | sed "s/tag/download/")"
+  # Determine what release asset is needed. the command outputs the architecture such as "amd64" or "arm64"
   release_file="certwarden_linux_$(dpkg --print-architecture)"
-
   # Download the release file
   wget "$release_link/$release_file.zip"
-
   # Export the release
   unzip "$release_file.zip"
   tar -xf "$release_file.tar"
   cd "release/scripts" || exit 1
 
-  # Update files.
+  # Update like the legacy method.
     # stop
   systemctl stop certwarden
 
