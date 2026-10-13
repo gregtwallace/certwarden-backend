@@ -101,6 +101,9 @@ with tempfile.TemporaryDirectory() as tempdir:
   ## Copy LICENSE.md
   shutil.copyfile(path_src_license, os.path.join(path_out_acmesh_root, "LICENSE.md"))
 
+  ## Add HEAD for versioning
+  with open(os.path.join(path_out_acmesh_root, "HEAD"), "a") as f:
+    f.write(args.tag)
 
   ## Copy main script to use as source
 
