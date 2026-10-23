@@ -173,8 +173,6 @@ def main():
 
   print("exiting certwarden-backend build script")
 
-def temp():
-  return os.path.dirname(os.path.realpath(__file__))
 
 # run main if this script is called directly
 if __name__ == "__main__":
