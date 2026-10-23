@@ -1,6 +1,6 @@
 module certwarden-backend
 
-go 1.26.5
+go 1.27.3
 
 require github.com/julienschmidt/httprouter v1.3.0
 
