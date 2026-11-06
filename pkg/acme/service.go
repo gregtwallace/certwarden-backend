@@ -20,6 +20,9 @@ type App interface {
 
 // Acme service struct
 type Service struct {
+	// temporarily park this here
+	shutdownContext context.Context
+
 	logger       *zap.SugaredLogger
 	httpClient   *http.Client
 	dirUri       string
@@ -48,7 +51,9 @@ func NewService(app App, dirUri string) (*Service, error) {
 	service.backgroundDirManager(app.GetShutdownContext(), app.GetShutdownWaitGroup())
 
 	// nonce manager
-	service.nonceManager = noncemanager.New(service.httpClient, app.GetShutdownContext(), &service.dir.NewNonce)
+	service.nonceManager = noncemanager.New(service.httpClient, &service.dir.NewNonce)
+
+	service.shutdownContext = app.GetShutdownContext()
 
 	return service, nil
 }
