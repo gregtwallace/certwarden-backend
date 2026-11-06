@@ -1,4 +1,4 @@
-package nonces
+package noncemanager
 
 import (
 	"certwarden-backend/pkg/datatypes/ringbuffer"
@@ -20,18 +20,18 @@ type Manager struct {
 	shutdownContext context.Context
 
 	newNonceUrl *string
-	nonces      *ringbuffer.RingBuffer[string]
+	nonceValues *ringbuffer.Buffer
 }
 
-// NewManager creates a new nonce manager
-func NewManager(client *http.Client, shutdownCtx context.Context, nonceUrl *string) *Manager {
+// New creates a new nonce manager
+func New(client *http.Client, shutdownCtx context.Context, nonceUrl *string) *Manager {
 	// Note: nonceUrl must be a pointer so directory updates are reflected in Manager
 
 	return &Manager{
 		httpClient:      client,
 		shutdownContext: shutdownCtx,
 		newNonceUrl:     nonceUrl,
-		nonces:          ringbuffer.NewRingBuffer[string](bufferSize),
+		nonceValues:     ringbuffer.New(bufferSize),
 	}
 }
 
@@ -126,7 +126,7 @@ func (manager *Manager) fetchNonce() (string, error) {
 // fetching from the newNonceUrl
 func (manager *Manager) Nonce() (string, error) {
 	// try to read, if error fetch new
-	nonce, err := manager.nonces.Read()
+	nonce, err := manager.nonceValues.Pop()
 
 	// if read failed, fetch from url
 	if err != nil {
@@ -145,11 +145,8 @@ func (manager *Manager) SaveNonce(nonce string) error {
 		return errors.New("nonce manager: cannot save empty nonce")
 	}
 
-	// write new nonce and evict oldest if buffer is full
-	err := manager.nonces.Write(nonce, true)
-	if err != nil {
-		return err
-	}
+	// write new nonce (evicts oldest if buffer is full)
+	manager.nonceValues.Push(nonce)
 
 	return nil
 }
