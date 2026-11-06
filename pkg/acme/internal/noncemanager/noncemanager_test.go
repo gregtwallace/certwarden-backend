@@ -57,9 +57,12 @@ func TestPush(t *testing.T) {
 				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			} else {
 				// check that the value was pushed to the buffer
-				val, _ := mgr.nonceValues.Pop()
+				val, err := mgr.nonceValues.Pop()
 				if val != tc.expectedVal {
 					t.Errorf("expected value '%s' but got '%s'", tc.expectedVal, val)
+				}
+				if val != "" && err != nil {
+					t.Errorf("expected no error but got '%s'", helpers_test.ErrorToVal(err))
 				}
 			}
 		})
