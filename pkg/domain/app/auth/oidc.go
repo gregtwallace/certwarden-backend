@@ -16,10 +16,53 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const oidcCertWardenScope = "certwarden:superadmin"
+const oidcDefaultSuperadminScope = "certwarden:superadmin"
 const oidcPendingSessionMinExp = 5 * time.Minute
 
-var oidcRequiredScopes = []string{oidc.ScopeOpenID, oidc.ScopeOfflineAccess, "profile", oidcCertWardenScope}
+func oidcSuperadminScope(superadminScope string) string {
+	if superadminScope == "" {
+		return oidcDefaultSuperadminScope
+	}
+
+	return superadminScope
+}
+
+func oidcRequestedScopes(superadminScope string) []string {
+	return []string{oidc.ScopeOpenID, oidc.ScopeOfflineAccess, "profile", oidcSuperadminScope(superadminScope)}
+}
+
+func oidcRequiredAuthorizationScopes(superadminScope string) []string {
+	return []string{oidcSuperadminScope(superadminScope)}
+}
+
+func oidcMissingRequiredScope(grantedScopes string, requiredScopes []string) string {
+	responseScopes := strings.Split(grantedScopes, " ")
+	for _, requiredScope := range requiredScopes {
+		found := false
+		for _, responseScope := range responseScopes {
+			if requiredScope == responseScope {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return requiredScope
+		}
+	}
+
+	return ""
+}
+
+func oidcTokenResponseScope(token *oauth2.Token) (scope string, present, valid bool) {
+	scopeValue := token.Extra("scope")
+	if scopeValue == nil {
+		return "", false, true
+	}
+
+	scope, valid = scopeValue.(string)
+	return scope, true, valid
+}
 
 // oidcPendingSession tracks various bits of information across the different steps of the OIDC
 // autentication and authorization flow
@@ -68,10 +111,11 @@ type expectedToken struct {
 
 // oidcExtraFuncs implements session manager's extraFuncs interface
 type oidcExtraFuncs struct {
-	ctxWithHttpClient context.Context
-	cfg               *oauth2.Config
-	idTokenVerifier   *oidc.IDTokenVerifier
-	token             *expectedToken
+	ctxWithHttpClient           context.Context
+	cfg                         *oauth2.Config
+	requiredAuthorizationScopes []string
+	idTokenVerifier             *oidc.IDTokenVerifier
+	token                       *expectedToken
 
 	mu sync.Mutex
 }
@@ -141,19 +185,9 @@ func (oef *oidcExtraFuncs) RefreshCheck() error {
 
 	// Validate the required scopes were granted
 	if t.Scope != "" {
-		responseScopes := strings.Split(t.Scope, " ")
-		for _, requiredScope := range oidcRequiredScopes {
-			found := false
-			for _, responseScope := range responseScopes {
-				if requiredScope == responseScope {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				return fmt.Errorf("oidc refresh failed, required scope '%s' was not granted", requiredScope)
-			}
+		missingScope := oidcMissingRequiredScope(t.Scope, oef.requiredAuthorizationScopes)
+		if missingScope != "" {
+			return fmt.Errorf("oidc refresh failed, required scope '%s' was not granted", missingScope)
 		}
 	}
 

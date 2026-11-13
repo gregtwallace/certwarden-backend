@@ -26,6 +26,8 @@
 'auth':
   'local':
     'enabled': true
+  'oidc':
+    'superadmin_scope': 'certwarden:superadmin'
 
 'updater':
   'auto_check': true

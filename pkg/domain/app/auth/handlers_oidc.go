@@ -189,24 +189,20 @@ func (service *Service) OIDCGetCallback(w http.ResponseWriter, r *http.Request) 
 	// if the scope is omitted, spec requires scope to exactly match the request (i.e., scope was accepted and
 	// validation here isn't needed)
 	// i.e., this is the AUTHORIZATION step
-	responseScopeString, hasScope := oidcStateObj.oauth2Token.Extra("scope").(string)
+	responseScopeString, hasScope, scopeValid := oidcTokenResponseScope(oidcStateObj.oauth2Token)
+	if !scopeValid {
+		service.logger.Infof("client %s: oidc user '%s' token response scope did not assert to string", r.RemoteAddr, oidcStateObj.oidcIDToken.Subject)
+		// redirect to frontend to try again
+		http.Redirect(w, r, oidcUnauthorizedErrorURL(oidcStateObj.callerRedirectUrl).String(), http.StatusFound)
+		return nil
+	}
 	if hasScope {
-		responseScopes := strings.Split(responseScopeString, " ")
-		for _, requiredScope := range oidcRequiredScopes {
-			found := false
-			for _, responseScope := range responseScopes {
-				if requiredScope == responseScope {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				service.logger.Infof("client %s: oidc user '%s' required scope '%s' was not granted", r.RemoteAddr, oidcStateObj.oidcIDToken.Subject, requiredScope)
-				// redirect to frontend to try again
-				http.Redirect(w, r, oidcUnauthorizedErrorURL(oidcStateObj.callerRedirectUrl).String(), http.StatusFound)
-				return nil
-			}
+		missingScope := oidcMissingRequiredScope(responseScopeString, service.oidc.requiredAuthorizationScopes)
+		if missingScope != "" {
+			service.logger.Infof("client %s: oidc user '%s' required scope '%s' was not granted", r.RemoteAddr, oidcStateObj.oidcIDToken.Subject, missingScope)
+			// redirect to frontend to try again
+			http.Redirect(w, r, oidcUnauthorizedErrorURL(oidcStateObj.callerRedirectUrl).String(), http.StatusFound)
+			return nil
 		}
 	}
 
@@ -262,17 +258,18 @@ func (service *Service) OIDCLoginFinalize(w http.ResponseWriter, r *http.Request
 		service.logger.Errorf("client %s: login failed oidc state's id_token did not assert to string", r.RemoteAddr)
 		return output.ErrJsonUnauthorized
 	}
-	scopeStr, ok := oidcStateObj.oauth2Token.Extra("scope").(string)
-	if !ok {
+	scopeStr, _, scopeValid := oidcTokenResponseScope(oidcStateObj.oauth2Token)
+	if !scopeValid {
 		service.logger.Errorf("client %s: login failed oidc state's scope did not assert to string", r.RemoteAddr)
 		return output.ErrJsonUnauthorized
 	}
 
 	// make extra func obj
 	extraFuncs := &oidcExtraFuncs{
-		ctxWithHttpClient: service.oidc.ctxWithHttpClient,
-		cfg:               service.oidc.oauth2Config,
-		idTokenVerifier:   service.oidc.idTokenVerifier,
+		ctxWithHttpClient:           service.oidc.ctxWithHttpClient,
+		cfg:                         service.oidc.oauth2Config,
+		requiredAuthorizationScopes: service.oidc.requiredAuthorizationScopes,
+		idTokenVerifier:             service.oidc.idTokenVerifier,
 		token: &expectedToken{
 			AccessToken:  oidcStateObj.oauth2Token.AccessToken,
 			RefreshToken: oidcStateObj.oauth2Token.RefreshToken,
