@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -58,6 +59,16 @@ type Config struct {
 		ClientID       string `yaml:"client_id"`
 		ClientSecret   string `yaml:"client_secret"`
 		APIRedirectURI string `yaml:"api_redirect_uri"`
+		// Scopes overrides the scopes requested from, and required of, the
+		// IdP. Empty = the upstream default (which includes the custom
+		// certwarden:superadmin scope). IdPs that cannot issue custom scopes
+		// (e.g. Cloudflare Access) need this, and then AUTHORIZATION no
+		// longer comes from that scope: use AllowedEmails and/or the IdP's
+		// own access policy.
+		Scopes []string `yaml:"scopes"`
+		// AllowedEmails, if non-empty, restricts OIDC login to ID tokens whose
+		// verified email claim is in this list (case-insensitive).
+		AllowedEmails []string `yaml:"allowed_emails"`
 	} `yaml:"oidc"`
 }
 
@@ -77,6 +88,8 @@ type Service struct {
 		pendingSessions   *safemap.SafeMap[*oidcPendingSession]
 		oauth2Config      *oauth2.Config
 		idTokenVerifier   *oidc.IDTokenVerifier
+		requiredScopes    []string
+		allowedEmails     map[string]struct{}
 	}
 }
 
@@ -116,51 +129,9 @@ func NewService(app App, cfg *Config) (*Service, error) {
 
 	// OIDC (optional)
 	if cfg.OIDC.IssuerURL != "" {
-		// context to use CW's http Client
-		oidcCtxWithHttpClient := oidc.ClientContext(app.GetShutdownContext(), app.GetHttpClient())
-
-		// oidc provider
-		var err error
-		provider, err := oidc.NewProvider(oidcCtxWithHttpClient, cfg.OIDC.IssuerURL)
+		err := service.configureOIDC(app, cfg)
 		if err != nil {
-			// failed to make provider, log error but continue without oidc
-			service.logger.Errorf("auth: failed to create oidc provider (%s), oidc will not be enabled", err)
-		} else {
-			// provider created okay, finish OIDC configuration
-			// store ctx for use in other OIDC/Oauth2 calls
-			service.oidc.ctxWithHttpClient = oidcCtxWithHttpClient
-
-			// manage pending OIDC states
-			service.oidc.pendingSessions = safemap.NewSafeMap[*oidcPendingSession]()
-
-			// verify the rest of the config is populated
-			if cfg.OIDC.ClientID == "" || cfg.OIDC.ClientSecret == "" || cfg.OIDC.APIRedirectURI == "" {
-				return nil, errors.New("auth: when using OIDC, config must speficy client id, client secret, and api redirect uri")
-			}
-
-			// oidc oauth2 config
-			service.oidc.oauth2Config = &oauth2.Config{
-				ClientID:     cfg.OIDC.ClientID,
-				ClientSecret: cfg.OIDC.ClientSecret,
-				RedirectURL:  cfg.OIDC.APIRedirectURI,
-
-				Endpoint: provider.Endpoint(),
-				Scopes:   oidcRequiredScopes,
-			}
-
-			// ensure redirect parses
-			_, err = url.Parse(service.oidc.oauth2Config.RedirectURL)
-			if err != nil {
-				err = fmt.Errorf("auth: oidc cfg url failed to parse (%w), fix the config", err)
-				service.logger.Error(err)
-				return nil, err
-			}
-
-			// oidc id token verifier
-			service.oidc.idTokenVerifier = provider.Verifier(&oidc.Config{ClientID: cfg.OIDC.ClientID})
-
-			// clean stale pending sessions
-			service.startOidcCleanerService(service.oidc.ctxWithHttpClient, app.GetShutdownWaitGroup())
+			return nil, err
 		}
 	}
 
@@ -181,4 +152,84 @@ func (service *Service) methodLocalEnabled() bool {
 
 func (service *Service) methodOIDCEnabled() bool {
 	return service.oidc.pendingSessions != nil
+}
+
+// configureOIDC sets up the optional OIDC login. A provider that cannot be
+// created is logged and OIDC stays disabled; an incomplete or invalid config
+// is an error.
+func (service *Service) configureOIDC(app App, cfg *Config) error {
+	// context to use CW's http Client
+	oidcCtxWithHttpClient := oidc.ClientContext(app.GetShutdownContext(), app.GetHttpClient())
+
+	// oidc provider
+	provider, err := oidc.NewProvider(oidcCtxWithHttpClient, cfg.OIDC.IssuerURL)
+	if err != nil {
+		// failed to make provider, log error but continue without oidc
+		service.logger.Errorf("auth: failed to create oidc provider (%s), oidc will not be enabled", err)
+		return nil
+	}
+
+	// provider created okay, finish OIDC configuration
+	// store ctx for use in other OIDC/Oauth2 calls
+	service.oidc.ctxWithHttpClient = oidcCtxWithHttpClient
+
+	// manage pending OIDC states
+	service.oidc.pendingSessions = safemap.NewSafeMap[*oidcPendingSession]()
+
+	// verify the rest of the config is populated
+	if cfg.OIDC.ClientID == "" || cfg.OIDC.ClientSecret == "" || cfg.OIDC.APIRedirectURI == "" {
+		return errors.New("auth: when using OIDC, config must speficy client id, client secret, and api redirect uri")
+	}
+
+	// oidc oauth2 config
+	service.oidc.oauth2Config = &oauth2.Config{
+		ClientID:     cfg.OIDC.ClientID,
+		ClientSecret: cfg.OIDC.ClientSecret,
+		RedirectURL:  cfg.OIDC.APIRedirectURI,
+
+		Endpoint: provider.Endpoint(),
+		Scopes:   oidcRequiredScopes,
+	}
+
+	// optional scope override and email allow-list
+	service.applyOIDCAuthorizationConfig(cfg)
+
+	// ensure redirect parses
+	_, err = url.Parse(service.oidc.oauth2Config.RedirectURL)
+	if err != nil {
+		err = fmt.Errorf("auth: oidc cfg url failed to parse (%w), fix the config", err)
+		service.logger.Error(err)
+		return err
+	}
+
+	// oidc id token verifier
+	service.oidc.idTokenVerifier = provider.Verifier(&oidc.Config{ClientID: cfg.OIDC.ClientID})
+
+	// clean stale pending sessions
+	service.startOidcCleanerService(service.oidc.ctxWithHttpClient, app.GetShutdownWaitGroup())
+
+	return nil
+}
+
+// applyOIDCAuthorizationConfig applies the optional scope override (see
+// Config.OIDC.Scopes) and email allow-list (see Config.OIDC.AllowedEmails)
+func (service *Service) applyOIDCAuthorizationConfig(cfg *Config) {
+	service.oidc.requiredScopes = oidcRequiredScopes
+	if len(cfg.OIDC.Scopes) > 0 {
+		service.oidc.requiredScopes = cfg.OIDC.Scopes
+		service.oidc.oauth2Config.Scopes = cfg.OIDC.Scopes
+		service.logger.Infof("auth: oidc scopes overridden by config: %s", strings.Join(cfg.OIDC.Scopes, " "))
+	}
+
+	if len(cfg.OIDC.AllowedEmails) == 0 {
+		if len(cfg.OIDC.Scopes) > 0 {
+			service.logger.Warn("auth: oidc scopes overridden without allowed_emails; authorization relies entirely on the idp's access policy")
+		}
+		return
+	}
+
+	service.oidc.allowedEmails = make(map[string]struct{}, len(cfg.OIDC.AllowedEmails))
+	for _, e := range cfg.OIDC.AllowedEmails {
+		service.oidc.allowedEmails[strings.ToLower(strings.TrimSpace(e))] = struct{}{}
+	}
 }
