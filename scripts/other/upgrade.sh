@@ -36,7 +36,7 @@ else # Using the new method.
   cleanup() { test "$tempdir" && rm -rf -- "$tempdir"; }
   trap cleanup EXIT HUP INT TERM    # makes so the function runs even if the script is killed
   tempdir=$(mktemp -d -- "${TMPDIR:-/tmp}/tmpXXXXXXXXXXXXXX") ||
-    { echo 'Error creating a temporary directory' >&2; exit 1; }
+    { echo 'Error creating a temporary directory' >&2; exit 2; }
   cd "$tempdir" || exit 1
   # Get release link
   #The release_link line does the following:
@@ -49,8 +49,8 @@ else # Using the new method.
   # Download the release file
   wget "$release_link/$release_file.zip"
   # Export the release
-  unzip "$release_file.zip"
-  tar -xf "$release_file.tar"
+  unzip "$release_file.zip" || { echo 'Error, could not decompress ZIP' >&2; exit 3; }
+  tar -xf "$release_file.tar" || { echo 'Error, could not decompress TAR' >&2; exit 3; }
   cd "release/scripts" || exit 1
 
   # Update like the legacy method.
