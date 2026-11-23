@@ -43,7 +43,8 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) *o
 	return nil
 }
 
-// healthHandler writes some basic info about the status of the Application
+// healthHandler writes some basic info about the status of the Application; if this ever
+// does return an error, update the httpToHttpsRedirectHandler to deal with it
 func healthHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// write 204 (No Content)
 	w.WriteHeader(http.StatusNoContent)
@@ -56,6 +57,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 func (app *Application) httpToHttpsRedirectHandler(w http.ResponseWriter, r *http.Request) {
 	// if its health check, just do healthHandler (DONT redirect)
 	if (r.Method == http.MethodGet || r.Method == http.MethodHead) && r.URL.Path == healthUrlPath {
+		//nolint:errcheck // ignore error - it never returns one
 		healthHandler(w, r)
 		return
 	}
