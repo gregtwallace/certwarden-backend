@@ -54,6 +54,12 @@ func healthHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 // httpToHttpsRedirectHandler redirects the user from http to https. If the redirect target isn't
 // in the https certificate, 400 is returned instead
 func (app *Application) httpToHttpsRedirectHandler(w http.ResponseWriter, r *http.Request) {
+	// if its health check, just do healthHandler (DONT redirect)
+	if (r.Method == http.MethodGet || r.Method == http.MethodHead) && r.URL.Path == healthUrlPath {
+		healthHandler(w, r)
+		return
+	}
+
 	// get hostname from http request
 	hostName, _, err := net.SplitHostPort(r.Host)
 	isRawV6 := false

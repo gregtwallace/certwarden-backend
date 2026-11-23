@@ -27,13 +27,15 @@ func TestAppHttpToHttpsRedirectHandler(t *testing.T) {
 		{"http://something.example.com:4050", true},
 		{"http://notexplicit.example.com", true},
 		{"http://notexplicit.example.com:5222", true},
-		{"http://127.0.0.1", true},
-		{"http://127.0.0.1:8080", true},
+		{"http://10.10.0.101", true},
+		{"http://10.10.0.101:8080", true},
 		{"http://[2001:db8::1234]", true},
 		{"http://[2001:db8::1234]:8080", true},
 
 		// should not work
 		{"", false},
+		{"http://localhost:80/certwarden/health", false},
+		{"http://localhost:80/certwarden/api/v1/app/auth/status", false},
 		{"http://something.examplex.com:80/someplace/index.html?somethingelse=52", false},
 		{"http://something.examplex.com/someplace/index.html?somethingelse=52", false},
 		{"http://192.168.100.1:80/someplace/index.html?somethingelse=52", false},
@@ -46,8 +48,8 @@ func TestAppHttpToHttpsRedirectHandler(t *testing.T) {
 	}
 
 	// make dummy self-signed cert
-	sc, err := NewTestSafecert([]string{"localhost", "example.com", "something.example.com", "*.example.com"},
-		[]string{"127.0.0.1", "2001:db8::1234"})
+	sc, err := NewTestSafecert([]string{"example.com", "something.example.com", "*.example.com"},
+		[]string{"10.10.0.101", "2001:db8::1234"})
 	if err != nil {
 		t.Fatalf("failed to make test cert (%s)", err)
 	}
@@ -62,7 +64,7 @@ func TestAppHttpToHttpsRedirectHandler(t *testing.T) {
 
 	// run tests
 	for i := range tc {
-		t.Run(fmt.Sprintf("%d: %s", i, tc[i].requestTarget), func(t *testing.T) {
+		t.Run(fmt.Sprintf("redirect %d: %s", i, tc[i].requestTarget), func(t *testing.T) {
 			// do request/write
 			w := httptest.NewRecorder()
 			var r *http.Request
@@ -114,6 +116,75 @@ func TestAppHttpToHttpsRedirectHandler(t *testing.T) {
 
 			if !bytes.Equal(resDat, expectedBody) {
 				t.Errorf("expected body '%s' but got '%s'", expectedBody, resDat)
+			}
+		})
+	}
+
+	// special case for health endpoint
+	// test cases
+	tcHealth := []struct {
+		requestTarget string
+	}{
+		// should work
+		{"http://localhost:80/certwarden/api/health"},
+		{"http://127.0.0.1:80/certwarden/api/health"},
+		{"http://9.9.9.9:80/certwarden/api/health"},
+		{"http://[::1]:80/certwarden/api/health"},
+		{"http://localhost:4050/certwarden/api/health"},
+		{"http://127.0.0.1:4050/certwarden/api/health"},
+		{"http://9.9.9.9:4050/certwarden/api/health"},
+		{"http://[::1]:4050/certwarden/api/health"},
+	}
+
+	for i := range tcHealth {
+		t.Run(fmt.Sprintf("health GET %d: %s", i, tcHealth[i].requestTarget), func(t *testing.T) {
+			// do request/write
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, tcHealth[i].requestTarget, http.NoBody)
+
+			a.httpToHttpsRedirectHandler(w, r)
+
+			// check result
+			res := w.Result()
+			defer res.Body.Close()
+			resBody, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Errorf("expected error to be nil got %v", err)
+			}
+			if !bytes.Equal(resBody, []byte{}) {
+				t.Errorf("expected body '%s' but got '%s'", []byte{}, resBody)
+			}
+
+			// check: response code
+			if res.StatusCode != http.StatusNoContent {
+				t.Errorf("expected status 204 no content but got '%d'", res.StatusCode)
+			}
+		})
+	}
+
+	// do it again but with HEAD method
+	for i := range tcHealth {
+		t.Run(fmt.Sprintf("health HEAD %d: %s", i, tcHealth[i].requestTarget), func(t *testing.T) {
+			// do request/write
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodHead, tcHealth[i].requestTarget, http.NoBody)
+
+			a.httpToHttpsRedirectHandler(w, r)
+
+			// check result
+			res := w.Result()
+			defer res.Body.Close()
+			resBody, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Errorf("expected error to be nil got %v", err)
+			}
+			if !bytes.Equal(resBody, []byte{}) {
+				t.Errorf("expected body '%s' but got '%s'", []byte{}, resBody)
+			}
+
+			// check: response code
+			if res.StatusCode != http.StatusNoContent {
+				t.Errorf("expected status 204 no content but got '%d'", res.StatusCode)
 			}
 		})
 	}
