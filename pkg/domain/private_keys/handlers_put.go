@@ -49,7 +49,7 @@ func (service *Service) PutKeyUpdate(w http.ResponseWriter, r *http.Request) *ou
 		return outErr
 	}
 	// name (optional - check if not nil)
-	if payload.Name != nil && !service.NameValid(*payload.Name, &payload.ID) {
+	if payload.Name != nil && !service.IsValidName(*payload.Name, &payload.ID) {
 		service.logger.Debug(ErrNameBad)
 		return output.ErrorJsonErrValidationFailed(ErrNameBad)
 	}

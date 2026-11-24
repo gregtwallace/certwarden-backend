@@ -1,47 +1,46 @@
-package validation
+package validation_test
 
-import "testing"
+import (
+	"certwarden-backend/pkg/validation"
+	"fmt"
+	"testing"
+)
 
-var validNames = []string{
-	"test",
-	"aName",
-	"sOmENaMEee",
-	"name.com",
-	"name.com.",
-	"some.name.com...",
-	"som~name.here",
-	"myTest_-Name",
-	"ok~name",
-}
+func TestValidation_IsValidName(t *testing.T) {
+	tc := []struct {
+		name          string
+		expectedValid bool
+	}{
+		{"test", true},
+		{"aName", true},
+		{"sOmENaMEee", true},
+		{"name.com", true},
+		{"name.com.", true},
+		{"some.name.com...", true},
+		{"som~name.here", true},
+		{"myTest_-Name", true},
+		{"ok~name", true},
 
-var invalidNames = []string{
-	"",
-	" ",
-	"    ",
-	"a Name",
-	" aName",
-	"aName ",
-	"some$name",
-	"a[name]",
-	"another`name",
-	"aga^in",
-	"ag\\ain",
-}
-
-func TestValidation_NameValid(t *testing.T) {
-	// test valid names
-	for _, name := range validNames {
-		valid := NameValid(name)
-		if !valid {
-			t.Errorf("valid name test case '%s' returned invalid", name)
-		}
+		{"", false},
+		{" ", false},
+		{"    ", false},
+		{"a Name", false},
+		{" aName", false},
+		{"aName ", false},
+		{"some$name", false},
+		{"a[name]", false},
+		{"another`name", false},
+		{"aga^in", false},
+		{"ag\\ain", false},
 	}
 
-	// test invalid names
-	for _, name := range invalidNames {
-		valid := NameValid(name)
-		if valid {
-			t.Errorf("invalid name test case '%s' returned valid", name)
-		}
+	// run tests
+	for i := range tc {
+		t.Run(fmt.Sprintf("%d: name: %q", i, tc[i].name), func(t *testing.T) {
+			result := validation.IsValidName(tc[i].name)
+			if tc[i].expectedValid != result {
+				t.Errorf("id %q expected isvalidname '%t' but got '%t'", tc[i].name, tc[i].expectedValid, result)
+			}
+		})
 	}
 }

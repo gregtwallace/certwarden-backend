@@ -23,7 +23,7 @@ var (
 // error.
 func (service *Service) getKey(id int) (*Key, *output.JsonError) {
 	// basic check
-	if !validation.IsIdExistingValidRange(id) {
+	if !validation.IsValidIDValue(id) {
 		service.logger.Debug(ErrIdBad)
 		return nil, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
@@ -49,9 +49,9 @@ func (service *Service) getKey(id int) (*Key, *output.JsonError) {
 // characters and also confirms the name is not already in use by another
 // key. If an id is specified, the name will also be accepted if the name
 // is already in use by the specified id.
-func (service *Service) NameValid(keyName string, keyId *int) bool {
+func (service *Service) IsValidName(keyName string, keyId *int) bool {
 	// basic character/length check
-	if !validation.NameValid(keyName) {
+	if !validation.IsValidName(keyName) {
 		return false
 	}
 

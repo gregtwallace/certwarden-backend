@@ -75,7 +75,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) *outp
 	}
 
 	// if id is new, provide some info
-	if validation.IsIdNew(id) {
+	if validation.IsNewID(id) {
 		return service.GetNewCertOptions(w, r)
 	}
 

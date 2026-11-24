@@ -1,6 +1,10 @@
-package validation
+package validation_test
 
-import "testing"
+import (
+	"certwarden-backend/pkg/validation"
+	"fmt"
+	"testing"
+)
 
 var validUsernames = []string{
 	"greg",
@@ -28,7 +32,9 @@ var invalidUsernames = []string{
 
 // makeValidEmails makes the array of emails to test that should yield
 // a valid result
-func makeValidEmails() []string {
+func makeValidEmails(t *testing.T) []string {
+	t.Helper()
+
 	validEmails := []string{}
 
 	// valid usernames with known valid domain
@@ -46,7 +52,9 @@ func makeValidEmails() []string {
 
 // makeInvalidEmails makes the array of emails to test that should yield
 // an invalid result
-func makeInvalidEmails() []string {
+func makeInvalidEmails(t *testing.T) []string {
+	t.Helper()
+
 	invalidEmails := []string{
 		// example without an @
 		"john.smith.example.com",
@@ -69,37 +77,47 @@ func makeInvalidEmails() []string {
 
 func TestValidation_EmailValid(t *testing.T) {
 	// test valid emails
-	for _, email := range makeValidEmails() {
-		if !EmailValid(email) {
-			t.Errorf("valid email test case '%s' returned invalid", email)
-		}
+	for _, email := range makeValidEmails(t) {
+		t.Run(fmt.Sprintf("valid email: %q", email), func(t *testing.T) {
+			if !validation.EmailValid(email) {
+				t.Errorf("valid email test case '%s' returned invalid", email)
+			}
+		})
 	}
 
 	// test invalid emails
-	for _, email := range makeInvalidEmails() {
-		if EmailValid(email) {
-			t.Errorf("invalid email test case '%s' returned valid", email)
-		}
+	for _, email := range makeInvalidEmails(t) {
+		t.Run(fmt.Sprintf("invalid email: %q", email), func(t *testing.T) {
+			if validation.EmailValid(email) {
+				t.Errorf("invalid email test case '%s' returned valid", email)
+			}
+		})
 	}
 }
 
 func TestValidation_EmailValidOrBlank(t *testing.T) {
 	// test blank
-	if !EmailValidOrBlank("") {
-		t.Error("valid email or blank test case '' (i.e. blank) returned invalid")
-	}
+	t.Run("blank email: \"\"", func(t *testing.T) {
+		if !validation.EmailValidOrBlank("") {
+			t.Error("valid email or blank test case '' (i.e. blank) returned invalid")
+		}
+	})
 
 	// test valid emails
-	for _, email := range makeValidEmails() {
-		if !EmailValidOrBlank(email) {
-			t.Errorf("valid email or blank test case '%s' returned invalid", email)
-		}
+	for _, email := range makeValidEmails(t) {
+		t.Run(fmt.Sprintf("valid email: %q", email), func(t *testing.T) {
+			if !validation.EmailValidOrBlank(email) {
+				t.Errorf("valid email or blank test case '%s' returned invalid", email)
+			}
+		})
 	}
 
 	// test invalid emails
-	for _, email := range makeInvalidEmails() {
-		if EmailValidOrBlank(email) {
-			t.Errorf("invalid email or blank test case '%s' returned valid", email)
-		}
+	for _, email := range makeInvalidEmails(t) {
+		t.Run(fmt.Sprintf("invalid email: %q", email), func(t *testing.T) {
+			if validation.EmailValidOrBlank(email) {
+				t.Errorf("invalid email or blank test case '%s' returned valid", email)
+			}
+		})
 	}
 }

@@ -1,14 +1,12 @@
-package validation
+package validation_test
 
 import (
+	"certwarden-backend/pkg/validation"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 )
-
-// nowTestingFunc returns: Wed Jan 01 2020 11:05:28 GMT+0000
-// http date format: `Wed, 01 Jan 2020 11:05:28 GMT`
-var nowTestingFunc = func() time.Time { return time.Unix(1577876728, 0) }
 
 // test structure
 type retryAfterTest struct {
@@ -34,7 +32,7 @@ var retryAfterTests = []retryAfterTest{
 	{
 		retryAfterValue: "-2",
 		expectedValue:   time.Time{},
-		expectedError:   ErrHTTPRetryAfterNegativeSeconds,
+		expectedError:   validation.ErrHTTPRetryAfterNegativeSeconds,
 	},
 	// valid ahead of now
 	{
@@ -52,7 +50,7 @@ var retryAfterTests = []retryAfterTest{
 	{
 		retryAfterValue: "Wed, 01 Jan 2020 11:05:27 GMT",
 		expectedValue:   time.Time{},
-		expectedError:   ErrHTTPRetryAfterNegativeSeconds,
+		expectedError:   validation.ErrHTTPRetryAfterNegativeSeconds,
 	},
 	// valid ANSIC
 	{
@@ -96,27 +94,38 @@ var retryAfterInvalidFormatTests = []string{
 
 // run all Retry After validation tests
 func TestValidation_RetryAfterValid(t *testing.T) {
-	// run tests
-	for _, aTest := range retryAfterTests {
-		parsedVal, err := parseRetryAfter(aTest.retryAfterValue, nowTestingFunc)
-		if !errors.Is(err, aTest.expectedError) {
-			t.Errorf("retry after value '%s' expected error '%v' but got '%v'", aTest.retryAfterValue, aTest.expectedError, err)
-		}
+	// set time "now"
+	// Testing "now" time is:
+	// Wed Jan 01 2020 11:05:28 GMT+0000
+	// http date format: `Wed, 01 Jan 2020 11:05:28 GMT`
+	revertToDefaultTimeNow := validation.SetTimeNow(t, time.Unix(1577876728, 0))
+	t.Cleanup(revertToDefaultTimeNow)
 
-		if !parsedVal.Equal(aTest.expectedValue) {
-			t.Errorf("retry after value '%s' expected parse to '%s' but got '%s'", aTest.retryAfterValue, aTest.expectedValue.UTC(), parsedVal.UTC())
-		}
+	// run tests
+	for i, raTest := range retryAfterTests {
+		t.Run(fmt.Sprintf("%d: header value %q", i, raTest.retryAfterValue), func(t *testing.T) {
+			parsedVal, err := validation.ParseRetryAfter(raTest.retryAfterValue)
+			if !errors.Is(err, raTest.expectedError) {
+				t.Errorf("retry after value '%s' expected error '%v' but got '%v'", raTest.retryAfterValue, raTest.expectedError, err)
+			}
+
+			if !parsedVal.Equal(raTest.expectedValue) {
+				t.Errorf("retry after value '%s' expected parse to '%s' but got '%s'", raTest.retryAfterValue, raTest.expectedValue.UTC(), parsedVal.UTC())
+			}
+		})
 	}
 
-	// invalid format
-	for _, invalidFormatString := range retryAfterInvalidFormatTests {
-		parsedVal, err := parseRetryAfter(invalidFormatString, nowTestingFunc)
-		if !errors.Is(err, ErrHTTPRetryAfterInvalidFormat) {
-			t.Errorf("retry after value '%s' expected error '%v' but got '%v'", invalidFormatString, ErrHTTPRetryAfterInvalidFormat, err)
-		}
+	// invalid formats
+	for i, invalidFormatString := range retryAfterInvalidFormatTests {
+		t.Run(fmt.Sprintf("%d: invalid time format %q", i, invalidFormatString), func(t *testing.T) {
+			parsedVal, err := validation.ParseRetryAfter(invalidFormatString)
+			if !errors.Is(err, validation.ErrHTTPRetryAfterInvalidFormat) {
+				t.Errorf("retry after value '%s' expected error '%v' but got '%v'", invalidFormatString, validation.ErrHTTPRetryAfterInvalidFormat, err)
+			}
 
-		if !parsedVal.Equal(time.Time{}) {
-			t.Errorf("retry after value '%s' expected parse to '%s' but got '%s'", invalidFormatString, time.Time{}, parsedVal)
-		}
+			if !parsedVal.Equal(time.Time{}) {
+				t.Errorf("retry after value '%s' expected parse to '%s' but got '%s'", invalidFormatString, time.Time{}, parsedVal)
+			}
+		})
 	}
 }

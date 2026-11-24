@@ -3,11 +3,16 @@ package storage
 import (
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/domain/certificates"
+	"time"
 )
 
 // errors.go
 var ErrorWrongRowCount = errorWrongRowCount
 var ErrorWrongAffectedRowCount = errorWrongAffectedRowCount
+
+// time.go
+var TimeNow = func() func() time.Time { return timeNow } // returns current timeNow function
+var SetTimeNow = setTimeNow
 
 // types_json.go
 var SliceToJsonString_Strings = sliceToJsonString[[]string]

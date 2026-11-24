@@ -42,7 +42,7 @@ var (
 // GetCertificate returns the Certificate for the specified id.
 func (service *Service) GetCertificate(id int) (*Certificate, *output.JsonError) {
 	// if id is not in valid range, it is definitely not valid
-	if !validation.IsIdExistingValidRange(id) {
+	if !validation.IsValidIDValue(id) {
 		service.logger.Debug(ErrIdBad)
 		return nil, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
@@ -67,7 +67,7 @@ func (service *Service) GetCertificate(id int) (*Certificate, *output.JsonError)
 // and is not in use in storage OR is in use by the specified certId)
 func (service *Service) nameValid(certName string, certId *int) bool {
 	// basic check
-	if !validation.NameValid(certName) {
+	if !validation.IsValidName(certName) {
 		return false
 	}
 

@@ -13,14 +13,14 @@ func TestSetTimeNow(t *testing.T) {
 	revert := storage.SetTimeNow(t, setTiVal)
 
 	// check change
-	ti := storage.Now()
+	ti := storage.TimeNow()()
 	if !ti.Equal(setTiVal) {
 		t.Errorf("time change didn't work, expected '%s' but got '%s'", setTiVal, ti)
 	}
 
 	// check revert to real func
 	revert()
-	ti = storage.Now()
+	ti = storage.TimeNow()()
 	if ti.Equal(setTiVal) {
 		t.Errorf("time change revert didn't work, expected current time but got '%s'", ti)
 	}
