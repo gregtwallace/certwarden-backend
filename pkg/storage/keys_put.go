@@ -48,7 +48,7 @@ func (store *Storage) PutKeyUpdate(payload *private_keys.UpdatePayload) (*privat
 		return nil, err
 	}
 	if rowsAffected != 1 {
-		return nil, errorWrongUpdateRowCount(1, rowsAffected)
+		return nil, errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	// get updated key to return
@@ -115,7 +115,7 @@ func (store *Storage) PutKeyLastAccess(keyId int, lastAccess time.Time) (err err
 		return err
 	}
 	if rowsAffected != 1 {
-		return errorWrongUpdateRowCount(1, rowsAffected)
+		return errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	return nil

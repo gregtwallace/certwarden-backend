@@ -87,7 +87,7 @@ func (store *Storage) DeleteAcmeAccount(id int) error {
 		return err
 	}
 	if rowsAffected != 1 {
-		return errorWrongUpdateRowCount(1, rowsAffected)
+		return errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	return nil

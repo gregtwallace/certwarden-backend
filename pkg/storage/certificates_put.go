@@ -95,7 +95,7 @@ func (store *Storage) PutCertUpdate(payload *certificates.UpdatePayload) (*certi
 		return nil, err
 	}
 	if rowsAffected != 1 {
-		return nil, errorWrongUpdateRowCount(1, rowsAffected)
+		return nil, errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	// get updated to return
@@ -187,7 +187,7 @@ func (store *Storage) PutCertLastAccess(certId int, lastAccess time.Time) (err e
 		return err
 	}
 	if rowsAffected != 1 {
-		return errorWrongUpdateRowCount(1, rowsAffected)
+		return errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	return nil

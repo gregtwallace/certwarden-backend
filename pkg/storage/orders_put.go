@@ -76,7 +76,7 @@ func (store *Storage) PutOrderACME(payload *orders.UpdateAcmeOrderPayload) error
 		return err
 	}
 	if rowsAffected != 1 {
-		return errorWrongUpdateRowCount(1, rowsAffected)
+		return errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	return nil
@@ -123,7 +123,7 @@ func (store *Storage) PutOrderRenewalInfo(payload *orders.UpdateRenewalInfoPaylo
 		return err
 	}
 	if rowsAffected != 1 {
-		return errorWrongUpdateRowCount(1, rowsAffected)
+		return errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	return nil
@@ -159,7 +159,7 @@ func (store *Storage) PutOrderStatusInvalid(orderId int, updatedAt time.Time) er
 		return err
 	}
 	if rowsAffected != 1 {
-		return errorWrongUpdateRowCount(1, rowsAffected)
+		return errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	return nil
@@ -196,7 +196,7 @@ func (store *Storage) PutOrderFinalizedKey(orderId, keyId int, updatedAt time.Ti
 		return err
 	}
 	if rowsAffected != 1 {
-		return errorWrongUpdateRowCount(1, rowsAffected)
+		return errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	return nil
@@ -252,7 +252,7 @@ func (store *Storage) PutOrderPemData(orderId int, payload *orders.CertPayload) 
 		return err
 	}
 	if rowsAffected != 1 {
-		return errorWrongUpdateRowCount(1, rowsAffected)
+		return errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	return nil
@@ -289,7 +289,7 @@ func (store *Storage) PutOrderRevoke(orderId int, updatedAt time.Time) error {
 		return err
 	}
 	if rowsAffected != 1 {
-		return errorWrongUpdateRowCount(1, rowsAffected)
+		return errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	return nil

@@ -52,7 +52,7 @@ func (store *Storage) DeleteCert(id int) (err error) {
 		return err
 	}
 	if rowsAffected != 1 {
-		return errorWrongUpdateRowCount(1, rowsAffected)
+		return errorWrongAffectedRowCount(1, rowsAffected)
 	}
 
 	err = tx.Commit()

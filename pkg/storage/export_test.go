@@ -6,7 +6,8 @@ import (
 )
 
 // errors.go
-var ErrorWrongUpdateRowCount = errorWrongUpdateRowCount
+var ErrorWrongRowCount = errorWrongRowCount
+var ErrorWrongAffectedRowCount = errorWrongAffectedRowCount
 
 // types_json.go
 var SliceToJsonString_Strings = sliceToJsonString[[]string]
