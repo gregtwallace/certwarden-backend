@@ -286,7 +286,13 @@ func (service *Service) NewOrderPayload(cert certificates.Certificate) acme.NewO
 			return nil
 		}
 
-		return new(acme.ACMERenewalInfoIdentifier(x509Cert))
+		id, err := acme.ACMERenewalInfoIdentifier(x509Cert)
+		if err != nil {
+			service.logger.Errorf("orders: new order cant populated `replaces`, failed to generate ari identifier for latest order of cert %d (%s)", cert.ID, err)
+			return nil
+		}
+
+		return new(id)
 	}()
 
 	return acme.NewOrderPayload{

@@ -125,13 +125,14 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		// replace offending line of code to make it get the nonce from meta nonce
 		// capture 1st, 2nd, and 3rd variable name
 		// regex should cover all cases of the code, even if formatted or var names change
-		re := regexp.MustCompile(`,\s*([A-Za-z0-9]+)\.nonce.*!==.*void 0.*&&.*([A-Za-z0-9]+)\.setAttribute\(["']nonce["'],.*([A-Za-z0-9]+)\.nonce\),`)
+		// Note: Have to use this adding pattern to include all quote variants
+		re := regexp.MustCompile(`,\s*([A-Za-z0-9]+)\.nonce.*!==.*void 0.*&&.*([A-Za-z0-9]+)\.setAttribute\(["'` + "`" + `]nonce["'` + "`" + `],.*([A-Za-z0-9]+)\.nonce\),`)
 		// use 2nd variable name in new string
 		fString := string(fBytes)
-		fString = re.ReplaceAllString(fString, ",$2.setAttribute('nonce',document.querySelector('meta[property=\"csp-nonce\"]').nonce),")
-		// orig:             ,n.nonce!==void 0&&t.setAttribute("nonce",n.nonce),
-		// orig (formatted): , n.nonce !== void 0 && t.setAttribute('nonce', n.nonce),
-		// modified:         ,t.setAttribute('nonce',document.querySelector('meta[property="csp-nonce"]').nonce),
+		fString = re.ReplaceAllString(fString, ",$2.setAttribute(`nonce`,document.querySelector(`meta[property='csp-nonce']`).nonce),")
+		// orig:             ,e.nonce!==void 0&&t.setAttribute(`nonce`,e.nonce),
+		// orig (formatted): , e.nonce !== void 0 && t.setAttribute(`nonce`, e.nonce),
+		// modified:         ,t.setAttribute(`nonce`,document.querySelector('meta[property="csp-nonce"]').nonce),
 
 		// serve modified file, and return
 		http.ServeContent(w, r, fInfo.Name(), fInfo.ModTime(), strings.NewReader(fString))
