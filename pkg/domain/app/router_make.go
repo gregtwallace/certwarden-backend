@@ -16,6 +16,9 @@ const apiKeyDownloadUrlPath = apiUrlPath + "/v1/download"
 // frontend React app path (e.g. Vite config `base`)
 const frontendUrlPath = baseUrlPath + "/app"
 
+// health path
+const healthUrlPath = apiUrlPath + "/health"
+
 // makeRouterAndRoutes creates the application's router and adds the routes. It also
 // inserts the common CORS middleware before assigning the router to app
 func (app *Application) makeRouterAndRoutes() {
@@ -28,8 +31,8 @@ func (app *Application) makeRouterAndRoutes() {
 	}
 
 	// health check (HEAD or GET) - insecure for docker probing
-	router.handleAPIRouteInsecure(http.MethodHead, apiUrlPath+"/health", healthHandler)
-	router.handleAPIRouteInsecure(http.MethodGet, apiUrlPath+"/health", healthHandler)
+	router.handleAPIRouteInsecure(http.MethodHead, healthUrlPath, healthHandler)
+	router.handleAPIRouteInsecure(http.MethodGet, healthUrlPath, healthHandler)
 
 	// app auth - insecure as these give clients the access_token to access secure routes
 	// app auth status
