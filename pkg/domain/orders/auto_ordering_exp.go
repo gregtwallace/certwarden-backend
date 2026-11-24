@@ -47,7 +47,7 @@ func (service *Service) orderExpiringCerts() {
 				acmeARI, err := acmeService.GetACMERenewalInfo(*orders[i].Pem)
 				// TODO: Add retry / exponential backoff for a couple attempts ?
 				if err != nil {
-					service.logger.Errorf("orders: auto order failed to fetch new ari info for %d (%s)", orders[i].ID, err)
+					service.logger.Errorf("orders: auto order failed to fetch new ari info for certificate '%s' (order: %d) (%s)", orders[i].Certificate.Name, orders[i].ID, err)
 				} else {
 					// success
 					ari = &renewalInfo{

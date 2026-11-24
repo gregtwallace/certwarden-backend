@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime"
@@ -8,15 +9,11 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/jibber_jabber"
-	"golang.org/x/time/rate"
 )
 
-// rate limit params -- 5 / 10 are the most conservative values published by
-// Let's Encrypt at: https://letsencrypt.org/docs/rate-limits/#overall-requests-limit
-const (
-	limitEventsPerSecond = 5
-	limitBurstAtMost     = 10
-)
+// rate limit: even more conservative than what is set by Let's Encrypt
+// at: https://letsencrypt.org/docs/rate-limits/#overall-requests-limit
+const rateLimit = 3 // per second
 
 // default Accept-Language header values
 const (
@@ -26,9 +23,9 @@ const (
 
 // httpCWRoundTripper implements RoundTrip with some headers for CertWarden
 type httpCWRoundTripper struct {
-	userAgent      string
-	acceptLanguage string
-	rateLimiter    *rate.Limiter
+	userAgent       string
+	acceptLanguage  string
+	rateLimitTicker *time.Ticker
 }
 
 func (rt *httpCWRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -39,9 +36,10 @@ func (rt *httpCWRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 	req.Header.Set("Accept-Language", rt.acceptLanguage)
 
 	// impose rate limit
-	err := rt.rateLimiter.Wait(req.Context())
-	if err != nil {
-		return nil, err
+	select {
+	case <-req.Context().Done():
+		return nil, errors.New("request context canceled")
+	case <-rt.rateLimitTicker.C:
 	}
 
 	return http.DefaultTransport.RoundTrip(req)
@@ -85,14 +83,14 @@ func makeHttpClient() (client *http.Client) {
 	}
 	_, _ = sb.WriteString("*;q=0.5")
 
-	// create rate limiter
-	rl := rate.NewLimiter(rate.Every(time.Second/limitEventsPerSecond), limitBurstAtMost)
+	// create rate limit Ticker
+	rlTicker := time.NewTicker(time.Second / rateLimit)
 
 	// make round tripper
 	t := &httpCWRoundTripper{
-		userAgent:      fmt.Sprintf("CertWarden/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH),
-		acceptLanguage: sb.String(),
-		rateLimiter:    rl,
+		userAgent:       fmt.Sprintf("CertWarden/%s (%s; %s)", appVersion, runtime.GOOS, runtime.GOARCH),
+		acceptLanguage:  sb.String(),
+		rateLimitTicker: rlTicker,
 	}
 
 	return &http.Client{
