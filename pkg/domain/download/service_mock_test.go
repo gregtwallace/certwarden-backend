@@ -5,14 +5,15 @@ import (
 	"certwarden-backend/pkg/domain/download"
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/test_helpers"
 	"context"
 	"database/sql"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"go.uber.org/zap"
@@ -38,16 +39,16 @@ func makeFakeOutputterApp(l *zap.SugaredLogger) *fakeOutputterApp {
 type fakeStorage struct {
 }
 
-func (fs *fakeStorage) GetOneKeyByName(name string) (private_keys.Key, error) {
+func (fs *fakeStorage) GetOneKeyByName(name string) (*private_keys.Key, error) {
 	// just get the key from the same name cert
 	c, err := fs.GetCertNewestValidOrderByName(name)
 	if err != nil {
-		return private_keys.Key{}, err
+		return nil, err
 	}
-	return *c.FinalizedKey, nil
+	return c.FinalizedKey, nil
 }
 
-func (fs *fakeStorage) GetCertNewestValidOrderByName(certName string) (order orders.Order, err error) {
+func (fs *fakeStorage) GetCertNewestValidOrderByName(certName string) (order *orders.Order, err error) {
 	if certName == "test-a" {
 		pem := `-----BEGIN CERTIFICATE-----
 MIIBOzCB5qADAgECAgFvMA0GCSqGSIb3DQEBCwUAMB4xHDAaBgNVBAoTE0ludGVy
@@ -78,7 +79,7 @@ Af8wHQYDVR0OBBYEFH+dsDe3QdO7VwziDWsg7E7VScrtMA0GCSqGSIb3DQEBCwUA
 A0EAT/w/FWrwVzV6uau8H2qIhBuM+fbVAlVpVuvg5AxVwAOv+YhuTc83BTakfXgH
 8Joh9m0OL1x+zBvxoby5o9Xg3Q==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -130,7 +131,7 @@ Af8wHQYDVR0OBBYEFCqm2NbHYf7QY4LEPLZVa02U2lT9MA0GCSqGSIb3DQEBCwUA
 A0EAq7awvHcloElKaKXjHwnYADpmGHlzKxWXCYpbYewq+MWjkyNOz5+mtUPXR/Jk
 abU3C9xvwy61nVOjwhJpLlOSkA==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -182,7 +183,7 @@ Af8wHQYDVR0OBBYEFKBtmH4P8sXj3S55qI77ZL62ssufMA0GCSqGSIb3DQEBCwUA
 A0EATsMeVCPlMKlPADgnH6XLiL84ofGJNtUQ8YgO3EY2Jgpr0HELG1oSSizWNRes
 gGAROyiIETRshG2BbfFolQxEUw==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -234,7 +235,7 @@ Af8wHQYDVR0OBBYEFNfAVAINdRIo/WHyWX9CIkL9225SMA0GCSqGSIb3DQEBCwUA
 A0EAM3AWlFRDPeKM4k8QC6xRLUdVBiutj1FYzwq5WkqBh5f+vm2NNsv6v7l43KgT
 G/zUBlah2C64Lprd+EZW6xMQ7Q==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -286,7 +287,7 @@ Af8wHQYDVR0OBBYEFPggvDzOv1cAig6XMGB8mxeogmguMA0GCSqGSIb3DQEBCwUA
 A0EAEKXN9SngV8TnwoWVtZjHlZy3Y/kaY3vRfnRQB4cLeE6/UD4VshDFC9LbvH9P
 BcJ3umu+SsvpqDQvQagT/D/bZg==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -340,7 +341,7 @@ Af8wHQYDVR0OBBYEFINOrn3MmHKQROTZg3FtvVAHOQtlMA0GCSqGSIb3DQEBCwUA
 A0EAWtSaoEHPq0cseQUod1Bk/vnbidNcexOL6cqTOUivN+k4X+4ig/ClDT/fDm2x
 7qe+skSjMhpMSiOiMyw5PgvZ9w==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -395,7 +396,7 @@ Af8wHQYDVR0OBBYEFLPogQY9cmqJ2oYKbYDPjB1fBKvgMA0GCSqGSIb3DQEBCwUA
 A0EAdy9WLjVZ1N5Fwb7DbteJ6FpatKIUG2i8gc1dnmHOEuchTc9P07KfjVeWMa2d
 3yrTcq88EI0Rc3ItjF7Ao6d8gg==
 -----END CERTIFICATE-----`
-		return orders.Order{
+		return &orders.Order{
 			Pem: &pem,
 			FinalizedKey: &private_keys.Key{
 				Pem: `-----BEGIN RSA PRIVATE KEY-----
@@ -419,12 +420,12 @@ j1f1P6e7Khe0uXD3N+r34piMQT0WX0po2rf16x0i
 			}}, nil
 	}
 
-	return orders.Order{}, sql.ErrNoRows
+	return nil, sql.ErrNoRows
 }
-func (fs *fakeStorage) PutKeyLastAccess(keyId int, unixLastAccessTime int64) (err error) {
+func (fs *fakeStorage) PutKeyLastAccess(keyId int, lastAccess time.Time) (err error) {
 	return errors.New("not implemented")
 }
-func (fs *fakeStorage) PutCertLastAccess(certId int, unixLastAccessTime int64) (err error) {
+func (fs *fakeStorage) PutCertLastAccess(certId int, lastAccess time.Time) (err error) {
 	return errors.New("not implemented")
 }
 
@@ -466,7 +467,7 @@ func makeFakeApp(t *testing.T) *fakeApp {
 // function to run one test
 func oneTest(t *testing.T, handler func(w http.ResponseWriter, r *http.Request) *output.JsonError,
 	apiKeyHeader *string, apiKeyURL *string, certName string, expectedBody string, expectedJsonErr *output.JsonError) {
-	r, err := http.NewRequest("GET", "/certwarden/api/v1/download/certificates", nil)
+	r, err := http.NewRequest("GET", "/certwarden/api/v1/download/certificates", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -490,13 +491,13 @@ func oneTest(t *testing.T, handler func(w http.ResponseWriter, r *http.Request) 
 	jsonErr := handler(w, r)
 
 	if !errors.Is(jsonErr, expectedJsonErr) {
-		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned error '%s' but expected '%s'", test_helpers.GetFunctionName(handler),
-			certName, test_helpers.StringPointerToVal(apiKeyHeader), test_helpers.StringPointerToVal(apiKeyURL), jsonErr, expectedJsonErr)
+		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned error '%s' but expected '%s'", helpers_test.GetFunctionName(handler),
+			certName, helpers_test.StringPointerToVal(apiKeyHeader), helpers_test.StringPointerToVal(apiKeyURL), jsonErr, expectedJsonErr)
 	}
 
 	body := w.Body.String()
 	if body != expectedBody {
-		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned body '%s' but expected body '%s'", test_helpers.GetFunctionName(handler),
-			certName, test_helpers.StringPointerToVal(apiKeyHeader), test_helpers.StringPointerToVal(apiKeyURL), body, expectedBody)
+		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned body '%s' but expected body '%s'", helpers_test.GetFunctionName(handler),
+			certName, helpers_test.StringPointerToVal(apiKeyHeader), helpers_test.StringPointerToVal(apiKeyURL), body, expectedBody)
 	}
 }

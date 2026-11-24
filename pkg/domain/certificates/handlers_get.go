@@ -18,6 +18,7 @@ import (
 // to answer a query for a portion of the certs
 type allCertsResponse struct {
 	output.JsonResponse
+
 	TotalCertificates int                          `json:"total_records"`
 	Certificates      []certificateSummaryResponse `json:"certificates"`
 }
@@ -31,7 +32,7 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) *out
 	certs, totalRows, err := service.storage.GetAllCerts(query)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// populate cert summaries for output
@@ -50,7 +51,7 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) *out
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -58,6 +59,7 @@ func (service *Service) GetAllCerts(w http.ResponseWriter, r *http.Request) *out
 
 type certificateResponse struct {
 	output.JsonResponse
+
 	Certificate certificateDetailedResponse `json:"certificate"`
 }
 
@@ -69,7 +71,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) *outp
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// if id is new, provide some info
@@ -92,7 +94,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) *outp
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -100,6 +102,7 @@ func (service *Service) GetOneCert(w http.ResponseWriter, r *http.Request) *outp
 
 type newCertOptions struct {
 	output.JsonResponse
+
 	CertificateOptions struct {
 		AvailableKeys  []private_keys.KeySummaryResponse `json:"private_keys"`
 		KeyAlgorithms  []key_crypto.Algorithm            `json:"key_algorithms"`
@@ -110,6 +113,7 @@ type newCertOptions struct {
 // usableAccount uses a custom AcmeServer struct to also output valid profile names
 type usableAccount struct {
 	acme_accounts.AccountSummaryResponse
+
 	AcmeServer struct {
 		ID           int               `json:"id"`
 		Name         string            `json:"name"`
@@ -126,7 +130,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	keys, err := service.keys.AvailableKeys()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	outputKeys := []private_keys.KeySummaryResponse{}
@@ -138,7 +142,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	accounts, err := service.accounts.GetUsableAccounts()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	outputAccounts := []usableAccount{}
@@ -149,9 +153,9 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 		// get profiles
 		acmeService, err := service.acmeServerService.AcmeService(accounts[i].AcmeServer.ID)
 		if err != nil {
-			err = fmt.Errorf("failed to retrieve acme service to list profiles (%s)", err)
+			err = fmt.Errorf("failed to retrieve acme service to list profiles (%w)", err)
 			service.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		// redo AcmeServer
@@ -175,7 +179,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

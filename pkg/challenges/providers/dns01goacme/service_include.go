@@ -5,9 +5,15 @@ package dns01goacme
 import (
 	"certwarden-backend/pkg/datatypes/environment"
 	"fmt"
+
+	//nolint:depguard // only using this to fold this external logger into the main logger
+	"log/slog"
 	"os"
 
+	"go.uber.org/zap/exp/zapslog"
+
 	goacme_dns01 "github.com/go-acme/lego/v5/challenge/dns01"
+	goacme_log "github.com/go-acme/lego/v5/log"
 	goacme_dns "github.com/go-acme/lego/v5/providers/dns"
 )
 
@@ -26,6 +32,14 @@ func NewService(app App, cfg *Config) (*Service, error) {
 		return nil, errServiceComponent
 	}
 
+	// set go-acme log to main zap logger
+	goacme_log.SetDefault(slog.New(zapslog.NewHandler(
+		service.logger.Desugar().Core(),
+		zapslog.WithName("go-acme log"),
+		// WithCaller doesn't work as expected (it always returns `log/logger.go`)
+		// AddStacktraceAt is unnecessary - already covered by base zap.Logger configuration in main app
+	)))
+
 	// shutdown context
 	service.shutdownContext = app.GetShutdownContext()
 
@@ -38,7 +52,7 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	for key, val := range envMap {
 		err := os.Setenv(key, val)
 		if err != nil {
-			return nil, fmt.Errorf("go-acme failed to set environment variable (%s)", err)
+			return nil, fmt.Errorf("go-acme failed to set environment variable (%w)", err)
 		}
 	}
 
@@ -60,14 +74,14 @@ func NewService(app App, cfg *Config) (*Service, error) {
 	var err error
 	service.goacmeProvider, err = goacme_dns.NewDNSChallengeProviderByName(cfg.DnsProviderName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to configure go-acme dns provider (%s)", err)
+		return nil, fmt.Errorf("failed to configure go-acme dns provider (%w)", err)
 	}
 
 	// clear environment (only needed during creation of the go-acme provider)
 	for key := range envMap {
 		err := os.Unsetenv(key)
 		if err != nil {
-			return nil, fmt.Errorf("go-acme failed to clear environment variable (%s)", err)
+			return nil, fmt.Errorf("go-acme failed to clear environment variable (%w)", err)
 		}
 	}
 

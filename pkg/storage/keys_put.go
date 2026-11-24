@@ -3,13 +3,12 @@ package storage
 import (
 	"certwarden-backend/pkg/domain/private_keys"
 	"context"
-	"errors"
-	"fmt"
+	"time"
 )
 
 // PutKeyUpdate updates an existing key in the db using any non-null
 // fields specified in the UpdatePayload.
-func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_keys.Key, error) {
+func (store *Storage) PutKeyUpdate(payload *private_keys.UpdatePayload) (*private_keys.Key, error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -36,60 +35,59 @@ func (store *Storage) PutKeyUpdate(payload private_keys.UpdatePayload) (private_
 		payload.ApiKeyNew,
 		payload.ApiKeyDisabled,
 		payload.ApiKeyViaUrl,
-		payload.UpdatedAt,
+		payload.UpdatedAt.Unix(),
 		payload.ID,
 	)
-
 	if err != nil {
-		return private_keys.Key{}, err
+		return nil, err
 	}
 
 	// verify update actually happened
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return private_keys.Key{}, err
+		return nil, err
 	}
 	if rowsAffected != 1 {
-		return private_keys.Key{}, errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+		return nil, errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	// get updated key to return
 	updatedKey, err := store.GetOneKeyById(payload.ID)
 	if err != nil {
-		return private_keys.Key{}, err
+		return nil, err
 	}
 
 	return updatedKey, nil
 }
 
 // PutKeyApiKey sets a key's api key and updates the updated at time
-func (store *Storage) PutKeyApiKey(keyId int, apiKey string, updateTimeUnix int) (err error) {
+func (store *Storage) PutKeyApiKey(keyId int, apiKey string, updatedAt time.Time) (err error) {
 	// leverage main Put function
 	payload := private_keys.UpdatePayload{
 		ID:        keyId,
 		ApiKey:    &apiKey,
-		UpdatedAt: updateTimeUnix,
+		UpdatedAt: updatedAt,
 	}
 
-	_, err = store.PutKeyUpdate(payload)
+	_, err = store.PutKeyUpdate(&payload)
 	return err
 }
 
-// PutKeyUpdate sets a key's new api key and updates the updated at time
-func (store *Storage) PutKeyNewApiKey(keyId int, newApiKey string, updateTimeUnix int) (err error) {
+// PutKeyApiKeyNew sets a key's new api key and updates the updated at time
+func (store *Storage) PutKeyApiKeyNew(keyId int, apiKeyNew string, updatedAt time.Time) (err error) {
 	// leverage main Put function
 	payload := private_keys.UpdatePayload{
 		ID:        keyId,
-		ApiKeyNew: &newApiKey,
-		UpdatedAt: updateTimeUnix,
+		ApiKeyNew: &apiKeyNew,
+		UpdatedAt: updatedAt,
 	}
 
-	_, err = store.PutKeyUpdate(payload)
+	_, err = store.PutKeyUpdate(&payload)
 	return err
 }
 
 // PutKeyLastAccess sets a key's last access time
-func (store *Storage) PutKeyLastAccess(keyId int, lastAccessTimeUnix int64) (err error) {
+func (store *Storage) PutKeyLastAccess(keyId int, lastAccess time.Time) (err error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -104,7 +102,7 @@ func (store *Storage) PutKeyLastAccess(keyId int, lastAccessTimeUnix int64) (err
 	`
 
 	res, err := store.db.ExecContext(ctx, query,
-		lastAccessTimeUnix,
+		lastAccess.Unix(),
 		keyId,
 	)
 	if err != nil {
@@ -117,7 +115,7 @@ func (store *Storage) PutKeyLastAccess(keyId int, lastAccessTimeUnix int64) (err
 		return err
 	}
 	if rowsAffected != 1 {
-		return errors.Join(fmt.Errorf("expected 1 row update, but got '%d'", rowsAffected), ErrWrongUpdateRowCount)
+		return errorWrongUpdateRowCount(1, rowsAffected)
 	}
 
 	return nil

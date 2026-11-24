@@ -1,10 +1,12 @@
 package storage
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
-// UpdateUserPassword updates the specified user's password hash to the specified
-// hash.
-func (store *Storage) UpdateUserPassword(username string, newPasswordHash string) (userId int, err error) {
+// PutUserPasswordHash updates the specified user's password hash to the specified hash.
+func (store *Storage) PutUserPasswordHash(username, passwordHash string, updatedAt time.Time) (userId int, err error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -17,20 +19,31 @@ func (store *Storage) UpdateUserPassword(username string, newPasswordHash string
 		updated_at = $2
 	WHERE
 		username = $3
-	RETURNING
-		id
 	`
 
-	// update password and return id
-	err = store.db.QueryRowContext(ctx, query,
-		newPasswordHash,
-		timeNow(),
+	res, err := store.db.ExecContext(ctx, query,
+		passwordHash,
+		updatedAt.Unix(),
 		username,
-	).Scan(&userId)
-
+	)
 	if err != nil {
 		return -2, err
 	}
 
-	return userId, nil
+	// verify update actually happened
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return -2, err
+	}
+	if rowsAffected != 1 {
+		return -2, errorWrongUpdateRowCount(1, rowsAffected)
+	}
+
+	// get updated key to return
+	updatedUser, err := store.GetOneUserByUsername(username)
+	if err != nil {
+		return -2, err
+	}
+
+	return updatedUser.ID, nil
 }

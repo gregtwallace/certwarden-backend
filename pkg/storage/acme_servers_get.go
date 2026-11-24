@@ -8,7 +8,7 @@ import (
 )
 
 // GetAllAcmeServers returns a slice of all of the ACME Servers in the database
-func (store *Storage) GetAllAcmeServers(q pagination_sort.Query) (accounts []acme_servers.Server, totalRowCount int, err error) {
+func (store *Storage) GetAllAcmeServers(q pagination_sort.Query) (accounts []*acme_servers.Server, totalRowCount int, err error) {
 	// validate and set sort
 	sortField := q.SortField()
 
@@ -63,7 +63,7 @@ func (store *Storage) GetAllAcmeServers(q pagination_sort.Query) (accounts []acm
 	// for total row count
 	var totalRows int
 
-	var allServers []acme_servers.Server
+	var allServers []*acme_servers.Server
 	for rows.Next() {
 		var oneServer acmeServerDb
 		err = rows.Scan(
@@ -89,17 +89,17 @@ func (store *Storage) GetAllAcmeServers(q pagination_sort.Query) (accounts []acm
 }
 
 // GetOneServerById returns a Server based on unique id
-func (store *Storage) GetOneServerById(acmeServerId int) (acme_servers.Server, error) {
+func (store *Storage) GetOneServerById(acmeServerId int) (*acme_servers.Server, error) {
 	return store.dbGetOneServer(acmeServerId, "")
 }
 
 // GetOneServerByName returns a Server based on unique name
-func (store *Storage) GetOneServerByName(name string) (acme_servers.Server, error) {
+func (store *Storage) GetOneServerByName(name string) (*acme_servers.Server, error) {
 	return store.dbGetOneServer(-1, name)
 }
 
 // dbGetOneServer returns a Server based on unique id or unique name
-func (store Storage) dbGetOneServer(acmeServerId int, name string) (acme_servers.Server, error) {
+func (store Storage) dbGetOneServer(acmeServerId int, name string) (*acme_servers.Server, error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -129,7 +129,7 @@ func (store Storage) dbGetOneServer(acmeServerId int, name string) (acme_servers
 	)
 
 	if err != nil {
-		return acme_servers.Server{}, err
+		return nil, err
 	}
 
 	// convert to Server

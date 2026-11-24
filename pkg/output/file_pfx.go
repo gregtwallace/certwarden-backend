@@ -21,7 +21,7 @@ func (service *Service) WritePfx(w http.ResponseWriter, r *http.Request, obj Pfx
 		return err
 	}
 
-	file := outFileObj{
+	file := &outFileObj{
 		filename:        obj.FilenameNoExt() + ".pfx",
 		content:         pfxContent,
 		httpContentType: "application/x-pkcs12",

@@ -26,9 +26,9 @@ func (service *Service) GetPostProcessWorkStatus(w http.ResponseWriter, r *http.
 	// lookup all orders in db
 	orders, err := service.storage.GetOrders(orderIDs)
 	if err != nil {
-		err = fmt.Errorf("orders: failed to convert post process jobs to order objects (%s)", err)
+		err = fmt.Errorf("orders: failed to convert post process jobs to order objects (%w)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// build working part of response
@@ -38,12 +38,12 @@ func (service *Service) GetPostProcessWorkStatus(w http.ResponseWriter, r *http.
 		if mgrWorkingJob == nil {
 			workingResp[workerID] = nil
 		} else {
-			for _, order := range orders {
-				if mgrWorkingJob.orderID == order.ID {
+			for i := range orders {
+				if mgrWorkingJob.orderID == orders[i].ID {
 					workingResp[workerID] = &orderJobResponse{
 						AddedToQueue: int(mgrWorkingJob.addedToQueue.Unix()),
 						HighPriority: mgrWorkingJob.IsHighPriority(),
-						Order:        order.summaryResponse(service),
+						Order:        orders[i].summaryResponse(service),
 					}
 					break
 				}
@@ -54,12 +54,12 @@ func (service *Service) GetPostProcessWorkStatus(w http.ResponseWriter, r *http.
 	// build waiting part of response
 	waitingResp := []orderJobResponse{}
 	for _, mgrWaitingJob := range mgrJobs.WaitingJobs {
-		for _, order := range orders {
-			if mgrWaitingJob.orderID == order.ID {
+		for i := range orders {
+			if mgrWaitingJob.orderID == orders[i].ID {
 				waitingResp = append(waitingResp, orderJobResponse{
 					AddedToQueue: int(mgrWaitingJob.addedToQueue.Unix()),
 					HighPriority: mgrWaitingJob.IsHighPriority(),
-					Order:        order.summaryResponse(service),
+					Order:        orders[i].summaryResponse(service),
 				})
 				break
 			}
@@ -80,7 +80,7 @@ func (service *Service) GetPostProcessWorkStatus(w http.ResponseWriter, r *http.
 	err = service.output.WriteJSON(w, jobsResp)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 	return nil
 }

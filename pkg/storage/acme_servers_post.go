@@ -6,7 +6,7 @@ import (
 )
 
 // PostNewServer saves the server to the db
-func (store *Storage) PostNewServer(payload acme_servers.NewPayload) (acme_servers.Server, error) {
+func (store *Storage) PostNewServer(payload *acme_servers.NewPayload) (*acme_servers.Server, error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
@@ -24,18 +24,18 @@ func (store *Storage) PostNewServer(payload acme_servers.NewPayload) (acme_serve
 		payload.Description,
 		payload.DirectoryURL,
 		payload.IsStaging,
-		payload.CreatedAt,
-		payload.UpdatedAt,
+		payload.CreatedAt.Unix(),
+		payload.UpdatedAt.Unix(),
 	).Scan(&acmeServerId)
 
 	if err != nil {
-		return acme_servers.Server{}, err
+		return nil, err
 	}
 
 	// get updated server to return
 	updatedServer, err := store.GetOneServerById(acmeServerId)
 	if err != nil {
-		return acme_servers.Server{}, err
+		return nil, err
 	}
 
 	return updatedServer, nil

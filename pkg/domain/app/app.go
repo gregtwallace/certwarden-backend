@@ -24,7 +24,7 @@ import (
 )
 
 // application version
-const appVersion = "0.29.7"
+const appVersion = "0.30.0"
 
 // config version
 // increment any time there is a breaking change between versions
@@ -48,6 +48,7 @@ const pprofServerIdleTimeout = httpServerIdleTimeout
 // logger and to close the underlying file
 type appLogger struct {
 	*zap.SugaredLogger
+
 	syncAndClose func()
 }
 

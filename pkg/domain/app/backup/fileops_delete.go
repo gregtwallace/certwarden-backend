@@ -12,7 +12,7 @@ import (
 func (service *Service) deleteOlderThan(maxAge time.Duration) (oldestRemaining time.Time, err error) {
 	filesInfo, err := service.listBackupFiles()
 	if err != nil {
-		return time.Time{}, fmt.Errorf("failed to delete aged backup files (%s)", err)
+		return time.Time{}, fmt.Errorf("failed to delete aged backup files (%w)", err)
 	}
 
 	anyErr := false
@@ -52,7 +52,7 @@ func (service *Service) deleteCountGreaterThan(count int) error {
 
 	filesInfo, err := service.listBackupFiles()
 	if err != nil {
-		return fmt.Errorf("failed to delete backup files over max count (%s)", err)
+		return fmt.Errorf("failed to delete backup files over max count (%w)", err)
 	}
 
 	// compare backup len to the specified count

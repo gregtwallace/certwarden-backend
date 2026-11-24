@@ -5,6 +5,7 @@ import (
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
 	"database/sql"
+	"encoding/json"
 	"time"
 )
 
@@ -16,41 +17,40 @@ type orderDb struct {
 	location       string
 	status         string
 	knownRevoked   bool
-	err            sql.NullString // stored as json object
-	expires        sql.NullInt32
-	dnsIdentifiers jsonStringSlice // stored as json array
-	authorizations jsonStringSlice // stored as json array
+	acmeErr        sql.NullString // json: acme.Error
+	expires        sql.NullInt64
+	dnsIdentifiers []byte // json: []string
+	authorizations []byte // json: []string
 	finalize       string
 	finalizedKey   keyDb
 	certificateUrl sql.NullString
 	pem            sql.NullString
 	chainRootCN    sql.NullString
-	validFrom      sql.NullInt32
-	validTo        sql.NullInt32
+	validFrom      sql.NullInt64
+	validTo        sql.NullInt64
 	createdAt      int64
 	updatedAt      int64
 	profile        sql.NullString
 	renewalInfo    sql.NullString
 }
 
-func (order orderDb) toOrder() (orders.Order, error) {
+func (order *orderDb) toOrder() (*orders.Order, error) {
 	// handle if key is not null (id value would not be okay from coalesce if null)
 	var key *private_keys.Key
 	if order.finalizedKey.id >= 0 {
-		key = new(private_keys.Key)
-		*key = order.finalizedKey.toKey()
+		key = order.finalizedKey.toKey()
 	}
 
 	// handle acme Error
-	var acmeErr *acme.Error
-	if order.err.Valid {
-		acmeErr = acme.NewAcmeError(&order.err.String)
+	acmeErr, err := jsonStringToNullableStruct[acme.Error](nullStringToString(order.acmeErr))
+	if err != nil {
+		return nil, err
 	}
 
 	// convert cert
 	cert, err := order.certificate.toCertificate()
 	if err != nil {
-		return orders.Order{}, err
+		return nil, err
 	}
 
 	// renewal info
@@ -59,22 +59,35 @@ func (order orderDb) toOrder() (orders.Order, error) {
 		ri = nil
 	}
 
-	return orders.Order{
+	// slices
+	dnsIds := []string{}
+	err = json.Unmarshal(order.dnsIdentifiers, &dnsIds)
+	if err != nil {
+		return nil, err
+	}
+
+	authz := []string{}
+	err = json.Unmarshal(order.authorizations, &authz)
+	if err != nil {
+		return nil, err
+	}
+
+	return &orders.Order{
 		ID:             order.id,
-		Certificate:    cert,
+		Certificate:    *cert,
 		Location:       order.location,
 		Status:         order.status,
 		KnownRevoked:   order.knownRevoked,
 		Error:          acmeErr,
-		Expires:        nullInt32ToInt(order.expires),
-		DnsIdentifiers: order.dnsIdentifiers.toSlice(),
-		Authorizations: order.authorizations.toSlice(),
+		Expires:        nullInt64UnixToTime(order.expires),
+		DnsIdentifiers: dnsIds,
+		Authorizations: authz,
 		Finalize:       order.finalize,
 		FinalizedKey:   key,
 		CertificateUrl: nullStringToString(order.certificateUrl),
 		Pem:            nullStringToString(order.pem),
-		ValidFrom:      nullInt32UnixToTime(order.validFrom),
-		ValidTo:        nullInt32UnixToTime(order.validTo),
+		ValidFrom:      nullInt64UnixToTime(order.validFrom),
+		ValidTo:        nullInt64UnixToTime(order.validTo),
 		ChainRootCN:    nullStringToString(order.chainRootCN),
 		CreatedAt:      time.Unix(order.createdAt, 0),
 		UpdatedAt:      time.Unix(order.updatedAt, 0),

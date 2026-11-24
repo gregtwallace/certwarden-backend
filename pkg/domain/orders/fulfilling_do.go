@@ -25,14 +25,14 @@ func (j *orderFulfillJob) Do(workerID int) {
 
 	// update certificate timestamp after fulfiller is done
 	defer func() {
-		err = j.service.storage.UpdateCertUpdatedTime(order.Certificate.ID)
+		err = j.service.storage.PutCertUpdatedAt(order.Certificate.ID, time.Now())
 		if err != nil {
 			j.service.logger.Errorf("orders: fulfilling worker %d: update cert time error: %s", workerID, err)
 		}
 	}()
 
 	// get account key
-	key, err := order.Certificate.CertificateAccount.AcmeAccountKey()
+	key, err := order.Certificate.Account.AcmeAccountKey()
 	if err != nil {
 		j.service.logger.Errorf("orders: fulfilling worker %d: get account key error: %s", workerID, err)
 		return // done, failed
@@ -49,7 +49,7 @@ func (j *orderFulfillJob) Do(workerID int) {
 	var acmeOrder acme.Order
 
 	// acmeService to avoid repeated logic
-	acmeService, err := j.service.acmeServerService.AcmeService(order.Certificate.CertificateAccount.AcmeServer.ID)
+	acmeService, err := j.service.acmeServerService.AcmeService(order.Certificate.Account.AcmeServer.ID)
 	if err != nil {
 		j.service.logger.Errorf("orders: fulfilling worker %d: select acme service error: %s", workerID, err)
 		return // done, failed
@@ -75,7 +75,10 @@ fulfillLoop:
 			// status of the order to "invalid" and MAY delete the order resource.")
 			acmeErr := new(acme.Error)
 			if errors.As(err, &acmeErr) && acmeErr.Status == http.StatusNotFound {
-				j.service.storage.PutOrderInvalid(order.ID)
+				err := j.service.storage.PutOrderStatusInvalid(order.ID, time.Now())
+				if err != nil {
+					j.service.logger.Errorf("orders: fulfilling worker %d: failed to set order '%d' to invalid status (%s)", workerID, order.ID, err)
+				}
 				return // done, permanent status
 			}
 
@@ -104,7 +107,7 @@ fulfillLoop:
 			// save finalized_key_id in storage (if finalize ACME cmd below fails, this will save any key change
 			// upon next attempt to finalize with ACME; therefore this should always occur BEFORE the ACME finalize
 			// command)
-			err = j.service.storage.UpdateFinalizedKey(order.ID, order.Certificate.CertificateKey.ID)
+			err = j.service.storage.PutOrderFinalizedKey(order.ID, order.Certificate.Key.ID, time.Now())
 			if err != nil {
 				j.service.logger.Errorf("orders: fulfilling worker %d: update finalized key error: %s", workerID, err)
 				return // done, failed
@@ -189,7 +192,7 @@ fulfillLoop:
 	loopTimedOut := time.Since(startTime) >= timeoutLength
 
 	// update order in storage (regardless of loop outcome)
-	err = j.service.storage.PutOrderAcme(makeUpdateOrderAcmePayload(order.ID, acmeOrder))
+	err = j.service.storage.PutOrderACME(makeUpdateOrderAcmePayload(order.ID, &acmeOrder))
 	if err != nil {
 		j.service.logger.Errorf("orders: fulfilling worker %d: update order db error: %s", workerID, err)
 	}

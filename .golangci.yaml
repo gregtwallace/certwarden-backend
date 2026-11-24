@@ -1,0 +1,92 @@
+version: '2'
+
+linters:
+  default: standard
+
+
+  enable:
+    - bodyclose
+    - copyloopvar
+    - depguard
+    - embeddedstructfieldcheck
+    # - err113 #TODO: enable
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - exptostd
+    - fatcontext
+    - forbidigo
+    - forcetypeassert
+    - gocheckcompilerdirectives
+    # - gochecknoglobals #TODO: enable
+    - gochecknoinits
+    - gochecksumtype
+    # - gocognit #TODO: enable
+    # - goconst #TODO: enable
+    - gocritic
+    # TODO: review additional linters (after writing more tests)
+
+
+  settings:
+    depguard:
+      rules:
+        main:
+          list-mode: original
+          deny:
+            - pkg: 'math/rand$'
+              desc: use math/rand/v2
+            - pkg: 'log$'
+              desc: use app struct logger instead
+            - pkg: 'log/slog$'
+              desc: use app struct logger instead
+
+    embeddedstructfieldcheck:
+      empty-line: true
+      forbid-mutex: true
+
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+      disable-default-exclusions: false
+      exclude-functions:
+        - (*database/sql.Tx).Rollback
+        - (*database/sql.Rows).Close
+        - (io.Closer).Close
+        - (*os.File).Close
+      verbose: true
+
+    errchkjson:
+      check-error-free-encoding: false
+      report-no-exported: true
+
+    errorlint:
+      errorf: true
+      errorf-multi: true
+      asserts: true
+      comparison: true
+
+    fatcontext:
+      check-struct-pointers: false #TODO: enable
+
+    forbidigo:
+      exclude-godoc-examples: false
+      analyze-types: true
+
+    gochecksumtype:
+      default-signifies-exhaustive: false
+      include-shared-interfaces: true
+
+    # gocognit:
+    #   min-complexity: 15 #TODO: set to 15
+
+    gocritic:
+      enable-all: true
+
+  exclusions:
+    rules:
+      # Allow global vars & extra cognitive complexity in test files
+      - path: '(.+)_test\.go'
+        linters:
+          - gochecknoglobals
+          # - gocognit

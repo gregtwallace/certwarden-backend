@@ -6,13 +6,29 @@ import (
 )
 
 // PostNewAccount inserts a new cert into the db
-func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates.Certificate, error) {
+func (store *Storage) PostNewCert(payload *certificates.NewPayload) (*certificates.Certificate, error) {
 	// database update
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// don't check for in use in storage. main app business logic should
 	// take care of it
+
+	// slices
+	certExts, err := sliceToJsonString(payload.CSRExtraExtensions, false)
+	if err != nil {
+		return nil, err
+	}
+
+	subjAlts, err := sliceToJsonString(payload.SubjectAltNames, false)
+	if err != nil {
+		return nil, err
+	}
+
+	postProcEnv, err := sliceToJsonString(payload.PostProcessingEnvironment, false)
+	if err != nil {
+		return nil, err
+	}
 
 	// insert the new cert
 	query := `
@@ -26,26 +42,26 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates
 	`
 
 	id := -1
-	err := store.db.QueryRowContext(ctx, query,
+	err = store.db.QueryRowContext(ctx, query,
 		payload.Name,
 		payload.Description,
 		payload.PrivateKeyID,
 		payload.AcmeAccountID,
 		payload.Subject,
-		makeJsonStringSlice(payload.SubjectAltNames, false),
+		subjAlts,
 		payload.Organization,
 		payload.OrganizationalUnit,
 		payload.Country,
 		payload.State,
 		payload.City,
-		makeJsonCertExtensionSlice(payload.CSRExtraExtensions, false),
+		certExts,
 		payload.PreferredRootCN,
-		payload.CreatedAt,
-		payload.UpdatedAt,
+		payload.CreatedAt.Unix(),
+		payload.UpdatedAt.Unix(),
 		payload.ApiKey,
 		payload.ApiKeyViaUrl,
 		payload.PostProcessingCommand,
-		makeJsonStringSlice(payload.PostProcessingEnvironment, false),
+		postProcEnv,
 		payload.PostProcessingClientAddress,
 		payload.PostProcessingClientKeyB64,
 		payload.Profile,
@@ -54,13 +70,13 @@ func (store *Storage) PostNewCert(payload certificates.NewPayload) (certificates
 	).Scan(&id)
 
 	if err != nil {
-		return certificates.Certificate{}, err
+		return nil, err
 	}
 
 	// get updated to return
 	newCert, err := store.GetOneCertById(id)
 	if err != nil {
-		return certificates.Certificate{}, err
+		return nil, err
 	}
 
 	return newCert, nil

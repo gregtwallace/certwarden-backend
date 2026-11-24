@@ -23,24 +23,24 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	orderIdParam := params.ByName("orderid")
 	orderId, err := strconv.Atoi(orderIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// basic check
 	if !validation.IsIdExistingValidRange(certId) {
 		service.logger.Debug(errCertIdBad)
-		return output.JsonErrValidationFailed(errCertIdBad)
+		return output.ErrorJsonErrValidationFailed(errCertIdBad)
 	}
 	if !validation.IsIdExistingValidRange(orderId) {
 		service.logger.Debug(errOrderIdBad)
-		return output.JsonErrValidationFailed(errOrderIdBad)
+		return output.ErrorJsonErrValidationFailed(errOrderIdBad)
 	}
 
 	// get from storage
@@ -49,17 +49,17 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return output.JsonErrNotFound(err)
+			return output.ErrorJsonErrNotFound(err)
 		} else {
 			service.logger.Error(err)
-			return output.JsonErrStorageGeneric(err)
+			return output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 
 	// verify cert id matches the order
 	if order.Certificate.ID != certId {
 		service.logger.Debug(errIdMismatch)
-		return output.JsonErrNotFound(errIdMismatch)
+		return output.ErrorJsonErrNotFound(errIdMismatch)
 	}
 
 	// verify valid, not known revoked, not past validTo, and finalized key isn't deleted; else don't post process it
@@ -72,14 +72,14 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 
 		err = fmt.Errorf("orders: cant post process order %d (status: %s, knownrevoked: %t, final key name: %s, validTo: %s)", orderId, order.Status, order.KnownRevoked, finalKeyName, order.ValidTo)
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// add to post processing
 	err = service.postProcess(order.ID, true)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -90,7 +90,7 @@ func (service *Service) PostProcessOrder(w http.ResponseWriter, r *http.Request)
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

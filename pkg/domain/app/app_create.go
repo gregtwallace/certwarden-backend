@@ -53,7 +53,7 @@ func create() (*Application, error) {
 	_, err = os.Stat(dataStorageAppDataPath)
 	if errors.Is(err, os.ErrNotExist) {
 		// create data dir
-		err = os.Mkdir(dataStorageAppDataPath, 0700)
+		err = os.Mkdir(dataStorageAppDataPath, 0o700)
 		if err != nil {
 			app.logger.Errorf("failed to make data storage directory (%s)", err)
 			return app, err

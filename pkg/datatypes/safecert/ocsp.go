@@ -29,7 +29,7 @@ func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *http.Cl
 	}
 
 	// make sure there is at least one OCSPServer for leaf
-	if len(leafCert.OCSPServer) <= 0 {
+	if len(leafCert.OCSPServer) == 0 {
 		return nil, errOCSPStaplingNotAvailable
 	}
 
@@ -44,13 +44,31 @@ func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *http.Cl
 	// randomly select starting ocsp server from list
 	serverIndex := rand.IntN(len(leafCert.OCSPServer))
 
+	// separate for defer resource release
+	httpDoer := func(req *http.Request) (bodyBytes []byte, err error) {
+		response, err := httpClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer response.Body.Close()
+
+		// read and parse
+		var respBody []byte
+		respBody, err = io.ReadAll(response.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		return respBody, nil
+	}
+
 	// fetch response (try each server until valid response, or run out of servers)
 	var ocspResp *ocsp.Response
 	for i := 0; i < len(leafCert.IssuingCertificateURL); i++ {
 		// make request
 		var req *http.Request
 		reqURL := leafCert.OCSPServer[(serverIndex+i)%len(leafCert.OCSPServer)] + "/" + ocspReq
-		req, err = http.NewRequest(http.MethodGet, reqURL, nil)
+		req, err = http.NewRequest(http.MethodGet, reqURL, http.NoBody)
 		if err != nil {
 			// this loop iteration failed
 			continue
@@ -61,23 +79,13 @@ func getOCSPResponse(leafCert, issuerCert *x509.Certificate, httpClient *http.Cl
 		req.Header.Set("Accept", "application/ocsp-response")
 
 		// do request
-		var resp *http.Response
-		resp, err = httpClient.Do(req)
+		var bodyBytes []byte
+		bodyBytes, err = httpDoer(req)
 		if err != nil {
-			// this loop iteration failed
-			continue
-		}
-		defer resp.Body.Close()
-
-		// read and parse
-		var respBody []byte
-		respBody, err = io.ReadAll(resp.Body)
-		if err != nil {
-			// this loop iteration failed
 			continue
 		}
 
-		ocspResp, err = ocsp.ParseResponse(respBody, issuerCert)
+		ocspResp, err = ocsp.ParseResponse(bodyBytes, issuerCert)
 		if err != nil {
 			// this loop iteration failed
 			continue
@@ -124,7 +132,7 @@ func (sc *SafeCert) startOCSPManagement() {
 	}
 
 	// make sure there is at least one OCSPServer for leaf
-	if len(sc.leafCert.OCSPServer) <= 0 {
+	if len(sc.leafCert.OCSPServer) == 0 {
 		return
 	}
 
@@ -149,7 +157,7 @@ func (sc *SafeCert) startOCSPManagement() {
 			// need write lock for OCSP updates
 			// Note: This will block until the original called of startOCSPManagement()
 			// releases its write lock.
-			sc.Lock()
+			sc.mu.Lock()
 
 			// get OCSP response from OCSP server
 			var nextRunTime time.Time
@@ -218,7 +226,7 @@ func (sc *SafeCert) startOCSPManagement() {
 			nextTimer := time.NewTimer(time.Until(nextRunTime.Truncate(time.Second).Add(time.Second)))
 
 			// OCSP update done
-			sc.Unlock()
+			sc.mu.Unlock()
 
 			select {
 			case <-stopCtx.Done():

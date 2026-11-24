@@ -9,7 +9,7 @@ import (
 )
 
 // Provision adds the requested DNS record.
-func (service *Service) Provision(domain string, _ string, keyAuth acme.KeyAuth) error {
+func (service *Service) Provision(domain, _ string, keyAuth acme.KeyAuth) error {
 	// get dns record
 	dnsRecordName, dnsRecordValue := acme.ValidationResourceDns01(domain, keyAuth)
 
@@ -35,7 +35,7 @@ func (service *Service) Provision(domain string, _ string, keyAuth acme.KeyAuth)
 }
 
 // Deprovision deletes the corresponding DNS record.
-func (service *Service) Deprovision(domain string, _ string, keyAuth acme.KeyAuth) error {
+func (service *Service) Deprovision(domain, _ string, keyAuth acme.KeyAuth) error {
 	// get dns record
 	dnsRecordName, dnsRecordValue := acme.ValidationResourceDns01(domain, keyAuth)
 

@@ -22,7 +22,7 @@ type Order struct {
 	Status         string
 	KnownRevoked   bool
 	Error          *acme.Error
-	Expires        *int
+	Expires        *time.Time
 	DnsIdentifiers []string
 	Authorizations []string
 	Finalize       string
@@ -35,7 +35,7 @@ type Order struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	Profile        *string
-	RenewalInfo    *renewalInfo
+	RenewalInfo    *RenewalInfo
 }
 
 // orderSummaryResponse is a JSON response containing only
@@ -53,28 +53,28 @@ type orderSummaryResponse struct {
 	ValidTo           *int                            `json:"valid_to"`
 	ChainRootCN       *string                         `json:"chain_root_cn"`
 	Profile           *string                         `json:"profile,omitempty"`
-	RenewalInfo       *renewalInfo                    `json:"renewal_info"`
+	RenewalInfo       *RenewalInfo                    `json:"renewal_info"`
 	CreatedAt         int64                           `json:"created_at"`
 	UpdatedAt         int64                           `json:"updated_at"`
 }
 
 type orderCertificateSummaryResponse struct {
-	ID                 int                                    `json:"id"`
-	Name               string                                 `json:"name"`
-	CertificateAccount orderCertificateAccountSummaryResponse `json:"acme_account"`
-	Subject            string                                 `json:"subject"`
-	SubjectAltNames    []string                               `json:"subject_alts"`
-	ApiKeyViaUrl       bool                                   `json:"api_key_via_url"`
-	LastAccess         int64                                  `json:"last_access"`
+	ID              int                         `json:"id"`
+	Name            string                      `json:"name"`
+	Account         orderAccountSummaryResponse `json:"acme_account"`
+	Subject         string                      `json:"subject"`
+	SubjectAltNames []string                    `json:"subject_alts"`
+	ApiKeyViaUrl    bool                        `json:"api_key_via_url"`
+	LastAccess      *int64                      `json:"last_access"`
 }
 
-type orderCertificateAccountSummaryResponse struct {
-	ID                     int                                          `json:"id"`
-	Name                   string                                       `json:"name"`
-	OrderCertAccountServer orderCertificateAccountServerSummaryResponse `json:"acme_server"`
+type orderAccountSummaryResponse struct {
+	ID                     int                               `json:"id"`
+	Name                   string                            `json:"name"`
+	OrderCertAccountServer orderAccountServerSummaryResponse `json:"acme_server"`
 }
 
-type orderCertificateAccountServerSummaryResponse struct {
+type orderAccountServerSummaryResponse struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	IsStaging bool   `json:"is_staging"`
@@ -85,7 +85,7 @@ type orderKeySummaryResponse struct {
 	Name string `json:"name"`
 }
 
-func (order Order) summaryResponse(service *Service) orderSummaryResponse {
+func (order *Order) summaryResponse(service *Service) orderSummaryResponse {
 	// depends on if FinalizedKey is set yet
 	var finalKey *orderKeySummaryResponse
 	if order.FinalizedKey != nil {
@@ -97,6 +97,7 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 
 	// check if job is in queue (priority is irrelevant for checking if exists, so just use false)
 	// should never error, so ignore err
+	//nolint:errcheck // TODO: in the future, refactor the job_manager package (and add tests)
 	fulfillJob, _ := service.makeFulfillingJob(order.ID, false)
 	fulfillingWorker := service.orderFulfilling.JobExists(fulfillJob)
 
@@ -112,25 +113,30 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 		validToUnix = &validToUnixVal
 	}
 
+	var la *int64
+	if order.Certificate.LastAccess != nil {
+		la = new(order.Certificate.LastAccess.Unix())
+	}
+
 	return orderSummaryResponse{
 		FulfillmentWorker: fulfillingWorker,
 		ID:                order.ID,
 		Certificate: orderCertificateSummaryResponse{
 			ID:   order.Certificate.ID,
 			Name: order.Certificate.Name,
-			CertificateAccount: orderCertificateAccountSummaryResponse{
-				ID:   order.Certificate.CertificateAccount.ID,
-				Name: order.Certificate.CertificateAccount.Name,
-				OrderCertAccountServer: orderCertificateAccountServerSummaryResponse{
-					ID:        order.Certificate.CertificateAccount.AcmeServer.ID,
-					Name:      order.Certificate.CertificateAccount.AcmeServer.Name,
-					IsStaging: order.Certificate.CertificateAccount.AcmeServer.IsStaging,
+			Account: orderAccountSummaryResponse{
+				ID:   order.Certificate.Account.ID,
+				Name: order.Certificate.Account.Name,
+				OrderCertAccountServer: orderAccountServerSummaryResponse{
+					ID:        order.Certificate.Account.AcmeServer.ID,
+					Name:      order.Certificate.Account.AcmeServer.Name,
+					IsStaging: order.Certificate.Account.AcmeServer.IsStaging,
 				},
 			},
 			Subject:         order.Certificate.Subject,
 			SubjectAltNames: order.Certificate.SubjectAltNames,
 			ApiKeyViaUrl:    order.Certificate.ApiKeyViaUrl,
-			LastAccess:      order.Certificate.LastAccess.Unix(),
+			LastAccess:      la,
 		},
 		Status:         order.Status,
 		KnownRevoked:   order.KnownRevoked,
@@ -149,11 +155,11 @@ func (order Order) summaryResponse(service *Service) orderSummaryResponse {
 
 // Output Methods
 
-func (order Order) FilenameNoExt() string {
+func (order *Order) FilenameNoExt() string {
 	return fmt.Sprintf("%s.cert", order.Certificate.Name)
 }
 
-func (order Order) PemContent() string {
+func (order *Order) PemContent() string {
 	// if Pem is nil, return empty
 	if order.Pem == nil {
 		return ""
@@ -162,7 +168,7 @@ func (order Order) PemContent() string {
 	return *order.Pem
 }
 
-func (order Order) Modtime() time.Time {
+func (order *Order) Modtime() time.Time {
 	// only available if finalized, ensure nil check
 	keyModtime := time.Time{}
 	if order.FinalizedKey != nil {
@@ -185,7 +191,7 @@ func (order Order) Modtime() time.Time {
 
 // PemContentNoChain returns the Pem data for the main certificate but discards the remainder
 // of the certificate chain
-func (order Order) PemContentNoChain() string {
+func (order *Order) PemContentNoChain() string {
 	// decode first cert and drop the rest
 	certBlock, _ := pem.Decode([]byte(order.PemContent()))
 
@@ -195,7 +201,7 @@ func (order Order) PemContentNoChain() string {
 
 // PemContentChainOnly returns the Pem data for the certificate chain, but not the actual
 // main cert
-func (order Order) PemContentChainOnly() string {
+func (order *Order) PemContentChainOnly() string {
 	// decode the first cert in the chain and discard it
 	// this effectively leaves the root chain as the "rest"
 	_, chain := pem.Decode([]byte(order.PemContent()))
@@ -226,7 +232,7 @@ func (order *Order) hasPostProcessingToDo() bool {
 }
 
 // NewOrderPayload creates the appropriate newOrder payload for ACME
-func (service *Service) NewOrderPayload(cert certificates.Certificate) acme.NewOrderPayload {
+func (service *Service) NewOrderPayload(cert *certificates.Certificate) acme.NewOrderPayload {
 	var identifiers []acme.Identifier
 
 	// subject is always required and should be first
@@ -248,7 +254,7 @@ func (service *Service) NewOrderPayload(cert certificates.Certificate) acme.NewO
 
 	// ACME ARI Extension: try to include the `replaces` field
 	replaces := func() *string {
-		acmeServ, err := service.acmeServerService.AcmeService(cert.CertificateAccount.AcmeServer.ID)
+		acmeServ, err := service.acmeServerService.AcmeService(cert.Account.AcmeServer.ID)
 		if err != nil {
 			service.logger.Errorf("orders: new order cant populated `replaces`, failed to get acme service for cert %d (%s)", cert.ID, err)
 			return nil

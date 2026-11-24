@@ -21,13 +21,13 @@ type accountDb struct {
 	kid             string
 }
 
-func (acct accountDb) toAccount() acme_accounts.Account {
-	return acme_accounts.Account{
+func (acct *accountDb) toAccount() *acme_accounts.Account {
+	return &acme_accounts.Account{
 		ID:          acct.id,
 		Name:        acct.name,
 		Description: acct.description,
-		AcmeServer:  acct.accountServerDb.toServer(),
-		AccountKey:  acct.accountKeyDb.toKey(),
+		AcmeServer:  *acct.accountServerDb.toServer(),
+		AccountKey:  *acct.accountKeyDb.toKey(),
 		Status:      acct.status,
 		Email:       acct.email,
 		AcceptedTos: acct.acceptedTos,

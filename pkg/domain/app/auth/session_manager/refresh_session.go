@@ -19,7 +19,7 @@ func (sm *SessionManager) RefreshSession(r *http.Request, w http.ResponseWriter)
 		// get the session token cookie from request
 		clientSessionCookie, err := r.Cookie(sessionCookieName)
 		if err != nil {
-			return nil, fmt.Errorf("bad cookie: %s", err)
+			return nil, fmt.Errorf("bad cookie: %w", err)
 		}
 
 		// check for matching session token
@@ -61,7 +61,7 @@ func (sm *SessionManager) RefreshSession(r *http.Request, w http.ResponseWriter)
 	// session was found, update it and return username and new auth
 	session.authorization, err = sm.newAuthorization(session.authorization.Username, userType(session.authorization.UserType))
 	if err != nil {
-		return nil, fmt.Errorf("couldn't make new auth: %s", err)
+		return nil, fmt.Errorf("couldn't make new auth: %w", err)
 	}
 
 	return session.authorization, nil

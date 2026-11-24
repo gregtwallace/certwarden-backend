@@ -19,8 +19,8 @@ type acmeServerDb struct {
 
 // toServer maps the database acme server info to the acme_servers
 // Server object
-func (serv acmeServerDb) toServer() acme_servers.Server {
-	return acme_servers.Server{
+func (serv *acmeServerDb) toServer() *acme_servers.Server {
+	return &acme_servers.Server{
 		ID:           serv.id,
 		Name:         serv.name,
 		Description:  serv.description,

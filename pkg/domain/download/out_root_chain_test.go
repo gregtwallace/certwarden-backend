@@ -15,83 +15,83 @@ func TestOutCertRootChainViaHeader(t *testing.T) {
 	}
 
 	// Test: No header provided
-	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, nil, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: blank/empty apikey provided
 	apiKey := ""
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: incorrect apikey provided
 	apiKey = "something"
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: key apikey provided instead of cert apikey
 	apiKey = "k-123"
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: key apikey variants
 	apiKey = ".k-123"
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 	apiKey = "k-123."
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 	apiKey = "123.k-123"
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 	apiKey = "k-123.123"
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: correct apikey provided but via url
 	apiKey = "c-abc"
-	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
 	// `b` doesn't have a non-new apikey
-	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
 	// `d` doesnt have a any correct apikey
-	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: correct new apikey provided but via url
 	apiKey = "c-abc-new"
-	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaHeader, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
 
 	// Test: correct apikey provided
 	apiKey = "c-abc"
@@ -231,75 +231,75 @@ func TestOutCertRootChainViaURL(t *testing.T) {
 	}
 
 	// Test: No url value provided
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, nil, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: blank/empty apikey provided
 	apiKey := ""
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: incorrect apikey provided
 	apiKey = "something"
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: key apikey provided instead of cert apikey
 	apiKey = "k-123"
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: key apikey variants
 	apiKey = ".k-123"
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 	apiKey = "k-123."
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 	apiKey = "123.k-123"
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 	apiKey = "k-123.123"
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.JsonErrUnauthorized)
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
 
 	// Test: correct apikey provided
 	apiKey = "c-abc"
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
 	// `b` doesn't have a non-new apikey
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
 	// `d` doesnt have a any correct apikey
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", `-----BEGIN CERTIFICATE-----
 MIIBZzCCARGgAwIBAgIBNzANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
@@ -344,7 +344,7 @@ A0EAdy9WLjVZ1N5Fwb7DbteJ6FpatKIUG2i8gc1dnmHOEuchTc9P07KfjVeWMa2d
 
 	// Test: correct new apikey provided
 	apiKey = "c-abc-new"
-	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.JsonErrUnauthorized)
+	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
 	oneTest(t, service.DownloadCertRootChainViaUrl, nil, &apiKey, "test-e", `-----BEGIN CERTIFICATE-----
 MIIBZzCCARGgAwIBAgIBNzANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
 LVRlc3QtZTAeFw0yNjA1MDEyMjE0NDdaFw0zNjA1MDEyMjE0NDdaMB4xHDAaBgNV

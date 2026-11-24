@@ -13,7 +13,7 @@ import (
 
 // doScriptOrBinaryPost executes the certificate's post processing command. if the cert
 // does not have a command, this is a no-op
-func (j *postProcessJob) doScriptOrBinaryPostProcess(order Order, workerID int) {
+func (j *postProcessJob) doScriptOrBinaryPostProcess(order *Order, workerID int) {
 	// no-op if no command
 	if order.Certificate.PostProcessingCommand == "" {
 		j.service.logger.Debugf("orders: post processing worker %d: order %d: skipping command (cert does not have a command to run) (cert: %d, cn: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject)

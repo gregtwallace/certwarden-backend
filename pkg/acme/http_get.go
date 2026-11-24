@@ -11,14 +11,14 @@ func (service *Service) get(url string) (bodyBytes []byte, _ http.Header, _ erro
 	// do GET
 	resp, err := service.httpClient.Get(url)
 	if err != nil {
-		return nil, nil, fmt.Errorf("acme: get %s failed (%v)", url, err)
+		return nil, nil, fmt.Errorf("acme: get %s failed (%w)", url, err)
 	}
 	defer resp.Body.Close()
 
 	// read body of response
 	bodyBytes, err = io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, nil, fmt.Errorf("acme: get %s failed to read body (%v)", url, err)
+		return nil, nil, fmt.Errorf("acme: get %s failed to read body (%w)", url, err)
 	}
 
 	// ACME response body (debugging)

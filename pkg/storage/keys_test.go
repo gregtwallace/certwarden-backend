@@ -2,11 +2,24 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/private_keys"
+	"certwarden-backend/pkg/helpers_test"
 	"testing"
 )
 
-// CompareKey compares key to expectedKey and throws appropriate errors for any differences
-func CompareKey(t *testing.T, key, expectedKey private_keys.Key) {
+// compareKey compares key to expectedKey and throws appropriate errors for any differences
+func compareKey(t *testing.T, key, expectedKey *private_keys.Key) {
+	if key == nil && expectedKey == nil {
+		return
+	}
+	if key == nil && expectedKey != nil {
+		t.Errorf("key: key is nil but expectedKey is non-nil")
+		return
+	}
+	if key != nil && expectedKey == nil {
+		t.Errorf("key: key is non-nil but expectedKey is nil")
+		return
+	}
+
 	if key.ID != expectedKey.ID {
 		t.Errorf("key: id expected '%d' but got '%d'", expectedKey.ID, key.ID)
 	}
@@ -43,15 +56,16 @@ func CompareKey(t *testing.T, key, expectedKey private_keys.Key) {
 		t.Errorf("key: api key via url expected '%t' but got '%t'", expectedKey.ApiKeyViaUrl, key.ApiKeyViaUrl)
 	}
 
-	if !key.LastAccess.Equal(expectedKey.LastAccess) {
-		t.Errorf("key: last access expected '%s' but got '%s'", expectedKey.LastAccess.UTC(), key.LastAccess.UTC())
+	err := helpers_test.TimePointerEquals(key.LastAccess, expectedKey.LastAccess)
+	if err != nil {
+		t.Errorf("key: last access expected '%s' but got '%s'", helpers_test.TimeToVal(expectedKey.LastAccess), helpers_test.TimeToVal(key.LastAccess))
 	}
 
 	if !key.CreatedAt.Equal(expectedKey.CreatedAt) {
-		t.Errorf("key: last access expected '%s' but got '%s'", expectedKey.CreatedAt.UTC(), key.CreatedAt.UTC())
+		t.Errorf("key: created at expected '%s' but got '%s'", expectedKey.CreatedAt.UTC(), key.CreatedAt.UTC())
 	}
 
 	if !key.UpdatedAt.Equal(expectedKey.UpdatedAt) {
-		t.Errorf("key: last access expected '%s' but got '%s'", expectedKey.UpdatedAt.UTC(), key.UpdatedAt.UTC())
+		t.Errorf("key: updated at expected '%s' but got '%s'", expectedKey.UpdatedAt.UTC(), key.UpdatedAt.UTC())
 	}
 }

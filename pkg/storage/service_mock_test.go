@@ -1,6 +1,7 @@
 package storage_test
 
 import (
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/pagination_sort"
 	"certwarden-backend/pkg/storage"
 	"context"
@@ -54,65 +55,65 @@ func makeFakeApp(t *testing.T, appDataPath string) *fakeApp {
 
 // openStorageWithTestData makes a copy of the testing data db and then returns a storage service
 // that uses the copy; Cleanup() should be called at the end of the test
-func openStorageWithTestData(t *testing.T, testName string) (_ *storage.Storage, _ error) {
+func openStorageWithTestData(t *testing.T, testName string) *storage.Storage {
 	thisTestFolder := tempFileStorage + testName
 
 	// copy test data to temp appDataPath for tests to run
-	_, err := os.Stat(thisTestFolder)
-	if err == nil {
-		os.RemoveAll(thisTestFolder)
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return nil, err
-	}
-
-	err = os.MkdirAll(thisTestFolder, os.FileMode(0o777))
-	if err != nil {
-		return nil, err
-	}
-	t.Cleanup(func() {
-		_ = os.RemoveAll(thisTestFolder)
-	})
+	helpers_test.MakeTempStorage(t, thisTestFolder)
 
 	testDataF, err := os.Open(testDataDbFile)
 	if err != nil {
-		return nil, err
+		t.Fatalf("failed to open test data file '%s'", err)
 	}
-	defer testDataF.Close()
+	t.Cleanup(func() {
+		err := testDataF.Close()
+		if err != nil {
+			t.Errorf("failed to close testDataF (%s)", err)
+		}
+	})
 
 	testDataCopyF, err := os.Create(thisTestFolder + "/appdata.db")
 	if err != nil {
-		return nil, err
+		t.Fatalf("failed to create test data file copy '%s'", err)
 	}
-	defer testDataCopyF.Close()
+	t.Cleanup(func() {
+		err := testDataCopyF.Close()
+		if err != nil {
+			t.Errorf("failed to close testDataCopyF (%s)", err)
+		}
+	})
 
 	_, err = io.Copy(testDataCopyF, testDataF)
 	if err != nil {
-		return nil, err
+		t.Fatalf("failed to copy test data '%s'", err)
 	}
 
 	err = testDataCopyF.Sync()
 	if err != nil {
-		return nil, err
+		t.Fatalf("failed to sync test data '%s'", err)
 	}
 
 	fakeApp := makeFakeApp(t, thisTestFolder)
 
-	storage, err := storage.OpenStorage(fakeApp)
+	store, err := storage.OpenStorage(fakeApp)
 	if err != nil {
-		return nil, err
+		t.Fatalf("failed to open storage '%s'", err)
 	}
 	t.Cleanup(func() {
-		_ = storage.Close()
+		err := store.Close()
+		if err != nil {
+			t.Errorf("failed to close storage (%s)", err)
+		}
 	})
 
-	return storage, nil
+	return store
 }
 
-// QueryBuilderForTest generates a Query for use in tests
-func QueryBuilderForTest(limit int, offset int, sortField string, sortAsc bool) pagination_sort.Query {
-	sortDirText := "desc"
-	if sortAsc {
-		sortDirText = "asc"
+// queryBuilderForTest generates a Query for use in tests
+func queryBuilderForTest(limit, offset int, sortField string, sortDesc bool) pagination_sort.Query {
+	sortDirText := "asc"
+	if sortDesc {
+		sortDirText = "desc"
 	}
 
 	p := url.Values{
@@ -123,7 +124,10 @@ func QueryBuilderForTest(limit int, offset int, sortField string, sortAsc bool) 
 
 	// make fake request just for query parsing
 	r := &http.Request{}
-	u, _ := url.Parse("https://example.com/")
+	u, err := url.Parse("https://example.com/")
+	if err != nil {
+		panic("url must parse failed")
+	}
 	r.URL = u
 	r.URL.RawQuery = p.Encode()
 

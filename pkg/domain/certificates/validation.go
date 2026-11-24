@@ -3,7 +3,9 @@ package certificates
 import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/validation"
+	"crypto/aes"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 )
@@ -32,14 +34,17 @@ var (
 	// tech contacts
 	ErrPhoneBad        = errors.New("contact phone is not valid")
 	ErrEmailBad        = errors.New("contact email is not valid")
+
+	// aes key
+	ErrPostProcessingClientKeyB64Bad = errors.New("post processing aes key not valid")
 )
 
 // GetCertificate returns the Certificate for the specified id.
-func (service *Service) GetCertificate(id int) (Certificate, *output.JsonError) {
+func (service *Service) GetCertificate(id int) (*Certificate, *output.JsonError) {
 	// if id is not in valid range, it is definitely not valid
 	if !validation.IsIdExistingValidRange(id) {
 		service.logger.Debug(ErrIdBad)
-		return Certificate{}, output.JsonErrValidationFailed(ErrIdBad)
+		return nil, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get from storage
@@ -48,10 +53,10 @@ func (service *Service) GetCertificate(id int) (Certificate, *output.JsonError) 
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return Certificate{}, output.JsonErrNotFound(fmt.Errorf("certificate id %d not found", id))
+			return nil, output.ErrorJsonErrNotFound(fmt.Errorf("certificate id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Certificate{}, output.JsonErrStorageGeneric(err)
+			return nil, output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 
@@ -102,7 +107,7 @@ func (service *Service) privateKeyIdValid(keyId int, certId *int) bool {
 		}
 
 		// if certificate's key id matches keyId, valid
-		if cert.CertificateKey.ID == keyId {
+		if cert.Key.ID == keyId {
 			return true
 		}
 
@@ -127,4 +132,17 @@ func subjectAltsValid(alts []string) bool {
 	}
 
 	return true
+}
+
+// clientKeyB64Valid ensures the string is a base64 RawURL encoded AES key
+func clientKeyB64Valid(b64Key string) bool {
+	// decode AES key
+	aesKey, err := base64.RawURLEncoding.DecodeString(b64Key)
+	if err != nil {
+		return false
+	}
+
+	// ensure key is a proper size and can create a cipher
+	_, err = aes.NewCipher(aesKey)
+	return err == nil
 }

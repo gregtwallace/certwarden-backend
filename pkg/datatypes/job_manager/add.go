@@ -19,8 +19,8 @@ func (mgr *Manager[V]) AddJob(job V) error {
 		return ErrAddZeroValueJob
 	}
 
-	mgr.Lock()
-	defer mgr.Unlock()
+	mgr.mu.Lock()
+	defer mgr.mu.Unlock()
 
 	// check for equivelant job using job's equal func
 	workerNumb := mgr.unsafeJobExists(job)

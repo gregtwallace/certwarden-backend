@@ -17,7 +17,7 @@ type PemObject interface {
 func (service *Service) WritePem(w http.ResponseWriter, r *http.Request, obj PemObject) {
 	pemContent := []byte(obj.PemContent())
 
-	file := outFileObj{
+	file := &outFileObj{
 		filename:        obj.FilenameNoExt() + ".pem",
 		content:         pemContent,
 		httpContentType: "application/x-pem-file",

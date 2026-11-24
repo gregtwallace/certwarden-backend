@@ -2,10 +2,9 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/acme_accounts"
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/pagination_sort"
-	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -83,7 +82,6 @@ var (
 	}
 )
 
-// TODO
 func TestGetAllAcmeAccounts(t *testing.T) {
 	testCases := []struct {
 		q                  pagination_sort.Query
@@ -93,23 +91,20 @@ func TestGetAllAcmeAccounts(t *testing.T) {
 		expectedAcctAtIndx acme_accounts.Account
 	}{
 		{pagination_sort.Query{}, 7, 7, 3, acmeAcct23},
-		{QueryBuilderForTest(1, 1, "id", true), 7, 1, 0, acmeAcct2},
-		{QueryBuilderForTest(2, 1, "servername", false), 7, 2, 1, acmeAcct2},
-		{QueryBuilderForTest(2, 4, "servername", false), 7, 2, 0, acmeAcct23},
-		{QueryBuilderForTest(6, 1, "keyname", true), 7, 6, 5, acmeAcct1},
+		{queryBuilderForTest(1, 1, "id", false), 7, 1, 0, acmeAcct2},
+		{queryBuilderForTest(2, 1, "servername", true), 7, 2, 1, acmeAcct2},
+		{queryBuilderForTest(2, 4, "servername", true), 7, 2, 0, acmeAcct23},
+		{queryBuilderForTest(6, 1, "keyname", false), 7, 6, 5, acmeAcct1},
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getallacmeaccounts")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getallacmeaccounts")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (%s)", i, tc.expectedAcctAtIndx.Name), func(t *testing.T) {
-			accts, totalCt, err := storage.GetAllAcmeAccounts(tc.q)
+			accts, totalCt, err := store.GetAllAcmeAccounts(tc.q)
 			if err != nil {
-				t.Errorf("get all keys failed")
+				t.Errorf("get all failed")
 				return
 			}
 
@@ -120,7 +115,7 @@ func TestGetAllAcmeAccounts(t *testing.T) {
 				t.Errorf("incorrect result length, expected '%d' but got '%d'", tc.expectedResultLen, len(accts))
 			}
 			if tc.testIndx <= len(accts)-1 {
-				CompareAcmeAccount(t, accts[tc.testIndx], tc.expectedAcctAtIndx)
+				compareAcmeAccount(t, accts[tc.testIndx], &tc.expectedAcctAtIndx)
 			} else {
 				t.Errorf("couldnt test result at index '%d' because length of result array was only '%d'", tc.testIndx, len(accts))
 			}
@@ -132,29 +127,26 @@ func TestGetOneAccountById(t *testing.T) {
 	testCases := []struct {
 		id           int
 		expectedErr  error
-		expectedAcct acme_accounts.Account
+		expectedAcct *acme_accounts.Account
 	}{
-		{-5, sql.ErrNoRows, acme_accounts.Account{}},
-		{50, sql.ErrNoRows, acme_accounts.Account{}},
-		{1, nil, acmeAcct1},
-		{2, nil, acmeAcct2},
-		{23, nil, acmeAcct23},
+		{-5, sql.ErrNoRows, nil},
+		{50, sql.ErrNoRows, nil},
+		{1, nil, &acmeAcct1},
+		{2, nil, &acmeAcct2},
+		{23, nil, &acmeAcct23},
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getoneaccountbyid")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getoneaccountbyid")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.id), func(t *testing.T) {
-			acct, err := storage.GetOneAcmeAccountById(tc.id)
-			if !errors.Is(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
+			acct, err := store.GetOneAcmeAccountById(tc.id)
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedAcct)
+			compareAcmeAccount(t, acct, tc.expectedAcct)
 		})
 	}
 }
@@ -163,29 +155,26 @@ func TestGetOneAccountByName(t *testing.T) {
 	testCases := []struct {
 		name         string
 		expectedErr  error
-		expectedAcct acme_accounts.Account
+		expectedAcct *acme_accounts.Account
 	}{
-		{"", sql.ErrNoRows, acme_accounts.Account{}},
-		{"fake-name", sql.ErrNoRows, acme_accounts.Account{}},
-		{"LE_Staging_Account", nil, acmeAcct1},
-		{"LE_Production_Account", nil, acmeAcct2},
-		{"Google_Cloud_Staging2", nil, acmeAcct23},
+		{"", sql.ErrNoRows, nil},
+		{"fake-name", sql.ErrNoRows, nil},
+		{"le_staging_account", nil, &acmeAcct1}, // case is wrong
+		{"LE_Production_Account", nil, &acmeAcct2},
+		{"Google_Cloud_Staging2", nil, &acmeAcct23},
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "getoneaccountbyname")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "getoneaccountbyname")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (name: %s)", i, tc.name), func(t *testing.T) {
-			acct, err := storage.GetOneAcmeAccountByName(tc.name)
-			if !errors.Is(err, tc.expectedErr) {
-				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
+			acct, err := store.GetOneAcmeAccountByName(tc.name)
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedAcct)
+			compareAcmeAccount(t, acct, tc.expectedAcct)
 		})
 	}
 }

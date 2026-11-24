@@ -21,20 +21,22 @@ const logEntriesForView = 500
 type logEntry struct {
 	Level      string `json:"level"`
 	TimeStamp  string `json:"ts"`
-	Caller     string `json:"caller"`
+	Logger     string `json:"logger,omitempty"`
+	Caller     string `json:"caller,omitempty"`
 	Message    string `json:"msg"`
 	StackTrace string `json:"stacktrace,omitempty"`
 }
 
 type currentLogResponse struct {
 	output.JsonResponse
+
 	LogEntries []logEntry `json:"log_entries"`
 }
 
 // readAndParseLogFile reads the specified log file and converts it into an array of log entries
 func readAndParseLogFile(filePathAndName string) ([]logEntry, error) {
 	// open log, read only
-	logFile, err := os.OpenFile(filePathAndName, os.O_RDONLY, 0600)
+	logFile, err := os.OpenFile(filePathAndName, os.O_RDONLY, 0o600)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +77,7 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 	logEntries, err := readAndParseLogFile(dataStorageLogPath + "/" + logFileName)
 	if err != nil {
 		app.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// if size is too small, read more from next file
@@ -100,12 +102,14 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 
 				t, err := time.Parse("2006-01-02T15-04-05.000", timeString)
 				if err != nil {
+					// skip - invalid timestamp
 					app.logger.Errorf("app: log view: failed to parse time of log file %s (%s)", logFilename, err)
-				} else {
-					if t.After(newestTime) {
-						newestTime = t
-						oldestTimestampLogFilename = logFilename
-					}
+					continue
+				}
+
+				if t.After(newestTime) {
+					newestTime = t
+					oldestTimestampLogFilename = logFilename
 				}
 			}
 
@@ -136,7 +140,7 @@ func (app *Application) viewCurrentLogHandler(w http.ResponseWriter, r *http.Req
 	err = app.output.WriteJSON(w, response)
 	if err != nil {
 		app.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -153,31 +157,40 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	logFiles, err := listLogFiles()
 	if err != nil {
 		app.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
-	// range through all log files
-	for _, logFilename := range logFiles {
+	addLogFileToZip := func(filename string) *output.JsonError {
 		// open log file
-		logFile, err := os.Open(dataStorageLogPath + "/" + logFilename)
+		logFile, err := os.Open(dataStorageLogPath + "/" + filename)
 		if err != nil {
 			app.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 		defer logFile.Close()
 
 		// create file in zip
-		zipFile, err := zipWriter.Create(logFilename)
+		zipFile, err := zipWriter.Create(filename)
 		if err != nil {
 			app.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		// copy log file to zip file
 		_, err = io.Copy(zipFile, logFile)
 		if err != nil {
 			app.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
+		}
+
+		return nil
+	}
+
+	// range through all log files
+	for _, logFilename := range logFiles {
+		err := addLogFileToZip(logFilename)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -185,7 +198,7 @@ func (app *Application) downloadLogsHandler(w http.ResponseWriter, r *http.Reque
 	err = zipWriter.Close()
 	if err != nil {
 		app.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// make zip filename with timestamp

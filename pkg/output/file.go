@@ -25,7 +25,7 @@ type outFileObj struct {
 
 // writeNoCacheFile is a generic file output function that is used by other public file output
 // functions; it also includes a `no-store` cache header
-func (service *Service) writeFile(w http.ResponseWriter, r *http.Request, file outFileObj) {
+func (service *Service) writeFile(w http.ResponseWriter, r *http.Request, file *outFileObj) {
 	// get filename and log for auditing
 	filename := file.filename
 	service.logger.Debugf("writing file %s to client %s", filename, r.RemoteAddr)
@@ -35,7 +35,7 @@ func (service *Service) writeFile(w http.ResponseWriter, r *http.Request, file o
 
 	// Set Content-Type and Content-Disposition headers explicitly
 	w.Header().Set("Content-Type", file.httpContentType)
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
 
 	// set eTag if there is one
 	if file.eTag != "" {

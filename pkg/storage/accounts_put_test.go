@@ -2,10 +2,9 @@ package storage_test
 
 import (
 	"certwarden-backend/pkg/domain/acme_accounts"
+	"certwarden-backend/pkg/helpers_test"
 	"certwarden-backend/pkg/storage"
-	"certwarden-backend/pkg/test_helpers"
 	"database/sql"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -14,30 +13,30 @@ import (
 func TestPutAcmeAccountUpdate(t *testing.T) {
 	testCases := []struct {
 		payload           acme_accounts.UpdatePayload
-		expectedPutResult acme_accounts.Account
+		expectedPutResult *acme_accounts.Account
 		expectedPutErr    error
 		getId             int
-		expectedGetResult acme_accounts.Account
+		expectedGetResult *acme_accounts.Account
 		expectedGetErr    error
 	}{
 		{ // invalid
 			acme_accounts.UpdatePayload{
 				ID: -1,
 			},
-			acme_accounts.Account{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			-1,
-			acme_accounts.Account{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{ // invalid
 			acme_accounts.UpdatePayload{
 				ID: 522,
 			},
-			acme_accounts.Account{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			522,
-			acme_accounts.Account{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{ // update all things
@@ -47,7 +46,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 				Description: new("new desc 1"),
 				UpdatedAt:   time.Unix(1000265751, 0),
 			},
-			acme_accounts.Account{
+			&acme_accounts.Account{
 				ID:          1,
 				Name:        "update-1",
 				Description: "new desc 1",
@@ -62,7 +61,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 			},
 			nil,
 			1,
-			acme_accounts.Account{
+			&acme_accounts.Account{
 				ID:          1,
 				Name:        "update-1",
 				Description: "new desc 1",
@@ -82,7 +81,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 				ID:        2,
 				UpdatedAt: time.Unix(11021111, 0),
 			},
-			acme_accounts.Account{
+			&acme_accounts.Account{
 				ID:          2,
 				Name:        "LE_Production_Account",
 				Description: "LE Prod Account - Primary",
@@ -97,7 +96,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 			},
 			nil,
 			2,
-			acme_accounts.Account{
+			&acme_accounts.Account{
 				ID:          2,
 				Name:        "LE_Production_Account",
 				Description: "LE Prod Account - Primary",
@@ -118,7 +117,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 				Description: new("new thing"),
 				UpdatedAt:   time.Unix(107800111, 0),
 			},
-			acme_accounts.Account{
+			&acme_accounts.Account{
 				ID:          23,
 				Name:        "Google_Cloud_Staging2",
 				Description: "new thing",
@@ -133,7 +132,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 			},
 			nil,
 			23,
-			acme_accounts.Account{
+			&acme_accounts.Account{
 				ID:          23,
 				Name:        "Google_Cloud_Staging2",
 				Description: "new thing",
@@ -154,10 +153,10 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 				Name:      new("le_production_account"),
 				UpdatedAt: time.Unix(107800777, 0),
 			},
-			acme_accounts.Account{},
-			test_helpers.ErrAnyType,
+			nil,
+			helpers_test.NewTestErrorStringComp("UNIQUE constraint failed"),
 			16,
-			acmeAcct16,
+			&acmeAcct16,
 			nil,
 		},
 		// more tests for acme account updates
@@ -170,7 +169,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 				CreatedAt: new(time.Unix(80808080, 0)),
 				UpdatedAt: time.Unix(107800000, 0),
 			},
-			acme_accounts.Account{
+			&acme_accounts.Account{
 				ID:          29,
 				Name:        "GC3",
 				Description: "",
@@ -185,7 +184,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 			},
 			nil,
 			29,
-			acme_accounts.Account{
+			&acme_accounts.Account{
 				ID:          29,
 				Name:        "GC3",
 				Description: "",
@@ -206,7 +205,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 				Status:    new("deactivated"),
 				UpdatedAt: time.Unix(155500000, 0),
 			},
-			acme_accounts.Account{
+			&acme_accounts.Account{
 				ID:          28,
 				Name:        "Google_Cloud_Staging2a",
 				Description: "",
@@ -221,7 +220,7 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 			},
 			nil,
 			28,
-			acme_accounts.Account{
+			&acme_accounts.Account{
 				ID:          28,
 				Name:        "Google_Cloud_Staging2a",
 				Description: "",
@@ -239,26 +238,23 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putacmeacctupdate")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putacmeacctupdate")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
-			acct, err := storage.PutAcmeAccountUpdate(tc.payload)
-			if !test_helpers.ErrorsIs(err, tc.expectedPutErr) {
-				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
+			acct, err := store.PutAcmeAccountUpdate(&tc.payload)
+			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
+				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedPutResult)
+			compareAcmeAccount(t, acct, tc.expectedPutResult)
 
-			acct, err = storage.GetOneAcmeAccountById(tc.getId)
-			if !errors.Is(err, tc.expectedGetErr) {
-				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			acct, err = store.GetOneAcmeAccountById(tc.getId)
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedGetResult)
+			compareAcmeAccount(t, acct, tc.expectedGetResult)
 		})
 	}
 }
@@ -266,30 +262,30 @@ func TestPutAcmeAccountUpdate(t *testing.T) {
 func TestPutAcmeAccountNewKey(t *testing.T) {
 	testCases := []struct {
 		payload           acme_accounts.RolloverKeyPayload
-		expectedPutResult acme_accounts.Account
+		expectedPutResult *acme_accounts.Account
 		expectedPutErr    error
 		getId             int
-		expectedGetResult acme_accounts.Account
+		expectedGetResult *acme_accounts.Account
 		expectedGetErr    error
 	}{
 		{ // invalid
 			acme_accounts.RolloverKeyPayload{
 				ID: -1,
 			},
-			acme_accounts.Account{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			-1,
-			acme_accounts.Account{},
+			nil,
 			sql.ErrNoRows,
 		},
 		{ // invalid
 			acme_accounts.RolloverKeyPayload{
 				ID: 522,
 			},
-			acme_accounts.Account{},
+			nil,
 			storage.ErrWrongUpdateRowCount,
 			522,
-			acme_accounts.Account{},
+			nil,
 			sql.ErrNoRows,
 		},
 		// ok updates
@@ -299,7 +295,7 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 				PrivateKeyID: new(58),
 				UpdatedAt:    time.Unix(1088265758, 0),
 			},
-			acme_accounts.Account{
+			&acme_accounts.Account{
 				ID:          28,
 				Name:        "Google_Cloud_Staging2a",
 				Description: "",
@@ -314,7 +310,7 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 			},
 			nil,
 			28,
-			acme_accounts.Account{
+			&acme_accounts.Account{
 				ID:          28,
 				Name:        "Google_Cloud_Staging2a",
 				Description: "",
@@ -336,10 +332,10 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 				PrivateKeyID: new(-1), // invalid key (doesnt exist)
 				UpdatedAt:    time.Unix(1088000751, 0),
 			},
-			acme_accounts.Account{},
-			test_helpers.ErrAnyType,
+			nil,
+			helpers_test.NewTestErrorStringComp("FOREIGN KEY constraint failed"),
 			1,
-			acmeAcct1,
+			&acmeAcct1,
 			nil,
 		},
 		{
@@ -348,10 +344,10 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 				PrivateKeyID: new(678), // invalid key (doesnt exist)
 				UpdatedAt:    time.Unix(1088000752, 0),
 			},
-			acme_accounts.Account{},
-			test_helpers.ErrAnyType,
+			nil,
+			helpers_test.NewTestErrorStringComp("FOREIGN KEY constraint failed"),
 			1,
-			acmeAcct1,
+			&acmeAcct1,
 			nil,
 		},
 		{
@@ -360,35 +356,32 @@ func TestPutAcmeAccountNewKey(t *testing.T) {
 				PrivateKeyID: new(1), // invalid key (unique constraint fails)
 				UpdatedAt:    time.Unix(1088000753, 0),
 			},
-			acme_accounts.Account{},
-			test_helpers.ErrAnyType,
+			nil,
+			helpers_test.NewTestErrorStringComp("UNIQUE constraint failed"),
 			23,
-			acmeAcct23,
+			&acmeAcct23,
 			nil,
 		},
 	}
 
 	// create testing service
-	storage, err := openStorageWithTestData(t, "putacmeacctnewkey")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openStorageWithTestData(t, "putacmeacctnewkey")
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d (id: %d)", i, tc.payload.ID), func(t *testing.T) {
-			acct, err := storage.PutAcmeAccountNewKey(tc.payload)
-			if !test_helpers.ErrorsIs(err, tc.expectedPutErr) {
-				t.Errorf("expected put error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedPutErr), test_helpers.ErrorToVal(err))
+			acct, err := store.PutAcmeAccountNewKey(&tc.payload)
+			if !helpers_test.ErrorsIs(err, tc.expectedPutErr) {
+				t.Errorf("expected put error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedPutErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedPutResult)
+			compareAcmeAccount(t, acct, tc.expectedPutResult)
 
-			acct, err = storage.GetOneAcmeAccountById(tc.getId)
-			if !errors.Is(err, tc.expectedGetErr) {
-				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			acct, err = store.GetOneAcmeAccountById(tc.getId)
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
 			}
 
-			CompareAcmeAccount(t, acct, tc.expectedGetResult)
+			compareAcmeAccount(t, acct, tc.expectedGetResult)
 		})
 	}
 }

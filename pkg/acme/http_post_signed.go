@@ -21,7 +21,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 	// make acme msg
 	msg, err := makeAcmeSignedMessage(payload, nonce, url, accountKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("acme: failed to make signed post message (%s)", err)
+		return nil, nil, fmt.Errorf("acme: failed to make signed post message (%w)", err)
 	}
 
 	// post
@@ -33,6 +33,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		if service.logger.Level() == zapcore.DebugLevel {
 			// VERY VERBOSE, includes Header & Signature, in addition to Payload
 
+			//nolint:gocritic // err is `commentedOutCode:` -- keep this for debugging locally
 			// prettyMsg, prettyErr := json.MarshalIndent(msg, "", "\t")
 			// if prettyErr != nil {
 			// 	service.logger.Debugf("sending acme signed post to: %s ; unencoded msg: %s", url, msg)
@@ -54,10 +55,11 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 		if err != nil {
 			return nil, nil, err
 		}
-		defer response.Body.Close()
+		// re-add defer here
 
 		// read body of response
 		bodyBytes, err = io.ReadAll(response.Body)
+		response.Body.Close() // TODO: refactor and add defer back - doing this for now for resource release purposes
 		if err != nil {
 			// if body read fails, try post again
 			continue
@@ -108,7 +110,11 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 				// BANDAID - END
 
 				// update msg & try again
-				msg.setNonceAndSign(nextNonce, accountKey)
+				err = msg.setNonceAndSign(nextNonce, accountKey)
+				if err != nil {
+					return nil, nil, fmt.Errorf("acme: failed to re-sign post message after badNonce error (%w)", err)
+				}
+
 				continue
 			}
 		}

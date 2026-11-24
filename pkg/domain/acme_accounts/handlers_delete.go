@@ -16,7 +16,7 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) *o
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -30,11 +30,11 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) *o
 	inUse, err := service.storage.AcmeAccountInUse(id)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 	if inUse {
 		service.logger.Debug("cannot delete, in use")
-		return output.JsonErrDeleteInUse("acme account")
+		return output.ErrorJsonErrDeleteInUse("acme account")
 	}
 	// end validation
 
@@ -42,7 +42,7 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) *o
 	err = service.storage.DeleteAcmeAccount(id)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// write response
@@ -54,7 +54,7 @@ func (service *Service) DeleteAccount(w http.ResponseWriter, r *http.Request) *o
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

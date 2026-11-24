@@ -39,7 +39,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	token := challenge.Token
 	keyAuth, err := key.KeyAuthorization(token)
 	if err != nil {
-		return fmt.Errorf("challenges: failed to make key auth (%s)", err)
+		return fmt.Errorf("challenges: failed to make key auth (%w)", err)
 	}
 
 	// if using an alias, emit debug log message about required CNAME record (or error if challenge

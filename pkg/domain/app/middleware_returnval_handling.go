@@ -44,7 +44,7 @@ func loggableRequestURI(r *http.Request) string {
 // an http.Handler by processing the error from the custom handler func and logging it. If
 // sensitive is true, the log level is increased and a little more verbose. This is useful
 // for certain routes that should always log their access (e.g. download)
-func middlewareApplyReturnValHandling(next handlerFunc, sensitive bool, logger *zap.SugaredLogger, output *output.Service) http.HandlerFunc {
+func middlewareApplyReturnValHandling(next handlerFunc, sensitive bool, logger *zap.SugaredLogger, out *output.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// shorten URI for logging
 		trimmedURI := loggableRequestURI(r)
@@ -61,7 +61,7 @@ func middlewareApplyReturnValHandling(next handlerFunc, sensitive bool, logger *
 
 		// if there was an error, log it and write error JSON
 		if err != nil {
-			writeErr := output.WriteJSON(w, err)
+			writeErr := out.WriteJSON(w, err)
 
 			// if error, serve isn't done until error json written
 			timeToServe = time.Since(start)

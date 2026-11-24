@@ -9,7 +9,7 @@ import (
 type ChallengeType string
 
 const (
-	UnknownChallengeType ChallengeType = ""
+	ChallengeTypeUnknown ChallengeType = ""
 
 	ChallengeTypeHttp01       ChallengeType = "http-01"
 	ChallengeTypeDns01        ChallengeType = "dns-01"

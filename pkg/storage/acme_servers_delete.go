@@ -12,6 +12,12 @@ func (store *Storage) ServerInUse(serverId int) (inUse bool, err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
+	tx, err := store.db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback()
+
 	// check server exists
 	query := `
 	SELECT id
@@ -19,7 +25,7 @@ func (store *Storage) ServerInUse(serverId int) (inUse bool, err error) {
 	WHERE id = $1
 	`
 
-	row := store.db.QueryRowContext(ctx, query, serverId)
+	row := tx.QueryRowContext(ctx, query, serverId)
 	_discardVar := -2
 	err = row.Scan(&_discardVar)
 	if err != nil {
@@ -34,10 +40,15 @@ func (store *Storage) ServerInUse(serverId int) (inUse bool, err error) {
 	WHERE acme_server_id = $1
 	`
 
-	row = store.db.QueryRowContext(ctx, query, serverId)
+	row = tx.QueryRowContext(ctx, query, serverId)
 	err = row.Scan(&_discardVar)
 	if !errors.Is(err, sql.ErrNoRows) {
 		return true, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return false, err
 	}
 
 	return false, nil
@@ -45,9 +56,6 @@ func (store *Storage) ServerInUse(serverId int) (inUse bool, err error) {
 
 // DeleteServer deletes an acme server from the database
 func (store *Storage) DeleteServer(serverId int) error {
-	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
-	defer cancel()
-
 	// check that delete is safe
 	inUse, err := store.ServerInUse(serverId)
 	if err != nil {
@@ -56,6 +64,9 @@ func (store *Storage) DeleteServer(serverId int) error {
 	if inUse {
 		return ErrInUse
 	}
+
+	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
+	defer cancel()
 
 	// delete
 	query := `

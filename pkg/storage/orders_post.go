@@ -4,11 +4,17 @@ import (
 	"certwarden-backend/pkg/domain/orders"
 	"context"
 	"database/sql"
+	"errors"
 )
 
 // PostNewOrder makes a new order in the db. An error is returned if the order
 // location already exists (or any other error)
-func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId int, err error) {
+// TODO: Refactor to make this behave like the other 'post' methods. (e.g., return
+// the new order if success, otherwise just return error). Switch 'put' method to
+// take the order URL (which is unique) and then all this func will need to do is
+// return already existing error.
+// TODO: Should not rely on int value when non-nil error is returned.
+func (store *Storage) PostNewOrder(payload *orders.NewOrderAcmePayload) (newId int, err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -31,12 +37,28 @@ func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId in
 
 	row := tx.QueryRowContext(ctx, query, payload.Location)
 	err = row.Scan(&newId)
-
 	// if err == nil, record was found. return the existingId and a corresponding error
 	if err == nil {
 		return newId, orders.ErrOrderExists
-	} else if err != sql.ErrNoRows {
+	} else if !errors.Is(err, sql.ErrNoRows) {
 		// any other error, except no rows (because that indicates this order is truly new to db)
+		return -2, err
+	}
+
+	// deal with error obj
+	acmeErr, err := structToNullableJsonString(payload.Error)
+	if err != nil {
+		return -2, err
+	}
+
+	// slices
+	dnsIds, err := sliceToJsonString(payload.DnsIds, false)
+	if err != nil {
+		return -2, err
+	}
+
+	authz, err := sliceToJsonString(payload.Authorizations, false)
+	if err != nil {
 		return -2, err
 	}
 
@@ -45,7 +67,6 @@ func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId in
 		acme_orders
 			(
 				certificate_id,
-				acme_account_id,
 				status,
 				known_revoked,
 				expires,
@@ -71,8 +92,7 @@ func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId in
 				$9,
 				$10,
 				$11,
-				$12,
-				$13
+				$12
 			)
 	RETURNING
 		id
@@ -80,13 +100,12 @@ func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId in
 
 	err = tx.QueryRowContext(ctx, query,
 		payload.CertId,
-		payload.AccountId,
 		payload.Status,
 		payload.KnownRevoked,
-		payload.Expires.Unix(),
-		makeJsonStringSlice(payload.DnsIds, false),
-		payload.Error,
-		makeJsonStringSlice(payload.Authorizations, false),
+		timePointerToNullInt64(payload.Expires),
+		dnsIds,
+		acmeErr,
+		authz,
 		payload.Finalize,
 		payload.Profile,
 		payload.Location,
@@ -94,12 +113,14 @@ func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId in
 		payload.UpdatedAt,
 	).Scan(&newId)
 
-	err = tx.Commit()
 	if err != nil {
 		return -2, err
 	}
 
-	// TODO: Handle 0 rows updated.
+	err = tx.Commit()
+	if err != nil {
+		return -2, err
+	}
 
 	return newId, nil
 }

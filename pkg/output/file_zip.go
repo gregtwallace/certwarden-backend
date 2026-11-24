@@ -15,5 +15,5 @@ func (service *Service) WriteZip(w http.ResponseWriter, r *http.Request, filenam
 		// no eTag
 	}
 
-	service.writeFile(w, r, file)
+	service.writeFile(w, r, &file)
 }

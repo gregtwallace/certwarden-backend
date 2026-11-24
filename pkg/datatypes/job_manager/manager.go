@@ -34,7 +34,7 @@ type Manager[V Job[V]] struct {
 	highJobsChan chan V
 	lowJobsChan  chan V
 
-	sync.RWMutex
+	mu sync.RWMutex
 }
 
 // NewManager creates the job manager and its workers

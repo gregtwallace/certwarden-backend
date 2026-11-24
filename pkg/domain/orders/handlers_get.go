@@ -15,6 +15,7 @@ import (
 // to answer a query for a portion of a cert's orders
 type allOrdersResponse struct {
 	output.JsonResponse
+
 	TotalOrders int                    `json:"total_records"`
 	Orders      []orderSummaryResponse `json:"orders"`
 }
@@ -29,7 +30,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validate certificate ID
@@ -44,10 +45,10 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return output.JsonErrNotFound(err)
+			return output.ErrorJsonErrNotFound(err)
 		} else {
 			service.logger.Error(err)
-			return output.JsonErrStorageGeneric(err)
+			return output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 
@@ -67,7 +68,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -85,10 +86,10 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 		// special error case for no record found
 		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return output.JsonErrNotFound(err)
+			return output.ErrorJsonErrNotFound(err)
 		} else {
 			service.logger.Error(err)
-			return output.JsonErrStorageGeneric(err)
+			return output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 
@@ -108,7 +109,7 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

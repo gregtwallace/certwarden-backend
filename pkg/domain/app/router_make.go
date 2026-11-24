@@ -75,6 +75,7 @@ func (app *Application) makeRouterAndRoutes() {
 	router.handleAPIRouteSecure(http.MethodPost, apiUrlPath+"/v1/app/challenges/domainaliases", app.challenges.PostDomainAliases)
 
 	// challenges: providers
+	//nolint:gocritic // useful for local troubleshooting
 	// router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/domains", app.challenges.Providers.GetAllDomains)
 	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services", app.challenges.DNSIdentifierProviders.GetAllProviders)
 	router.handleAPIRouteSecure(http.MethodGet, apiUrlPath+"/v1/app/challenges/providers/services/:id", app.challenges.DNSIdentifierProviders.GetOneProvider)

@@ -8,7 +8,7 @@ import (
 )
 
 // GetAllAcmeAccounts returns a slice of all of the Accounts in the database
-func (store *Storage) GetAllAcmeAccounts(q pagination_sort.Query) (accounts []acme_accounts.Account, totalRowCount int, err error) {
+func (store *Storage) GetAllAcmeAccounts(q pagination_sort.Query) (accounts []*acme_accounts.Account, totalRowCount int, err error) {
 	// validate and set sort
 	sortField := q.SortField()
 
@@ -79,7 +79,7 @@ func (store *Storage) GetAllAcmeAccounts(q pagination_sort.Query) (accounts []ac
 	// for total row count
 	var totalRows int
 
-	var allAccounts []acme_accounts.Account
+	var allAccounts []*acme_accounts.Account
 	for rows.Next() {
 		var oneAccount accountDb
 		err = rows.Scan(
@@ -128,17 +128,17 @@ func (store *Storage) GetAllAcmeAccounts(q pagination_sort.Query) (accounts []ac
 }
 
 // GetOneAcmeAccountById returns an Account based on its unique id
-func (store *Storage) GetOneAcmeAccountById(id int) (acme_accounts.Account, error) {
+func (store *Storage) GetOneAcmeAccountById(id int) (*acme_accounts.Account, error) {
 	return store.getOneAcmeAccount(id, "")
 }
 
 // GetOneAcmeAccountByName returns an Account based on its unique name
-func (store *Storage) GetOneAcmeAccountByName(name string) (acme_accounts.Account, error) {
+func (store *Storage) GetOneAcmeAccountByName(name string) (*acme_accounts.Account, error) {
 	return store.getOneAcmeAccount(-1, name)
 }
 
 // getOneAcmeAccount returns an Account based on either its unique id or its unique name
-func (store *Storage) getOneAcmeAccount(id int, name string) (acme_accounts.Account, error) {
+func (store *Storage) getOneAcmeAccount(id int, name string) (*acme_accounts.Account, error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -195,7 +195,7 @@ func (store *Storage) getOneAcmeAccount(id int, name string) (acme_accounts.Acco
 		&oneAccount.accountKeyDb.updatedAt,
 	)
 	if err != nil {
-		return acme_accounts.Account{}, err
+		return nil, err
 	}
 
 	return oneAccount.toAccount(), nil

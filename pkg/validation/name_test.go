@@ -11,6 +11,7 @@ var validNames = []string{
 	"some.name.com...",
 	"som~name.here",
 	"myTest_-Name",
+	"ok~name",
 }
 
 var invalidNames = []string{
@@ -21,6 +22,10 @@ var invalidNames = []string{
 	" aName",
 	"aName ",
 	"some$name",
+	"a[name]",
+	"another`name",
+	"aga^in",
+	"ag\\ain",
 }
 
 func TestValidation_NameValid(t *testing.T) {

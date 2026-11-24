@@ -28,7 +28,7 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *outp
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// params
@@ -36,13 +36,13 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *outp
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// if manager only has 1 provider, delete will never be allowed
 	if len(mgr.providers) <= 1 {
 		mgr.logger.Debug("cannot delete provider if there is only 1 provider available")
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// find provider
@@ -56,7 +56,7 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *outp
 				break
 			} else {
 				mgr.logger.Debug(errWrongTag)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 		}
 	}
@@ -65,7 +65,7 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *outp
 	if p == nil {
 		err = errBadID(payload.ID)
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// call provider stop func before deleting
@@ -83,7 +83,7 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *outp
 	err = mgr.unsafeWriteProvidersConfig()
 	if err != nil {
 		mgr.logger.Errorf("failed to save config file after providers update (%s)", err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -95,7 +95,7 @@ func (mgr *Manager) DeleteProvider(w http.ResponseWriter, r *http.Request) *outp
 	err = mgr.output.WriteJSON(w, response)
 	if err != nil {
 		mgr.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

@@ -17,7 +17,7 @@ func (app *Application) doShutdownHandler(w http.ResponseWriter, r *http.Request
 	err := app.output.WriteJSON(w, response)
 	if err != nil {
 		app.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	// log shutdown
@@ -40,7 +40,7 @@ func (app *Application) doRestartHandler(w http.ResponseWriter, r *http.Request)
 	err := app.output.WriteJSON(w, response)
 	if err != nil {
 		app.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	// log restart
