@@ -81,7 +81,7 @@ func (store *Storage) GetAllAcmeServers(q pagination_sort.Query) (accounts []acm
 			return nil, 0, err
 		}
 
-		// convert to Server and sppend
+		// convert to Server and append
 		allServers = append(allServers, oneServer.toServer())
 	}
 

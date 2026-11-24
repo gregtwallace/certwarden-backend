@@ -1,6 +1,7 @@
-package download
+package download_test
 
 import (
+	"certwarden-backend/pkg/domain/download"
 	"certwarden-backend/pkg/output"
 	"testing"
 )
@@ -8,7 +9,7 @@ import (
 func TestOutKeyViaHeader(t *testing.T) {
 	// create testing service
 	app := makeFakeApp(t)
-	service, err := NewService(app)
+	service, err := download.NewService(app)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +163,7 @@ N/VC8wvORy4lKBkAeRy0oK+9o6R5mdzP3Fjpz9I4
 func TestOutKeyViaURL(t *testing.T) {
 	// create testing service
 	app := makeFakeApp(t)
-	service, err := NewService(app)
+	service, err := download.NewService(app)
 	if err != nil {
 		t.Fatal(err)
 	}

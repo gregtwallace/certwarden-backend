@@ -1,0 +1,89 @@
+package storage_test
+
+import (
+	"certwarden-backend/pkg/domain/acme_accounts"
+	"certwarden-backend/pkg/storage"
+	"certwarden-backend/pkg/test_helpers"
+	"database/sql"
+	"errors"
+	"fmt"
+	"testing"
+)
+
+func TestAcmeAccountInUse(t *testing.T) {
+	testCases := []struct {
+		acctID        int
+		expectedInUse bool
+		expectedErr   error
+	}{
+		{-2, false, sql.ErrNoRows},
+		{35, false, sql.ErrNoRows},
+
+		{1, true, nil},
+		{2, true, nil},
+		{20, true, nil},
+
+		{16, false, nil},
+		{23, false, nil},
+		{28, false, nil},
+		{29, false, nil},
+	}
+
+	// create testing service
+	storage, err := openStorageWithTestData(t, "acmeaccountinuse")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("id: %d", tc.acctID), func(t *testing.T) {
+			inUse, err := storage.AcmeAccountInUse(tc.acctID)
+			if !errors.Is(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedErr), test_helpers.ErrorToVal(err))
+			}
+
+			if inUse != tc.expectedInUse {
+				t.Errorf("expected inuse '%t' but got '%t'", tc.expectedInUse, inUse)
+			}
+		})
+	}
+}
+
+func TestDeleteAcmeAccount(t *testing.T) {
+	testCases := []struct {
+		acctID            int
+		expectedDelErr    error
+		expectedGetResult acme_accounts.Account
+		expectedGetErr    error
+	}{
+		{-2, sql.ErrNoRows, acme_accounts.Account{}, sql.ErrNoRows}, // non-existent
+		{25, sql.ErrNoRows, acme_accounts.Account{}, sql.ErrNoRows}, // non-existent
+		{16, nil, acme_accounts.Account{}, sql.ErrNoRows},           // not in use, gets deleted
+		{28, nil, acme_accounts.Account{}, sql.ErrNoRows},           // not in use, gets deleted
+		{1, storage.ErrInUse, acmeAcct1, nil},                       // in use
+		{2, storage.ErrInUse, acmeAcct2, nil},                       // in use
+		{20, storage.ErrInUse, acmeAcct20, nil},                     // in use
+	}
+
+	// create testing service
+	storage, err := openStorageWithTestData(t, "deleteacmeaccount")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("id: %d", tc.acctID), func(t *testing.T) {
+			err := storage.DeleteAcmeAccount(tc.acctID)
+			if !errors.Is(err, tc.expectedDelErr) {
+				t.Errorf("expected delete error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedDelErr), test_helpers.ErrorToVal(err))
+			}
+
+			acct, err := storage.GetOneAcmeAccountById(tc.acctID)
+			if !errors.Is(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", test_helpers.ErrorToVal(tc.expectedGetErr), test_helpers.ErrorToVal(err))
+			}
+
+			CompareAcmeAccount(t, acct, tc.expectedGetResult)
+		})
+	}
+}

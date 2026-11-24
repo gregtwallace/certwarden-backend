@@ -7,8 +7,8 @@ import (
 	"fmt"
 )
 
-// GetAllAccounts returns a slice of all of the Accounts in the database
-func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_accounts.Account, totalRowCount int, err error) {
+// GetAllAcmeAccounts returns a slice of all of the Accounts in the database
+func (store *Storage) GetAllAcmeAccounts(q pagination_sort.Query) (accounts []acme_accounts.Account, totalRowCount int, err error) {
 	// validate and set sort
 	sortField := q.SortField()
 
@@ -121,26 +121,24 @@ func (store *Storage) GetAllAccounts(q pagination_sort.Query) (accounts []acme_a
 		}
 
 		// convert to Account
-		convertedAccount := oneAccount.toAccount()
-
-		allAccounts = append(allAccounts, convertedAccount)
+		allAccounts = append(allAccounts, oneAccount.toAccount())
 	}
 
 	return allAccounts, totalRows, nil
 }
 
-// GetOneAccountById returns an Account based on its unique id
-func (store *Storage) GetOneAccountById(id int) (acme_accounts.Account, error) {
-	return store.getOneAccount(id, "")
+// GetOneAcmeAccountById returns an Account based on its unique id
+func (store *Storage) GetOneAcmeAccountById(id int) (acme_accounts.Account, error) {
+	return store.getOneAcmeAccount(id, "")
 }
 
-// GetOneAccountByName returns an Account based on its unique name
-func (store *Storage) GetOneAccountByName(name string) (acme_accounts.Account, error) {
-	return store.getOneAccount(-1, name)
+// GetOneAcmeAccountByName returns an Account based on its unique name
+func (store *Storage) GetOneAcmeAccountByName(name string) (acme_accounts.Account, error) {
+	return store.getOneAcmeAccount(-1, name)
 }
 
-// getOneAccount returns an Account based on either its unique id or its unique name
-func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account, error) {
+// getOneAcmeAccount returns an Account based on either its unique id or its unique name
+func (store *Storage) getOneAcmeAccount(id int, name string) (acme_accounts.Account, error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
@@ -164,7 +162,6 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 	row := store.db.QueryRowContext(ctx, query, id, name)
 
 	var oneAccount accountDb
-
 	err := row.Scan(
 		&oneAccount.id,
 		&oneAccount.name,
@@ -197,7 +194,6 @@ func (store *Storage) getOneAccount(id int, name string) (acme_accounts.Account,
 		&oneAccount.accountKeyDb.createdAt,
 		&oneAccount.accountKeyDb.updatedAt,
 	)
-
 	if err != nil {
 		return acme_accounts.Account{}, err
 	}

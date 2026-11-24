@@ -15,3 +15,7 @@ __debug*
 
 # windows build output
 *.exe
+
+# test tmp files
+/test_data/*-journal
+/test_data/tmp

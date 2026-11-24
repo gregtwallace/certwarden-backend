@@ -3,16 +3,20 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 )
 
 // KeyInUse returns a bool if the specified key is in use, it returns
-// an error if the key does not exist (or any other error)
+// an error if the key does not exist or any other error occurs. NOTE: This check
+// includes if the key is assigned an acme account, certificate, OR is the private key
+// for a current order (but the cert has been reconfigured to a different key). Therefore,
+// it is possible for a key to return TRUE for inUse, but may also be in the "available"
+// key list, returned by the GET available keys function.
 func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)
 	defer cancel()
 
 	// check key exists
-	// if scan in succeeds, key exists
 	query := `
 	SELECT id
 	FROM private_keys
@@ -20,10 +24,11 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	`
 
 	row := store.db.QueryRowContext(ctx, query, id)
-	temp := -2
-	row.Scan(&temp)
-	if temp == -2 {
-		return false, sql.ErrNoRows
+	_discardVar := -2
+	err = row.Scan(&_discardVar)
+	if err != nil {
+		// sql.ErrNoRows included here
+		return false, err
 	}
 
 	// check not in use in accounts
@@ -35,10 +40,9 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	`
 
 	row = store.db.QueryRowContext(ctx, query, id)
-	temp = -2
-	row.Scan(&temp)
-	if temp != -2 {
-		return true, nil
+	err = row.Scan(&_discardVar)
+	if !errors.Is(err, sql.ErrNoRows) {
+		return true, err
 	}
 
 	// check not in use in certs
@@ -51,18 +55,16 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	`
 
 	row = store.db.QueryRowContext(ctx, query, id)
-	temp = -2
-	row.Scan(&temp)
-	if temp != -2 {
-		return true, nil
+	err = row.Scan(&_discardVar)
+	if !errors.Is(err, sql.ErrNoRows) {
+		return true, err
 	}
 
-	// check not in use by valid order on an existing cert_id with longest dated expiration
-	// query groups valid orders by cert_id and then returns a result if the
-	// order has the max valid_to for a particular key (the one being deleted)
-	// This query is used to confirm the key isn't needed for any of the currently hosted cert records.
-	// Needed because cert could be rotating key (cert record has a different key id now) and
-	// don't want to delete key that may still be needed by pre-rotation cert
+	// Even if the key isnt in use on a certificate, it may be in use on the certificate's most recent
+	// valid order. In that case, the key is being actively served to CW clients. This query checks if
+	// the key is in use on any such order by first getting the most recent valid order for each cert
+	// then filtering to just orders using the key we're checking. If there is any result, the key is
+	// in use by a most recent order.
 	query = `
 	SELECT
 		certificate_id
@@ -71,6 +73,10 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 	WHERE 
 		status = "valid"
 		AND
+		known_revoked = 0
+		AND
+		pem NOT NULL
+		AND
 		certificate_id not null
 	GROUP BY
 		certificate_id
@@ -78,14 +84,12 @@ func (store *Storage) KeyInUse(id int) (inUse bool, err error) {
 		MAX(created_at)
 		AND
 		finalized_key_id = $1
-	
 	`
 
 	row = store.db.QueryRowContext(ctx, query, id)
-	temp = -2
-	row.Scan(&temp)
-	if temp != -2 {
-		return true, nil
+	err = row.Scan(&_discardVar)
+	if !errors.Is(err, sql.ErrNoRows) {
+		return true, err
 	}
 
 	return false, nil

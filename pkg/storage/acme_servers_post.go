@@ -5,7 +5,7 @@ import (
 	"context"
 )
 
-// PostNewServer saves the KeyExtended to the db as a new key
+// PostNewServer saves the server to the db
 func (store *Storage) PostNewServer(payload acme_servers.NewPayload) (acme_servers.Server, error) {
 	// database action
 	ctx, cancel := context.WithTimeout(store.shutdownContext, store.timeout)

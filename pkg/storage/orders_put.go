@@ -33,7 +33,7 @@ func (store *Storage) PutOrderAcme(payload orders.UpdateAcmeOrderPayload) (err e
 
 	_, err = store.db.ExecContext(ctx, query,
 		payload.Status,
-		payload.Expires,
+		payload.Expires.Unix(),
 		makeJsonStringSlice(payload.DnsIds, true),
 		payload.Error,
 		makeJsonStringSlice(payload.Authorizations, true),

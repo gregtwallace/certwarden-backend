@@ -5,6 +5,7 @@ import (
 	"certwarden-backend/pkg/domain/acme_servers"
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/domain/private_keys/key_crypto"
+	"time"
 )
 
 // Account is a single ACME account
@@ -17,8 +18,8 @@ type Account struct {
 	Status      string
 	Email       string
 	AcceptedTos bool
-	CreatedAt   int
-	UpdatedAt   int
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 	Kid         string
 }
 
@@ -77,8 +78,8 @@ type accountDetailedResponse struct {
 	AccountSummaryResponse
 	AcmeServer accountServerDetailedResponse `json:"acme_server"`
 	AccountKey accountKeyDetailedResponse    `json:"private_key"`
-	CreatedAt  int                           `json:"created_at"`
-	UpdatedAt  int                           `json:"updated_at"`
+	CreatedAt  int64                         `json:"created_at"`
+	UpdatedAt  int64                         `json:"updated_at"`
 }
 
 type accountServerDetailedResponse struct {
@@ -118,8 +119,8 @@ func (acct Account) detailedResponse(service *Service) (accountDetailedResponse,
 			},
 			Algorithm: acct.AccountKey.Algorithm,
 		},
-		CreatedAt: acct.CreatedAt,
-		UpdatedAt: acct.UpdatedAt,
+		CreatedAt: acct.CreatedAt.Unix(),
+		UpdatedAt: acct.UpdatedAt.Unix(),
 	}, nil
 }
 

@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"math/big"
-	"time"
 )
 
 // encodeString returns an encoded string using the type of encoding
@@ -47,28 +46,4 @@ func encodeBigInt(bigInt *big.Int, keyBitSize int) (encodedProp string) {
 	bytesBuf := make([]byte, octetLen)
 
 	return encodeString(bigInt.FillBytes(bytesBuf))
-}
-
-// timeString is a string in the date format defined in RFC3339 (which is
-// what RFC8555 says to use)
-type timeString string
-
-// ToUnixTime returns the unix time for a timeString. If the timeString is
-// nil or fails to parse, 0 is returned.
-func (ats *timeString) ToUnixTime() (unixTime *int) {
-	if ats == nil {
-		return nil
-	}
-
-	// RFC3339
-	layout := "2006-01-02T15:04:05Z"
-
-	// Parse
-	t, err := time.Parse(layout, string(*ats))
-	if err != nil {
-		return new(int)
-	}
-
-	ts := int(t.Unix())
-	return &ts
 }

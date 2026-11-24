@@ -6,5 +6,6 @@ import "errors"
 // sql error types
 
 var (
-	ErrInUse = errors.New("record in use")
+	ErrInUse               = errors.New("record in use")
+	ErrWrongUpdateRowCount = errors.New("record update row count unexpected")
 )

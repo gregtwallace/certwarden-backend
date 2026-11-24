@@ -1,6 +1,9 @@
 package storage
 
-import "certwarden-backend/pkg/domain/acme_servers"
+import (
+	"certwarden-backend/pkg/domain/acme_servers"
+	"time"
+)
 
 // acmeServerDb is a single acme server, as database table fields
 // corresponds to acme_servers.Server
@@ -10,8 +13,8 @@ type acmeServerDb struct {
 	description  string
 	directoryUrl string
 	isStaging    bool
-	createdAt    int
-	updatedAt    int
+	createdAt    int64
+	updatedAt    int64
 }
 
 // toServer maps the database acme server info to the acme_servers
@@ -23,7 +26,7 @@ func (serv acmeServerDb) toServer() acme_servers.Server {
 		Description:  serv.description,
 		DirectoryURL: serv.directoryUrl,
 		IsStaging:    serv.isStaging,
-		CreatedAt:    serv.createdAt,
-		UpdatedAt:    serv.updatedAt,
+		CreatedAt:    time.Unix(serv.createdAt, 0),
+		UpdatedAt:    time.Unix(serv.updatedAt, 0),
 	}
 }

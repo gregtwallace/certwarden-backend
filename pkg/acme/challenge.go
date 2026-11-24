@@ -2,6 +2,7 @@ package acme
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // Define challenge types (per RFC 8555)
@@ -20,7 +21,7 @@ type Challenge struct {
 	Type      ChallengeType `json:"type"`
 	Url       string        `json:"url"`
 	Status    string        `json:"status"`
-	Validated timeString    `json:"validated,omitempty"`
+	Validated time.Time     `json:"validated,omitempty"`
 	Token     string        `json:"token"`
 	Error     *Error        `json:"error,omitempty"`
 

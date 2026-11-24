@@ -83,7 +83,7 @@ func (store *Storage) PostNewOrder(payload orders.NewOrderAcmePayload) (newId in
 		payload.AccountId,
 		payload.Status,
 		payload.KnownRevoked,
-		payload.Expires,
+		payload.Expires.Unix(),
 		makeJsonStringSlice(payload.DnsIds, false),
 		payload.Error,
 		makeJsonStringSlice(payload.Authorizations, false),

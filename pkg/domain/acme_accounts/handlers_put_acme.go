@@ -25,8 +25,8 @@ type changeEmailPayload struct {
 // email address and saves the updated address to storage
 func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// get id from param
-	idParam := httprouter.ParamsFromContext(r.Context()).ByName("id")
-	id, err := strconv.Atoi(idParam)
+	idParamStr := httprouter.ParamsFromContext(r.Context()).ByName("id")
+	idParam, err := strconv.Atoi(idParamStr)
 	if err != nil {
 		service.logger.Debug(err)
 		return output.JsonErrValidationFailed(err)
@@ -42,7 +42,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 
 	// validation
 	// id
-	account, outErr := service.getAccount(id)
+	account, outErr := service.getAccount(idParam)
 	if outErr != nil {
 		return outErr
 	}
@@ -75,25 +75,20 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 		return output.JsonErrInternal(err)
 	}
 
-	var acmeAccount AcmeAccount
-	acmeAccount.Account, err = acmeService.UpdateAccount(acmePayload, acmeAccountKey)
+	acmeAcct, err := acmeService.UpdateAccount(acmePayload, acmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
 
-	// add additional details to the payload before saving
-	acmeAccount.ID = id
-	acmeAccount.UpdatedAt = int(time.Now().Unix())
-
-	// save ACME response to account
-	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccount)
+	// save ACME response to storage
+	account, err = service.storage.PutAcmeAccountUpdate(acmeAcctToUpdatePayload(idParam, acmeAcct))
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)
 	}
 
-	detailedResp, err := updatedAcct.detailedResponse(service)
+	detailedResp, err := account.detailedResponse(service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate account summary response (%s)", err)
 		service.logger.Error(err)
@@ -117,9 +112,9 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 
 // RolloverKeyPayload is used to change an account's private key
 type RolloverKeyPayload struct {
-	ID           int  `json:"-"`
-	PrivateKeyID *int `json:"private_key_id"`
-	UpdatedAt    int  `json:"-"`
+	ID           int       `json:"-"`
+	PrivateKeyID *int      `json:"private_key_id"`
+	UpdatedAt    time.Time `json:"-"`
 }
 
 // RolloverKey changes the private key used for an account
@@ -190,10 +185,10 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) *out
 	}
 
 	// add additional details to the payload before saving
-	payload.UpdatedAt = int(time.Now().Unix())
+	payload.UpdatedAt = time.Now()
 
 	// update private key id in db
-	updatedAcct, err := service.storage.PutNewAccountKey(payload)
+	updatedAcct, err := service.storage.PutAcmeAccountNewKey(payload)
 	if err != nil {
 		service.logger.Error(err)
 		return output.JsonErrStorageGeneric(err)

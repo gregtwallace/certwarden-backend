@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"go.uber.org/zap/zapcore"
 )
@@ -23,14 +24,14 @@ type NewOrderPayload struct {
 // LE response with order information
 type Order struct {
 	Status         string          `json:"status"`
-	Expires        *timeString     `json:"expires"`
+	Expires        *time.Time      `json:"expires"`
 	Identifiers    IdentifierSlice `json:"identifiers"`
 	Error          *Error          `json:"error,omitempty"`
 	Authorizations []string        `json:"authorizations"`
 	Finalize       string          `json:"finalize"`
 	Certificate    *string         `json:"certificate,omitempty"`
-	NotBefore      *timeString     `json:"notBefore,omitempty"`
-	NotAfter       *timeString     `json:"notAfter,omitempty"`
+	NotBefore      *time.Time      `json:"notBefore,omitempty"`
+	NotAfter       *time.Time      `json:"notAfter,omitempty"`
 	Location       string          `json:"-"` // omit because it is in the header
 
 	// ACME Profiles Extension

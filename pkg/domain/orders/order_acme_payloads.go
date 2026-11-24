@@ -16,7 +16,7 @@ type NewOrderAcmePayload struct {
 	AccountId      int
 	Status         string
 	KnownRevoked   bool
-	Expires        *int
+	Expires        *time.Time
 	DnsIds         []string
 	Error          *string
 	Authorizations []string
@@ -40,7 +40,7 @@ func makeNewOrderAcmePayload(cert certificates.Certificate, acmeResponse acme.Or
 		AccountId:      cert.CertificateAccount.ID,
 		Status:         acmeResponse.Status,
 		KnownRevoked:   false,
-		Expires:        acmeResponse.Expires.ToUnixTime(),
+		Expires:        acmeResponse.Expires,
 		DnsIds:         acmeResponse.Identifiers.DnsIdentifiers(),
 		Error:          acmeErr,
 		Authorizations: acmeResponse.Authorizations,
@@ -57,7 +57,7 @@ func makeNewOrderAcmePayload(cert certificates.Certificate, acmeResponse acme.Or
 // UpdateAcmeOrderPayload is the payload to update storage regarding an existing ACME order
 type UpdateAcmeOrderPayload struct {
 	Status         string
-	Expires        *int
+	Expires        *time.Time
 	DnsIds         []string
 	Error          *string
 	Authorizations []string
@@ -77,7 +77,7 @@ func makeUpdateOrderAcmePayload(orderId int, acmeResponse acme.Order) UpdateAcme
 
 	return UpdateAcmeOrderPayload{
 		Status:         acmeResponse.Status,
-		Expires:        acmeResponse.Expires.ToUnixTime(),
+		Expires:        acmeResponse.Expires,
 		DnsIds:         acmeResponse.Identifiers.DnsIdentifiers(),
 		Error:          acmeErr,
 		Authorizations: acmeResponse.Authorizations,

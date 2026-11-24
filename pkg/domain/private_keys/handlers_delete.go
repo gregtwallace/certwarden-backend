@@ -34,7 +34,7 @@ func (service *Service) DeleteKey(w http.ResponseWriter, r *http.Request) *outpu
 		return output.JsonErrStorageGeneric(err)
 	}
 	if inUse {
-		service.logger.Warn("cannot delete, in use")
+		service.logger.Debug("cannot delete, in use")
 		return output.JsonErrDeleteInUse("private key")
 	}
 	// end validation

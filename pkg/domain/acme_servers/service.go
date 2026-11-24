@@ -34,7 +34,7 @@ type Storage interface {
 	PutServerUpdate(UpdatePayload) (Server, error)
 	DeleteServer(acmeServerId int) error
 
-	ServerHasAccounts(accountId int) (inUse bool)
+	ServerInUse(accountId int) (inUse bool, err error)
 }
 
 // Acme service struct

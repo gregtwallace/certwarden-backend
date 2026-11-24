@@ -1,18 +1,17 @@
-package download
+package download_test
 
 import (
 	"certwarden-backend/pkg/domain/certificates"
+	"certwarden-backend/pkg/domain/download"
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/test_helpers"
 	"context"
 	"database/sql"
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
-	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/julienschmidt/httprouter"
@@ -433,7 +432,7 @@ func (fs *fakeStorage) PutCertLastAccess(certId int, unixLastAccessTime int64) (
 type fakeApp struct {
 	logger    *zap.SugaredLogger
 	outputter *output.Service
-	storage   Storage
+	storage   download.Storage
 }
 
 func (fa *fakeApp) GetLogger() *zap.SugaredLogger {
@@ -444,7 +443,7 @@ func (fa *fakeApp) GetOutputter() *output.Service {
 	return fa.outputter
 }
 
-func (fa *fakeApp) GetDownloadStorage() Storage {
+func (fa *fakeApp) GetDownloadStorage() download.Storage {
 	return fa.storage
 }
 
@@ -462,20 +461,6 @@ func makeFakeApp(t *testing.T) *fakeApp {
 		outputter: outputService,
 		storage:   &fakeStorage{},
 	}
-}
-
-// function name reflection
-func getFunctionName(f interface{}) string {
-	strs := strings.Split((runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()), ".")
-	return strs[len(strs)-1]
-}
-
-// function to friendly format string pointers
-func stringPointerToVal(sp *string) string {
-	if sp != nil {
-		return *sp
-	}
-	return "<nil>"
 }
 
 // function to run one test
@@ -505,13 +490,13 @@ func oneTest(t *testing.T, handler func(w http.ResponseWriter, r *http.Request) 
 	jsonErr := handler(w, r)
 
 	if !errors.Is(jsonErr, expectedJsonErr) {
-		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned error '%s' but expected '%s'", getFunctionName(handler),
-			certName, stringPointerToVal(apiKeyHeader), stringPointerToVal(apiKeyURL), jsonErr, expectedJsonErr)
+		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned error '%s' but expected '%s'", test_helpers.GetFunctionName(handler),
+			certName, test_helpers.StringPointerToVal(apiKeyHeader), test_helpers.StringPointerToVal(apiKeyURL), jsonErr, expectedJsonErr)
 	}
 
 	body := w.Body.String()
 	if body != expectedBody {
-		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned body '%s' but expected body '%s'", getFunctionName(handler),
-			certName, stringPointerToVal(apiKeyHeader), stringPointerToVal(apiKeyURL), body, expectedBody)
+		t.Errorf("%s: name '%s' with header api-key '%s' and url api-key '%s' returned body '%s' but expected body '%s'", test_helpers.GetFunctionName(handler),
+			certName, test_helpers.StringPointerToVal(apiKeyHeader), test_helpers.StringPointerToVal(apiKeyURL), body, expectedBody)
 	}
 }
