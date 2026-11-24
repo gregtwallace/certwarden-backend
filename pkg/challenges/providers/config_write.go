@@ -6,6 +6,7 @@ import (
 	"certwarden-backend/pkg/challenges/providers/dns01cloudflare"
 	"certwarden-backend/pkg/challenges/providers/dns01goacme"
 	"certwarden-backend/pkg/challenges/providers/dns01manual"
+	"certwarden-backend/pkg/challenges/providers/dnspersist01manual"
 	"certwarden-backend/pkg/challenges/providers/http01internal"
 	"errors"
 	"io/fs"
@@ -82,6 +83,17 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 		case *dns01goacme.Config:
 			mgrCfg.Dns01GoAcmeConfigs = append(mgrCfg.Dns01GoAcmeConfigs,
 				ConfigManagerDns01GoAcme{
+					InternalConfig: InternalConfig{
+						Domains:                  p.Domains,
+						PostProvisionWaitSeconds: p.PostProvisionWaitSeconds,
+					},
+					Config: realCfg,
+				},
+			)
+
+		case *dnspersist01manual.Config:
+			mgrCfg.DnsPersist01ManualConfigs = append(mgrCfg.DnsPersist01ManualConfigs,
+				ConfigManagerDnsPersist01Manual{
 					InternalConfig: InternalConfig{
 						Domains:                  p.Domains,
 						PostProvisionWaitSeconds: p.PostProvisionWaitSeconds,

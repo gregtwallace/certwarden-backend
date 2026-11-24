@@ -6,6 +6,7 @@ import (
 	"certwarden-backend/pkg/challenges/providers/dns01cloudflare"
 	"certwarden-backend/pkg/challenges/providers/dns01goacme"
 	"certwarden-backend/pkg/challenges/providers/dns01manual"
+	"certwarden-backend/pkg/challenges/providers/dnspersist01manual"
 	"certwarden-backend/pkg/challenges/providers/http01internal"
 	"certwarden-backend/pkg/output"
 	"encoding/json"
@@ -28,12 +29,13 @@ type modifyPayload struct {
 	PostProvisionWaitSeconds *int     `json:"post_resource_provision_wait"`
 
 	// plus only one of these
-	Http01InternalConfig  *http01internal.Config  `json:"http_01_internal,omitempty"`
-	Dns01ManualConfig     *dns01manual.Config     `json:"dns_01_manual,omitempty"`
-	Dns01AcmeDnsConfig    *dns01acmedns.Config    `json:"dns_01_acme_dns,omitempty"`
-	Dns01AcmeShConfig     *dns01acmesh.Config     `json:"dns_01_acme_sh,omitempty"`
-	Dns01CloudflareConfig *dns01cloudflare.Config `json:"dns_01_cloudflare,omitempty"`
-	Dns01GoAcmeConfig     *dns01goacme.Config     `json:"dns_01_go_acme,omitempty"`
+	Http01InternalConfig     *http01internal.Config     `json:"http_01_internal,omitempty"`
+	Dns01ManualConfig        *dns01manual.Config        `json:"dns_01_manual,omitempty"`
+	Dns01AcmeDnsConfig       *dns01acmedns.Config       `json:"dns_01_acme_dns,omitempty"`
+	Dns01AcmeShConfig        *dns01acmesh.Config        `json:"dns_01_acme_sh,omitempty"`
+	Dns01CloudflareConfig    *dns01cloudflare.Config    `json:"dns_01_cloudflare,omitempty"`
+	Dns01GoAcmeConfig        *dns01goacme.Config        `json:"dns_01_go_acme,omitempty"`
+	DnsPersist01ManualConfig *dnspersist01manual.Config `json:"dns_persist_01_manual,omitempty"`
 }
 
 // ModifyProvider modifies the provider specified by the ID in manager with the specified
@@ -119,6 +121,10 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 		configCount++
 		pCfg = payload.Dns01GoAcmeConfig
 	}
+	if payload.DnsPersist01ManualConfig != nil {
+		configCount++
+		pCfg = payload.DnsPersist01ManualConfig
+	}
 
 	// check config count, also error on wrong config type
 	if configCount > 1 {
@@ -176,6 +182,14 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Dns01GoAcmeConfig)
 
+		case *dnspersist01manual.Service:
+			if payload.DnsPersist01ManualConfig == nil {
+				err = errors.New("update provider wrong config received")
+				mgr.logger.Debug(err)
+				return output.JsonErrValidationFailed(err)
+			}
+			err = pServ.UpdateService(mgr.childApp, payload.DnsPersist01ManualConfig)
+
 		default:
 			// default fail
 			err = errors.New("provider service is unsupported, please report this as a bug to developer")
@@ -196,10 +210,6 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 
 	// update any internal config changes
 	mgr.unsafeUpdateProviderDomains(p, payload.Domains)
-
-	if payload.PostProvisionWaitSeconds != nil {
-		p.PostProvisionWaitSeconds = *payload.PostProvisionWaitSeconds
-	}
 
 	if payload.PostProvisionWaitSeconds != nil {
 		p.PostProvisionWaitSeconds = *payload.PostProvisionWaitSeconds

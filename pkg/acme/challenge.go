@@ -10,8 +10,9 @@ type ChallengeType string
 const (
 	UnknownChallengeType ChallengeType = ""
 
-	ChallengeTypeHttp01 ChallengeType = "http-01"
-	ChallengeTypeDns01  ChallengeType = "dns-01"
+	ChallengeTypeHttp01       ChallengeType = "http-01"
+	ChallengeTypeDns01        ChallengeType = "dns-01"
+	ChallengeTypeDnsPersist01 ChallengeType = "dns-persist-01"
 )
 
 // ACME challenge object
