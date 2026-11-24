@@ -2,6 +2,7 @@ package validation
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -22,6 +23,28 @@ func DomainValid(domain string, wildOk bool) bool {
 	}
 
 	return regexp.MustCompile(DomainValidRegex).MatchString(domain)
+}
+
+// DomainAndPortValid validates if the string is a valid fqdn followed by a colon followed
+// by a valid port number
+func DomainAndPortValid(domain string) bool {
+	clientAddrSplit := strings.Split(domain, ":")
+
+	// bad split
+	if len(clientAddrSplit) != 1 && len(clientAddrSplit) != 2 {
+		return false
+	}
+
+	// validate port (if exists)
+	if len(clientAddrSplit) == 2 {
+		portNumb, err := strconv.Atoi(clientAddrSplit[1])
+		if err != nil || portNumb < 1 || portNumb > 65535 {
+			return false
+		}
+	}
+
+	// validate domain
+	return regexp.MustCompile(DomainValidRegex).MatchString(clientAddrSplit[0])
 }
 
 // HttpsUrlValid returns true if the string contains only valid URL characters

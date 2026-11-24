@@ -66,7 +66,7 @@ for filename in os.listdir("dnsapi"):
 
   # read file in, preserve shebang, add source directive, and then the rest of the script
   dnsData = ""
-  with open("dnsapi/" + filename) as f:
+  with open("dnsapi/" + filename, encoding="utf8") as f:
     # read in first line
     shebang = f.readline()
 
@@ -77,5 +77,5 @@ for filename in os.listdir("dnsapi"):
     dnsData = shebang + source_script + script
 
   # write to CW custom folder
-  cwF = open(dnsApiCwPath + "/" + filename, "w")
+  cwF = open(dnsApiCwPath + "/" + filename, "w", encoding="utf8")
   cwF.write(dnsData)

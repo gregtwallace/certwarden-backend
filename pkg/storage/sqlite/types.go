@@ -25,17 +25,28 @@ func (jss jsonStringSlice) toSlice() []string {
 }
 
 // makeCommaJoinedString creates a JSS from a slice of strings
-func makeJsonStringSlice(stringSlice []string) jsonStringSlice {
-	if len(stringSlice) == 0 {
-		return "[]"
+func makeJsonStringSlice(stringSlice []string, nullOk bool) *jsonStringSlice {
+	if stringSlice == nil {
+		if !nullOk {
+			empty := jsonStringSlice("[]")
+			return &empty
+		}
+
+		return nil
 	}
 
-	jss, err := json.Marshal(stringSlice)
+	jssBytes, err := json.Marshal(stringSlice)
 	if err != nil {
-		return "[]"
+		if !nullOk {
+			empty := jsonStringSlice("[]")
+			return &empty
+		}
+
+		return nil
 	}
 
-	return jsonStringSlice(jss)
+	jss := jsonStringSlice(jssBytes)
+	return &jss
 }
 
 // jsonCertExtensionSlice is a json formatted string that is a slice of CertExtension
@@ -69,15 +80,26 @@ func (jces jsonCertExtensionSlice) toCertExtensionSlice() ([]certificates.CertEx
 }
 
 // makeJsonCertExtensionSlice creates a JCES from a slice of CertExtensionJSON
-func makeJsonCertExtensionSlice(extensionSlice []certificates.CertExtensionJSON) jsonCertExtensionSlice {
-	if len(extensionSlice) == 0 {
-		return "[]"
+func makeJsonCertExtensionSlice(extensionSlice []certificates.CertExtensionJSON, nullOk bool) *jsonCertExtensionSlice {
+	if extensionSlice == nil {
+		if !nullOk {
+			empty := jsonCertExtensionSlice("[]")
+			return &empty
+		}
+
+		return nil
 	}
 
-	jpes, err := json.Marshal(extensionSlice)
+	jpesBytes, err := json.Marshal(extensionSlice)
 	if err != nil {
-		return "[]"
+		if !nullOk {
+			empty := jsonCertExtensionSlice("[]")
+			return &empty
+		}
+
+		return nil
 	}
 
-	return jsonCertExtensionSlice(jpes)
+	jpes := jsonCertExtensionSlice(jpesBytes)
+	return &jpes
 }

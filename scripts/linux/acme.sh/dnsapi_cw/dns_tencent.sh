@@ -7,7 +7,7 @@ SRC_FILE="${ABS_CURR_PATH}/../acme_src.sh"
 # shellcheck disable=SC2034
 dns_tencent_info='Tencent.com
 Site: cloud.Tencent.com
-Docs: github.com/acmesh-official/acme.sh/wiki/dnsapi#dns_tencent
+Docs: github.com/acmesh-official/acme.sh/wiki/dnsapi2#dns_tencent
 Options:
  Tencent_SecretId Secret ID
  Tencent_SecretKey Secret Key
