@@ -6,8 +6,8 @@ import (
 	"certwarden-backend/pkg/domain/certificates"
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/pagination_sort"
-	"certwarden-backend/pkg/storage"
 	"crypto/x509"
+	"database/sql"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -264,7 +264,7 @@ func (service *Service) NewOrderPayload(cert certificates.Certificate) acme.NewO
 		orders, _, err := service.storage.GetOrdersByCert(cert.ID, pagination_sort.Query{})
 		if err != nil {
 			// no records isn't an error worth logging
-			if !errors.Is(err, storage.ErrNoRecord) {
+			if !errors.Is(err, sql.ErrNoRows) {
 				service.logger.Error(err)
 			}
 			return nil

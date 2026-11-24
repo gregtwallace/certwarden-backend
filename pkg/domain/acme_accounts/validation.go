@@ -3,8 +3,8 @@ package acme_accounts
 import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
-	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/validation"
+	"database/sql"
 	"errors"
 	"fmt"
 )
@@ -32,7 +32,7 @@ func (service *Service) getAccount(id int) (Account, *output.JsonError) {
 	account, err := service.storage.GetOneAccountById(id)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
 			return Account{}, output.JsonErrNotFound(fmt.Errorf("account id %d not found", id))
 		} else {
@@ -57,7 +57,7 @@ func (service *Service) nameValid(accountName string, accountId *int) bool {
 
 	// make sure the name isn't already in use in storage
 	account, err := service.storage.GetOneAccountByName(accountName)
-	if errors.Is(err, storage.ErrNoRecord) {
+	if errors.Is(err, sql.ErrNoRows) {
 		// no rows means name is not in use (valid)
 		return true
 	} else if err != nil {

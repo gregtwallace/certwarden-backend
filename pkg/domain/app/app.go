@@ -14,7 +14,7 @@ import (
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage/sqlite"
+	"certwarden-backend/pkg/storage"
 	"context"
 	"net/http"
 	"sync"
@@ -24,7 +24,7 @@ import (
 )
 
 // application version
-const appVersion = "0.29.2"
+const appVersion = "0.29.3"
 
 // config version
 // increment any time there is a breaking change between versions
@@ -64,7 +64,7 @@ type Application struct {
 	httpsCert         *safecert.SafeCert
 	httpClient        *http.Client
 	router            http.Handler
-	storage           *sqlite.Storage
+	storage           *storage.Storage
 	acmeServers       *acme_servers.Service
 	challenges        *challenges.Service
 	updater           *updater.Service

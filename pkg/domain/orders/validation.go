@@ -2,8 +2,8 @@ package orders
 
 import (
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/validation"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -38,7 +38,7 @@ func (service *Service) getOrder(certId int, orderId int) (Order, *output.JsonEr
 	order, err := service.storage.GetOneOrder(orderId)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
 			return Order{}, output.JsonErrNotFound(fmt.Errorf("order id %d not found", orderId))
 		} else {

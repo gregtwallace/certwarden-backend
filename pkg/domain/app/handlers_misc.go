@@ -2,7 +2,7 @@ package app
 
 import (
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage/sqlite"
+	"certwarden-backend/pkg/storage"
 	"net/http"
 )
 
@@ -28,7 +28,7 @@ func (app *Application) statusHandler(w http.ResponseWriter, r *http.Request) *o
 	response.ServerStatus.LogLevel = app.logger.Level().String()
 	response.ServerStatus.Version = appVersion
 	response.ServerStatus.ConfigVersion = *app.config.ConfigVersion
-	response.ServerStatus.DbUserVersion = sqlite.DbCurrentUserVersion
+	response.ServerStatus.DbUserVersion = storage.DbCurrentUserVersion
 
 	err := app.output.WriteJSON(w, response)
 	if err != nil {

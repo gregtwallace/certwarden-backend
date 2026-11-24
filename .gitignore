@@ -12,3 +12,6 @@
 
 # temporary debug files
 __debug*
+
+# windows build output
+*.exe

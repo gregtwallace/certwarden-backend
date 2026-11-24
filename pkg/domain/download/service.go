@@ -1,7 +1,6 @@
 package download
 
 import (
-	"certwarden-backend/pkg/domain/certificates"
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/output"
@@ -22,8 +21,6 @@ type App interface {
 // Storage interface for storage functions
 type Storage interface {
 	GetOneKeyByName(name string) (private_keys.Key, error)
-
-	GetOneCertByName(name string) (cert certificates.Certificate, err error)
 
 	GetCertNewestValidOrderByName(certName string) (order orders.Order, err error)
 

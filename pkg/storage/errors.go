@@ -6,6 +6,5 @@ import "errors"
 // sql error types
 
 var (
-	ErrInUse    = errors.New("record in use")
-	ErrNoRecord = errors.New("no such record found in storage")
+	ErrInUse = errors.New("record in use")
 )

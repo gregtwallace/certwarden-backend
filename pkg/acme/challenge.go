@@ -23,6 +23,9 @@ type Challenge struct {
 	Validated timeString    `json:"validated,omitempty"`
 	Token     string        `json:"token"`
 	Error     *Error        `json:"error,omitempty"`
+
+	// for dns-persist-01
+	IssuerDomainNames []string `json:"issuer-domain-names,omitempty"`
 }
 
 // Account response decoder

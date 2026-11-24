@@ -14,7 +14,7 @@ import (
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage/sqlite"
+	"certwarden-backend/pkg/storage"
 	"context"
 	"errors"
 	"os"
@@ -129,23 +129,8 @@ func create() (*Application, error) {
 	// start automatic backup service
 	app.backup.StartAutoBackupService(app, &app.config.Backup)
 
-	// if db file does not exist at new location, check old location and move file
-	// from old to new (if exists at old location)
-	if _, err := os.Stat(dataStorageAppDataPath + "/" + sqlite.DbFilename); errors.Is(err, os.ErrNotExist) {
-		// stat old location
-		if _, err := os.Stat(dataStorageRootPath + "/" + sqlite.DbFilename); err == nil {
-			// exists at old location, move it
-			err = os.Rename(dataStorageRootPath+"/"+sqlite.DbFilename, dataStorageAppDataPath+"/"+sqlite.DbFilename)
-			if err != nil {
-				app.logger.Errorf("failed to move app db file from old location to new location (%s)", err)
-				return app, err
-			}
-			app.logger.Infof("storage database moved from %s to %s", dataStorageRootPath+"/"+sqlite.DbFilename, dataStorageAppDataPath+"/"+sqlite.DbFilename)
-		}
-	}
-
 	// storage
-	app.storage, err = sqlite.OpenStorage(app)
+	app.storage, err = storage.OpenStorage(app)
 	if err != nil {
 		app.logger.Errorf("failed to configure app storage (%s)", err)
 		return app, err

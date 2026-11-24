@@ -2,7 +2,7 @@ package updater
 
 import (
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage/sqlite"
+	"certwarden-backend/pkg/storage"
 	"net/http"
 )
 
@@ -33,7 +33,7 @@ func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request
 	// does new db version match? if blank, false
 	dbMatch := false
 	if service.newVersion.info != nil {
-		dbMatch = sqlite.DbCurrentUserVersion == service.newVersion.info.DatabaseVersion
+		dbMatch = storage.DbCurrentUserVersion == service.newVersion.info.DatabaseVersion
 	}
 
 	// new version or not?
