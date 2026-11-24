@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var autoOrderRunInterval = 2 * time.Hour
+var autoOrderRunInterval = 1 * time.Hour
 
 // startAutoOrderService starts a go routine that manages certificate renewals. It both completes existing orders
 // that are not yet in a 'valid' or 'invalid' state and also places new orders for expiring certs. A job is run

@@ -6,70 +6,81 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudflare/cloudflare-go"
+	"github.com/cloudflare/cloudflare-go/v6"
+	"github.com/cloudflare/cloudflare-go/v6/dns"
+	"github.com/cloudflare/cloudflare-go/v6/zones"
 )
 
-// cloudflareResource returns the resource container for the specified dns record name.
-// If a matching resource isn't found, an error is returned.
-func (service *Service) cloudflareResource(dnsRecordName string) (*cloudflare.ResourceContainer, error) {
-	// fetch list of zones
-	ctx, cancel := context.WithTimeout(context.Background(), apiCallTimeout)
-	defer cancel()
+// getZoneID returns the cloudflare zone id for the domain or subdomain specified; if the API call
+// fails or the zone isn't found, an error is returned
+func (service *Service) getZoneID(dnsRecordName string) (string, error) {
+	domainParts := strings.Split(dnsRecordName, ".")
+	checkFor := ""
+	zoneID := ""
 
-	availableZones, err := service.cloudflareApi.ListZones(ctx)
-	if err != nil {
-		err = fmt.Errorf("dns01cloudflare api instance %s failed to list zones while searching for zone for %s (%s)", service.redactedApiIdentifier(), dnsRecordName, err)
-		service.logger.Error(err)
-		return nil, err
-	}
+	for i := range len(domainParts) {
+		if i != 0 {
+			checkFor = "." + checkFor
+		}
+		checkFor = domainParts[len(domainParts)-i-1] + checkFor
 
-	// find the zone for this resource
-	resourceZone := cloudflare.Zone{}
-	for i := range availableZones {
-		// check if zone name is the suffix of resource name (i.e. this is the correct zone)
-		if strings.HasSuffix(dnsRecordName, availableZones[i].Name) {
-			resourceZone = availableZones[i]
+		// never check the first piece
+		if i == 0 {
+			continue
+		}
+
+		ctx, cancel := context.WithTimeout(service.shutdownContext, apiCallTimeout)
+		defer cancel()
+		resp, err := service.cloudflareClient.Zones.List(ctx, zones.ZoneListParams{
+			Name: cloudflare.F("equal:" + checkFor),
+		})
+		if err != nil {
+			service.logger.Errorf("dns01cloudflare: list zones api call failed (%s)", err)
+			continue
+		}
+
+		if len(resp.Result) > 0 {
+			zoneID = resp.Result[0].ID
 			break
 		}
 	}
-	// defer err check to after perm (zone not found won't have needed permission)
 
-	// verify proper permission
-	properPermission := false
-	for i := range resourceZone.Permissions {
-		if resourceZone.Permissions[i] == "#dns_records:edit" {
-			properPermission = true
-			break
-		}
-	}
-	if !properPermission {
-		return nil, fmt.Errorf("dns01cloudflare could not find cloudflare zone with proper permission supporting resource name %s", dnsRecordName)
+	if zoneID == "" {
+		return "", fmt.Errorf("could not find cloudflare zone for %s", dnsRecordName)
 	}
 
-	return cloudflare.ZoneIdentifier(resourceZone.ID), nil
+	return zoneID, nil
 }
 
 // cloudflareCreateDNSParams returns the cloudflare create dns record params for a given
 // acme resource name and content
-func cloudflareCreateDNSParams(dnsRecordName, dnsRecordValue string) cloudflare.CreateDNSRecordParams {
-	return cloudflare.CreateDNSRecordParams{
-		Type:    "TXT",
-		Name:    dnsRecordName,
-		Content: dnsRecordValue,
+func cloudflareCreateDNSParams(dnsRecordName, dnsRecordValue string) dns.TXTRecordParam {
+	return dns.TXTRecordParam{
+		Name:    cloudflare.F(dnsRecordName),
+		Content: cloudflare.F("\"" + dnsRecordValue + "\""),
+		Type:    cloudflare.F(dns.TXTRecordTypeTXT),
 
 		// specific to create
-		TTL:       60,
-		Proxiable: false,
-		Comment:   fmt.Sprintf("created by Cert Warden on %s", time.Now().Format("Mon Jan 2 15:04:05 MST 2006")),
+		TTL:     cloudflare.F(dns.TTL(60)), // 60 seconds
+		Proxied: cloudflare.Bool(false),
+		Comment: cloudflare.F(fmt.Sprintf("created by Cert Warden on %s", time.Now().Format("Mon Jan 2 15:04:05 MST 2006"))),
 	}
 }
 
 // cloudflareListDNSParams returns the cloudflare list dns records params for a given
 // acme resource name and content
-func cloudflareListDNSParams(dnsRecordName, dnsRecordValue string) cloudflare.ListDNSRecordsParams {
-	return cloudflare.ListDNSRecordsParams{
-		Type:    "TXT",
-		Name:    dnsRecordName,
-		Content: dnsRecordValue,
+func cloudflareListDNSParams(dnsRecordName, dnsRecordValue, zoneID string) dns.RecordListParams {
+	return dns.RecordListParams{
+		ZoneID:  cloudflare.F(zoneID),
+		Name:    cloudflare.F(dns.RecordListParamsName{Exact: cloudflare.F(dnsRecordName)}),
+		Content: cloudflare.F(dns.RecordListParamsContent{Exact: cloudflare.F("\"" + dnsRecordValue + "\"")}),
+		Type:    cloudflare.F(dns.RecordListParamsTypeTXT),
+	}
+}
+
+// cloudflareDeleteDNSParams returns the cloudflare delete dns records params for a zoneID
+func cloudflareDeleteDNSParams(zoneID string) dns.RecordDeleteParams {
+	return dns.RecordDeleteParams{
+		ZoneID: cloudflare.F(zoneID),
 	}
 }

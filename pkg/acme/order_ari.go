@@ -1,6 +1,7 @@
 package acme
 
 import (
+	"certwarden-backend/pkg/validation"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -8,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -43,31 +43,15 @@ func unmarshalACMERenewalInfo(jsonResp json.RawMessage, headers http.Header) (ar
 	}
 
 	// get Retry-After value from header
-	retryAfter := headers.Get("Retry-After")
-	if retryAfter == "" {
+	retryAfterHeaderStr := headers.Get("Retry-After")
+	if retryAfterHeaderStr == "" {
 		return nil, errors.New("acme: ari response missing Retry-After header")
 	}
 
-	// check if header was in seconds and ensure > 0
-	parsedOk := false
-	secs, err := strconv.Atoi(retryAfter)
-	if err == nil && secs > 0 {
-		ari.RetryAfter = time.Now().Add(time.Duration(secs) * time.Second).Round(time.Second).UTC()
-		parsedOk = true
-	} else {
-		// wasn't in seconds, try to parse date and ensure > 0
-		t, err := http.ParseTime(retryAfter)
-		if err == nil {
-			until := time.Until(t)
-			if until > 0 {
-				ari.RetryAfter = t.Round(time.Second).UTC()
-				parsedOk = true
-			}
-		}
-	}
-
-	if !parsedOk {
-		return nil, fmt.Errorf("acme: ari response Retry-After header value '%s' could not be parsed", retryAfter)
+	// parse and validate Retry-After
+	ari.RetryAfter, err = validation.ParseRetryAfter(retryAfterHeaderStr)
+	if err != nil {
+		return nil, fmt.Errorf("acme: ari response Retry-After header value '%s' could not be parsed (%s)", retryAfterHeaderStr, err)
 	}
 
 	// s 4.3.2 - impose limits on Retry-After

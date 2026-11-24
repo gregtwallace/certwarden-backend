@@ -46,7 +46,9 @@ func (service *Service) getKey(keyName string, apiKey string, apiKeyViaUrl bool)
 	}
 
 	// verify apikey matches private key's apiKey (new or old)
-	if (apiKey != key.ApiKey) && (apiKey != key.ApiKeyNew) {
+	// also ensure blank can't be a match (i.e. apiKey missing)
+	if (key.ApiKey == "" || apiKey != key.ApiKey) &&
+		(key.ApiKeyNew == "" || apiKey != key.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
 		return private_keys.Key{}, output.JsonErrUnauthorized
 	}
