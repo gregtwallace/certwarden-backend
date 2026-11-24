@@ -529,8 +529,6 @@ func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, e
 			OR
 			status = "processing"
 		)
-		AND
-		expires > $2
 	GROUP BY
 		certificate_id
 	HAVING
@@ -539,7 +537,6 @@ func (store *Storage) GetNewestIncompleteCertOrderId(certId int) (orderId int, e
 
 	row := store.db.QueryRowContext(ctx, query,
 		certId,
-		timeNow(),
 	)
 
 	err = row.Scan(
