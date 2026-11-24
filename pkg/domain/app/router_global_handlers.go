@@ -11,7 +11,7 @@ func (app *Application) handlerNotFound() http.Handler {
 	// the base handler function (before middleware)
 	handlerFunc := func(w http.ResponseWriter, r *http.Request) *output.JsonError {
 		// return 404 not found
-		err := app.output.WriteJSON(w, output.JsonErrNotFound(errors.New(r.URL.Path)))
+		err := app.output.WriteJSON(w, output.ErrorJsonErrNotFound(errors.New(r.URL.Path)))
 		if err != nil {
 			app.logger.Errorf("failed to write json (%s)", err)
 			// never return Error since this is already an error

@@ -30,7 +30,7 @@ func (router *router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleAPIRouteInsecure creates a route on router intended for an INSECURE API route
-func (router *router) handleAPIRouteInsecure(method string, path string, handlerFunc handlerFunc) {
+func (router *router) handleAPIRouteInsecure(method, path string, handlerFunc handlerFunc) {
 	// CORS
 	handlerFunc = middlewareApplyCORS(handlerFunc, router.permittedCrossOrigins)
 
@@ -42,7 +42,7 @@ func (router *router) handleAPIRouteInsecure(method string, path string, handler
 }
 
 // handleAPIRouteSecure creates a route on router intended for an authenticated API route
-func (router *router) handleAPIRouteSecure(method string, path string, handlerFunc handlerFunc) {
+func (router *router) handleAPIRouteSecure(method, path string, handlerFunc handlerFunc) {
 	// JWT Auth
 	handlerFunc = middlewareApplyAuthJWT(handlerFunc, router.auth)
 
@@ -58,7 +58,7 @@ func (router *router) handleAPIRouteSecure(method string, path string, handlerFu
 
 // handleAPIRouteSecure creates a route on router intended for an authenticated API route WITH
 // enhanced logging to ensure any time these routes are accessed they are explicitly logged
-func (router *router) handleAPIRouteSecureSensitive(method string, path string, handlerFunc handlerFunc) {
+func (router *router) handleAPIRouteSecureSensitive(method, path string, handlerFunc handlerFunc) {
 	// JWT Auth
 	handlerFunc = middlewareApplyAuthJWT(handlerFunc, router.auth)
 
@@ -74,7 +74,7 @@ func (router *router) handleAPIRouteSecureSensitive(method string, path string, 
 
 // handleAPIRouteSecureDownload creates a route on router intended for downloading files via
 // a logged in (SECURE) user.
-func (router *router) handleAPIRouteSecureDownload(method string, path string, handlerFunc handlerFunc) {
+func (router *router) handleAPIRouteSecureDownload(method, path string, handlerFunc handlerFunc) {
 	// JWT Auth
 	handlerFunc = middlewareApplyAuthJWT(handlerFunc, router.auth)
 
@@ -90,7 +90,7 @@ func (router *router) handleAPIRouteSecureDownload(method string, path string, h
 
 // handleAPIRouteDownloadWithAPIKey creates a route on router intended for downloading files via
 // their API key(s).
-func (router *router) handleAPIRouteDownloadWithAPIKey(method string, path string, handlerFunc handlerFunc) {
+func (router *router) handleAPIRouteDownloadWithAPIKey(method, path string, handlerFunc handlerFunc) {
 	// Auth of API Keys is done by Downloads pkg, not here
 
 	// NO CORS
@@ -104,7 +104,7 @@ func (router *router) handleAPIRouteDownloadWithAPIKey(method string, path strin
 }
 
 // handleFrontend creates a route to serve content for the frontend
-func (router *router) handleFrontend(method string, path string, handlerFunc handlerFunc) {
+func (router *router) handleFrontend(method, path string, handlerFunc handlerFunc) {
 	// NO CORS
 	// Frontend App should not cross-origin
 

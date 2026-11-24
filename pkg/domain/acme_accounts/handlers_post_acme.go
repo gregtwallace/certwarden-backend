@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -30,35 +29,35 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// convert id param to an integer
 	idParam, err := strconv.Atoi(idParamStr)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation (only need to confirm account exists and has a key)
 	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam)
+	account, err := service.storage.GetOneAcmeAccountById(idParam)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// get crypto key
 	key, err := key_crypto.PemStringToKey(account.AccountKey.Pem, account.AccountKey.Algorithm)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// validate override email if it exists
 	if payload.Email != nil && *payload.Email != "" && !validation.EmailValid(*payload.Email) {
 		service.logger.Debug(ErrEmailBad)
-		return output.JsonErrValidationFailed(ErrEmailBad)
+		return output.ErrorJsonErrValidationFailed(ErrEmailBad)
 	}
 
 	// end validation
@@ -67,32 +66,27 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *
 	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
-	var acmeAccount AcmeAccount
-	acmeAccount.Account, err = acmeService.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey, payload.Email), key)
+	acmeAcct, err := acmeService.NewAccount(account.newAccountPayload(payload.EabKid, payload.EabHmacKey, payload.Email), key)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
-	// add additional details to the acmeAccount before saving
-	acmeAccount.ID = idParam
-	acmeAccount.UpdatedAt = int(time.Now().Unix())
-
-	// save ACME response to account
-	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccount)
+	// save ACME response to storage
+	account, err = service.storage.PutAcmeAccountUpdate(acmeAcctToUpdatePayload(idParam, acmeAcct))
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
-	updatedAcctDetailedResp, err := updatedAcct.detailedResponse(service)
+	updatedAcctDetailedResp, err := account.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -104,7 +98,7 @@ func (service *Service) NewAcmeAccount(w http.ResponseWriter, r *http.Request) *
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -120,28 +114,28 @@ func (service *Service) RefreshAcmeAccount(w http.ResponseWriter, r *http.Reques
 	idParam, err := strconv.Atoi(idParamStr)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation - confirm account exists and has a kid / URL
 	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam)
+	account, err := service.storage.GetOneAcmeAccountById(idParam)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// get acme AccountKey
 	acmeAccountKey, err := account.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// if kid/url is blank, can't GET account object
 	if acmeAccountKey.Kid == "" {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 	// end validation
 
@@ -149,32 +143,27 @@ func (service *Service) RefreshAcmeAccount(w http.ResponseWriter, r *http.Reques
 	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
-	var acmeAccount AcmeAccount
-	acmeAccount.Account, err = acmeService.GetAccount(acmeAccountKey)
+	acmeAcct, err := acmeService.GetAccount(acmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
-	// add additional details to the acmeAccount before saving
-	acmeAccount.ID = idParam
-	acmeAccount.UpdatedAt = int(time.Now().Unix())
-
-	// save ACME response to account
-	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccount)
+	// save ACME response to storage
+	account, err = service.storage.PutAcmeAccountUpdate(acmeAcctToUpdatePayload(idParam, acmeAcct))
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
-	updatedAcctDetailedResp, err := updatedAcct.detailedResponse(service)
+	updatedAcctDetailedResp, err := account.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -186,7 +175,7 @@ func (service *Service) RefreshAcmeAccount(w http.ResponseWriter, r *http.Reques
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -203,34 +192,34 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) *outp
 	idParam, err := strconv.Atoi(idParamStr)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
 	// fetch the relevant account
-	account, err := service.storage.GetOneAccountById(idParam)
+	account, err := service.storage.GetOneAcmeAccountById(idParam)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// get acme AccountKey
 	acmeAccountKey, err := account.AcmeAccountKey()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// if kid is blank, can't deactivate
 	if acmeAccountKey.Kid == "" {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// status must be 'valid' to deactivate
 	if account.Status != "valid" {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 	// end validation
 
@@ -238,32 +227,27 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) *outp
 	acmeService, err := service.acmeServerService.AcmeService(account.AcmeServer.ID)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
-	var acmeAccount AcmeAccount
-	acmeAccount.Account, err = acmeService.DeactivateAccount(acmeAccountKey)
+	acmeAcct, err := acmeService.DeactivateAccount(acmeAccountKey)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
-	// add additional details to the acmeAccount before saving
-	acmeAccount.ID = idParam
-	acmeAccount.UpdatedAt = int(time.Now().Unix())
-
-	// save ACME response to account
-	updatedAcct, err := service.storage.PutAcmeAccountResponse(acmeAccount)
+	// save ACME response to storage
+	account, err = service.storage.PutAcmeAccountUpdate(acmeAcctToUpdatePayload(idParam, acmeAcct))
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
-	updatedAcctDetailedResp, err := updatedAcct.detailedResponse(service)
+	updatedAcctDetailedResp, err := account.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -275,7 +259,7 @@ func (service *Service) Deactivate(w http.ResponseWriter, r *http.Request) *outp
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

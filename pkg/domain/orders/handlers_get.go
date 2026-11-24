@@ -3,7 +3,7 @@ package orders
 import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
-	"certwarden-backend/pkg/storage"
+	"database/sql"
 	"errors"
 	"net/http"
 	"strconv"
@@ -15,6 +15,7 @@ import (
 // to answer a query for a portion of a cert's orders
 type allOrdersResponse struct {
 	output.JsonResponse
+
 	TotalOrders int                    `json:"total_records"`
 	Orders      []orderSummaryResponse `json:"orders"`
 }
@@ -29,7 +30,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 	certId, err := strconv.Atoi(certIdParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validate certificate ID
@@ -42,12 +43,12 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 	orders, totalRows, err := service.storage.GetOrdersByCert(certId, query)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return output.JsonErrNotFound(err)
+			return output.ErrorJsonErrNotFound(err)
 		} else {
 			service.logger.Error(err)
-			return output.JsonErrStorageGeneric(err)
+			return output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 
@@ -67,7 +68,7 @@ func (service *Service) GetCertOrders(w http.ResponseWriter, r *http.Request) *o
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -83,12 +84,12 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 	orders, totalRows, err := service.storage.GetAllValidCurrentOrders(query)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return output.JsonErrNotFound(err)
+			return output.ErrorJsonErrNotFound(err)
 		} else {
 			service.logger.Error(err)
-			return output.JsonErrStorageGeneric(err)
+			return output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 
@@ -108,7 +109,7 @@ func (service *Service) GetAllValidCurrentOrders(w http.ResponseWriter, r *http.
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

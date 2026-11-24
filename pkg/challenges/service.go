@@ -79,7 +79,7 @@ func NewService(app application, cfg *Config) (service *Service, err error) {
 	service.shutdownWaitgroup = app.GetShutdownWaitGroup()
 
 	// configure challenge providers
-	service.DNSIdentifierProviders, err = providers.MakeManager(app, cfg.ProviderConfigs)
+	service.DNSIdentifierProviders, err = providers.MakeManager(app, &cfg.ProviderConfigs)
 	if err != nil {
 		service.logger.Errorf("challenges: failed to configure challenge provider(s) (%s)", err)
 		return nil, err

@@ -10,77 +10,60 @@ import (
 	"github.com/cenkalti/backoff/v4"
 )
 
-var (
-	errChallengeRetriesExhausted = errors.New("challenges: solving failed: challenge failed to move to final state (timeout)")
-	errChallengeTypeNotFound     = errors.New("challenges: solving failed: provider's challenge type not found in challenges array (possibly trying to use a wildcard with http-01)")
-)
+var errChallengeRetriesExhausted = errors.New("challenges: solving failed: challenge failed to move to final state (timeout)")
 
-// Solve accepts an ACME identifier and a slice of challenges and then solves the challenge using a provider
-// for the specific domain. If no provider exists or solving otherwise fails, an error is returned.
-func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Challenge, key acme.AccountKey, acmeService *acme.Service) (err error) {
+// Solve resolves an authorization to a finalized state by selecting a challenge and using a provider
+// to solve that challenge. If no provider exists or solving otherwise fails, an error is returned.
+func (service *Service) Solve(authURL string, auth *acme.Authorization, key acme.AccountKey, acmeService *acme.Service) (err error) {
+	// decompose auth into pieces (to avoid more extensive refactor for now)
+	// TODO: Refactor
+	identifier := auth.Identifier
+	challenges := auth.Challenges
+
 	// confirm Type is correct (only dns is supported)
 	if identifier.Type != acme.IdentifierTypeDns {
 		return fmt.Errorf("challenges: acme identifier is type (%s); only 'dns' is supported", string(identifier.Type))
 	}
 
-	// identifier value -> fqdn
-	domain := service.dnsIDValuetoDomain(identifier.Value)
-	if domain != identifier.Value {
-		service.logger.Debugf("challenges: alias exists for acme identifier `%s` and will provision to `%s`", identifier.Value, domain)
-	}
+	// identifier value -> provision fqdn
+	provisionDomain := service.dnsIDValuetoDomain(identifier.Value)
 
-	// get provider for fqdn
-	provider, err := service.DNSIdentifierProviders.ProviderFor(domain)
+	// get provider for provision fqdn
+	provider, err := service.DNSIdentifierProviders.ProviderFor(provisionDomain)
 	if err != nil {
 		return err
 	}
 
-	// range to the correct challenge to solve based on ACME Challenge Type (from provider)
 	challengeType := provider.AcmeChallengeType()
-	var challenge acme.Challenge
-	found := false
-
-	for i := range challenges {
-		if challenges[i].Type == challengeType {
-			found = true
-			challenge = challenges[i]
-			break
-		}
-	}
-	if !found {
-		return errChallengeTypeNotFound
+	selectedChall, err := acme.SelectChallenge(challengeType, challenges)
+	if err != nil {
+		return fmt.Errorf("challenges: error selecting challenge (%w)", err)
 	}
 
 	// vars for provision/deprovision
-	token := challenge.Token
+	token := selectedChall.Token
 	keyAuth, err := key.KeyAuthorization(token)
 	if err != nil {
-		return fmt.Errorf("challenges: failed to make key auth (%s)", err)
+		return fmt.Errorf("challenges: failed to make key auth (%w)", err)
 	}
 
-	// if using an alias, ensure the proper CNAME record exists
-	if domain != identifier.Value {
-		// exact cname domain depends on challenge type
-		cnamePointsFrom := ""
-		cnamePointsTo := ""
-		if challengeType == acme.ChallengeTypeDns01 {
-			cnamePointsFrom = "_acme-challenge." + identifier.Value
-			cnamePointsTo = "_acme-challenge." + domain
-		} else if challengeType == acme.ChallengeTypeHttp01 {
-			cnamePointsFrom = identifier.Value
-			cnamePointsTo = domain
-		} else {
-			return fmt.Errorf("challenges: challenge type %s doesnt support using a domain alias (domain: %s)", challengeType, domain)
-		}
-
-		service.logger.Debugf(("challenges: manual cname record pointing from %s to %s is required"), cnamePointsFrom, cnamePointsTo)
+	// if using an alias, emit debug log message about required CNAME record (or error if challenge
+	// type doesn't support a CNAME record)
+	cnamePointsFrom, cnamePointsTo, err := acme.DNSChallengeCNAMEInfo(identifier.Value, provisionDomain, challengeType)
+	if err != nil {
+		return fmt.Errorf("challenges: cname error for identifier '%s', provision domain '%s', and challenge type '%s' (%w)",
+			identifier.Value, provisionDomain, challengeType, err)
+	}
+	if cnamePointsFrom != "" {
+		service.logger.Debugf("challenges: alias exists for acme identifier '%s' and manually created cname record pointing from '%s' to '%s' is required",
+			identifier.Value, cnamePointsFrom, cnamePointsTo)
 	}
 
 	// provision the needed resource for validation and defer deprovisioning
 	// add to wg to ensure deprovision completes during shutdown
 	service.shutdownWaitgroup.Add(1)
 	// Provision with the appropriate provider
-	err = service.provision(domain, token, keyAuth, provider)
+	err = service.provision(provisionDomain, token, keyAuth, provider)
 
 	// do error check after Deprovision to ensure any records that were created
 	// get cleaned up, even if Provision errored.
@@ -91,7 +74,7 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 			// wg done do shutdown can proceed after deprovision
 			defer service.shutdownWaitgroup.Done()
 
-			err = service.deprovision(domain, token, keyAuth, provider)
+			err = service.deprovision(provisionDomain, token, keyAuth, provider)
 			if err != nil {
 				service.logger.Errorf("challenges: deprovision failed (%s)", err)
 			}
@@ -111,18 +94,18 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 		case <-time.After(wait):
 			// continue
 		case <-service.shutdownContext.Done():
-			return errShutdown(domain)
+			return errShutdown(provisionDomain)
 		}
 	} else {
 		service.logger.Debugf("challenges: no wait configured for propagation of resource for %s", identifier.Value)
 	}
 
 	// Below this point is to inform ACME the challenge is ready to be validated
-	// by the server and to subsequently monitor the challenge to be moved to the
+	// by the server and to subsequently monitor the authorization to be moved to the
 	// valid or invalid state.
 
 	// inform ACME that the challenge is ready
-	challenge, err = acmeService.InstructServerToValidateChallenge(challenge.Url, key)
+	err = acmeService.DoChallengeValidation(selectedChall.Url, key)
 	if err != nil {
 		return err
 	}
@@ -130,26 +113,28 @@ func (service *Service) Solve(identifier acme.Identifier, challenges []acme.Chal
 	// sleep a little before first check
 	time.Sleep(7 * time.Second)
 
-	// monitor challenge status using exponential backoff
+	// monitor auth status using exponential backoff
+	// RFC 8555 s. 7.5.1 states to poll the authorization after telling the ACME server
+	// the client is ready for challenge validation
 	challCheckFunc := func() error {
 		// get challenge
-		challenge, err = acmeService.GetChallenge(challenge.Url, key)
+		authoriz, err := acmeService.GetAuth(authURL, key)
 		if err != nil {
 			return err
 		}
 
 		// log error if invalid
-		if challenge.Status == "invalid" {
-			service.logger.Infof("challenges: challenge %s status invalid; acme error: %s", challenge.Url, challenge.Error)
+		if authoriz.Status == "invalid" {
+			service.logger.Infof("challenges: authorization %q status invalid", authURL)
 		}
 
 		// done if Status has reached a final status
-		if challenge.Status == "valid" || challenge.Status == "invalid" {
+		if authoriz.Status == "valid" || authoriz.Status == "invalid" {
 			return nil
 		}
 
 		// not a final status
-		return fmt.Errorf("challenge %s status (%s) not a final status", challenge.Status, challenge.Url)
+		return fmt.Errorf("challenge %q status (%q) not a final status", authoriz.Status, authURL)
 	}
 
 	// notify: info log challenge checks

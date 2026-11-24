@@ -53,6 +53,7 @@ var validFieldNames = []string{
 	"keyname",
 	"name",
 	"status",
+	"servername",
 	"subject",
 	"valid_to",
 	"last_access",

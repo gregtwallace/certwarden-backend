@@ -2,8 +2,10 @@ package certificates
 
 import (
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/validation"
+	"crypto/aes"
+	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 )
@@ -28,26 +30,29 @@ var (
 	// domain
 	ErrDomainBad        = errors.New("domain or subject name not valid")
 	ErrClientAddressBad = errors.New("client address is not valid")
+
+	// aes key
+	ErrPostProcessingClientKeyB64Bad = errors.New("post processing aes key not valid")
 )
 
 // GetCertificate returns the Certificate for the specified id.
-func (service *Service) GetCertificate(id int) (Certificate, *output.JsonError) {
+func (service *Service) GetCertificate(id int) (*Certificate, *output.JsonError) {
 	// if id is not in valid range, it is definitely not valid
-	if !validation.IsIdExistingValidRange(id) {
+	if !validation.IsValidIDValue(id) {
 		service.logger.Debug(ErrIdBad)
-		return Certificate{}, output.JsonErrValidationFailed(ErrIdBad)
+		return nil, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get from storage
 	account, err := service.storage.GetOneCertById(id)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return Certificate{}, output.JsonErrNotFound(fmt.Errorf("certificate id %d not found", id))
+			return nil, output.ErrorJsonErrNotFound(fmt.Errorf("certificate id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Certificate{}, output.JsonErrStorageGeneric(err)
+			return nil, output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 
@@ -58,13 +63,13 @@ func (service *Service) GetCertificate(id int) (Certificate, *output.JsonError) 
 // and is not in use in storage OR is in use by the specified certId)
 func (service *Service) nameValid(certName string, certId *int) bool {
 	// basic check
-	if !validation.NameValid(certName) {
+	if !validation.IsValidName(certName) {
 		return false
 	}
 
 	// make sure the name isn't already in use in storage
 	cert, err := service.storage.GetOneCertByName(certName)
-	if errors.Is(err, storage.ErrNoRecord) {
+	if errors.Is(err, sql.ErrNoRows) {
 		// no rows means name is not in use
 		return true
 	} else if err != nil {
@@ -98,7 +103,7 @@ func (service *Service) privateKeyIdValid(keyId int, certId *int) bool {
 		}
 
 		// if certificate's key id matches keyId, valid
-		if cert.CertificateKey.ID == keyId {
+		if cert.Key.ID == keyId {
 			return true
 		}
 
@@ -123,4 +128,17 @@ func subjectAltsValid(alts []string) bool {
 	}
 
 	return true
+}
+
+// clientKeyB64Valid ensures the string is a base64 RawURL encoded AES key
+func clientKeyB64Valid(b64Key string) bool {
+	// decode AES key
+	aesKey, err := base64.RawURLEncoding.DecodeString(b64Key)
+	if err != nil {
+		return false
+	}
+
+	// ensure key is a proper size and can create a cipher
+	_, err = aes.NewCipher(aesKey)
+	return err == nil
 }

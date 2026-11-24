@@ -17,6 +17,7 @@ type orderJobResponse struct {
 // of the a work service
 type orderWorkStatusResponse struct {
 	output.JsonResponse
+
 	JobsWorking map[int]*orderJobResponse `json:"jobs_working"` // [workerid]
 	JobsWaiting []orderJobResponse        `json:"jobs_waiting"`
 }
@@ -38,12 +39,16 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 		orderIDs = append(orderIDs, mgrWaitingJob.orderID)
 	}
 
-	// lookup all orders in db
-	orders, err := service.storage.GetOrders(orderIDs)
-	if err != nil {
-		err = fmt.Errorf("orders: failed to convert fulfilling jobs to order objects (%s)", err)
-		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+	// lookup all orders in db, if any jobs exist
+	orders := []*Order{}
+	var err error
+	if len(orderIDs) > 0 {
+		orders, err = service.storage.GetOrders(orderIDs)
+		if err != nil {
+			err = fmt.Errorf("orders: failed to convert fulfilling jobs to order objects (%w)", err)
+			service.logger.Error(err)
+			return output.ErrorJsonErrInternal(err)
+		}
 	}
 
 	// build working part of response
@@ -53,12 +58,12 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 		if mgrWorkingJob == nil {
 			workingResp[workerID] = nil
 		} else {
-			for _, order := range orders {
-				if mgrWorkingJob.orderID == order.ID {
+			for i := range orders {
+				if mgrWorkingJob.orderID == orders[i].ID {
 					workingResp[workerID] = &orderJobResponse{
 						AddedToQueue: int(mgrWorkingJob.addedToQueue.Unix()),
 						HighPriority: mgrWorkingJob.IsHighPriority(),
-						Order:        order.summaryResponse(service),
+						Order:        orders[i].summaryResponse(service),
 					}
 					break
 				}
@@ -69,12 +74,12 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 	// build waiting part of response
 	waitingResp := []orderJobResponse{}
 	for _, mgrWaitingJob := range mgrJobs.WaitingJobs {
-		for _, order := range orders {
-			if mgrWaitingJob.orderID == order.ID {
+		for i := range orders {
+			if mgrWaitingJob.orderID == orders[i].ID {
 				waitingResp = append(waitingResp, orderJobResponse{
 					AddedToQueue: int(mgrWaitingJob.addedToQueue.Unix()),
 					HighPriority: mgrWaitingJob.IsHighPriority(),
-					Order:        order.summaryResponse(service),
+					Order:        orders[i].summaryResponse(service),
 				})
 				break
 			}
@@ -95,7 +100,7 @@ func (service *Service) GetFulfillWorkStatus(w http.ResponseWriter, r *http.Requ
 	err = service.output.WriteJSON(w, jobsResp)
 	if err != nil {
 		service.logger.Errorf("orders: failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 	return nil
 }

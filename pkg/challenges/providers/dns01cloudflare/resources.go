@@ -4,70 +4,109 @@ import (
 	"certwarden-backend/pkg/acme"
 	"context"
 	"errors"
+	"fmt"
 
-	"github.com/cloudflare/cloudflare-go"
+	"github.com/cloudflare/cloudflare-go/v6"
+	"github.com/cloudflare/cloudflare-go/v6/dns"
 )
 
 // Provision adds the corresponding DNS record on Cloudflare.
-func (service *Service) Provision(domain string, _ string, keyAuth acme.KeyAuth) error {
+func (service *Service) Provision(domain, _ string, keyAuth acme.KeyAuth) error {
 	// get dns record
 	dnsRecordName, dnsRecordValue := acme.ValidationResourceDns01(domain, keyAuth)
 
-	// cloudflare resource
-	cfResource, err := service.cloudflareResource(dnsRecordName)
+	// get zone
+	zoneID, err := service.getZoneID(dnsRecordName)
 	if err != nil {
-		return err
+		return fmt.Errorf("dns01cloudflare: failed to get zone id for %s (%w)", dnsRecordName, err)
 	}
 
 	// create DNS record on cloudflare for the ACME resource
-	ctx, cancel := context.WithTimeout(context.Background(), apiCallTimeout)
+	ctx, cancel := context.WithTimeout(service.shutdownContext, apiCallTimeout)
 	defer cancel()
 
-	_, err = service.cloudflareApi.CreateDNSRecord(ctx, cfResource, cloudflareCreateDNSParams(dnsRecordName, dnsRecordValue))
-	cfReqErr := new(cloudflare.RequestError)
-	// return err if not a CF RequestError, or if it is CF Req Error, but does NOT contain code 81057 (which is "Record already exists")
-	if err != nil && (!errors.As(err, &cfReqErr) || !cfReqErr.InternalErrorCodeIs(81057)) {
-		return err
+	_, err = service.cloudflareClient.DNS.Records.New(ctx, dns.RecordNewParams{
+		ZoneID: cloudflare.F(zoneID),
+		Body:   cloudflareCreateDNSParams(dnsRecordName, dnsRecordValue),
+	})
+	if err != nil {
+		// try to check cloudflare error
+		cfErr, ok := errors.AsType[*cloudflare.Error](err)
+		if !ok {
+			return fmt.Errorf("dns01cloudflare: failed to create dns record %s: %s (%w)", dnsRecordName, dnsRecordValue, err)
+		}
+
+		// record exists error (81057 or 81058) is fine
+		alreadyExistsError := false
+		for i := range cfErr.Errors {
+			if cfErr.Errors[i].Code == 81057 || cfErr.Errors[i].Code == 81058 {
+				alreadyExistsError = true
+				break
+			}
+		}
+		if !alreadyExistsError {
+			return fmt.Errorf("dns01cloudflare: failed to create dns record %s: %s (%w)", dnsRecordName, dnsRecordValue, err)
+		}
 	}
 
 	return nil
 }
 
 // Deprovision deletes the corresponding DNS record on Cloudflare.
-func (service *Service) Deprovision(domain string, _ string, keyAuth acme.KeyAuth) error {
+func (service *Service) Deprovision(domain, _ string, keyAuth acme.KeyAuth) error {
 	// get dns record
 	dnsRecordName, dnsRecordValue := acme.ValidationResourceDns01(domain, keyAuth)
 
-	// cloudflare resource
-	cfResource, err := service.cloudflareResource(dnsRecordName)
+	// get zone
+	zoneID, err := service.getZoneID(dnsRecordName)
 	if err != nil {
-		return err
+		return fmt.Errorf("dns01cloudflare: failed to get zone id for %s (%w)", dnsRecordName, err)
 	}
 
 	// fetch matching record(s) (should only be one)
-	ctx, cancel := context.WithTimeout(context.Background(), apiCallTimeout)
+	ctx, cancel := context.WithTimeout(service.shutdownContext, apiCallTimeout)
 	defer cancel()
 
-	records, _, err := service.cloudflareApi.ListDNSRecords(ctx, cfResource, cloudflareListDNSParams(dnsRecordName, dnsRecordValue))
+	resultPage, err := service.cloudflareClient.DNS.Records.List(ctx, cloudflareListDNSParams(dnsRecordName, dnsRecordValue, zoneID))
 	if err != nil {
-		return err
+		return fmt.Errorf("dns01cloudflare: failed to delete %s: %s (couldn't list dns records) (%w)", dnsRecordName, dnsRecordValue, err)
+	}
+
+	// don't bother checking addl pages, if there are over 100 records somehow, that's beyond the help of this application
+	dnsRecordIDs := []string{}
+	for i := range resultPage.Result {
+		dnsRecordIDs = append(dnsRecordIDs, resultPage.Result[i].ID)
+	}
+
+	delOneRecord := func(recordID string) error {
+		ctx, cancel := context.WithTimeout(service.shutdownContext, apiCallTimeout)
+		defer cancel()
+
+		_, err = service.cloudflareClient.DNS.Records.Delete(
+			ctx,
+			recordID,
+			cloudflareDeleteDNSParams(zoneID),
+		)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 
 	// delete all records with the name and content (should only ever be one)
-	ctx, cancel = context.WithTimeout(context.Background(), apiCallTimeout)
-	defer cancel()
-
-	var deleteErr error
-	for i := range records {
-		err = service.cloudflareApi.DeleteDNSRecord(ctx, cfResource, records[i].ID)
+	errs := []error{}
+	for _, recordID := range dnsRecordIDs {
+		err := delOneRecord(recordID)
 		if err != nil {
-			deleteErr = err
+			err := fmt.Errorf("dns01cloudflare: failed to delete %s: %s (record ID: %s) (%w)", dnsRecordName, dnsRecordValue, recordID, err)
+			errs = append(errs, err)
 			service.logger.Error(err)
 		}
 	}
 
-	if deleteErr != nil {
-		return err
+	if len(errs) > 0 {
+		return fmt.Errorf("dns01cloudflare: failed to delete dns record(s) during cleanup step of %s: %s", dnsRecordName, dnsRecordValue)
 	}
 
 	return nil

@@ -90,14 +90,15 @@ func (app *Application) startPprof() error {
 	// create listener for web server
 	ln, err := net.Listen("tcp", srv.Addr)
 	if err != nil {
-		return fmt.Errorf("pprof server cannot bind to %s (%s)", srv.Addr, err)
+		return fmt.Errorf("pprof server cannot bind to %s (%w)", srv.Addr, err)
 	}
 
 	// start server
 	app.shutdownWaitgroup.Add(1)
 	go func() {
-		defer func() { _ = ln.Close }()
 		defer app.shutdownWaitgroup.Done()
+		//nolint:errcheck // shutting down, who cares
+		defer ln.Close()
 
 		// start server as https or http
 		var err error

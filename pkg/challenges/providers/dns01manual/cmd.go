@@ -16,22 +16,22 @@ func (service *Service) makeDeleteCommand(dnsRecordName, dnsRecordValue string) 
 }
 
 // makeCommand makes a command to create or delete a dns record
-func (service *Service) makeCommand(dnsRecordName, dnsRecordValue string, delete bool) *exec.Cmd {
+func (service *Service) makeCommand(dnsRecordName, dnsRecordValue string, doDelete bool) *exec.Cmd {
 	// create or delete?
 	scriptPath := service.createScriptPath
-	if delete {
+	if doDelete {
 		scriptPath = service.deleteScriptPath
 	}
 
 	// make args for command
-	// 0 - script name (e.g. /path/to/script.sh)
-	args := []string{scriptPath}
-
-	// 1 - RecordName (e.g. _acme-challenge.www.example.com)
-	args = append(args, dnsRecordName)
-
-	// 2 - RecordValue (e.g. XKrxpRBosdIKFzxW_CT3KLZNf6q0HG9i01zxXp5CPBs)
-	args = append(args, dnsRecordValue)
+	args := []string{
+		// 0 - script name (e.g. /path/to/script.sh)
+		scriptPath,
+		// 1 - RecordName (e.g. _acme-challenge.www.example.com)
+		dnsRecordName,
+		// 2 - RecordValue (e.g. XKrxpRBosdIKFzxW_CT3KLZNf6q0HG9i01zxXp5CPBs)
+		dnsRecordValue,
+	}
 
 	// make command
 	cmd := exec.Command(service.shellPath, args...)

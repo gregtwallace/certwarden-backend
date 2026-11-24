@@ -11,23 +11,30 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-// NameDescPayload is the struct for editing an existing account name and desc
-type NameDescPayload struct {
-	ID          int     `json:"-"`
-	Name        *string `json:"name"`
-	Description *string `json:"description"`
-	UpdatedAt   int     `json:"-"`
+// UpdatePayload is the struct for editing an existing account; most fields
+// are inaccessible via json marshal to prevent an api user from manually
+// editing them
+// DO NOT change `-` fields json value!
+type UpdatePayload struct {
+	ID          int        `json:"-"`
+	Name        *string    `json:"name"`
+	Description *string    `json:"description"`
+	Status      *string    `json:"-"`
+	Email       *string    `json:"-"`
+	KID         *string    `json:"-"`
+	CreatedAt   *time.Time `json:"-"`
+	UpdatedAt   time.Time  `json:"-"`
 }
 
-// PutNameDescAccount is a handler that sets the name and description of an account
+// UpdatePayload is a handler that sets the name and description of an account
 // within storage
 func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// payload decoding
-	var payload NameDescPayload
+	var payload UpdatePayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// get id from param
@@ -35,7 +42,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -48,26 +55,26 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	// name (optional)
 	if payload.Name != nil && !service.nameValid(*payload.Name, &payload.ID) {
 		service.logger.Debug(ErrNameBad)
-		return output.JsonErrValidationFailed(ErrNameBad)
+		return output.ErrorJsonErrValidationFailed(ErrNameBad)
 	}
 	// end validation
 
 	// add additional details to the payload before saving
-	payload.UpdatedAt = int(time.Now().Unix())
+	payload.UpdatedAt = time.Now()
 
 	// save account name and desc to storage, which also returns the account id with new
 	// name and description
-	updatedAcct, err := service.storage.PutNameDescAccount(payload)
+	updatedAcct, err := service.storage.PutAcmeAccountUpdate(&payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	detailedResp, err := updatedAcct.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate account summary response (%s)", err)
+		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -79,7 +86,7 @@ func (service *Service) PutNameDescAccount(w http.ResponseWriter, r *http.Reques
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

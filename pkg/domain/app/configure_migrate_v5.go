@@ -6,7 +6,9 @@ import (
 )
 
 // CHANGES v4 to v5:
-// -
+// - Remove `precheck_wait` and `postcheck_wait` to provider configs
+// - Replace with `post_resource_provision_wait` that is calculated from the pre/post values, with
+//   sane default backstop values
 
 // configMigrateV4toV5 modifies the unmarhsalled yaml of the config file
 // to migrate the config from version 4 to version 5. an error is returned

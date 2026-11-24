@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os/exec"
 	"sync"
+	"time"
 
 	"github.com/scaleway/scaleway-sdk-go/logger"
 	"go.uber.org/zap"
@@ -41,26 +42,26 @@ type App interface {
 // Storage interface for storage functions
 type Storage interface {
 	// orders
-	GetOneOrder(orderId int) (order Order, err error)
-	GetOrders(orderIDs []int) (orders []Order, err error)
-	GetOrdersByCert(certId int, q pagination_sort.Query) (orders []Order, totalRows int, err error)
-	GetCertNewestValidOrderById(id int) (order Order, err error)
+	GetOneOrder(orderId int) (*Order, error)
+	GetOrders(orderIDs []int) ([]*Order, error)
+	GetOrdersByCert(certId int, q pagination_sort.Query) (_ []*Order, totalRows int, _ error)
+	GetCertNewestValidOrderById(id int) (*Order, error)
 
-	PostNewOrder(payload NewOrderAcmePayload) (newId int, err error)
+	PostNewOrder(payload *NewOrderAcmePayload) (newId int, err error)
 
-	PutOrderAcme(payload UpdateAcmeOrderPayload) (err error)
-	PutOrderInvalid(orderId int) (err error)
-	PutRenewalInfo(UpdateRenewalInfoPayload) (err error)
-	UpdateFinalizedKey(orderId int, keyId int) (err error)
-	UpdateOrderCert(orderId int, CertPayload *CertPayload) (err error)
-	RevokeOrder(orderId int) (err error)
+	PutOrderACME(payload *UpdateAcmeOrderPayload) error
+	PutOrderStatusInvalid(orderId int, updatedAt time.Time) error
+	PutOrderRenewalInfo(payload *UpdateRenewalInfoPayload) error
+	PutOrderFinalizedKey(orderId, keyId int, updatedAt time.Time) error
+	PutOrderPemData(orderId int, CertPayload *CertPayload) error
+	PutOrderRevoke(orderId int, updatedAt time.Time) error
 
-	GetAllValidCurrentOrders(q pagination_sort.Query) (orders []Order, totalRows int, err error)
+	GetAllValidCurrentOrders(q pagination_sort.Query) (_ []*Order, totalRows int, _ error)
 	GetAllIncompleteOrderIds() (orderIds []int, err error)
 	GetNewestIncompleteCertOrderId(certId int) (orderId int, err error)
 
 	// certs
-	UpdateCertUpdatedTime(certId int) (err error)
+	PutCertUpdatedAt(certId int, updatedAt time.Time) (err error)
 }
 
 // service struct

@@ -5,6 +5,7 @@ import (
 	"certwarden-backend/pkg/domain/acme_servers"
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/domain/private_keys/key_crypto"
+	"time"
 )
 
 // Account is a single ACME account
@@ -17,8 +18,8 @@ type Account struct {
 	Status      string
 	Email       string
 	AcceptedTos bool
-	CreatedAt   int
-	UpdatedAt   int
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 	Kid         string
 }
 
@@ -49,7 +50,7 @@ type accountKeySummaryResponse struct {
 	Name string `json:"name"`
 }
 
-func (acct Account) SummaryResponse() AccountSummaryResponse {
+func (acct *Account) SummaryResponse() AccountSummaryResponse {
 	return AccountSummaryResponse{
 		ID:          acct.ID,
 		Name:        acct.Name,
@@ -75,14 +76,16 @@ func (acct Account) SummaryResponse() AccountSummaryResponse {
 // fields that can be returned as JSON
 type accountDetailedResponse struct {
 	AccountSummaryResponse
+
 	AcmeServer accountServerDetailedResponse `json:"acme_server"`
 	AccountKey accountKeyDetailedResponse    `json:"private_key"`
-	CreatedAt  int                           `json:"created_at"`
-	UpdatedAt  int                           `json:"updated_at"`
+	CreatedAt  int64                         `json:"created_at"`
+	UpdatedAt  int64                         `json:"updated_at"`
 }
 
 type accountServerDetailedResponse struct {
 	accountServerSummaryResponse
+
 	// from remote server
 	ExternalAccountRequired bool   `json:"external_account_required"`
 	TermsOfService          string `json:"terms_of_service"`
@@ -90,10 +93,11 @@ type accountServerDetailedResponse struct {
 
 type accountKeyDetailedResponse struct {
 	accountKeySummaryResponse
+
 	Algorithm key_crypto.Algorithm `json:"algorithm"`
 }
 
-func (acct Account) detailedResponse(service *Service) (accountDetailedResponse, error) {
+func (acct *Account) detailedResponse(service *Service) (accountDetailedResponse, error) {
 	as, err := service.acmeServerService.AcmeService(acct.AcmeServer.ID)
 	if err != nil {
 		return accountDetailedResponse{}, err
@@ -118,8 +122,8 @@ func (acct Account) detailedResponse(service *Service) (accountDetailedResponse,
 			},
 			Algorithm: acct.AccountKey.Algorithm,
 		},
-		CreatedAt: acct.CreatedAt,
-		UpdatedAt: acct.UpdatedAt,
+		CreatedAt: acct.CreatedAt.Unix(),
+		UpdatedAt: acct.UpdatedAt.Unix(),
 	}, nil
 }
 
@@ -140,7 +144,7 @@ func (account *Account) AcmeAccountKey() (acmeAcctKey acme.AccountKey, err error
 
 // newAccountPayload() generates the payload for ACME to post to the
 // new-account endpoint
-func (account *Account) newAccountPayload(eabKid string, eabHmacKey string, overrideEmail *string) acme.NewAccountPayload {
+func (account *Account) newAccountPayload(eabKid, eabHmacKey string, overrideEmail *string) acme.NewAccountPayload {
 	email := account.Email
 	if overrideEmail != nil {
 		email = *overrideEmail

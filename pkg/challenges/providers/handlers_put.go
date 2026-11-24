@@ -6,6 +6,7 @@ import (
 	"certwarden-backend/pkg/challenges/providers/dns01cloudflare"
 	"certwarden-backend/pkg/challenges/providers/dns01goacme"
 	"certwarden-backend/pkg/challenges/providers/dns01manual"
+	"certwarden-backend/pkg/challenges/providers/dnspersist01manual"
 	"certwarden-backend/pkg/challenges/providers/http01internal"
 	"certwarden-backend/pkg/output"
 	"encoding/json"
@@ -16,6 +17,8 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 )
+
+var errInvalidProviderConfig = errors.New("providers: wrong config received")
 
 // modifyPayload is the needed payload to update an existing provider
 type modifyPayload struct {
@@ -28,12 +31,13 @@ type modifyPayload struct {
 	PostProvisionWaitSeconds *int     `json:"post_resource_provision_wait"`
 
 	// plus only one of these
-	Http01InternalConfig  *http01internal.Config  `json:"http_01_internal,omitempty"`
-	Dns01ManualConfig     *dns01manual.Config     `json:"dns_01_manual,omitempty"`
-	Dns01AcmeDnsConfig    *dns01acmedns.Config    `json:"dns_01_acme_dns,omitempty"`
-	Dns01AcmeShConfig     *dns01acmesh.Config     `json:"dns_01_acme_sh,omitempty"`
-	Dns01CloudflareConfig *dns01cloudflare.Config `json:"dns_01_cloudflare,omitempty"`
-	Dns01GoAcmeConfig     *dns01goacme.Config     `json:"dns_01_go_acme,omitempty"`
+	Http01InternalConfig     *http01internal.Config     `json:"http_01_internal,omitempty"`
+	Dns01ManualConfig        *dns01manual.Config        `json:"dns_01_manual,omitempty"`
+	Dns01AcmeDnsConfig       *dns01acmedns.Config       `json:"dns_01_acme_dns,omitempty"`
+	Dns01AcmeShConfig        *dns01acmesh.Config        `json:"dns_01_acme_sh,omitempty"`
+	Dns01CloudflareConfig    *dns01cloudflare.Config    `json:"dns_01_cloudflare,omitempty"`
+	Dns01GoAcmeConfig        *dns01goacme.Config        `json:"dns_01_go_acme,omitempty"`
+	DnsPersist01ManualConfig *dnspersist01manual.Config `json:"dns_persist_01_manual,omitempty"`
 }
 
 // ModifyProvider modifies the provider specified by the ID in manager with the specified
@@ -47,7 +51,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// params
@@ -55,7 +59,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	payload.ID, err = strconv.Atoi(idParam)
 	if err != nil {
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// find provider
@@ -70,7 +74,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 			} else {
 				err = errWrongTag
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 		}
 	}
@@ -79,16 +83,16 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	if p == nil {
 		err = errBadID(payload.ID)
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// if domains included, validate domains
 	if len(payload.Domains) > 0 {
 		err = mgr.unsafeValidateDomains(payload.Domains, p)
 		if err != nil {
-			err = fmt.Errorf("failed to validate domains (%s)", err)
+			err = fmt.Errorf("failed to validate domains (%w)", err)
 			mgr.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 	}
 
@@ -119,75 +123,87 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 		configCount++
 		pCfg = payload.Dns01GoAcmeConfig
 	}
+	if payload.DnsPersist01ManualConfig != nil {
+		configCount++
+		pCfg = payload.DnsPersist01ManualConfig
+	}
 
 	// check config count, also error on wrong config type
 	if configCount > 1 {
 		err = fmt.Errorf("update provider expects max 1 config, received %d", configCount)
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	} else if configCount == 1 {
 		// update provider service first (if cfg specified) so if fails, domains are unchanged
 		switch pServ := p.Service.(type) {
 		case *http01internal.Service:
 			if payload.Http01InternalConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Http01InternalConfig)
 
 		case *dns01manual.Service:
 			if payload.Dns01ManualConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Dns01ManualConfig)
 
 		case *dns01acmedns.Service:
 			if payload.Dns01AcmeDnsConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Dns01AcmeDnsConfig)
 
 		case *dns01acmesh.Service:
 			if payload.Dns01AcmeShConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Dns01AcmeShConfig)
 
 		case *dns01cloudflare.Service:
 			if payload.Dns01CloudflareConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Dns01CloudflareConfig)
 
 		case *dns01goacme.Service:
 			if payload.Dns01GoAcmeConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
-				return output.JsonErrValidationFailed(err)
+				return output.ErrorJsonErrValidationFailed(err)
 			}
 			err = pServ.UpdateService(mgr.childApp, payload.Dns01GoAcmeConfig)
+
+		case *dnspersist01manual.Service:
+			if payload.DnsPersist01ManualConfig == nil {
+				err = errInvalidProviderConfig
+				mgr.logger.Debug(err)
+				return output.ErrorJsonErrValidationFailed(err)
+			}
+			err = pServ.UpdateService(mgr.childApp, payload.DnsPersist01ManualConfig)
 
 		default:
 			// default fail
 			err = errors.New("provider service is unsupported, please report this as a bug to developer")
 			mgr.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		// common error check
 		if err != nil {
-			err = fmt.Errorf("failed to update service (%s)", err)
+			err = fmt.Errorf("failed to update service (%w)", err)
 			mgr.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 
 		// success, update config
@@ -201,16 +217,12 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 		p.PostProvisionWaitSeconds = *payload.PostProvisionWaitSeconds
 	}
 
-	if payload.PostProvisionWaitSeconds != nil {
-		p.PostProvisionWaitSeconds = *payload.PostProvisionWaitSeconds
-	}
-
 	// update config file
 	err = mgr.unsafeWriteProvidersConfig()
 	if err != nil {
-		err = fmt.Errorf("failed to save config file after providers update (%s)", err)
+		err = fmt.Errorf("failed to save config file after providers update (%w)", err)
 		mgr.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -222,7 +234,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 	err = mgr.output.WriteJSON(w, response)
 	if err != nil {
 		mgr.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

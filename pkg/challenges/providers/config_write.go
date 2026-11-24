@@ -6,6 +6,7 @@ import (
 	"certwarden-backend/pkg/challenges/providers/dns01cloudflare"
 	"certwarden-backend/pkg/challenges/providers/dns01goacme"
 	"certwarden-backend/pkg/challenges/providers/dns01manual"
+	"certwarden-backend/pkg/challenges/providers/dnspersist01manual"
 	"certwarden-backend/pkg/challenges/providers/http01internal"
 	"errors"
 	"io/fs"
@@ -82,6 +83,17 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 		case *dns01goacme.Config:
 			mgrCfg.Dns01GoAcmeConfigs = append(mgrCfg.Dns01GoAcmeConfigs,
 				ConfigManagerDns01GoAcme{
+					InternalConfig: InternalConfig{
+						Domains:                  p.Domains,
+						PostProvisionWaitSeconds: p.PostProvisionWaitSeconds,
+					},
+					Config: realCfg,
+				},
+			)
+
+		case *dnspersist01manual.Config:
+			mgrCfg.DnsPersist01ManualConfigs = append(mgrCfg.DnsPersist01ManualConfigs,
+				ConfigManagerDnsPersist01Manual{
 					InternalConfig: InternalConfig{
 						Domains:                  p.Domains,
 						PostProvisionWaitSeconds: p.PostProvisionWaitSeconds,
@@ -174,7 +186,10 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 
 	// set providers to the mgr Config
 	newNode := &yaml.Node{}
-	newNode.Encode(mgrCfg)
+	err = newNode.Encode(mgrCfg)
+	if err != nil {
+		return err
+	}
 	fullCfgFile.Content[0].Content[challValIndex].Content[providersValIndex] = newNode
 
 	// Marshall new completed config
@@ -184,7 +199,7 @@ func (mgr *Manager) unsafeWriteProvidersConfig() error {
 	}
 
 	// Write new config to file
-	err = os.WriteFile(mgr.configFile, newCfg, 0600)
+	err = os.WriteFile(mgr.configFile, newCfg, 0o600)
 	if err != nil {
 		return err
 	}

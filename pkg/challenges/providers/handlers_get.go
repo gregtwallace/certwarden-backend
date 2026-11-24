@@ -10,6 +10,7 @@ import (
 
 type providersResponse struct {
 	output.JsonResponse
+
 	Providers []provider `json:"providers"`
 }
 
@@ -33,7 +34,7 @@ func (mgr *Manager) GetAllProviders(w http.ResponseWriter, r *http.Request) *out
 	err := mgr.output.WriteJSON(w, response)
 	if err != nil {
 		mgr.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -65,7 +66,7 @@ func (mgr *Manager) GetAllProviders(w http.ResponseWriter, r *http.Request) *out
 // 	err := mgr.output.WriteJSON(w, response)
 // 	if err != nil {
 // 		mgr.logger.Errorf("failed to write json (%s)", err)
-// 		return output.JsonErrWriteJsonError(err)
+// 		return output.ErrorJsonErrWriteJsonError(err)
 // 	}
 
 // 	return nil
@@ -73,6 +74,7 @@ func (mgr *Manager) GetAllProviders(w http.ResponseWriter, r *http.Request) *out
 
 type providerResponse struct {
 	output.JsonResponse
+
 	Provider *provider `json:"provider"`
 }
 
@@ -86,7 +88,7 @@ func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) *outp
 	id, err := strconv.Atoi(idParam)
 	if err != nil {
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// get the provider
@@ -100,7 +102,7 @@ func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) *outp
 	if p == nil {
 		err = errBadID(id)
 		mgr.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// write response
@@ -113,7 +115,7 @@ func (mgr *Manager) GetOneProvider(w http.ResponseWriter, r *http.Request) *outp
 	err = mgr.output.WriteJSON(w, response)
 	if err != nil {
 		mgr.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

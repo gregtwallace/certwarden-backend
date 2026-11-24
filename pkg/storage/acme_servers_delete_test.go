@@ -1,0 +1,78 @@
+package storage_test
+
+import (
+	"certwarden-backend/pkg/domain/acme_servers"
+	"certwarden-backend/pkg/helpers_test"
+	"certwarden-backend/pkg/storage"
+	"database/sql"
+	"fmt"
+	"testing"
+)
+
+func TestServerInUse(t *testing.T) {
+	testCases := []struct {
+		serverID      int
+		expectedInUse bool
+		expectedErr   error
+	}{
+		{2, false, sql.ErrNoRows},
+		{35, false, sql.ErrNoRows},
+		{0, true, nil},
+		{1, true, nil},
+		{4, false, nil},
+		{19, true, nil},
+		{20, false, nil},
+	}
+
+	// create testing service
+	store := openStorageWithTestData(t, "serverinuse")
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("server id: %d", tc.serverID), func(t *testing.T) {
+			inUse, err := store.ServerInUse(tc.serverID)
+			if !helpers_test.ErrorsIs(err, tc.expectedErr) {
+				t.Errorf("expected error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedErr), helpers_test.ErrorToVal(err))
+			}
+
+			if inUse != tc.expectedInUse {
+				t.Errorf("expected inuse '%t' but got '%t'", tc.expectedInUse, inUse)
+			}
+		})
+	}
+}
+
+func TestDeleteServer(t *testing.T) {
+	testCases := []struct {
+		serverID          int
+		expectedDelErr    error
+		expectedGetResult *acme_servers.Server
+		expectedGetErr    error
+	}{
+		{2, sql.ErrNoRows, nil, sql.ErrNoRows},     // non-existent
+		{25, sql.ErrNoRows, nil, sql.ErrNoRows},    // non-existent
+		{4, nil, nil, sql.ErrNoRows},               // not in use, gets deleted
+		{20, nil, nil, sql.ErrNoRows},              // not in use, gets deleted
+		{0, storage.ErrInUse, &acmeServer0, nil},   // in use
+		{1, storage.ErrInUse, &acmeServer1, nil},   // in use
+		{19, storage.ErrInUse, &acmeServer19, nil}, // in use
+	}
+
+	// create testing service
+	store := openStorageWithTestData(t, "deleteserver")
+
+	for _, tc := range testCases {
+		t.Run(fmt.Sprintf("server id: %d", tc.serverID), func(t *testing.T) {
+			err := store.DeleteServer(tc.serverID)
+			if !helpers_test.ErrorsIs(err, tc.expectedDelErr) {
+				t.Errorf("expected delete error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedDelErr), helpers_test.ErrorToVal(err))
+			}
+
+			server, err := store.GetOneServerById(tc.serverID)
+			if !helpers_test.ErrorsIs(err, tc.expectedGetErr) {
+				t.Errorf("expected get error '%s' but got '%s'", helpers_test.ErrorToVal(tc.expectedGetErr), helpers_test.ErrorToVal(err))
+			}
+
+			compareAcmeServer(t, server, tc.expectedGetResult)
+		})
+	}
+}

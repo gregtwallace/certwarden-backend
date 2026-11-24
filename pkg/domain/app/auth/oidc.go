@@ -36,8 +36,7 @@ type oidcPendingSession struct {
 // returned copy and then sets the OIDC error param on the returned copy
 // instead
 func oidcErrorURL(u *url.URL, err error) *url.URL {
-	newU, _ := url.Parse(u.String())
-
+	newU := *u
 	queryValues := newU.Query()
 
 	queryValues.Del("redirect_uri")
@@ -48,7 +47,7 @@ func oidcErrorURL(u *url.URL, err error) *url.URL {
 
 	newU.RawQuery = queryValues.Encode()
 
-	return newU
+	return &newU
 }
 
 // oidcUnauthorizedErrorURL copies a URL and removes the OIDC param values from the
@@ -117,13 +116,13 @@ func (oef *oidcExtraFuncs) RefreshCheck() error {
 	// unmarshal the token
 	bodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		return fmt.Errorf("oidc refresh failed, failed to read body (%s)", err)
+		return fmt.Errorf("oidc refresh failed, failed to read body (%w)", err)
 	}
 
 	var t expectedToken
 	err = json.Unmarshal(bodyBytes, &t)
 	if err != nil {
-		return fmt.Errorf("oidc refresh failed, failed to unmarshal new token (%s)", err)
+		return fmt.Errorf("oidc refresh failed, failed to unmarshal new token (%w)", err)
 	}
 
 	// validate token values
@@ -137,7 +136,7 @@ func (oef *oidcExtraFuncs) RefreshCheck() error {
 
 	_, err = oef.idTokenVerifier.Verify(oef.ctxWithHttpClient, t.IDToken)
 	if err != nil {
-		return fmt.Errorf("oidc refresh failed, id token failed verification (%s)", err)
+		return fmt.Errorf("oidc refresh failed, id token failed verification (%w)", err)
 	}
 
 	// Validate the required scopes were granted
@@ -192,7 +191,7 @@ func (service *Service) startOidcCleanerService(ctx context.Context, wg *sync.Wa
 			}
 
 			// run delete func against sessions map
-			_ = service.oidc.pendingSessions.DeleteFunc(deleteFunc)
+			service.oidc.pendingSessions.DeleteFunc(deleteFunc)
 		}
 	}()
 }

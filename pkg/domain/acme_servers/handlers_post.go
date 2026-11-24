@@ -12,12 +12,12 @@ import (
 
 // NewPayload is used to post a new Server
 type NewPayload struct {
-	Name         *string `json:"name"`
-	Description  *string `json:"description"`
-	DirectoryURL *string `json:"directory_url"`
-	IsStaging    *bool   `json:"is_staging"`
-	CreatedAt    int     `json:"-"`
-	UpdatedAt    int     `json:"-"`
+	Name         *string   `json:"name"`
+	Description  *string   `json:"description"`
+	DirectoryURL *string   `json:"directory_url"`
+	IsStaging    *bool     `json:"is_staging"`
+	CreatedAt    time.Time `json:"-"`
+	UpdatedAt    time.Time `json:"-"`
 }
 
 // PostNewServer creates a new server, saves it to storage, and starts an *acme.Service
@@ -28,14 +28,14 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) *o
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// do validation
 	// name (missing or invalid)
 	if payload.Name == nil || !service.nameValid(*payload.Name, nil) {
 		service.logger.Debug(ErrNameBad)
-		return output.JsonErrValidationFailed(ErrNameBad)
+		return output.ErrorJsonErrValidationFailed(ErrNameBad)
 	}
 	// description (if none, set to blank)
 	if payload.Description == nil {
@@ -45,31 +45,32 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) *o
 	if payload.DirectoryURL == nil {
 		err = errors.New("directory url is not specified")
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 	_, err = acme.FetchAcmeDirectory(service.httpClient, *payload.DirectoryURL)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// is staging (required)
 	if payload.IsStaging == nil {
 		err = errors.New("is_staging is not specified")
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 	// end validation
 
 	// add additional details to the payload before saving
-	payload.CreatedAt = int(time.Now().Unix())
-	payload.UpdatedAt = payload.CreatedAt
+	t := time.Now()
+	payload.CreatedAt = t
+	payload.UpdatedAt = t
 
 	// save new key to storage, which also returns the new server
-	newServer, err := service.storage.PostNewServer(payload)
+	newServer, err := service.storage.PostNewServer(&payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// spin up new acme.Service
@@ -79,15 +80,15 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) *o
 	service.acmeServers[newServer.ID], err = acme.NewService(service, *payload.DirectoryURL)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// make detailed response
 	detailedResp, err := newServer.detailedResponse(service)
 	if err != nil {
-		err = fmt.Errorf("failed to generate server summary response (%s)", err)
+		err = fmt.Errorf("failed to generate server summary response (%w)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// write response
@@ -100,7 +101,7 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) *o
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

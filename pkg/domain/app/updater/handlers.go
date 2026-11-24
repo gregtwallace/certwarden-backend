@@ -2,13 +2,14 @@ package updater
 
 import (
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage/sqlite"
+	"certwarden-backend/pkg/storage"
 	"net/http"
 )
 
 // getNewVersionInfoResponse
 type getNewVersionInfoResponse struct {
 	output.JsonResponse
+
 	NewVersion struct {
 		LastCheckedUnixTime  int          `json:"last_checked_time"`
 		Available            bool         `json:"available"`
@@ -33,7 +34,7 @@ func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request
 	// does new db version match? if blank, false
 	dbMatch := false
 	if service.newVersion.info != nil {
-		dbMatch = sqlite.DbCurrentUserVersion == service.newVersion.info.DatabaseVersion
+		dbMatch = storage.DbCurrentUserVersion == service.newVersion.info.DatabaseVersion
 	}
 
 	// new version or not?
@@ -51,7 +52,7 @@ func (service *Service) GetNewVersionInfo(w http.ResponseWriter, r *http.Request
 	err := service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -64,7 +65,7 @@ func (service *Service) CheckForNewVersion(w http.ResponseWriter, r *http.Reques
 	err := service.fetchNewVersion()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// return new version info (same as GET new version)

@@ -40,7 +40,9 @@ func ValidateAndStandardizeKeyPem(rawKeyPem string) (standardizedKeyPem string, 
 	}
 
 	// split pem into beginning, content, and end
-	keyRegex := regexp.MustCompile(`^(-----BEGIN.*-----)([\s\S]*)(-----END.*-----)$`)
+	// see https://www.rfc-editor.org/info/rfc7468/ for valid label chars
+	// while techincally there are other valid chars, they're not used in the real world, so use A-Za-z0-9
+	keyRegex := regexp.MustCompile(`^(-{5}BEGIN(?: [A-Za-z0-9]+)*-{5})([\s\S]*)(-{5}END(?: [A-Za-z0-9]+)*-{5})$`)
 	rawKeyPemPieces := keyRegex.FindStringSubmatch(rawKeyPem)
 	if len(rawKeyPemPieces) != 4 {
 		return "", UnknownAlgorithm, errUnsupportedPem

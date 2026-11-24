@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/randomness"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -17,7 +18,7 @@ const frontendBuildDir = "./frontend_build"
 const frontendEnvFile = frontendBuildDir + "/env.js"
 
 // noncePlaceholder is the text to use in frontend to show server where to inject nonce
-var noncePlaceholder = []byte("{SERVER-CSP-NONCE}")
+const noncePlaceholder = "{SERVER-CSP-NONCE}"
 
 // setContentSecurityPolicy sets w's CSP to allow a very limited subset of content that the
 // react app loads.
@@ -60,58 +61,78 @@ func setContentSecurityPolicy(w http.ResponseWriter, nonce []byte) {
 func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// remove the frontend URL root path (it is not used for the file path where frontend
 	// is stored)
-	fPath := strings.TrimPrefix(r.URL.Path, frontendUrlPath)
+	fPathRel := strings.TrimPrefix(r.URL.Path, frontendUrlPath)
 
 	// check file extension. if there is no extension, this is a path. always return index.html
 	// for any path. react router will handle routing of the path from there.
-	fExt := filepath.Ext(fPath)
+	fExt := filepath.Ext(fPathRel)
 	if fExt == "" {
-		fPath = "/index.html"
+		fPathRel = "/index.html"
 		fExt = ".html"
 	}
 
-	// app.logger.Debugf("serving frontend file: %s -> %s (fext = %s)", r.URL.Path, fPath, fExt)
+	// validate requested file is actually in the frontend path (i.e., block malicious payload)
+	fPathAbs, err := filepath.Abs(filepath.Join(frontendBuildDir, fPathRel))
+	if err != nil {
+		err = fmt.Errorf("frontend: failed to get absolute path for request (%w)", err)
+		app.logger.Error(err)
+		return output.ErrorJsonErrInternal(err)
+	}
+
+	pathFrontendAbs, err := filepath.Abs(frontendBuildDir)
+	if err != nil {
+		err = fmt.Errorf("frontend: failed to get absolute path for frontend root (%w)", err)
+		app.logger.Error(err)
+		return output.ErrorJsonErrInternal(err)
+	}
+
+	// DO NOT REMOVE THIS CHECK -- security against path traversal
+	if !strings.HasPrefix(fPathAbs, pathFrontendAbs) {
+		app.logger.Errorf("frontend: failed to serve frontend file (malicious request url path? %s)", r.URL.Path)
+		return output.ErrorJsonErrNotFound(errors.New(r.URL.Path))
+	}
 
 	// open requested file
-	f, err := os.Open(frontendBuildDir + "/" + fPath)
+	f, err := os.Open(fPathAbs)
 	if err != nil {
-		err = fmt.Errorf("failed to open frontend file %s (%s)", fPath, err)
+		err = fmt.Errorf("frontend: failed to open frontend file %s (%w)", fPathRel, err)
 		app.logger.Debug(err)
-		return output.JsonErrNotFound(err)
+		return output.ErrorJsonErrNotFound(err)
 	}
 	defer f.Close()
 
 	// get file info
 	fInfo, err := f.Stat()
 	if err != nil {
-		err = fmt.Errorf("failed to stat frontend file %s (%s)", fPath, err)
+		err = fmt.Errorf("frontend: failed to stat frontend file %s (%w)", fPathRel, err)
 		app.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// TODO: Remove when Vite/Emotion can properly handle this.
 	// This modifies the code of the relevant module (emotion sheet) to inject the nonce from the
 	// html meta tag.
-	if strings.HasPrefix(fPath, "/assets/emotion_sheet-") && fExt == ".js" {
+	if strings.HasPrefix(fPathRel, "/assets/emotion_sheet-") && fExt == ".js" {
 		// read in file to serve
 		fBytes := make([]byte, fInfo.Size())
 		_, err = f.Read(fBytes)
 		if err != nil {
-			err = fmt.Errorf("could not read frontend file %s into buffer for nonce injection (%s)", fPath, err)
+			err = fmt.Errorf("frontend: could not read frontend file %s into buffer for nonce injection (%w)", fPathRel, err)
 			app.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		// replace offending line of code to make it get the nonce from meta nonce
 		// capture 1st, 2nd, and 3rd variable name
 		// regex should cover all cases of the code, even if formatted or var names change
-		re := regexp.MustCompile(`,\s*([A-Za-z0-9]+)\.nonce.*!==.*void 0.*&&.*([A-Za-z0-9]+)\.setAttribute\(["']nonce["'],.*([A-Za-z0-9]+)\.nonce\),`)
+		// Note: Have to use this adding pattern to include all quote variants
+		re := regexp.MustCompile(`,\s*([A-Za-z0-9]+)\.nonce.*!==.*void 0.*&&.*([A-Za-z0-9]+)\.setAttribute\(["'` + "`" + `]nonce["'` + "`" + `],.*([A-Za-z0-9]+)\.nonce\),`)
 		// use 2nd variable name in new string
 		fString := string(fBytes)
-		fString = re.ReplaceAllString(fString, ",$2.setAttribute('nonce',document.querySelector('meta[property=\"csp-nonce\"]').nonce),")
-		// orig:             ,n.nonce!==void 0&&t.setAttribute("nonce",n.nonce),
-		// orig (formatted): , n.nonce !== void 0 && t.setAttribute('nonce', n.nonce),
-		// modified:         ,t.setAttribute('nonce',document.querySelector('meta[property="csp-nonce"]').nonce),
+		fString = re.ReplaceAllString(fString, ",$2.setAttribute(`nonce`,document.querySelector(`meta[property='csp-nonce']`).nonce),")
+		// orig:             ,e.nonce!==void 0&&t.setAttribute(`nonce`,e.nonce),
+		// orig (formatted): , e.nonce !== void 0 && t.setAttribute(`nonce`, e.nonce),
+		// modified:         ,t.setAttribute(`nonce`,document.querySelector('meta[property="csp-nonce"]').nonce),
 
 		// serve modified file, and return
 		http.ServeContent(w, r, fInfo.Name(), fInfo.ModTime(), strings.NewReader(fString))
@@ -124,9 +145,9 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		// generate nonce
 		nonce, err := randomness.GenerateFrontendNonce()
 		if err != nil {
-			err = fmt.Errorf("failed to generate nonce for frontend (%s)", err)
+			err = fmt.Errorf("frontend: failed to generate nonce for frontend (%w)", err)
 			app.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		// set CSP
@@ -136,13 +157,13 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		fBytes := make([]byte, fInfo.Size())
 		_, err = f.Read(fBytes)
 		if err != nil {
-			err = fmt.Errorf("failed to read frontend file %s into buffer for nonce injection (%s)", fPath, err)
+			err = fmt.Errorf("frontend: failed to read frontend file %s into buffer for nonce injection (%w)", fPathRel, err)
 			app.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 
 		// set nonce placeholders to the actual nonce value
-		fBytes = bytes.ReplaceAll(fBytes, noncePlaceholder, nonce)
+		fBytes = bytes.ReplaceAll(fBytes, []byte(noncePlaceholder), nonce)
 
 		// serve modified file, and return (modtime is now since nonce is always modified)
 		http.ServeContent(w, r, fInfo.Name(), time.Now(), bytes.NewReader(fBytes))
@@ -164,7 +185,8 @@ func redirectToFrontendHandler(w http.ResponseWriter, r *http.Request) *output.J
 // to set variables at server run time
 func setFrontendEnv() error {
 	// remove any old environment
-	_ = os.Remove(frontendEnvFile)
+	//nolint:errcheck // don't care, only care later if Create fails
+	os.Remove(frontendEnvFile)
 
 	// content of new environment file
 	// api and & app on same server, so use path for api url
@@ -178,9 +200,9 @@ func setFrontendEnv() error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = file.Close() }()
+	defer file.Close()
 
-	_, err = file.Write([]byte(envFileContent))
+	_, err = file.WriteString(envFileContent)
 	if err != nil {
 		return err
 	}

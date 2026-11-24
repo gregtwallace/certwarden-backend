@@ -32,7 +32,7 @@ type Manager struct {
 	mu         sync.RWMutex
 }
 
-func MakeManager(app application, cfg Config) (mgr *Manager, err error) {
+func MakeManager(app application, cfg *Config) (mgr *Manager, err error) {
 	// make struct with configs
 	mgr = &Manager{
 		childApp:   app,
@@ -56,7 +56,7 @@ func MakeManager(app application, cfg Config) (mgr *Manager, err error) {
 	}
 
 	// verify at least one domain / provider exists
-	if len(mgr.dP) <= 0 {
+	if len(mgr.dP) == 0 {
 		return nil, errors.New("no challenge providers are properly configured (at least one must be enabled)")
 	}
 

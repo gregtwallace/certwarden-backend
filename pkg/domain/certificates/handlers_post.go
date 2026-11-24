@@ -18,29 +18,29 @@ import (
 
 // NewPayload is the struct for creating a new certificate
 type NewPayload struct {
-	Name                        *string             `json:"name"`
-	Description                 *string             `json:"description"`
-	PrivateKeyID                *int                `json:"private_key_id"`
-	NewKeyAlgorithmValue        *string             `json:"algorithm_value"`
-	AcmeAccountID               *int                `json:"acme_account_id"`
-	Subject                     *string             `json:"subject"`
-	SubjectAltNames             []string            `json:"subject_alts"`
-	Organization                *string             `json:"organization"`
-	OrganizationalUnit          *string             `json:"organizational_unit"`
-	Country                     *string             `json:"country"`
-	State                       *string             `json:"state"`
-	City                        *string             `json:"city"`
-	CSRExtraExtensions          []CertExtensionJSON `json:"csr_extra_extensions"`
-	PreferredRootCN             *string             `json:"preferred_root_cn"`
-	PostProcessingCommand       *string             `json:"post_processing_command"`
-	PostProcessingEnvironment   []string            `json:"post_processing_environment"`
-	PostProcessingClientAddress *string             `json:"post_processing_client_address"`
-	PostProcessingClientKeyB64  string              `json:"-"`
-	Profile                     *string             `json:"profile"`
-	ApiKey                      string              `json:"-"`
-	ApiKeyViaUrl                bool                `json:"-"`
-	CreatedAt                   int                 `json:"-"`
-	UpdatedAt                   int                 `json:"-"`
+	Name                        *string         `json:"name"`
+	Description                 *string         `json:"description"`
+	PrivateKeyID                *int            `json:"private_key_id"`
+	NewKeyAlgorithmValue        *string         `json:"algorithm_value"`
+	AcmeAccountID               *int            `json:"acme_account_id"`
+	Subject                     *string         `json:"subject"`
+	SubjectAltNames             []string        `json:"subject_alts"`
+	Organization                *string         `json:"organization"`
+	OrganizationalUnit          *string         `json:"organizational_unit"`
+	Country                     *string         `json:"country"`
+	State                       *string         `json:"state"`
+	City                        *string         `json:"city"`
+	CSRExtraExtensions          []CertExtension `json:"csr_extra_extensions"`
+	PreferredRootCN             *string         `json:"preferred_root_cn"`
+	PostProcessingCommand       *string         `json:"post_processing_command"`
+	PostProcessingEnvironment   []string        `json:"post_processing_environment"`
+	PostProcessingClientAddress *string         `json:"post_processing_client_address"`
+	PostProcessingClientKeyB64  *string         `json:"post_processing_client_key"`
+	Profile                     *string         `json:"profile"`
+	ApiKey                      string          `json:"-"`
+	ApiKeyViaUrl                bool            `json:"-"`
+	CreatedAt                   time.Time       `json:"-"`
+	UpdatedAt                   time.Time       `json:"-"`
 }
 
 // PostNewCert creates a new certificate object in storage. No actual encryption certificate
@@ -53,14 +53,14 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
-	// validation
+	// do validation
 	// name
 	if payload.Name == nil || !service.nameValid(*payload.Name, nil) {
 		service.logger.Debug(ErrNameBad)
-		return output.JsonErrValidationFailed(ErrNameBad)
+		return output.ErrorJsonErrValidationFailed(ErrNameBad)
 	}
 	// description (if none, set to blank)
 	if payload.Description == nil {
@@ -70,63 +70,63 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	// if key id not specified
 	if payload.PrivateKeyID == nil {
 		service.logger.Debug(ErrKeyIdBad)
-		return output.JsonErrValidationFailed(ErrKeyIdBad)
+		return output.ErrorJsonErrValidationFailed(ErrKeyIdBad)
 	}
 	// keep track if new key will be generated and saved
 	generatedKeyPem := ""
 	// if new key id specified
-	if validation.IsIdNew(*payload.PrivateKeyID) {
+	if validation.IsNewID(*payload.PrivateKeyID) {
 		// confirm algorithm is specified
 		if payload.NewKeyAlgorithmValue == nil || *payload.NewKeyAlgorithmValue == "" {
 			service.logger.Debug(ErrKeyAlgorithmNone)
-			return output.JsonErrValidationFailed(ErrKeyAlgorithmNone)
+			return output.ErrorJsonErrValidationFailed(ErrKeyAlgorithmNone)
 		}
 		// confirm name is valid for a new key
-		if payload.Name == nil || !service.keys.NameValid(*payload.Name, nil) {
+		if payload.Name == nil || !service.keys.IsValidName(*payload.Name, nil) {
 			service.logger.Debug(ErrKeyNameBad)
-			return output.JsonErrValidationFailed(ErrKeyNameBad)
+			return output.ErrorJsonErrValidationFailed(ErrKeyNameBad)
 		}
 		// generate new key pem
 		generatedKeyPem, err = key_crypto.AlgorithmByStorageValue(*payload.NewKeyAlgorithmValue).GeneratePrivateKeyPem()
 		if err != nil {
 			service.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 	} else {
 		// not new key id
 		// error if algorithm value was specified
 		if payload.NewKeyAlgorithmValue != nil && *payload.NewKeyAlgorithmValue != "" {
 			service.logger.Debug(ErrKeyIdAndAlgorithm)
-			return output.JsonErrValidationFailed(ErrKeyIdAndAlgorithm)
+			return output.ErrorJsonErrValidationFailed(ErrKeyIdAndAlgorithm)
 		}
 		// error if key id is not valid
 		if !service.privateKeyIdValid(*payload.PrivateKeyID, nil) {
 			service.logger.Debug(ErrKeyIdBad)
-			return output.JsonErrValidationFailed(ErrKeyIdBad)
+			return output.ErrorJsonErrValidationFailed(ErrKeyIdBad)
 		}
 	}
 	// acme account
 	if payload.AcmeAccountID == nil {
 		err = errors.New("acme account id is unspecified")
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 	acctUsable, acct := service.accounts.AccountUsable(*payload.AcmeAccountID)
 	if !acctUsable {
 		err = errors.New("acme account id does not exist or is not usable")
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 	// subject
 	if payload.Subject == nil || !subjectValid(*payload.Subject) {
 		service.logger.Debug(ErrDomainBad)
-		return output.JsonErrValidationFailed(ErrDomainBad)
+		return output.ErrorJsonErrValidationFailed(ErrDomainBad)
 	}
 	// subject alts
 	// blank is okay, skip validation if not specified
 	if payload.SubjectAltNames != nil && !subjectAltsValid(payload.SubjectAltNames) {
 		service.logger.Debug(ErrDomainBad)
-		return output.JsonErrValidationFailed(ErrDomainBad)
+		return output.ErrorJsonErrValidationFailed(ErrDomainBad)
 	}
 	// profile Extension -- validate if specified, else blank
 	if payload.Profile == nil {
@@ -135,14 +135,14 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 		// specified, validate against acme service
 		acmeService, err := service.acmeServerService.AcmeService(acct.AcmeServer.ID)
 		if err != nil {
-			err = fmt.Errorf("failed to retrieve acme service (%s)", err)
+			err = fmt.Errorf("failed to retrieve acme service (%w)", err)
 			service.logger.Error(err)
-			return output.JsonErrInternal(err)
+			return output.ErrorJsonErrInternal(err)
 		}
 		if !acmeService.ProfileValidate(*payload.Profile) {
 			err = fmt.Errorf("acme service for specified account does not advertise profile `%s`", *payload.Profile)
 			service.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
+			return output.ErrorJsonErrValidationFailed(err)
 		}
 	}
 
@@ -165,14 +165,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 		payload.City = new(string)
 	}
 
-	// CSR Extra Extensions - check each extra extension for proper formatting
-	for i := range payload.CSRExtraExtensions {
-		_, err = payload.CSRExtraExtensions[i].ToCertExtension()
-		if err != nil {
-			service.logger.Debug(err)
-			return output.JsonErrValidationFailed(err)
-		}
-	}
+	// CSR Extra Extensions - error checking is now in the custom unmarshal function
 
 	if payload.PreferredRootCN == nil {
 		payload.PreferredRootCN = new(string)
@@ -189,40 +182,49 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	if payload.PostProcessingClientAddress == nil {
 		payload.PostProcessingClientAddress = new(string)
 	} else if *payload.PostProcessingClientAddress != "" {
-		valid := validation.DomainValid(*payload.PostProcessingClientAddress, false)
+		valid := validation.DomainAndPortValid(*payload.PostProcessingClientAddress)
 		if !valid {
 			service.logger.Debug(ErrClientAddressBad)
-			return output.JsonErrValidationFailed(ErrClientAddressBad)
+			return output.ErrorJsonErrValidationFailed(ErrClientAddressBad)
+		}
+	}
+	// post processing aes key (if specified)
+	if payload.PostProcessingClientKeyB64 != nil {
+		valid := clientKeyB64Valid(*payload.PostProcessingClientKeyB64)
+		if !valid {
+			service.logger.Debug(ErrPostProcessingClientKeyB64Bad)
+			return output.ErrorJsonErrValidationFailed(ErrPostProcessingClientKeyB64Bad)
 		}
 	}
 	// end validation
 
 	// if new private key was generated, save it to storage
+	createdAtAndUpdatedAt := time.Now()
 	if generatedKeyPem != "" {
+		apiKey, err := randomness.GenerateApiKey()
+		if err != nil {
+			service.logger.Error(err)
+			return output.ErrorJsonErrInternal(err)
+		}
+
 		// create new key payload
 		newKeyPayload := private_keys.NewPayload{
 			Name:           payload.Name,
 			Description:    payload.Description,
 			AlgorithmValue: payload.NewKeyAlgorithmValue,
 			PemContent:     &generatedKeyPem,
-			ApiKeyDisabled: new(bool),
+			ApiKeyDisabled: new(false),
 			ApiKeyViaUrl:   payload.ApiKeyViaUrl,
+			ApiKey:         apiKey,
+			CreatedAt:      createdAtAndUpdatedAt,
+			UpdatedAt:      createdAtAndUpdatedAt,
 		}
-		// set additional new key payload fields
-		newKeyPayload.ApiKey, err = randomness.GenerateApiKey()
-		if err != nil {
-			service.logger.Error(err)
-			return output.JsonErrInternal(err)
-		}
-		*newKeyPayload.ApiKeyDisabled = false
-		newKeyPayload.CreatedAt = int(time.Now().Unix())
-		newKeyPayload.UpdatedAt = payload.CreatedAt
 
 		// save new key to storage, and set the cert key id based on returned key's id
-		newKey, err := service.storage.PostNewKey(newKeyPayload)
+		newKey, err := service.storage.PostNewKey(&newKeyPayload)
 		if err != nil {
 			service.logger.Error(err)
-			return output.JsonErrStorageGeneric(err)
+			return output.ErrorJsonErrStorageGeneric(err)
 		}
 		*payload.PrivateKeyID = newKey.ID
 	}
@@ -231,26 +233,34 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	payload.ApiKey, err = randomness.GenerateApiKey()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 	payload.ApiKeyViaUrl = false
-	payload.CreatedAt = int(time.Now().Unix())
-	payload.UpdatedAt = payload.CreatedAt
-	// if client address specified, generate key to save (b64 raw url encoded)
-	if payload.PostProcessingClientAddress != nil && *payload.PostProcessingClientAddress != "" {
-		payload.PostProcessingClientKeyB64, err = randomness.GenerateAES256KeyAsBase64RawUrl()
-		if err != nil {
-			err = fmt.Errorf("failed to generate client key for certificate (%s)", err)
-			service.logger.Error(err)
-			return output.JsonErrInternal(err)
+	payload.CreatedAt = createdAtAndUpdatedAt
+	payload.UpdatedAt = createdAtAndUpdatedAt
+
+	// if client address specified but no aes key, generate key to save (b64 raw url encoded)
+	if payload.PostProcessingClientKeyB64 == nil {
+		// empty if no processing address
+		payload.PostProcessingClientKeyB64 = new("")
+
+		// processing address & user didnt specify an aes key -- generate one
+		if payload.PostProcessingClientAddress != nil && *payload.PostProcessingClientAddress != "" {
+			key, err := randomness.GenerateAES256KeyAsBase64RawUrl()
+			if err != nil {
+				err = fmt.Errorf("failed to generate client key for certificate (%w)", err)
+				service.logger.Error(err)
+				return output.ErrorJsonErrInternal(err)
+			}
+			payload.PostProcessingClientKeyB64 = &key
 		}
 	}
 
 	// save new cert
-	newCert, err := service.storage.PostNewCert(payload)
+	newCert, err := service.storage.PostNewCert(&payload)
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
 	// write response
@@ -262,7 +272,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -275,7 +285,7 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	certId, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -289,7 +299,7 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	if cert.ApiKeyNew != "" {
 		err = errors.New("new api key already exists")
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 	// validation -- end
 
@@ -297,14 +307,14 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	newApiKey, err := randomness.GenerateApiKey()
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// update storage
-	err = service.storage.PutCertNewApiKey(certId, newApiKey, int(time.Now().Unix()))
+	err = service.storage.PutCertApiKeyNew(certId, newApiKey, time.Now())
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 	cert.ApiKeyNew = newApiKey
 
@@ -317,7 +327,7 @@ func (service *Service) StageNewApiKey(w http.ResponseWriter, r *http.Request) *
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil
@@ -331,7 +341,7 @@ func (service *Service) MakeNewClientKey(w http.ResponseWriter, r *http.Request)
 	certId, err := strconv.Atoi(idParam)
 	if err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// validation
@@ -345,16 +355,16 @@ func (service *Service) MakeNewClientKey(w http.ResponseWriter, r *http.Request)
 	// generate AES 256 key
 	clientKey, err := randomness.GenerateAES256KeyAsBase64RawUrl()
 	if err != nil {
-		err = fmt.Errorf("failed to generate client key (%s)", err)
+		err = fmt.Errorf("failed to generate client key (%w)", err)
 		service.logger.Error(err)
-		return output.JsonErrInternal(err)
+		return output.ErrorJsonErrInternal(err)
 	}
 
 	// update storage
-	err = service.storage.PutCertClientKey(certId, clientKey, int(time.Now().Unix()))
+	err = service.storage.PutCertClientKey(certId, clientKey, time.Now())
 	if err != nil {
 		service.logger.Error(err)
-		return output.JsonErrStorageGeneric(err)
+		return output.ErrorJsonErrStorageGeneric(err)
 	}
 	cert.PostProcessingClientKeyB64 = clientKey
 
@@ -367,7 +377,7 @@ func (service *Service) MakeNewClientKey(w http.ResponseWriter, r *http.Request)
 	err = service.output.WriteJSON(w, response)
 	if err != nil {
 		service.logger.Errorf("failed to write json (%s)", err)
-		return output.JsonErrWriteJsonError(err)
+		return output.ErrorJsonErrWriteJsonError(err)
 	}
 
 	return nil

@@ -1,0 +1,617 @@
+package download_test
+
+import (
+	"certwarden-backend/pkg/domain/download"
+	"certwarden-backend/pkg/output"
+	"testing"
+)
+
+func TestOutPrivateCertChainViaHeader(t *testing.T) {
+	// create testing service
+	app := makeFakeApp(t)
+	service, err := download.NewService(app)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Test: No header provided
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, nil, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, nil, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, nil, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, nil, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, nil, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, nil, nil, "test-g", "", output.ErrJsonUnauthorized)
+
+	// Test: blank/empty apikey provided
+	apiKey := ""
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+
+	// Test: incorrect apikey provided
+	apiKey = "something"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "something.something"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+
+	// Test: just one of the apikeys
+	apiKey = "c-abc"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "k-123"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+
+	// Test: apikey variants
+	apiKey = ".k-123"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = ".c-abc"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "k-123."
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "c-abc."
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "123.k-123"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "k-123.123"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "123.c-abc"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "c-abc.123"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", "", output.ErrJsonUnauthorized)
+
+	// Test: correct apikey provided but via url
+	apiKey = "c-abc.k-123"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	// `b` doesn't have a non-new apikey
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	// `d` doesnt have a any correct apikey
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+
+	// Test: correct new apikey provided but via url
+	apiKey = "c-abc-new.k-123-new"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+
+	// Test: correct apikey provided
+	apiKey = "c-abc.k-123"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-a", `-----BEGIN RSA PRIVATE KEY-----
+MIIBOwIBAAJBAMLwirxhhFBmtzbKk0+m+MBRBUPcj1CrDmNmvVlkmTTKCzY1RNVk
+tOpgN6szMRlX1VRb+v5j7lJ5r2gJZrDNs8kCAwEAAQJACBwGRCSbuCszD1DJZLSM
+f+ue7XNydCekN0G3OiMeNdI92AUYEb+Yh8meJIYGob8wcAYCt3pp/WhhoM8Qw8kf
+BQIhAMaX+Dhswwehcf2hhO+eS0KNdB8i8demjJGLap+W/eZbAiEA+0osY3/LH24Z
+xWboFT6ISJuriZZK24AqbeiS/IsYj6sCIQC+mAEInhE7FI2i/k3n7kKKd9l3PIFg
+Fx6XXHcS/MVmOwIhAJi2lwtQ2oybSKYix+BBRGl70V+oKo4C8cYhlVJM5fxJAiBu
+N4JkNXHxXM7m8/ItFqWJtKH2DCTDl5SSt64qUnEEbw==
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIBOzCB5qADAgECAgFvMA0GCSqGSIb3DQEBCwUAMB4xHDAaBgNVBAoTE0ludGVy
+bWVkaWF0ZS1UZXN0LWEwHhcNMjYwNTAxMjIwNDMxWhcNMzYwNTAxMjIwNDMxWjAW
+MRQwEgYDVQQKEwtMZWFmLVRlc3QtYTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQCv
+ALveirKCCH4P0VX2ALGIu+rLoFPTuIoe94iPSdUVyiZYhtU94CwInFm1NiK0SJ88
+hRebXl34ueNysTUqBomnAgMBAAGjFzAVMBMGA1UdJQQMMAoGCCsGAQUFBwMBMA0G
+CSqGSIb3DQEBCwUAA0EApQ9eotS7RB9V8N06RTE6KJXtoTt5niwG0janr3fOYdk2
+6VVG1yS6fkb/Lyn35W/6LnIoGOwB1C8xntj5yvzTcw==
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBZzCCARGgAwIBAgIBCzANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtYTAeFw0yNjA1MDEyMjA0MzFaFw0zNjA1MDEyMjA0MzFaMB4xHDAaBgNV
+BAoTE0ludGVybWVkaWF0ZS1UZXN0LWEwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+rwC73oqyggh+D9FV9gCxiLvqy6BT07iKHveIj0nVFcomWIbVPeAsCJxZtTYitEif
+PIUXm15d+LnjcrE1KgaJpwIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAgQwDwYDVR0T
+AQH/BAUwAwEB/zAdBgNVHQ4EFgQUnzsNoqfuhd+iva9d5im/++NPU5gwDQYJKoZI
+hvcNAQELBQADQQBOwWQzYp8fj1Dk9TzikyoYdmONKWYknSSNjzD/kqMMI4fr51qM
+sp5CbPfXs9p7/ovby8Fmd4QY+CVXwlYrZZnI
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBXzCCAQmgAwIBAgIBATANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtYTAeFw0yNjA1MDEyMjA0MzFaFw0zNjA1MDEyMjA0MzFaMBYxFDASBgNV
+BAoTC1Jvb3QtVGVzdC1hMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAMR8JRKxAetS
+CF7wo/1pSnNDXz6ox/5AH+FXVVBy0LmVayxrgPxr5OVDAcgDwUx2gPB77XmtyCq8
+dmOfwm+vf3sCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
+Af8wHQYDVR0OBBYEFH+dsDe3QdO7VwziDWsg7E7VScrtMA0GCSqGSIb3DQEBCwUA
+A0EAT/w/FWrwVzV6uau8H2qIhBuM+fbVAlVpVuvg5AxVwAOv+YhuTc83BTakfXgH
+8Joh9m0OL1x+zBvxoby5o9Xg3Q==
+-----END CERTIFICATE-----`, nil)
+	// `b` doesn't have a non-new apikey
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-c", `-----BEGIN RSA PRIVATE KEY-----
+MIIBPAIBAAJBAN1VxmTOxWUcQjr7MNUxwkyJT5TuTQJU734/b9f8wKBVy87ikjFe
+UGJLzYRJYutBwJBztdXnlhOS/bXRBs1szUsCAwEAAQJACD2RTV+FaeZLcPa5MrbP
+jRnvpJPauiN/Zyvldh0q7s0xMQEZHVRmYUpsXZM4fFmSUvq3npBFptA3gNzOv8Hs
+AQIhAOFkEtCJ3TyXRb0/pdyY8wQijWaRvOgGgYvKLjy7YPvBAiEA+2SyKDgh15pB
+5yPyoGLg68tglMwm4VjVMFaeoiRw/AsCIQCIQVpKbX2senqzfL3FTUVkU4sN3b7I
+ud4o5vHqzxBDQQIhANggRwZK09V/Gf90qUf4GjS9wYfLR/XeoFIRdgoh2DznAiEA
+j2MbNxUDruMAHCN7tfis2cinNPVYxPGhPxrNWdikuoY=
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIBPDCB56ADAgECAgIBTTANBgkqhkiG9w0BAQsFADAeMRwwGgYDVQQKExNJbnRl
+cm1lZGlhdGUtVGVzdC1jMB4XDTI2MDUwMTIyMTM0MloXDTM2MDUwMTIyMTM0Mlow
+FjEUMBIGA1UEChMLTGVhZi1UZXN0LWMwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+pwYElBHs6irbGuWJFiQ0ydyiU4m1CrAcH53nE3+1vrIUS3k75QxGgndf4A8L5iIV
+mmLJWCTF4S0lLF5DqBYEMwIDAQABoxcwFTATBgNVHSUEDDAKBggrBgEFBQcDATAN
+BgkqhkiG9w0BAQsFAANBAKUgPgdxletP9b5RP8LOmGifDVDI+TQHHbSFdpkeNXm9
+mPv9L5+jK4g+0dedMKEy3Yk1FmfSIEXS1Xohk4BMNW8=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBZzCCARGgAwIBAgIBITANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtYzAeFw0yNjA1MDEyMjEzNDJaFw0zNjA1MDEyMjEzNDJaMB4xHDAaBgNV
+BAoTE0ludGVybWVkaWF0ZS1UZXN0LWMwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+pwYElBHs6irbGuWJFiQ0ydyiU4m1CrAcH53nE3+1vrIUS3k75QxGgndf4A8L5iIV
+mmLJWCTF4S0lLF5DqBYEMwIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAgQwDwYDVR0T
+AQH/BAUwAwEB/zAdBgNVHQ4EFgQUlFkGfdyfNVmhMQajsJA8JNp7sEgwDQYJKoZI
+hvcNAQELBQADQQAo7jCPam5K2xZqcvjVQBGhIi5Zxc+++XDbsHttiwWVWdE1DkqV
+roblaZUgYh2sf2XTG1U12LfTJ7LS9X3mC8HO
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBXzCCAQmgAwIBAgIBAzANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtYzAeFw0yNjA1MDEyMjEzNDJaFw0zNjA1MDEyMjEzNDJaMBYxFDASBgNV
+BAoTC1Jvb3QtVGVzdC1jMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANSk+BJk25sr
+O2XBe2yWlvqbQB817vJKOq8WEGCsj25W3XSDyGByvMTLUGM9nGH4mlE0moePVnf7
+gQek+T7syC8CAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
+Af8wHQYDVR0OBBYEFKBtmH4P8sXj3S55qI77ZL62ssufMA0GCSqGSIb3DQEBCwUA
+A0EATsMeVCPlMKlPADgnH6XLiL84ofGJNtUQ8YgO3EY2Jgpr0HELG1oSSizWNRes
+gGAROyiIETRshG2BbfFolQxEUw==
+-----END CERTIFICATE-----`, nil)
+	// // `d` doesnt have a any correct apikey
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", `-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAL8nKLmviCA2UqLqEwTJ8mPnuN5k1iKw4W1RlxYYtTpvyDDkz5v6
+C25MeHrbJqj0tzsBwXNZI2OHrBcSl3qWum0CAwEAAQJAKE4uu2Z8dsRVjNX74CLf
+2fp6g+QxtbtjsQwG5kkb73/Um0phhoLDtMzgNg+MncKKgjx2WmVkX45LTP/TN8Pv
+iQIhANbGnhTb6PD+ja1lTHuoxb16cKe3YjWRzu5QcqWwziE5AiEA49fKUxVQ5+gn
+vYeAzr1zmAnmlvSpgEYiFIx8ENN7xtUCICN0qHYjE6JtM3BTj7u+Ud6EzwIw+OqF
+Bpc6+qI1vOGpAiAZg7HBihKMVcAVhlYTUL3gGcO7xdwxZCku2eiOzc//nQIhALuF
+N/VC8wvORy4lKBkAeRy0oK+9o6R5mdzP3Fjpz9I4
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIBPDCB56ADAgECAgICKzANBgkqhkiG9w0BAQsFADAeMRwwGgYDVQQKExNJbnRl
+cm1lZGlhdGUtVGVzdC1lMB4XDTI2MDUwMTIyMTQ0N1oXDTM2MDUwMTIyMTQ0N1ow
+FjEUMBIGA1UEChMLTGVhZi1UZXN0LWUwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+rsPDF/cFzPtIHXEiaJf1EGI/SKFk+2fK7LaVqIJqDdECHOxz7e8MtdapREVkSvxV
+apaHsWlWwZ0dibcReFR0CQIDAQABoxcwFTATBgNVHSUEDDAKBggrBgEFBQcDATAN
+BgkqhkiG9w0BAQsFAANBAEUmUcREcOiU+NtRS+HVTGqMoWfoiOQ4aVPaADeRFUp4
+K+zKNM52f8wc8lFE6qlB2zDJICwzauZZGql3PuUuBss=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBZzCCARGgAwIBAgIBNzANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZTAeFw0yNjA1MDEyMjE0NDdaFw0zNjA1MDEyMjE0NDdaMB4xHDAaBgNV
+BAoTE0ludGVybWVkaWF0ZS1UZXN0LWUwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+rsPDF/cFzPtIHXEiaJf1EGI/SKFk+2fK7LaVqIJqDdECHOxz7e8MtdapREVkSvxV
+apaHsWlWwZ0dibcReFR0CQIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAgQwDwYDVR0T
+AQH/BAUwAwEB/zAdBgNVHQ4EFgQUUt4WDgWCFKQBP5pUgeJoaZ8OXUEwDQYJKoZI
+hvcNAQELBQADQQB9FrEVhfLtmX502bzUwWdThLgrnDpbUvAwi5sn6pD3bK3BFmkl
+g1/KbwHRr8PkIHTFtGbFNvZzjbrYb/FhHbSA
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBXzCCAQmgAwIBAgIBBTANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZTAeFw0yNjA1MDEyMjE0NDdaFw0zNjA1MDEyMjE0NDdaMBYxFDASBgNV
+BAoTC1Jvb3QtVGVzdC1lMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKBp48fOFsbg
+lz3dPzfZAwn6VPaDHkSBf8hBl3WHsd+XAErWYCzFLbDPrwTYLeoKTKBMvN6h36S6
+q528WfMRsAkCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
+Af8wHQYDVR0OBBYEFPggvDzOv1cAig6XMGB8mxeogmguMA0GCSqGSIb3DQEBCwUA
+A0EAEKXN9SngV8TnwoWVtZjHlZy3Y/kaY3vRfnRQB4cLeE6/UD4VshDFC9LbvH9P
+BcJ3umu+SsvpqDQvQagT/D/bZg==
+-----END CERTIFICATE-----`, nil)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-g", `-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAMGrhUa3l1WkRKNw5Sl/co9a5l+BjrJkokB/WBqMreyk+KYXaBFz
+9Phq2cWgQJZH1//Q1Hq+GBocmzXevS/DPjUCAwEAAQI/ZoHiiQujjjDkI54drVlH
+yZjTVrm8Ta/2MS019NeBNz8tk115EElXbuddVw025TiSG8X7h4LKiV3qZD8+VUhx
+AiEAymNMrOtjqQ8oRxcEY6E+6vrhTno9onaxcmGETgMLPp0CIQD0+QcYzbifkeOL
+m9/GYrx5Jkr7guA1T/2rpcIXK7leeQIhAJbXLZWPluawuldJq2bKDge6VmRULU3B
+4v0Z+y7di+rtAiA9S2oZLLA7TPeQYQoWy3G5JnmwgMi0zjT8k9cCkTAqkQIhAMGF
+j1f1P6e7Khe0uXD3N+r34piMQT0WX0po2rf16x0i
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIBPDCB56ADAgECAgIDCTANBgkqhkiG9w0BAQsFADAeMRwwGgYDVQQKExNJbnRl
+cm1lZGlhdGUtVGVzdC1nMB4XDTI2MDUwMjA0MDI1OFoXDTM2MDUwMjA0MDI1OFow
+FjEUMBIGA1UEChMLTGVhZi1UZXN0LWcwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+k58mZ4Z1BCkdmzl4Cna9rFTinSKvy9y/fcYtJPUHwd/Mf62WCGaRAKGTBRNxBkDk
+RJKfrgdNP125SZyERh7VcQIDAQABoxcwFTATBgNVHSUEDDAKBggrBgEFBQcDATAN
+BgkqhkiG9w0BAQsFAANBAB/Hjf+5i3xZ6kH9lQ4b96v4odYFaB+9oP8Tk00zmH7O
+xypvBwCIZaItlxUgJzOGAEPMpVkwE69KJMzR3N+YG5o=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBZzCCARGgAwIBAgIBTTANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZzAeFw0yNjA1MDIwNDAyNThaFw0zNjA1MDIwNDAyNThaMB4xHDAaBgNV
+BAoTE0ludGVybWVkaWF0ZS1UZXN0LWcwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+k58mZ4Z1BCkdmzl4Cna9rFTinSKvy9y/fcYtJPUHwd/Mf62WCGaRAKGTBRNxBkDk
+RJKfrgdNP125SZyERh7VcQIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAgQwDwYDVR0T
+AQH/BAUwAwEB/zAdBgNVHQ4EFgQUA0ZZBv8e35/IXD7eu6qI6R4WKcMwDQYJKoZI
+hvcNAQELBQADQQACsq/GqXJVzUGig4voguB96cBXxlLNP2UHnhAihLQZ8BY+g4mm
+HZtRvh8TK5VI0J64ed//xMalyNSeh9gva5KB
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBXzCCAQmgAwIBAgIBBzANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZzAeFw0yNjA1MDIwNDAyNThaFw0zNjA1MDIwNDAyNThaMBYxFDASBgNV
+BAoTC1Jvb3QtVGVzdC1nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKcI7qmhpJNm
+rmwcq8mQOa/82H4vMgg1dhZy7x8wi6HLIl3VCDiKeRrt4zr4r9DsOb1yP79QMjKV
+H0XpgTAepLkCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
+Af8wHQYDVR0OBBYEFLPogQY9cmqJ2oYKbYDPjB1fBKvgMA0GCSqGSIb3DQEBCwUA
+A0EAdy9WLjVZ1N5Fwb7DbteJ6FpatKIUG2i8gc1dnmHOEuchTc9P07KfjVeWMa2d
+3yrTcq88EI0Rc3ItjF7Ao6d8gg==
+-----END CERTIFICATE-----`, nil)
+
+	// Test: correct new apikey provided
+	apiKey = "c-abc-new.k-123-new"
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-b", `-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBALfdFbvTuf1r6Mk80ZLTfInivcfu9hF/JcRLnV+EOd4Z4/28zGBD
+IwlnYkWDD7gBhuBRJoUPLnyXJ7Rp84+bp10CAwEAAQJAKJHNK6Bse+VdXFgB4zys
+kG06VH0fCR3N2soXe728mguq9D3E3PyyFW/OyLUwWgXI3JXFC0+anu7oehFcE3o1
+aQIhAOkYh4WJiyP7eBPcuuRNaZUweBsmZMkoW80B3W/RsGn5AiEAye4hhcuWPVuu
+CjicvivY0I/y7tJ2nY/vXYfG1JqHoYUCIQDGWMghOpw6vyY7iI1D7heVCsx5Fd+X
+SI9tUFP0bbM3SQIgFZuy4KNhh11ZKWTXeQ4uHFtbDq1c3g15+tM9tqB2pRUCIBT8
+5URzNI/wCwqQD6D98UNKRJhD4MrDQlBBA9PYqnab
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIBPDCB56ADAgECAgIA3jANBgkqhkiG9w0BAQsFADAeMRwwGgYDVQQKExNJbnRl
+cm1lZGlhdGUtVGVzdC1iMB4XDTI2MDUwMTIyMTEwMFoXDTM2MDUwMTIyMTEwMFow
+FjEUMBIGA1UEChMLTGVhZi1UZXN0LWIwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+wAccmz5RPyTjdQnpTDUDuFwfo93bK8BfRqSd6+5bk7P3Qrb7pHfF3IZ/G4/VQKik
+SvcZsBXvUs/89Z6CrX9k0wIDAQABoxcwFTATBgNVHSUEDDAKBggrBgEFBQcDATAN
+BgkqhkiG9w0BAQsFAANBAJ2RTakwU/3dR3mZfhHBHairYA33pWtWNwBZK1GafOAb
+tQIixzXryAJo0bty01ipOrwViK8QAruggUFDTQ7trfo=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBZzCCARGgAwIBAgIBFjANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtYjAeFw0yNjA1MDEyMjExMDBaFw0zNjA1MDEyMjExMDBaMB4xHDAaBgNV
+BAoTE0ludGVybWVkaWF0ZS1UZXN0LWIwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+wAccmz5RPyTjdQnpTDUDuFwfo93bK8BfRqSd6+5bk7P3Qrb7pHfF3IZ/G4/VQKik
+SvcZsBXvUs/89Z6CrX9k0wIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAgQwDwYDVR0T
+AQH/BAUwAwEB/zAdBgNVHQ4EFgQUEI05lyluyXVvqiWPgeCKTFENnXEwDQYJKoZI
+hvcNAQELBQADQQAPrSh4VGjediCq2kWtkkQciRrz+nyRKKH50vbpTmImNLsxo4DW
+lu3c8NbPDv+Dl+nlovC7VvHm6Uq8aKcPpCuh
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBXzCCAQmgAwIBAgIBAjANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtYjAeFw0yNjA1MDEyMjExMDBaFw0zNjA1MDEyMjExMDBaMBYxFDASBgNV
+BAoTC1Jvb3QtVGVzdC1iMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANeEKvEOGie+
+J73rLRWN8fblF6pZ31tMeVAGXWvi1J6ZiLtDU2Dj65+9zWo/8TfIUtj9VwJRuPeM
+DNoVA5fG8wkCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
+Af8wHQYDVR0OBBYEFCqm2NbHYf7QY4LEPLZVa02U2lT9MA0GCSqGSIb3DQEBCwUA
+A0EAq7awvHcloElKaKXjHwnYADpmGHlzKxWXCYpbYewq+MWjkyNOz5+mtUPXR/Jk
+abU3C9xvwy61nVOjwhJpLlOSkA==
+-----END CERTIFICATE-----`, nil)
+	oneTest(t, service.DownloadPrivateCertChainViaHeader, &apiKey, nil, "test-e", `-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAL8nKLmviCA2UqLqEwTJ8mPnuN5k1iKw4W1RlxYYtTpvyDDkz5v6
+C25MeHrbJqj0tzsBwXNZI2OHrBcSl3qWum0CAwEAAQJAKE4uu2Z8dsRVjNX74CLf
+2fp6g+QxtbtjsQwG5kkb73/Um0phhoLDtMzgNg+MncKKgjx2WmVkX45LTP/TN8Pv
+iQIhANbGnhTb6PD+ja1lTHuoxb16cKe3YjWRzu5QcqWwziE5AiEA49fKUxVQ5+gn
+vYeAzr1zmAnmlvSpgEYiFIx8ENN7xtUCICN0qHYjE6JtM3BTj7u+Ud6EzwIw+OqF
+Bpc6+qI1vOGpAiAZg7HBihKMVcAVhlYTUL3gGcO7xdwxZCku2eiOzc//nQIhALuF
+N/VC8wvORy4lKBkAeRy0oK+9o6R5mdzP3Fjpz9I4
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIBPDCB56ADAgECAgICKzANBgkqhkiG9w0BAQsFADAeMRwwGgYDVQQKExNJbnRl
+cm1lZGlhdGUtVGVzdC1lMB4XDTI2MDUwMTIyMTQ0N1oXDTM2MDUwMTIyMTQ0N1ow
+FjEUMBIGA1UEChMLTGVhZi1UZXN0LWUwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+rsPDF/cFzPtIHXEiaJf1EGI/SKFk+2fK7LaVqIJqDdECHOxz7e8MtdapREVkSvxV
+apaHsWlWwZ0dibcReFR0CQIDAQABoxcwFTATBgNVHSUEDDAKBggrBgEFBQcDATAN
+BgkqhkiG9w0BAQsFAANBAEUmUcREcOiU+NtRS+HVTGqMoWfoiOQ4aVPaADeRFUp4
+K+zKNM52f8wc8lFE6qlB2zDJICwzauZZGql3PuUuBss=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBZzCCARGgAwIBAgIBNzANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZTAeFw0yNjA1MDEyMjE0NDdaFw0zNjA1MDEyMjE0NDdaMB4xHDAaBgNV
+BAoTE0ludGVybWVkaWF0ZS1UZXN0LWUwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+rsPDF/cFzPtIHXEiaJf1EGI/SKFk+2fK7LaVqIJqDdECHOxz7e8MtdapREVkSvxV
+apaHsWlWwZ0dibcReFR0CQIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAgQwDwYDVR0T
+AQH/BAUwAwEB/zAdBgNVHQ4EFgQUUt4WDgWCFKQBP5pUgeJoaZ8OXUEwDQYJKoZI
+hvcNAQELBQADQQB9FrEVhfLtmX502bzUwWdThLgrnDpbUvAwi5sn6pD3bK3BFmkl
+g1/KbwHRr8PkIHTFtGbFNvZzjbrYb/FhHbSA
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBXzCCAQmgAwIBAgIBBTANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZTAeFw0yNjA1MDEyMjE0NDdaFw0zNjA1MDEyMjE0NDdaMBYxFDASBgNV
+BAoTC1Jvb3QtVGVzdC1lMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKBp48fOFsbg
+lz3dPzfZAwn6VPaDHkSBf8hBl3WHsd+XAErWYCzFLbDPrwTYLeoKTKBMvN6h36S6
+q528WfMRsAkCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
+Af8wHQYDVR0OBBYEFPggvDzOv1cAig6XMGB8mxeogmguMA0GCSqGSIb3DQEBCwUA
+A0EAEKXN9SngV8TnwoWVtZjHlZy3Y/kaY3vRfnRQB4cLeE6/UD4VshDFC9LbvH9P
+BcJ3umu+SsvpqDQvQagT/D/bZg==
+-----END CERTIFICATE-----`, nil)
+}
+
+func TestOutPrivateCertChainViaURL(t *testing.T) {
+	// create testing service
+	app := makeFakeApp(t)
+	service, err := download.NewService(app)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Test: No header provided
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, nil, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, nil, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, nil, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, nil, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, nil, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, nil, "test-g", "", output.ErrJsonUnauthorized)
+
+	// Test: blank/empty apikey provided
+	apiKey := ""
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+
+	// Test: incorrect apikey provided
+	apiKey = "something"
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "something.something"
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+
+	// Test: just one of the apikeys
+	apiKey = "c-abc"
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "k-123"
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+
+	// Test: apikey variants
+	apiKey = ".k-123"
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = ".c-abc"
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "k-123."
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "c-abc."
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "123.k-123"
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "k-123.123"
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "123.c-abc"
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+	apiKey = "c-abc.123"
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-d", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", "", output.ErrJsonUnauthorized)
+
+	// Test: correct apikey provided
+	apiKey = "c-abc.k-123"
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-a", "", output.ErrJsonUnauthorized)
+	// `b` doesn't have a non-new apikey
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-c", "", output.ErrJsonUnauthorized)
+	// // `d` doesnt have a any correct apikey
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", `-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAL8nKLmviCA2UqLqEwTJ8mPnuN5k1iKw4W1RlxYYtTpvyDDkz5v6
+C25MeHrbJqj0tzsBwXNZI2OHrBcSl3qWum0CAwEAAQJAKE4uu2Z8dsRVjNX74CLf
+2fp6g+QxtbtjsQwG5kkb73/Um0phhoLDtMzgNg+MncKKgjx2WmVkX45LTP/TN8Pv
+iQIhANbGnhTb6PD+ja1lTHuoxb16cKe3YjWRzu5QcqWwziE5AiEA49fKUxVQ5+gn
+vYeAzr1zmAnmlvSpgEYiFIx8ENN7xtUCICN0qHYjE6JtM3BTj7u+Ud6EzwIw+OqF
+Bpc6+qI1vOGpAiAZg7HBihKMVcAVhlYTUL3gGcO7xdwxZCku2eiOzc//nQIhALuF
+N/VC8wvORy4lKBkAeRy0oK+9o6R5mdzP3Fjpz9I4
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIBPDCB56ADAgECAgICKzANBgkqhkiG9w0BAQsFADAeMRwwGgYDVQQKExNJbnRl
+cm1lZGlhdGUtVGVzdC1lMB4XDTI2MDUwMTIyMTQ0N1oXDTM2MDUwMTIyMTQ0N1ow
+FjEUMBIGA1UEChMLTGVhZi1UZXN0LWUwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+rsPDF/cFzPtIHXEiaJf1EGI/SKFk+2fK7LaVqIJqDdECHOxz7e8MtdapREVkSvxV
+apaHsWlWwZ0dibcReFR0CQIDAQABoxcwFTATBgNVHSUEDDAKBggrBgEFBQcDATAN
+BgkqhkiG9w0BAQsFAANBAEUmUcREcOiU+NtRS+HVTGqMoWfoiOQ4aVPaADeRFUp4
+K+zKNM52f8wc8lFE6qlB2zDJICwzauZZGql3PuUuBss=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBZzCCARGgAwIBAgIBNzANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZTAeFw0yNjA1MDEyMjE0NDdaFw0zNjA1MDEyMjE0NDdaMB4xHDAaBgNV
+BAoTE0ludGVybWVkaWF0ZS1UZXN0LWUwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+rsPDF/cFzPtIHXEiaJf1EGI/SKFk+2fK7LaVqIJqDdECHOxz7e8MtdapREVkSvxV
+apaHsWlWwZ0dibcReFR0CQIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAgQwDwYDVR0T
+AQH/BAUwAwEB/zAdBgNVHQ4EFgQUUt4WDgWCFKQBP5pUgeJoaZ8OXUEwDQYJKoZI
+hvcNAQELBQADQQB9FrEVhfLtmX502bzUwWdThLgrnDpbUvAwi5sn6pD3bK3BFmkl
+g1/KbwHRr8PkIHTFtGbFNvZzjbrYb/FhHbSA
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBXzCCAQmgAwIBAgIBBTANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZTAeFw0yNjA1MDEyMjE0NDdaFw0zNjA1MDEyMjE0NDdaMBYxFDASBgNV
+BAoTC1Jvb3QtVGVzdC1lMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKBp48fOFsbg
+lz3dPzfZAwn6VPaDHkSBf8hBl3WHsd+XAErWYCzFLbDPrwTYLeoKTKBMvN6h36S6
+q528WfMRsAkCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
+Af8wHQYDVR0OBBYEFPggvDzOv1cAig6XMGB8mxeogmguMA0GCSqGSIb3DQEBCwUA
+A0EAEKXN9SngV8TnwoWVtZjHlZy3Y/kaY3vRfnRQB4cLeE6/UD4VshDFC9LbvH9P
+BcJ3umu+SsvpqDQvQagT/D/bZg==
+-----END CERTIFICATE-----`, nil)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-g", `-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAMGrhUa3l1WkRKNw5Sl/co9a5l+BjrJkokB/WBqMreyk+KYXaBFz
+9Phq2cWgQJZH1//Q1Hq+GBocmzXevS/DPjUCAwEAAQI/ZoHiiQujjjDkI54drVlH
+yZjTVrm8Ta/2MS019NeBNz8tk115EElXbuddVw025TiSG8X7h4LKiV3qZD8+VUhx
+AiEAymNMrOtjqQ8oRxcEY6E+6vrhTno9onaxcmGETgMLPp0CIQD0+QcYzbifkeOL
+m9/GYrx5Jkr7guA1T/2rpcIXK7leeQIhAJbXLZWPluawuldJq2bKDge6VmRULU3B
+4v0Z+y7di+rtAiA9S2oZLLA7TPeQYQoWy3G5JnmwgMi0zjT8k9cCkTAqkQIhAMGF
+j1f1P6e7Khe0uXD3N+r34piMQT0WX0po2rf16x0i
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIBPDCB56ADAgECAgIDCTANBgkqhkiG9w0BAQsFADAeMRwwGgYDVQQKExNJbnRl
+cm1lZGlhdGUtVGVzdC1nMB4XDTI2MDUwMjA0MDI1OFoXDTM2MDUwMjA0MDI1OFow
+FjEUMBIGA1UEChMLTGVhZi1UZXN0LWcwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+k58mZ4Z1BCkdmzl4Cna9rFTinSKvy9y/fcYtJPUHwd/Mf62WCGaRAKGTBRNxBkDk
+RJKfrgdNP125SZyERh7VcQIDAQABoxcwFTATBgNVHSUEDDAKBggrBgEFBQcDATAN
+BgkqhkiG9w0BAQsFAANBAB/Hjf+5i3xZ6kH9lQ4b96v4odYFaB+9oP8Tk00zmH7O
+xypvBwCIZaItlxUgJzOGAEPMpVkwE69KJMzR3N+YG5o=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBZzCCARGgAwIBAgIBTTANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZzAeFw0yNjA1MDIwNDAyNThaFw0zNjA1MDIwNDAyNThaMB4xHDAaBgNV
+BAoTE0ludGVybWVkaWF0ZS1UZXN0LWcwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+k58mZ4Z1BCkdmzl4Cna9rFTinSKvy9y/fcYtJPUHwd/Mf62WCGaRAKGTBRNxBkDk
+RJKfrgdNP125SZyERh7VcQIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAgQwDwYDVR0T
+AQH/BAUwAwEB/zAdBgNVHQ4EFgQUA0ZZBv8e35/IXD7eu6qI6R4WKcMwDQYJKoZI
+hvcNAQELBQADQQACsq/GqXJVzUGig4voguB96cBXxlLNP2UHnhAihLQZ8BY+g4mm
+HZtRvh8TK5VI0J64ed//xMalyNSeh9gva5KB
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBXzCCAQmgAwIBAgIBBzANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZzAeFw0yNjA1MDIwNDAyNThaFw0zNjA1MDIwNDAyNThaMBYxFDASBgNV
+BAoTC1Jvb3QtVGVzdC1nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKcI7qmhpJNm
+rmwcq8mQOa/82H4vMgg1dhZy7x8wi6HLIl3VCDiKeRrt4zr4r9DsOb1yP79QMjKV
+H0XpgTAepLkCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
+Af8wHQYDVR0OBBYEFLPogQY9cmqJ2oYKbYDPjB1fBKvgMA0GCSqGSIb3DQEBCwUA
+A0EAdy9WLjVZ1N5Fwb7DbteJ6FpatKIUG2i8gc1dnmHOEuchTc9P07KfjVeWMa2d
+3yrTcq88EI0Rc3ItjF7Ao6d8gg==
+-----END CERTIFICATE-----`, nil)
+
+	// Test: correct new apikey provided
+	apiKey = "c-abc-new.k-123-new"
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-b", "", output.ErrJsonUnauthorized)
+	oneTest(t, service.DownloadPrivateCertChainViaUrl, nil, &apiKey, "test-e", `-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAL8nKLmviCA2UqLqEwTJ8mPnuN5k1iKw4W1RlxYYtTpvyDDkz5v6
+C25MeHrbJqj0tzsBwXNZI2OHrBcSl3qWum0CAwEAAQJAKE4uu2Z8dsRVjNX74CLf
+2fp6g+QxtbtjsQwG5kkb73/Um0phhoLDtMzgNg+MncKKgjx2WmVkX45LTP/TN8Pv
+iQIhANbGnhTb6PD+ja1lTHuoxb16cKe3YjWRzu5QcqWwziE5AiEA49fKUxVQ5+gn
+vYeAzr1zmAnmlvSpgEYiFIx8ENN7xtUCICN0qHYjE6JtM3BTj7u+Ud6EzwIw+OqF
+Bpc6+qI1vOGpAiAZg7HBihKMVcAVhlYTUL3gGcO7xdwxZCku2eiOzc//nQIhALuF
+N/VC8wvORy4lKBkAeRy0oK+9o6R5mdzP3Fjpz9I4
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIBPDCB56ADAgECAgICKzANBgkqhkiG9w0BAQsFADAeMRwwGgYDVQQKExNJbnRl
+cm1lZGlhdGUtVGVzdC1lMB4XDTI2MDUwMTIyMTQ0N1oXDTM2MDUwMTIyMTQ0N1ow
+FjEUMBIGA1UEChMLTGVhZi1UZXN0LWUwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+rsPDF/cFzPtIHXEiaJf1EGI/SKFk+2fK7LaVqIJqDdECHOxz7e8MtdapREVkSvxV
+apaHsWlWwZ0dibcReFR0CQIDAQABoxcwFTATBgNVHSUEDDAKBggrBgEFBQcDATAN
+BgkqhkiG9w0BAQsFAANBAEUmUcREcOiU+NtRS+HVTGqMoWfoiOQ4aVPaADeRFUp4
+K+zKNM52f8wc8lFE6qlB2zDJICwzauZZGql3PuUuBss=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBZzCCARGgAwIBAgIBNzANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZTAeFw0yNjA1MDEyMjE0NDdaFw0zNjA1MDEyMjE0NDdaMB4xHDAaBgNV
+BAoTE0ludGVybWVkaWF0ZS1UZXN0LWUwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA
+rsPDF/cFzPtIHXEiaJf1EGI/SKFk+2fK7LaVqIJqDdECHOxz7e8MtdapREVkSvxV
+apaHsWlWwZ0dibcReFR0CQIDAQABo0IwQDAOBgNVHQ8BAf8EBAMCAgQwDwYDVR0T
+AQH/BAUwAwEB/zAdBgNVHQ4EFgQUUt4WDgWCFKQBP5pUgeJoaZ8OXUEwDQYJKoZI
+hvcNAQELBQADQQB9FrEVhfLtmX502bzUwWdThLgrnDpbUvAwi5sn6pD3bK3BFmkl
+g1/KbwHRr8PkIHTFtGbFNvZzjbrYb/FhHbSA
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBXzCCAQmgAwIBAgIBBTANBgkqhkiG9w0BAQsFADAWMRQwEgYDVQQKEwtSb290
+LVRlc3QtZTAeFw0yNjA1MDEyMjE0NDdaFw0zNjA1MDEyMjE0NDdaMBYxFDASBgNV
+BAoTC1Jvb3QtVGVzdC1lMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKBp48fOFsbg
+lz3dPzfZAwn6VPaDHkSBf8hBl3WHsd+XAErWYCzFLbDPrwTYLeoKTKBMvN6h36S6
+q528WfMRsAkCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMB
+Af8wHQYDVR0OBBYEFPggvDzOv1cAig6XMGB8mxeogmguMA0GCSqGSIb3DQEBCwUA
+A0EAEKXN9SngV8TnwoWVtZjHlZy3Y/kaY3vRfnRQB4cLeE6/UD4VshDFC9LbvH9P
+BcJ3umu+SsvpqDQvQagT/D/bZg==
+-----END CERTIFICATE-----`, nil)
+
+	// Test: correct apikey but api is disabled
+	oneTest(t, service.DownloadKeyViaUrl, nil, &apiKey, "test-f", "", output.ErrJsonUnauthorized)
+}

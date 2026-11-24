@@ -6,6 +6,7 @@ import (
 	"certwarden-backend/pkg/challenges/providers/dns01cloudflare"
 	"certwarden-backend/pkg/challenges/providers/dns01goacme"
 	"certwarden-backend/pkg/challenges/providers/dns01manual"
+	"certwarden-backend/pkg/challenges/providers/dnspersist01manual"
 	"certwarden-backend/pkg/challenges/providers/http01internal"
 	"certwarden-backend/pkg/randomness"
 	"errors"
@@ -45,6 +46,12 @@ func (mgr *Manager) unsafeAddProvider(internalCfg InternalConfig, cfg providerCo
 
 	case *dns01goacme.Config:
 		serv, err = dns01goacme.NewService(mgr.childApp, realCfg)
+
+	case *dnspersist01manual.Config:
+		// todo: remove this if this Config ever has any values added to it
+		cfg = new(dnspersist01manual.Config)
+
+		serv, err = dnspersist01manual.NewService(mgr.childApp, realCfg)
 
 	default:
 		// default fail

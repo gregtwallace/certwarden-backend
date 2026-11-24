@@ -10,10 +10,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 const postProcessClientPostRoute = "/certwardenclient/api/v1/install"
-const postProcessClientPort = 5055
+const postProcessClientPortDefault = 5055
 
 // postProcessInnerClientPayload is the data that will be marshalled and
 // encrypted, then encoded, then embedded in the outer struct before sending to client
@@ -30,7 +32,7 @@ type postProcessClientPayload struct {
 
 // doClientPostProcess sends a data payload to the client located
 // at certificate's CN, using the encryption key specified on certificate
-func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
+func (j *postProcessJob) doClientPostProcess(order *Order, workerID int) {
 	// no-op if no client key
 	if order.Certificate.PostProcessingClientKeyB64 == "" || order.Certificate.PostProcessingClientAddress == "" {
 		j.service.logger.Debugf("orders: post processing worker %d: order %d: skipping client notify (cert does not have a client address and/or client key) (cert: %d, cn: %s, addr: %s)", workerID, order.ID, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
@@ -64,13 +66,13 @@ func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
 	}
 
 	// make AES-GCM for encrypting
-	aes, err := aes.NewCipher(aesKey)
+	aesCipher, err := aes.NewCipher(aesKey)
 	if err != nil {
 		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to make cipher (%s) (cert: %d, cn: %s, addr: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
 		return
 	}
 
-	gcm, err := cipher.NewGCM(aes)
+	gcm, err := cipher.NewGCM(aesCipher)
 	if err != nil {
 		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to make gcm AEAD (%s) (cert: %d, cn: %s, addr: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
 		return
@@ -98,20 +100,37 @@ func (j *postProcessJob) doClientPostProcess(order Order, workerID int) {
 	}
 
 	// send post to client
-	postTo := fmt.Sprintf("https://%s:%d%s", order.Certificate.PostProcessingClientAddress, postProcessClientPort, postProcessClientPostRoute)
-	resp, err := j.service.httpClient.Post(postTo, "application/json", bytes.NewBuffer(dataPayload))
+	clientAddress := order.Certificate.PostProcessingClientAddress
+	clientPort := postProcessClientPortDefault
+	clientAddrSplit := strings.Split(order.Certificate.PostProcessingClientAddress, ":")
+	if len(clientAddrSplit) == 2 {
+		portNumb, err := strconv.Atoi(clientAddrSplit[1])
+		if err != nil {
+			j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to parse client port number (%s) (cert: %d, cn: %s, addr: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
+			return
+		}
+
+		clientAddress = clientAddrSplit[0]
+		clientPort = portNumb
+	} else if len(clientAddrSplit) > 2 {
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to parse client address/port (%s) (cert: %d, cn: %s, addr: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
+		return
+	}
+	postTo := fmt.Sprintf("https://%s:%d%s", clientAddress, clientPort, postProcessClientPostRoute)
+	response, err := j.service.httpClient.Post(postTo, "application/json", bytes.NewBuffer(dataPayload))
 	if err != nil {
 		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: failed to post to client (%s) (cert: %d, cn: %s, addr: %s)", workerID, order.ID, err, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
 		return
 	}
 
 	// ensure body is read and closed
-	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, resp.Body)
+	defer response.Body.Close()
+	//nolint:errcheck // don't care about errors since we're discarding
+	io.Copy(io.Discard, response.Body)
 
 	// error if not 200
-	if resp.StatusCode != http.StatusOK {
-		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: post status %d (cert: %d, cn: %s, addr: %s)", workerID, order.ID, resp.StatusCode, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
+	if response.StatusCode != http.StatusOK {
+		j.service.logger.Errorf("orders: post processing worker %d: order %d: notify client failed: post status %d (cert: %d, cn: %s, addr: %s)", workerID, order.ID, response.StatusCode, order.Certificate.ID, order.Certificate.Subject, order.Certificate.PostProcessingClientAddress)
 		return
 	}
 

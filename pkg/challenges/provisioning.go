@@ -14,7 +14,7 @@ func errShutdown(domain string) error {
 
 // provision filles the apiMu channel and provisions the resource using the provider. The channel is emptied a few
 // seconds after provisioning completes as a way to rate limit these calls.
-func (service *Service) provision(domain string, token string, keyAuth acme.KeyAuth, provider providers.Service) (err error) {
+func (service *Service) provision(domain, token string, keyAuth acme.KeyAuth, provider providers.Service) (err error) {
 	// impose rate limit
 	err = service.apiRateLimiter.Wait(service.shutdownContext)
 	if err != nil {
@@ -33,14 +33,14 @@ func (service *Service) provision(domain string, token string, keyAuth acme.KeyA
 		return err
 	}
 
-	service.logger.Infof("challenges: provisioned domain %s", domain)
-	service.logger.Debugf("challenges: domain %s used token %s (key auth: %s)", domain, token, keyAuth)
+	service.logger.Infof("challenges: success on any needed provision action for domain %s", domain)
+	service.logger.Debugf("challenges: domain %s used token '%s' (key auth: '%s')", domain, token, keyAuth)
 	return nil
 }
 
 // deprovision fills the apiMu channel and deprovisions the resource using the provider. The channel is emptied one
 // second after deprovisioning completes as a way to rate limit these calls.
-func (service *Service) deprovision(domain string, token string, keyAuth acme.KeyAuth, provider providers.Service) (err error) {
+func (service *Service) deprovision(domain, token string, keyAuth acme.KeyAuth, provider providers.Service) (err error) {
 	// impose rate limit, but use background context
 	// background context ensures we try to deprovision all records
 	err = service.apiRateLimiter.Wait(context.Background())
@@ -56,7 +56,7 @@ func (service *Service) deprovision(domain string, token string, keyAuth acme.Ke
 		return err
 	}
 
-	service.logger.Infof("challenges: deprovisioned domain %s", domain)
-	service.logger.Debugf("challenges: domain %s previously used token %s (key auth: %s)", domain, token, keyAuth)
+	service.logger.Infof("challenges: success on any needed deprovision action for domain %s", domain)
+	service.logger.Debugf("challenges: domain %s previously used token '%s' (key auth: '%s')", domain, token, keyAuth)
 	return nil
 }

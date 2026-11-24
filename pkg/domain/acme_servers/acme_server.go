@@ -5,6 +5,7 @@ import (
 	"certwarden-backend/pkg/pagination_sort"
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 // Server is the struct for an ACME Server
@@ -14,8 +15,8 @@ type Server struct {
 	Description  string
 	DirectoryURL string
 	IsStaging    bool
-	CreatedAt    int
-	UpdatedAt    int
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 // AcmeService returns the service for a specific ACME Server specified
@@ -47,7 +48,7 @@ type ServerSummaryResponse struct {
 	TermsOfService          string `json:"terms_of_service"`
 }
 
-func (serv Server) summaryResponse(service *Service) (ServerSummaryResponse, error) {
+func (serv *Server) summaryResponse(service *Service) (ServerSummaryResponse, error) {
 	acmeService, err := service.AcmeService(serv.ID)
 	if err != nil {
 		return ServerSummaryResponse{}, err
@@ -67,12 +68,13 @@ func (serv Server) summaryResponse(service *Service) (ServerSummaryResponse, err
 // serverDetailedResponse contains full details about an ACME server
 type serverDetailedResponse struct {
 	ServerSummaryResponse
+
 	RawDirResp json.RawMessage `json:"raw_directory_response"`
-	CreatedAt  int             `json:"created_at"`
-	UpdatedAt  int             `json:"updated_at"`
+	CreatedAt  int64           `json:"created_at"`
+	UpdatedAt  int64           `json:"updated_at"`
 }
 
-func (serv Server) detailedResponse(service *Service) (serverDetailedResponse, error) {
+func (serv *Server) detailedResponse(service *Service) (serverDetailedResponse, error) {
 	summaryResp, err := serv.summaryResponse(service)
 	if err != nil {
 		service.logger.Errorf("failed to generate acme server summary response (%s)", err)
@@ -87,8 +89,8 @@ func (serv Server) detailedResponse(service *Service) (serverDetailedResponse, e
 	return serverDetailedResponse{
 		ServerSummaryResponse: summaryResp,
 		RawDirResp:            acmeService.DirectoryRawResponse(),
-		CreatedAt:             serv.CreatedAt,
-		UpdatedAt:             serv.UpdatedAt,
+		CreatedAt:             serv.CreatedAt.Unix(),
+		UpdatedAt:             serv.UpdatedAt.Unix(),
 	}, nil
 }
 

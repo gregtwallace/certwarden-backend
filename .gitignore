@@ -12,3 +12,13 @@
 
 # temporary debug files
 __debug*
+
+# test tmp files
+/test_data/*-journal
+/test_data/tmp
+
+# build output
+/_out
+
+# python cacje
+/__pycache__

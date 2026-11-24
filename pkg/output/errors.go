@@ -23,31 +23,31 @@ func (je JsonError) Error() string {
 //
 
 // generic
-func JsonErrNotFound(err error) *JsonError {
+func ErrorJsonErrNotFound(err error) *JsonError {
 	return &JsonError{
 		StatusCode: 404,
 		Message:    fmt.Sprintf("error: not found (%s)", err),
 	}
 }
 
-func JsonErrInternal(err error) *JsonError {
+func ErrorJsonErrInternal(err error) *JsonError {
 	return &JsonError{
 		StatusCode: 500,
 		Message:    fmt.Sprintf("error: internal (%s)", err),
 	}
 }
 
-var JsonErrUnauthorized = &JsonError{StatusCode: 401, Message: "unauthorized"}
+var ErrJsonUnauthorized = &JsonError{StatusCode: 401, Message: "unauthorized"}
 
 // storage
-func JsonErrStorageGeneric(err error) *JsonError {
+func ErrorJsonErrStorageGeneric(err error) *JsonError {
 	return &JsonError{
 		StatusCode: 500,
 		Message:    fmt.Sprintf("error: storage error (%s)", err),
 	}
 }
 
-func JsonErrDeleteInUse(recordType string) *JsonError {
+func ErrorJsonErrDeleteInUse(recordType string) *JsonError {
 	return &JsonError{
 		StatusCode: 409,
 		Message:    fmt.Sprintf("error: record (%s) in use, can't delete", recordType),
@@ -55,7 +55,7 @@ func JsonErrDeleteInUse(recordType string) *JsonError {
 }
 
 // write
-func JsonErrWriteJsonError(err error) *JsonError {
+func ErrorJsonErrWriteJsonError(err error) *JsonError {
 	return &JsonError{
 		StatusCode: 500,
 		Message:    fmt.Sprintf("error: json response write failed (%s)", err),
@@ -63,7 +63,7 @@ func JsonErrWriteJsonError(err error) *JsonError {
 }
 
 // validation
-func JsonErrValidationFailed(err error) *JsonError {
+func ErrorJsonErrValidationFailed(err error) *JsonError {
 	return &JsonError{
 		StatusCode: 400,
 		Message:    fmt.Sprintf("error: request validation (param or payload) invalid (%s)", err),

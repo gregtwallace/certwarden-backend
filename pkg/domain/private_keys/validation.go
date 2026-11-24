@@ -2,8 +2,8 @@ package private_keys
 
 import (
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/validation"
+	"database/sql"
 	"errors"
 	"fmt"
 )
@@ -21,23 +21,23 @@ var (
 
 // getKey returns the Key for the specified id or an
 // error.
-func (service *Service) getKey(id int) (Key, *output.JsonError) {
+func (service *Service) getKey(id int) (*Key, *output.JsonError) {
 	// basic check
-	if !validation.IsIdExistingValidRange(id) {
+	if !validation.IsValidIDValue(id) {
 		service.logger.Debug(ErrIdBad)
-		return Key{}, output.JsonErrValidationFailed(ErrIdBad)
+		return nil, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get the key from storage
 	key, err := service.storage.GetOneKeyById(id)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return Key{}, output.JsonErrNotFound(fmt.Errorf("key id %d not found", id))
+			return nil, output.ErrorJsonErrNotFound(fmt.Errorf("key id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Key{}, output.JsonErrStorageGeneric(err)
+			return nil, output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 
@@ -49,15 +49,15 @@ func (service *Service) getKey(id int) (Key, *output.JsonError) {
 // characters and also confirms the name is not already in use by another
 // key. If an id is specified, the name will also be accepted if the name
 // is already in use by the specified id.
-func (service *Service) NameValid(keyName string, keyId *int) bool {
+func (service *Service) IsValidName(keyName string, keyId *int) bool {
 	// basic character/length check
-	if !validation.NameValid(keyName) {
+	if !validation.IsValidName(keyName) {
 		return false
 	}
 
 	// make sure the name isn't already in use in storage
 	key, err := service.storage.GetOneKeyByName(keyName)
-	if errors.Is(err, storage.ErrNoRecord) {
+	if errors.Is(err, sql.ErrNoRows) {
 		// no rows means name is not in use
 		return true
 	} else if err != nil {
@@ -77,7 +77,7 @@ func (service *Service) NameValid(keyName string, keyId *int) bool {
 // return keys that exist but are not already in use by an account or a
 // certificate
 // TODO: Maybe move business logic here instead of in storage
-func (service *Service) AvailableKeys() (keys []Key, err error) {
+func (service *Service) AvailableKeys() (keys []*Key, err error) {
 	return service.storage.GetAvailableKeys()
 }
 

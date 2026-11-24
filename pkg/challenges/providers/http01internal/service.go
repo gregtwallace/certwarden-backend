@@ -66,7 +66,7 @@ func (service *Service) Stop() (err error) {
 
 	// common err check (shutdown err = fatal unstable)
 	if err != nil {
-		err = fmt.Errorf("stop http 01 server failed (%s) leaving http 01 internal provider in an unstable state", err)
+		err = fmt.Errorf("stop http 01 server failed (%w) leaving http 01 internal provider in an unstable state", err)
 		service.logger.Fatal(err)
 		// ^ app terminates
 		return err

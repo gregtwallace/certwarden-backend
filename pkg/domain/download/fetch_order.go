@@ -3,7 +3,7 @@ package download
 import (
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/output"
-	"certwarden-backend/pkg/storage"
+	"database/sql"
 	"errors"
 	"strings"
 	"time"
@@ -13,25 +13,25 @@ import (
 // apiKey matches the requested cert. It also checks the apiKeyViaUrl property if the client is making
 // a request with the apiKey in the Url. includeKeyPEM controls if the key API key is also checked
 // and sensitive Private Key PEM data is included in the Order.
-func (service *Service) getCertNewestValidOrder(certName string, apiKeyOrKeys string, apiKeyViaUrl bool, includeKeyPEM bool) (orders.Order, *output.JsonError) {
+func (service *Service) getCertNewestValidOrder(certName, apiKeyOrKeys string, apiKeyViaUrl, includeKeyPEM bool) (*orders.Order, *output.JsonError) {
 	// if apiKeyOrKeys is blank, definitely unauthorized
 	if apiKeyOrKeys == "" {
 		service.logger.Debug(errBlankApiKey)
-		return orders.Order{}, output.JsonErrUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// get the cert's newest valid order from storage
 	order, err := service.storage.GetCertNewestValidOrderByName(certName)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
 			// not yet authorized
-			return orders.Order{}, output.JsonErrNotFound(nil)
+			return nil, output.ErrorJsonErrNotFound(nil)
 		} else {
 			service.logger.Error(err)
 			// not yet authorized
-			return orders.Order{}, output.JsonErrStorageGeneric(nil)
+			return nil, output.ErrorJsonErrStorageGeneric(nil)
 		}
 	}
 
@@ -44,19 +44,21 @@ func (service *Service) getCertNewestValidOrder(certName string, apiKeyOrKeys st
 	// if apiKey came from URL, and cert does not support this, error
 	if apiKeyViaUrl && !order.Certificate.ApiKeyViaUrl {
 		service.logger.Debug(errApiKeyFromUrlDisallowed)
-		return orders.Order{}, output.JsonErrUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// verify cert apikey matches cert's cert apikey (new or old)
-	if (certApiKey != order.Certificate.ApiKey) && (certApiKey != order.Certificate.ApiKeyNew) {
+	// also ensure blank can't be a match (i.e. apiKey missing)
+	if (order.Certificate.ApiKey == "" || certApiKey != order.Certificate.ApiKey) &&
+		(order.Certificate.ApiKeyNew == "" || certApiKey != order.Certificate.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
-		return orders.Order{}, output.JsonErrUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// pem cant be blank
 	if order.Pem == nil || *order.Pem == "" {
 		service.logger.Debug(errNoPem)
-		return orders.Order{}, output.JsonErrNotFound(errNoPem)
+		return nil, output.ErrorJsonErrNotFound(errNoPem)
 	}
 
 	// next steps depend on if we're also checking the key API key
@@ -64,14 +66,14 @@ func (service *Service) getCertNewestValidOrder(certName string, apiKeyOrKeys st
 	if !includeKeyPEM {
 		// if not checking key API key, verify apiKeyOrKeys was only 1 key
 		if len(apiKeys) != 1 {
-			return orders.Order{}, output.JsonErrUnauthorized
+			return nil, output.ErrJsonUnauthorized
 		}
 
 		// if only checking cert key, nuke key private data as a safety precaution
 		order.FinalizedKey.Pem = ""
 
 		// before return, update cert last access, dont fail our though if this step fails, just log error
-		err = service.storage.PutCertLastAccess(order.Certificate.ID, time.Now().Unix())
+		err = service.storage.PutCertLastAccess(order.Certificate.ID, time.Now())
 		if err != nil {
 			service.logger.Errorf("download: failed to update cert (id: %d) last access time (%s)", order.Certificate.ID, err)
 		}
@@ -86,7 +88,7 @@ func (service *Service) getCertNewestValidOrder(certName string, apiKeyOrKeys st
 
 	// error if not exactly 2 apiKeys
 	if len(apiKeys) != 2 {
-		return orders.Order{}, output.JsonErrUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// check key API key
@@ -95,34 +97,36 @@ func (service *Service) getCertNewestValidOrder(certName string, apiKeyOrKeys st
 	// confirm the private key is valid
 	if order.FinalizedKey == nil {
 		service.logger.Debug(errFinalizedKeyMissing)
-		return orders.Order{}, output.JsonErrNotFound(errFinalizedKeyMissing)
+		return nil, output.ErrorJsonErrNotFound(errFinalizedKeyMissing)
 	}
 
 	// if key api key is disabled via API, error
 	if order.FinalizedKey.ApiKeyDisabled {
 		service.logger.Debug(errApiDisabled)
-		return orders.Order{}, output.JsonErrUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// if apiKey came from URL, and key does not support this, error
 	if apiKeyViaUrl && !order.FinalizedKey.ApiKeyViaUrl {
 		service.logger.Debug(errApiKeyFromUrlDisallowed)
-		return orders.Order{}, output.JsonErrUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// validate the apiKey for the private key is correct (new or old)
-	if (keyApiKey != order.FinalizedKey.ApiKey) && (keyApiKey != order.FinalizedKey.ApiKeyNew) {
+	// also ensure blank can't be a match (i.e. apiKey missing)
+	if (order.FinalizedKey.ApiKey == "" || keyApiKey != order.FinalizedKey.ApiKey) &&
+		(order.FinalizedKey.ApiKeyNew == "" || keyApiKey != order.FinalizedKey.ApiKeyNew) {
 		service.logger.Debug(errWrongApiKey)
-		return orders.Order{}, output.JsonErrUnauthorized
+		return nil, output.ErrJsonUnauthorized
 	}
 
 	// before return, update cert AND KEY last access, dont fail our though if this step fails, just log error
 	nowT := time.Now()
-	err = service.storage.PutCertLastAccess(order.Certificate.ID, nowT.Unix())
+	err = service.storage.PutCertLastAccess(order.Certificate.ID, nowT)
 	if err != nil {
 		service.logger.Errorf("download: failed to update cert (id: %d) last access time (%s)", order.Certificate.ID, err)
 	}
-	err = service.storage.PutKeyLastAccess(order.FinalizedKey.ID, nowT.Unix())
+	err = service.storage.PutKeyLastAccess(order.FinalizedKey.ID, nowT)
 	if err != nil {
 		service.logger.Errorf("download: failed to update key (id: %d) last access time (%s)", order.FinalizedKey.ID, err)
 	}

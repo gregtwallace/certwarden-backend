@@ -6,6 +6,7 @@ import (
 	"certwarden-backend/pkg/challenges/providers/dns01cloudflare"
 	"certwarden-backend/pkg/challenges/providers/dns01goacme"
 	"certwarden-backend/pkg/challenges/providers/dns01manual"
+	"certwarden-backend/pkg/challenges/providers/dnspersist01manual"
 	"certwarden-backend/pkg/challenges/providers/http01internal"
 )
 
@@ -46,24 +47,31 @@ type ConfigManagerDns01GoAcme struct {
 	*dns01goacme.Config `yaml:",inline"`
 }
 
+type ConfigManagerDnsPersist01Manual struct {
+	InternalConfig             `yaml:",inline"`
+	*dnspersist01manual.Config `yaml:",inline"`
+}
+
 // Config contains configurations for all provider types with domains
 type Config struct {
-	Http01InternalConfigs  []ConfigManagerHttp01Internal  `yaml:"http_01_internal,omitempty"`
-	Dns01ManualConfigs     []ConfigManagerDns01Manual     `yaml:"dns_01_manual,omitempty"`
-	Dns01AcmeDnsConfigs    []ConfigManagerDns01AcmeDns    `yaml:"dns_01_acme_dns,omitempty"`
-	Dns01AcmeShConfigs     []ConfigManagerDns01AcmeSh     `yaml:"dns_01_acme_sh,omitempty"`
-	Dns01CloudflareConfigs []ConfigManagerDns01Cloudflare `yaml:"dns_01_cloudflare,omitempty"`
-	Dns01GoAcmeConfigs     []ConfigManagerDns01GoAcme     `yaml:"dns_01_go_acme,omitempty"`
+	Http01InternalConfigs     []ConfigManagerHttp01Internal     `yaml:"http_01_internal,omitempty"`
+	Dns01ManualConfigs        []ConfigManagerDns01Manual        `yaml:"dns_01_manual,omitempty"`
+	Dns01AcmeDnsConfigs       []ConfigManagerDns01AcmeDns       `yaml:"dns_01_acme_dns,omitempty"`
+	Dns01AcmeShConfigs        []ConfigManagerDns01AcmeSh        `yaml:"dns_01_acme_sh,omitempty"`
+	Dns01CloudflareConfigs    []ConfigManagerDns01Cloudflare    `yaml:"dns_01_cloudflare,omitempty"`
+	Dns01GoAcmeConfigs        []ConfigManagerDns01GoAcme        `yaml:"dns_01_go_acme,omitempty"`
+	DnsPersist01ManualConfigs []ConfigManagerDnsPersist01Manual `yaml:"dns_persist_01_manual,omitempty"`
 }
 
 // Len returns the total number of Provider Configs, regardless of type.
-func (cfg Config) Len() int {
+func (cfg *Config) Len() int {
 	return len(cfg.Http01InternalConfigs) +
 		len(cfg.Dns01ManualConfigs) +
 		len(cfg.Dns01AcmeDnsConfigs) +
 		len(cfg.Dns01AcmeShConfigs) +
 		len(cfg.Dns01CloudflareConfigs) +
-		len(cfg.Dns01GoAcmeConfigs)
+		len(cfg.Dns01GoAcmeConfigs) +
+		len(cfg.DnsPersist01ManualConfigs)
 }
 
 // managerProviderConfig is a provider config and additional config for
@@ -74,7 +82,7 @@ type managerProviderConfig struct {
 }
 
 // All returns a slice of manager provider configs
-func (cfg Config) All() []managerProviderConfig {
+func (cfg *Config) All() []managerProviderConfig {
 	all := []managerProviderConfig{}
 	for _, mgrCfg := range cfg.Dns01AcmeDnsConfigs {
 		all = append(all, managerProviderConfig{
@@ -107,6 +115,12 @@ func (cfg Config) All() []managerProviderConfig {
 		})
 	}
 	for _, mgrCfg := range cfg.Dns01GoAcmeConfigs {
+		all = append(all, managerProviderConfig{
+			internalCfg: mgrCfg.InternalConfig,
+			providerCfg: mgrCfg.Config,
+		})
+	}
+	for _, mgrCfg := range cfg.DnsPersist01ManualConfigs {
 		all = append(all, managerProviderConfig{
 			internalCfg: mgrCfg.InternalConfig,
 			providerCfg: mgrCfg.Config,

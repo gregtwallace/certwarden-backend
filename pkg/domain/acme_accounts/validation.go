@@ -3,8 +3,8 @@ package acme_accounts
 import (
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/pagination_sort"
-	"certwarden-backend/pkg/storage"
 	"certwarden-backend/pkg/validation"
+	"database/sql"
 	"errors"
 	"fmt"
 )
@@ -21,23 +21,23 @@ var (
 )
 
 // getAccount returns the Account for the specified account id.
-func (service *Service) getAccount(id int) (Account, *output.JsonError) {
+func (service *Service) getAccount(id int) (*Account, *output.JsonError) {
 	// if id is not in valid range, it is definitely not valid
-	if !validation.IsIdExistingValidRange(id) {
+	if !validation.IsValidIDValue(id) {
 		service.logger.Debug(ErrIdBad)
-		return Account{}, output.JsonErrValidationFailed(ErrIdBad)
+		return nil, output.ErrorJsonErrValidationFailed(ErrIdBad)
 	}
 
 	// get from storage
-	account, err := service.storage.GetOneAccountById(id)
+	account, err := service.storage.GetOneAcmeAccountById(id)
 	if err != nil {
 		// special error case for no record found
-		if errors.Is(err, storage.ErrNoRecord) {
+		if errors.Is(err, sql.ErrNoRows) {
 			service.logger.Debug(err)
-			return Account{}, output.JsonErrNotFound(fmt.Errorf("account id %d not found", id))
+			return nil, output.ErrorJsonErrNotFound(fmt.Errorf("account id %d not found", id))
 		} else {
 			service.logger.Error(err)
-			return Account{}, output.JsonErrStorageGeneric(err)
+			return nil, output.ErrorJsonErrStorageGeneric(err)
 		}
 	}
 
@@ -51,13 +51,13 @@ func (service *Service) getAccount(id int) (Account, *output.JsonError) {
 // is already in use by the specified id.
 func (service *Service) nameValid(accountName string, accountId *int) bool {
 	// basic check
-	if !validation.NameValid(accountName) {
+	if !validation.IsValidName(accountName) {
 		return false
 	}
 
 	// make sure the name isn't already in use in storage
-	account, err := service.storage.GetOneAccountByName(accountName)
-	if errors.Is(err, storage.ErrNoRecord) {
+	account, err := service.storage.GetOneAcmeAccountByName(accountName)
+	if errors.Is(err, sql.ErrNoRows) {
 		// no rows means name is not in use (valid)
 		return true
 	} else if err != nil {
@@ -75,8 +75,8 @@ func (service *Service) nameValid(accountName string, accountId *int) bool {
 
 // GetUsableAccounts returns a list of accounts that have status == valid
 // and have also accepted the ToS (which is probably redundant)
-func (service *Service) GetUsableAccounts() ([]Account, error) {
-	accounts, _, err := service.storage.GetAllAccounts(pagination_sort.Query{})
+func (service *Service) GetUsableAccounts() ([]*Account, error) {
+	accounts, _, err := service.storage.GetAllAcmeAccounts(pagination_sort.Query{})
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (service *Service) AccountUsable(accountId int) (bool, *Account) {
 	// verify specified account id is usable
 	for i := range accounts {
 		if accounts[i].ID == accountId {
-			return true, &accounts[i]
+			return true, accounts[i]
 		}
 	}
 

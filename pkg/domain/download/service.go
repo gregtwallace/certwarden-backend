@@ -1,11 +1,11 @@
 package download
 
 import (
-	"certwarden-backend/pkg/domain/certificates"
 	"certwarden-backend/pkg/domain/orders"
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/output"
 	"errors"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -21,14 +21,12 @@ type App interface {
 
 // Storage interface for storage functions
 type Storage interface {
-	GetOneKeyByName(name string) (private_keys.Key, error)
+	GetOneKeyByName(name string) (*private_keys.Key, error)
 
-	GetOneCertByName(name string) (cert certificates.Certificate, err error)
+	GetCertNewestValidOrderByName(certName string) (*orders.Order, error)
 
-	GetCertNewestValidOrderByName(certName string) (order orders.Order, err error)
-
-	PutKeyLastAccess(keyId int, unixLastAccessTime int64) (err error)
-	PutCertLastAccess(certId int, unixLastAccessTime int64) (err error)
+	PutKeyLastAccess(keyId int, lastAccess time.Time) (err error)
+	PutCertLastAccess(certId int, lastAccess time.Time) (err error)
 }
 
 // Keys service struct
