@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"certwarden-backend/pkg/output"
 	"certwarden-backend/pkg/randomness"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -60,22 +61,41 @@ func setContentSecurityPolicy(w http.ResponseWriter, nonce []byte) {
 func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// remove the frontend URL root path (it is not used for the file path where frontend
 	// is stored)
-	fPath := strings.TrimPrefix(r.URL.Path, frontendUrlPath)
+	fPathRel := strings.TrimPrefix(r.URL.Path, frontendUrlPath)
 
 	// check file extension. if there is no extension, this is a path. always return index.html
 	// for any path. react router will handle routing of the path from there.
-	fExt := filepath.Ext(fPath)
+	fExt := filepath.Ext(fPathRel)
 	if fExt == "" {
-		fPath = "/index.html"
+		fPathRel = "/index.html"
 		fExt = ".html"
 	}
 
-	// app.logger.Debugf("serving frontend file: %s -> %s (fext = %s)", r.URL.Path, fPath, fExt)
+	// validate requested file is actually in the frontend path (i.e., block malicious payload)
+	fPathAbs, err := filepath.Abs(filepath.Join(frontendBuildDir, "/", fPathRel))
+	if err != nil {
+		err = fmt.Errorf("frontend: failed to get absolute path for request (%s)", err)
+		app.logger.Error(err)
+		return output.JsonErrInternal(err)
+	}
+
+	pathFrontendAbs, err := filepath.Abs(frontendBuildDir)
+	if err != nil {
+		err = fmt.Errorf("frontend: failed to get absolute path for frontend root (%s)", err)
+		app.logger.Error(err)
+		return output.JsonErrInternal(err)
+	}
+
+	// DO NOT REMOVE THIS CHECK -- security against path traversal
+	if !strings.HasPrefix(fPathAbs, pathFrontendAbs) {
+		app.logger.Errorf("frontend: failed to serve frontend file (malicious request url path? %s)", r.URL.Path)
+		return output.JsonErrNotFound(errors.New(r.URL.Path))
+	}
 
 	// open requested file
-	f, err := os.Open(frontendBuildDir + "/" + fPath)
+	f, err := os.Open(fPathAbs)
 	if err != nil {
-		err = fmt.Errorf("failed to open frontend file %s (%s)", fPath, err)
+		err = fmt.Errorf("frontend: failed to open frontend file %s (%s)", fPathRel, err)
 		app.logger.Debug(err)
 		return output.JsonErrNotFound(err)
 	}
@@ -84,7 +104,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 	// get file info
 	fInfo, err := f.Stat()
 	if err != nil {
-		err = fmt.Errorf("failed to stat frontend file %s (%s)", fPath, err)
+		err = fmt.Errorf("frontend: failed to stat frontend file %s (%s)", fPathRel, err)
 		app.logger.Error(err)
 		return output.JsonErrInternal(err)
 	}
@@ -92,12 +112,12 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 	// TODO: Remove when Vite/Emotion can properly handle this.
 	// This modifies the code of the relevant module (emotion sheet) to inject the nonce from the
 	// html meta tag.
-	if strings.HasPrefix(fPath, "/assets/emotion_sheet-") && fExt == ".js" {
+	if strings.HasPrefix(fPathRel, "/assets/emotion_sheet-") && fExt == ".js" {
 		// read in file to serve
 		fBytes := make([]byte, fInfo.Size())
 		_, err = f.Read(fBytes)
 		if err != nil {
-			err = fmt.Errorf("could not read frontend file %s into buffer for nonce injection (%s)", fPath, err)
+			err = fmt.Errorf("frontend: could not read frontend file %s into buffer for nonce injection (%s)", fPathRel, err)
 			app.logger.Error(err)
 			return output.JsonErrInternal(err)
 		}
@@ -124,7 +144,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		// generate nonce
 		nonce, err := randomness.GenerateFrontendNonce()
 		if err != nil {
-			err = fmt.Errorf("failed to generate nonce for frontend (%s)", err)
+			err = fmt.Errorf("frontend: failed to generate nonce for frontend (%s)", err)
 			app.logger.Error(err)
 			return output.JsonErrInternal(err)
 		}
@@ -136,7 +156,7 @@ func (app *Application) frontendFileHandler(w http.ResponseWriter, r *http.Reque
 		fBytes := make([]byte, fInfo.Size())
 		_, err = f.Read(fBytes)
 		if err != nil {
-			err = fmt.Errorf("failed to read frontend file %s into buffer for nonce injection (%s)", fPath, err)
+			err = fmt.Errorf("frontend: failed to read frontend file %s into buffer for nonce injection (%s)", fPathRel, err)
 			app.logger.Error(err)
 			return output.JsonErrInternal(err)
 		}

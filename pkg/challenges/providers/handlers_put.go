@@ -18,6 +18,8 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+var errInvalidProviderConfig = errors.New("providers: wrong config received")
+
 // modifyPayload is the needed payload to update an existing provider
 type modifyPayload struct {
 	// mandatory
@@ -136,7 +138,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 		switch pServ := p.Service.(type) {
 		case *http01internal.Service:
 			if payload.Http01InternalConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
 				return output.JsonErrValidationFailed(err)
 			}
@@ -144,7 +146,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 
 		case *dns01manual.Service:
 			if payload.Dns01ManualConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
 				return output.JsonErrValidationFailed(err)
 			}
@@ -152,7 +154,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 
 		case *dns01acmedns.Service:
 			if payload.Dns01AcmeDnsConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
 				return output.JsonErrValidationFailed(err)
 			}
@@ -160,7 +162,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 
 		case *dns01acmesh.Service:
 			if payload.Dns01AcmeShConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
 				return output.JsonErrValidationFailed(err)
 			}
@@ -168,7 +170,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 
 		case *dns01cloudflare.Service:
 			if payload.Dns01CloudflareConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
 				return output.JsonErrValidationFailed(err)
 			}
@@ -176,7 +178,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 
 		case *dns01goacme.Service:
 			if payload.Dns01GoAcmeConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
 				return output.JsonErrValidationFailed(err)
 			}
@@ -184,7 +186,7 @@ func (mgr *Manager) ModifyProvider(w http.ResponseWriter, r *http.Request) *outp
 
 		case *dnspersist01manual.Service:
 			if payload.DnsPersist01ManualConfig == nil {
-				err = errors.New("update provider wrong config received")
+				err = errInvalidProviderConfig
 				mgr.logger.Debug(err)
 				return output.JsonErrValidationFailed(err)
 			}
