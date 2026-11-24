@@ -68,6 +68,11 @@ func readAndParseLogFile(filePathAndName string) ([]logEntry, error) {
 		entries = append(entries, entry)
 	}
 
+	// ensure scanner didnt error
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
 	return entries, nil
 }
 
