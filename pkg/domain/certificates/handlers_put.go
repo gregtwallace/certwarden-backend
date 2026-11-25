@@ -142,31 +142,11 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 
 	// end validation
 
-	// tech phone number
-	if payload.TechPhone == nil {
-		payload.TechPhone = new(string)
-	} else if *payload.TechPhone != "" {
-		valid := validation.PhoneValid(*payload.TechPhone)
-		if !valid {
-			service.logger.Debug(ErrPhoneBad)
-			return output.JsonErrValidationFailed(ErrPhoneBad)
-		}
+	// validate technical contact details
+	if err := validateTechContacts(&payload.TechPhone, &payload.TechEmail); err != nil {
+		service.logger.Debug(err)
+		return output.JsonErrValidationFailed(err)
 	}
-
-	// end validation
-
-	// tech email address
-	if payload.TechEmail == nil {
-		payload.TechEmail = new(string)
-	} else if *payload.TechEmail != "" {
-		valid := validation.EmailValid(*payload.TechEmail)
-		if !valid {
-			service.logger.Debug(ErrEmailBad)
-			return output.JsonErrValidationFailed(ErrEmailBad)
-		}
-	}
-
-	// end validation
 
 	// add additional details to the payload before saving
 	payload.UpdatedAt = time.Now()
