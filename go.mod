@@ -2,8 +2,6 @@ module certwarden-backend
 
 go 1.27.3
 
-require github.com/julienschmidt/httprouter v1.3.0
-
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloudflare/cloudflare-go/v6 v6.10.0
@@ -12,6 +10,7 @@ require (
 	github.com/go-acme/lego/v5 v5.5.2
 	github.com/google/uuid v1.6.0
 	github.com/google/webpackager v0.0.0-20221027220206-53a1486f4205
+	github.com/julienschmidt/httprouter v1.3.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pressly/goose/v3 v3.27.3
 	github.com/rs/cors v1.11.1
@@ -87,7 +86,7 @@ require (
 	github.com/go-acme/tencentclouddnspod v1.3.131 // indirect
 	github.com/go-acme/tencentedgdeone v1.3.170 // indirect
 	github.com/go-errors/errors v1.5.1 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.5 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.6 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
