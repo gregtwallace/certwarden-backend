@@ -52,8 +52,8 @@ func (store *Storage) PutCertUpdate(payload *certificates.UpdatePayload) (*certi
 			post_processing_client_address = case when $17 is null then post_processing_client_address else $17 end,
 			post_processing_client_key = case when $18 is null then post_processing_client_key else $18 end,
 			profile = case when $19 is null then profile else $19 end,
-			tech_phone = case when $20 is null then profile else $20 end,
-			tech_email = case when $21 is null then profile else $21 end,
+			tech_phone = case when $20 is null then tech_phone else $20 end,
+			tech_email = case when $21 is null then tech_email else $21 end,
 			updated_at = $22
 		WHERE
 			id = $23
@@ -81,7 +81,6 @@ func (store *Storage) PutCertUpdate(payload *certificates.UpdatePayload) (*certi
 		payload.Profile,
 		payload.TechPhone,
 		payload.TechEmail,
-		payload.UpdatedAt,
 		payload.UpdatedAt.Unix(),
 		payload.ID,
 	)

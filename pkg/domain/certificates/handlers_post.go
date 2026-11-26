@@ -204,7 +204,7 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 	// validate technical contact details
 	if err := validateTechContacts(&payload.TechPhone, &payload.TechEmail); err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// if new private key was generated, save it to storage

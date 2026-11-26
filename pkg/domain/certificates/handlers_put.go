@@ -145,7 +145,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	// validate technical contact details
 	if err := validateTechContacts(&payload.TechPhone, &payload.TechEmail); err != nil {
 		service.logger.Debug(err)
-		return output.JsonErrValidationFailed(err)
+		return output.ErrorJsonErrValidationFailed(err)
 	}
 
 	// add additional details to the payload before saving

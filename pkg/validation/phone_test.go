@@ -26,7 +26,6 @@ var invalidPhones = []string{
 	"+---123456",	    // nonsense
 	"+999999999999999999", // too long
 	"+",		    // just plus
-	"",		    // empty is handled separately
 }
 
 // makeValidPhones returns valid test cases
@@ -48,6 +47,9 @@ func makeInvalidPhones() []string {
 }
 
 func TestValidation_PhoneValid(t *testing.T) {
+	if PhoneValid("") {
+		t.Error("invalid phone test case '' returned valid")
+	}
 	// test valid phones
 	for _, phone := range makeValidPhones() {
 		if !PhoneValid(phone) {
