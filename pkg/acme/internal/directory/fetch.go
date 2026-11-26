@@ -101,11 +101,11 @@ func (d *DirectoryMgr) updateDirectory(ctx context.Context) {
 		d.directoryObj = fetchedDir
 		d.muData.Unlock()
 
-		d.logger.Info("directory update detected changes and updated accordingly")
+		d.logger.Info("directory fetched and updated")
 	}
 
 	// update next update time (+ some jitter)
 	d.nextFetchAt = time.Now().Add(dirUpdateInterval).Add(time.Duration(rand.IntN(60)) * time.Second)
 
-	d.logger.Debugf("update complete, next run after %s", d.nextFetchAt.Format(time.RFC3339))
+	d.logger.Debugf("update job complete, next run not until after %s", d.nextFetchAt.Format(time.RFC3339))
 }
