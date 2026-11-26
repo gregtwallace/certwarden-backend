@@ -3,6 +3,7 @@ package acme_servers
 import (
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/validation"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -53,13 +54,10 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 		service.logger.Debug(ErrNameBad)
 		return output.ErrorJsonErrValidationFailed(ErrNameBad)
 	}
-	// directory_url (optional - check if not nil)
-	if payload.DirectoryURL != nil {
-		_, err = acme.FetchAcmeDirectory(service.httpClient, *payload.DirectoryURL)
-		if err != nil {
-			service.logger.Debug(err)
-			return output.ErrorJsonErrValidationFailed(err)
-		}
+	// directory_url (optional)
+	if payload.DirectoryURL != nil && !validation.IsValidHTTPSURL(*payload.DirectoryURL) {
+		service.logger.Debug(ErrACMEServerURLBad)
+		return output.ErrorJsonErrValidationFailed(ErrACMEServerURLBad)
 	}
 
 	// Description, and IsStaging do not need validation

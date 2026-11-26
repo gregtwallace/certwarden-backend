@@ -42,7 +42,7 @@ func (service *Service) orderExpiringCerts() {
 			ari := orders[i].RenewalInfo
 			newARI := false
 
-			if acmeService.SupportsARIExtension() &&
+			if acmeService.SupportsARIExtensionCached() &&
 				(orders[i].RenewalInfo == nil || orders[i].RenewalInfo.RetryAfter == nil || time.Now().After(*orders[i].RenewalInfo.RetryAfter)) {
 				acmeARI, err := acmeService.GetACMERenewalInfo(*orders[i].Pem)
 				// TODO: Add retry / exponential backoff for a couple attempts ?

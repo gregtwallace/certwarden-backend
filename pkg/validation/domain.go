@@ -46,12 +46,3 @@ func DomainAndPortValid(domain string) bool {
 	// validate domain
 	return regexp.MustCompile(DomainValidRegex).MatchString(clientAddrSplit[0])
 }
-
-// HttpsUrlValid returns true if the string contains only valid URL characters
-func HttpsUrlValid(url string) bool {
-	if !strings.HasPrefix(url, "https://") {
-		return false
-	}
-
-	return regexp.MustCompile(URLValidRegex).MatchString(url)
-}

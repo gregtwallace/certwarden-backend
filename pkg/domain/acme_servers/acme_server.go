@@ -60,8 +60,8 @@ func (serv *Server) summaryResponse(service *Service) (ServerSummaryResponse, er
 		Description:             serv.Description,
 		DirectoryURL:            serv.DirectoryURL,
 		IsStaging:               serv.IsStaging,
-		ExternalAccountRequired: acmeService.RequiresEAB(),
-		TermsOfService:          acmeService.TosUrl(),
+		ExternalAccountRequired: acmeService.RequiresEABCached(),
+		TermsOfService:          acmeService.TermsOfServiceURLCached(),
 	}, nil
 }
 
@@ -88,7 +88,7 @@ func (serv *Server) detailedResponse(service *Service) (serverDetailedResponse, 
 
 	return serverDetailedResponse{
 		ServerSummaryResponse: summaryResp,
-		RawDirResp:            acmeService.DirectoryRawResponse(),
+		RawDirResp:            acmeService.RawDirectoryCached(),
 		CreatedAt:             serv.CreatedAt.Unix(),
 		UpdatedAt:             serv.UpdatedAt.Unix(),
 	}, nil

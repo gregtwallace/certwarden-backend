@@ -58,12 +58,12 @@ func unmarshalOrder(jsonResp []byte, headers http.Header) (order Order, err erro
 // NewOrder posts a secure message to the NewOrder URL of the directory
 func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey) (order Order, err error) {
 	// Strip `replaces` if server doesn't indicate support, per recommendation in ARI s 5
-	if payload.Replaces != nil && !service.SupportsARIExtension() {
+	if payload.Replaces != nil && !service.SupportsARIExtensionCached() {
 		payload.Replaces = nil
 	}
 
 	// post new-order
-	jsonResp, headers, err := service.postToUrlSigned(payload, service.dir.NewOrder, accountKey)
+	jsonResp, headers, err := service.postToUrlSigned(payload, service.dir.NewOrderURL(service.shutdownContext), accountKey)
 	// if there is an acme.Error of type `malformed` or `alreadyReplaced` AND the `replaces` field is
 	// set, strip the replaces filed and do exactly 1 retry
 	acmeErr, isAcmeErr := errors.AsType[*Error](err)
@@ -71,7 +71,7 @@ func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey)
 		(acmeErr.Type == "urn:ietf:params:acme:error:malformed" || acmeErr.Type == "urn:ietf:params:acme:error:alreadyReplaced") {
 
 		payload.Replaces = nil
-		jsonResp, headers, err = service.postToUrlSigned(payload, service.dir.NewOrder, accountKey)
+		jsonResp, headers, err = service.postToUrlSigned(payload, service.dir.NewOrderURL(service.shutdownContext), accountKey)
 	}
 	if err != nil {
 		return Order{}, err

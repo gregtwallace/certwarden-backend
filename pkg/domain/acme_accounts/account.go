@@ -112,8 +112,8 @@ func (acct *Account) detailedResponse(service *Service) (accountDetailedResponse
 				DirectoryURL: acct.AcmeServer.DirectoryURL,
 				IsStaging:    acct.AcmeServer.IsStaging,
 			},
-			ExternalAccountRequired: as.RequiresEAB(),
-			TermsOfService:          as.TosUrl(),
+			ExternalAccountRequired: as.RequiresEABCached(),
+			TermsOfService:          as.TermsOfServiceURLCached(),
 		},
 		AccountKey: accountKeyDetailedResponse{
 			accountKeySummaryResponse: accountKeySummaryResponse{

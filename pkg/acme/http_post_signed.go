@@ -13,7 +13,7 @@ import (
 // postToUrlSigned posts the payload to the specified url, using the specified AccountKeyInfo
 // and returns the response body (data / bytes) and headers from ACME
 func (service *Service) postToUrlSigned(payload any, url string, accountKey AccountKey) (bodyBytes []byte, headers http.Header, err error) {
-	nonce, err := service.nonceManager.Nonce()
+	nonce, err := service.nonceManager.PopNonce(service.shutdownContext)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -99,7 +99,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 					service.logger.Warn("acme signed post: err badNonce but acme server did not provide new nonce in error response (server violates the spec; report it to the server dev)")
 
 					var mgrErr error
-					nextNonce, mgrErr = service.nonceManager.Nonce()
+					nextNonce, mgrErr = service.nonceManager.PopNonce(service.shutdownContext)
 					if mgrErr != nil {
 						// acme server didn't give proper nonce and getting one from nonce manager also failed;
 						// break and return original acmeError
@@ -125,7 +125,7 @@ func (service *Service) postToUrlSigned(payload any, url string, accountKey Acco
 
 	// save response nonce in manager
 	if response != nil && response.Header != nil {
-		nonceErr := service.nonceManager.SaveNonce(response.Header.Get("Replay-Nonce"))
+		nonceErr := service.nonceManager.PushNonce(response.Header.Get("Replay-Nonce"))
 		if nonceErr != nil {
 			// no need to error out of routine, just log the save failure
 			service.logger.Errorf("failed to save response replay nonce (%s)", nonceErr)

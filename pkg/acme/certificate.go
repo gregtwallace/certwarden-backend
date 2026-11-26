@@ -25,7 +25,7 @@ func (service *Service) RevokeCertificate(certPem string, reasonCode int, accoun
 	}
 
 	// revoke
-	_, _, err = service.postToUrlSigned(payload, service.dir.RevokeCert, accountKey)
+	_, _, err = service.postToUrlSigned(payload, service.dir.RevokeCertURL(service.shutdownContext), accountKey)
 	if err != nil {
 		return err
 	}

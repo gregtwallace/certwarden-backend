@@ -261,7 +261,7 @@ func (service *Service) NewOrderPayload(cert *certificates.Certificate) acme.New
 		}
 
 		// ARI extension not supported
-		if !acmeServ.SupportsARIExtension() {
+		if !acmeServ.SupportsARIExtensionCached() {
 			return nil
 		}
 

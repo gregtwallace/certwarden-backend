@@ -99,7 +99,7 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 			service.logger.Error(err)
 			return output.ErrorJsonErrInternal(err)
 		}
-		if !acmeService.ProfileValidate(*payload.Profile) {
+		if !acmeService.ProfileIsPublishedCached(*payload.Profile) {
 			err = fmt.Errorf("acme service for specified account does not advertise profile `%s`", *payload.Profile)
 			service.logger.Debug(err)
 			return output.ErrorJsonErrValidationFailed(err)

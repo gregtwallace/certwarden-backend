@@ -67,11 +67,6 @@ func unmarshalACMERenewalInfo(jsonResp json.RawMessage, headers http.Header) (ar
 	return ari, nil
 }
 
-// SupportsARIExtension returns true if the ACME Service supports ARI (ACME Renewal Info) extension
-func (service *Service) SupportsARIExtension() bool {
-	return service.dir.RenewalInfo != nil
-}
-
 // ACMERenewalInfoIdentifier returns the unique identifer for the passed in cert
 // as specified in the ACME ARI Draft v8 s 4.1
 func ACMERenewalInfoIdentifier(cert *x509.Certificate) (string, error) {
@@ -116,7 +111,7 @@ func ACMERenewalInfoIdentifier(cert *x509.Certificate) (string, error) {
 // for the specified certificate PEM.
 func (service *Service) GetACMERenewalInfo(certPem string) (*ACMERenewalInfo, error) {
 	// only some servers support this
-	if !service.SupportsARIExtension() {
+	if !service.SupportsARIExtensionCached() {
 		return nil, ErrARIUnsupported
 	}
 
@@ -142,7 +137,7 @@ func (service *Service) GetACMERenewalInfo(certPem string) (*ACMERenewalInfo, er
 		return nil, err
 	}
 
-	url := *service.dir.RenewalInfo + "/" + id
+	url := service.dir.RenewalInfoURL(service.shutdownContext) + "/" + id
 	resp, headers, err := service.get(url)
 	if err != nil {
 		return nil, fmt.Errorf("acme: ari get failed (%w)", err)
