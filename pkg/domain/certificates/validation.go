@@ -31,9 +31,31 @@ var (
 	ErrDomainBad        = errors.New("domain or subject name not valid")
 	ErrClientAddressBad = errors.New("client address is not valid")
 
+	// tech contacts
+	ErrPhoneBad        = errors.New("contact phone is not valid")
+	ErrEmailBad        = errors.New("contact email is not valid")
+
 	// aes key
 	ErrPostProcessingClientKeyB64Bad = errors.New("post processing aes key not valid")
 )
+
+// validateTechContacts normalizes omitted contact fields to empty strings and
+// validates any non-empty phone number and email address.
+func validateTechContacts(techPhone, techEmail **string) error {
+	if *techPhone == nil {
+		*techPhone = new(string)
+	} else if !validation.PhoneValidOrBlank(**techPhone) {
+		return ErrPhoneBad
+	}
+
+	if *techEmail == nil {
+		*techEmail = new(string)
+	} else if !validation.EmailValidOrBlank(**techEmail) {
+		return ErrEmailBad
+	}
+
+	return nil
+}
 
 // GetCertificate returns the Certificate for the specified id.
 func (service *Service) GetCertificate(id int) (*Certificate, *output.JsonError) {

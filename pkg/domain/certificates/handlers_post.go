@@ -18,6 +18,7 @@ import (
 
 // NewPayload is the struct for creating a new certificate
 type NewPayload struct {
+
 	Name                        *string         `json:"name"`
 	Description                 *string         `json:"description"`
 	PrivateKeyID                *int            `json:"private_key_id"`
@@ -37,6 +38,8 @@ type NewPayload struct {
 	PostProcessingClientAddress *string         `json:"post_processing_client_address"`
 	PostProcessingClientKeyB64  *string         `json:"post_processing_client_key"`
 	Profile                     *string         `json:"profile"`
+	TechPhone                   *string         `json:"tech_phone"`
+	TechEmail                   *string         `json:"tech_email"`
 	ApiKey                      string          `json:"-"`
 	ApiKeyViaUrl                bool            `json:"-"`
 	CreatedAt                   time.Time       `json:"-"`
@@ -197,6 +200,12 @@ func (service *Service) PostNewCert(w http.ResponseWriter, r *http.Request) *out
 		}
 	}
 	// end validation
+
+	// validate technical contact details
+	if err := validateTechContacts(&payload.TechPhone, &payload.TechEmail); err != nil {
+		service.logger.Debug(err)
+		return output.ErrorJsonErrValidationFailed(err)
+	}
 
 	// if new private key was generated, save it to storage
 	createdAtAndUpdatedAt := time.Now()

@@ -35,6 +35,8 @@ type UpdatePayload struct {
 	ApiKey                      *string         `json:"api_key"`
 	ApiKeyNew                   *string         `json:"api_key_new"`
 	ApiKeyViaUrl                *bool           `json:"api_key_via_url"`
+	TechPhone                   *string         `json:"tech_phone"`
+	TechEmail                   *string         `json:"tech_email"`
 	UpdatedAt                   time.Time       `json:"-"`
 }
 
@@ -139,6 +141,12 @@ func (service *Service) PutDetailsCert(w http.ResponseWriter, r *http.Request) *
 	}
 
 	// end validation
+
+	// validate technical contact details
+	if err := validateTechContacts(&payload.TechPhone, &payload.TechEmail); err != nil {
+		service.logger.Debug(err)
+		return output.ErrorJsonErrValidationFailed(err)
+	}
 
 	// add additional details to the payload before saving
 	payload.UpdatedAt = time.Now()
