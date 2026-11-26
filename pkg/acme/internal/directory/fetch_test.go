@@ -50,7 +50,7 @@ func TestUpdateDirectory_Success(t *testing.T) {
 	// next fetch is 15 minutes out, plus 0-59 seconds of jitter
 	assertNextFetchWithin(t, dm.nextFetchAt, before, after, dirUpdateInterval, 59*time.Second)
 
-	assert.Equal(t, 1, logs.FilterMessageSnippet("detected changes").Len())
+	assert.Equal(t, 1, logs.FilterMessageSnippet("directory fetched and updated").Len())
 	assertSemaphoreFree(t, dm)
 }
 
@@ -167,7 +167,7 @@ func TestUpdateDirectory_PicksUpChanges(t *testing.T) {
 	assert.Nil(t, d.Meta.Profiles)
 	assert.False(t, d.Meta.ExternalAccountRequired)
 
-	assert.Equal(t, 2, logs.FilterMessageSnippet("detected changes").Len())
+	assert.Equal(t, 2, logs.FilterMessageSnippet("directory fetched and updated").Len())
 }
 
 func TestUpdateDirectory_UnchangedDirectory(t *testing.T) {
@@ -175,14 +175,14 @@ func TestUpdateDirectory_UnchangedDirectory(t *testing.T) {
 	ctx := context.Background()
 
 	dm.updateDirectory(ctx)
-	require.Equal(t, 1, logs.FilterMessageSnippet("detected changes").Len())
+	require.Equal(t, 1, logs.FilterMessageSnippet("directory fetched and updated").Len())
 	first := dm.directoryObj
 
 	expire(dm)
 	dm.updateDirectory(ctx)
 
 	assert.Equal(t, first, dm.directoryObj)
-	assert.Equal(t, 1, logs.FilterMessageSnippet("detected changes").Len(),
+	assert.Equal(t, 1, logs.FilterMessageSnippet("directory fetched and updated").Len(),
 		"an identical directory must not be logged as a change")
 	assert.True(t, dm.nextFetchAt.After(time.Now().Add(dirUpdateInterval-time.Minute)),
 		"next fetch must still be pushed out a full interval when nothing changed")
