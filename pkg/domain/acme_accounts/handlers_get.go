@@ -84,7 +84,7 @@ func (service *Service) GetOneAccount(w http.ResponseWriter, r *http.Request) *o
 		return outErr
 	}
 
-	detailedResp, err := account.detailedResponse(service)
+	detailedResp, err := account.detailedResponse(r.Context(), service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
@@ -122,7 +122,7 @@ type newAccountOptions struct {
 // present options when the user is creating an account
 func (service *Service) GetNewAccountOptions(w http.ResponseWriter, r *http.Request) *output.JsonError {
 	// acme servers
-	acmeServers, err := service.acmeServerService.ListAllServersSummaries()
+	acmeServers, err := service.acmeServerService.ListAllServersSummaries(r.Context())
 	if err != nil {
 		service.logger.Error(err)
 		return output.ErrorJsonErrInternal(err)

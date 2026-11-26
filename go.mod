@@ -234,6 +234,8 @@ require (
 
 replace certwarden-backend/pkg/acme => /pkg/acme
 
+replace certwarden-backend/pkg/acme/internal/directory => /pkg/acme/internal/directory
+
 replace certwarden-backend/pkg/acme/internal/noncemanager => /pkg/acme/internal/noncemanager
 
 replace certwarden-backend/pkg/challenges => /pkg/challenges

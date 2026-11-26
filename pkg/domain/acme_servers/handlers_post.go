@@ -3,6 +3,7 @@ package acme_servers
 import (
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/output"
+	"certwarden-backend/pkg/validation"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -41,16 +42,16 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) *o
 	if payload.Description == nil {
 		payload.Description = new(string)
 	}
-	// directory url (required - confirm it actually fetches and decodes properly)
+	// directory url (required)
 	if payload.DirectoryURL == nil {
 		err = errors.New("directory url is not specified")
 		service.logger.Debug(err)
 		return output.ErrorJsonErrValidationFailed(err)
 	}
-	_, err = acme.FetchAcmeDirectory(service.httpClient, *payload.DirectoryURL)
-	if err != nil {
-		service.logger.Debug(err)
-		return output.ErrorJsonErrValidationFailed(err)
+
+	if !validation.IsValidHTTPSURL(*payload.DirectoryURL) {
+		service.logger.Debug(ErrACMEServerURLBad)
+		return output.ErrorJsonErrValidationFailed(ErrACMEServerURLBad)
 	}
 
 	// is staging (required)
@@ -84,7 +85,7 @@ func (service *Service) PostNewServer(w http.ResponseWriter, r *http.Request) *o
 	}
 
 	// make detailed response
-	detailedResp, err := newServer.detailedResponse(service)
+	detailedResp, err := newServer.detailedResponse(r.Context(), service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate server summary response (%w)", err)
 		service.logger.Error(err)

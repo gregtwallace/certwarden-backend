@@ -3,6 +3,7 @@ package acme_servers
 import (
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/pagination_sort"
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -48,7 +49,7 @@ type ServerSummaryResponse struct {
 	TermsOfService          string `json:"terms_of_service"`
 }
 
-func (serv *Server) summaryResponse(service *Service) (ServerSummaryResponse, error) {
+func (serv *Server) summaryResponse(ctx context.Context, service *Service) (ServerSummaryResponse, error) {
 	acmeService, err := service.AcmeService(serv.ID)
 	if err != nil {
 		return ServerSummaryResponse{}, err
@@ -60,8 +61,8 @@ func (serv *Server) summaryResponse(service *Service) (ServerSummaryResponse, er
 		Description:             serv.Description,
 		DirectoryURL:            serv.DirectoryURL,
 		IsStaging:               serv.IsStaging,
-		ExternalAccountRequired: acmeService.RequiresEAB(),
-		TermsOfService:          acmeService.TosUrl(),
+		ExternalAccountRequired: acmeService.RequiresEAB(ctx),
+		TermsOfService:          acmeService.TermsOfServiceURL(ctx),
 	}, nil
 }
 
@@ -74,8 +75,8 @@ type serverDetailedResponse struct {
 	UpdatedAt  int64           `json:"updated_at"`
 }
 
-func (serv *Server) detailedResponse(service *Service) (serverDetailedResponse, error) {
-	summaryResp, err := serv.summaryResponse(service)
+func (serv *Server) detailedResponse(ctx context.Context, service *Service) (serverDetailedResponse, error) {
+	summaryResp, err := serv.summaryResponse(ctx, service)
 	if err != nil {
 		service.logger.Errorf("failed to generate acme server summary response (%s)", err)
 		return serverDetailedResponse{}, err
@@ -88,14 +89,14 @@ func (serv *Server) detailedResponse(service *Service) (serverDetailedResponse, 
 
 	return serverDetailedResponse{
 		ServerSummaryResponse: summaryResp,
-		RawDirResp:            acmeService.DirectoryRawResponse(),
+		RawDirResp:            acmeService.RawDirectory(ctx),
 		CreatedAt:             serv.CreatedAt.Unix(),
 		UpdatedAt:             serv.UpdatedAt.Unix(),
 	}, nil
 }
 
 // ListAllServersSummaries returns a slice of summaries about all configured Servers
-func (service *Service) ListAllServersSummaries() ([]ServerSummaryResponse, error) {
+func (service *Service) ListAllServersSummaries(ctx context.Context) ([]ServerSummaryResponse, error) {
 	// fetch from storage
 	servers, _, err := service.storage.GetAllAcmeServers(pagination_sort.Query{})
 	if err != nil {
@@ -106,7 +107,7 @@ func (service *Service) ListAllServersSummaries() ([]ServerSummaryResponse, erro
 	serverSummaries := []ServerSummaryResponse{}
 	for i := range servers {
 		// populate summary
-		serverSummary, err := servers[i].summaryResponse(service)
+		serverSummary, err := servers[i].summaryResponse(ctx, service)
 		if err != nil {
 			return nil, err
 		}

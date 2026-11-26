@@ -16,15 +16,15 @@ func defaultTilNext() time.Duration {
 
 // fetchNonceOnce fetches a nonce from the URL using the http client. If the request fails for some reason, it
 // returns a duration for when to try again.
-func fetchNonceOnce(ctx context.Context, cli *http.Client, nonceURL *string) (nonce string, nextTry time.Duration) {
-	if nonceURL == nil || *nonceURL == "" {
+func fetchNonceOnce(ctx context.Context, cli *http.Client, nonceURL string) (nonce string, nextTry time.Duration) {
+	if nonceURL == "" {
 		return "", defaultTilNext()
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodHead, *nonceURL, http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, nonceURL, http.NoBody)
 	if err != nil {
 		return "", defaultTilNext()
 	}

@@ -102,7 +102,7 @@ func (service *Service) PostNewAccount(w http.ResponseWriter, r *http.Request) *
 		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
-	detailedResp, err := newAcct.detailedResponse(service)
+	detailedResp, err := newAcct.detailedResponse(r.Context(), service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)

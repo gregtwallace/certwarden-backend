@@ -26,10 +26,8 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
-func strPtr(s string) *string { return &s }
-
 func TestFetchNonceOnce_NilURL(t *testing.T) {
-	nonce, next := fetchNonceOnce(context.Background(), http.DefaultClient, nil)
+	nonce, next := fetchNonceOnce(context.Background(), http.DefaultClient, "")
 	if nonce != "" {
 		t.Errorf("nonce = %q, want empty", nonce)
 	}
@@ -39,7 +37,7 @@ func TestFetchNonceOnce_NilURL(t *testing.T) {
 }
 
 func TestFetchNonceOnce_EmptyURL(t *testing.T) {
-	nonce, next := fetchNonceOnce(context.Background(), http.DefaultClient, strPtr(""))
+	nonce, next := fetchNonceOnce(context.Background(), http.DefaultClient, "")
 	if nonce != "" {
 		t.Errorf("nonce = %q, want empty", nonce)
 	}
@@ -50,7 +48,7 @@ func TestFetchNonceOnce_EmptyURL(t *testing.T) {
 
 func TestFetchNonceOnce_InvalidURL(t *testing.T) {
 	// a control character makes http.NewRequestWithContext fail
-	nonce, next := fetchNonceOnce(context.Background(), http.DefaultClient, strPtr("http://example.com"))
+	nonce, next := fetchNonceOnce(context.Background(), http.DefaultClient, "http://example.com")
 	if nonce != "" {
 		t.Errorf("nonce = %q, want empty", nonce)
 	}
@@ -65,7 +63,7 @@ func TestFetchNonceOnce_ClientError(t *testing.T) {
 			return nil, errors.New("boom")
 		}),
 	}
-	nonce, next := fetchNonceOnce(context.Background(), cli, strPtr("https://example.invalid/nonce"))
+	nonce, next := fetchNonceOnce(context.Background(), cli, "https://example.invalid/nonce")
 	if nonce != "" {
 		t.Errorf("nonce = %q, want empty", nonce)
 	}
@@ -79,7 +77,7 @@ func TestFetchNonceOnce_ServerUnreachable(t *testing.T) {
 	url := srv.URL
 	srv.Close() // closed, so connection will be refused
 
-	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), &url)
+	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), url)
 	if nonce != "" {
 		t.Errorf("nonce = %q, want empty", nonce)
 	}
@@ -98,7 +96,7 @@ func TestFetchNonceOnce_ContextCanceled(t *testing.T) {
 	cancel()
 
 	url := srv.URL
-	nonce, next := fetchNonceOnce(ctx, srv.Client(), &url)
+	nonce, next := fetchNonceOnce(ctx, srv.Client(), url)
 	if nonce != "" {
 		t.Errorf("nonce = %q, want empty", nonce)
 	}
@@ -119,7 +117,7 @@ func TestFetchNonceOnce_AppliesTimeout(t *testing.T) {
 	}
 
 	start := time.Now()
-	fetchNonceOnce(context.Background(), cli, strPtr("https://example.invalid/nonce"))
+	fetchNonceOnce(context.Background(), cli, "https://example.invalid/nonce")
 
 	if !hasDeadline {
 		t.Fatal("request context has no deadline")
@@ -139,7 +137,7 @@ func TestFetchNonceOnce_Success(t *testing.T) {
 	defer srv.Close()
 
 	url := srv.URL
-	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), &url)
+	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), url)
 	if nonce != "abc123" {
 		t.Errorf("nonce = %q, want %q", nonce, "abc123")
 	}
@@ -160,7 +158,7 @@ func TestFetchNonceOnce_NonceReturnedOnNon200(t *testing.T) {
 	defer srv.Close()
 
 	url := srv.URL
-	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), &url)
+	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), url)
 	if nonce != "from-error-response" {
 		t.Errorf("nonce = %q, want %q", nonce, "from-error-response")
 	}
@@ -177,7 +175,7 @@ func TestFetchNonceOnce_NonceTakesPrecedenceOverRetryAfter(t *testing.T) {
 	defer srv.Close()
 
 	url := srv.URL
-	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), &url)
+	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), url)
 	if nonce != "n1" {
 		t.Errorf("nonce = %q, want %q", nonce, "n1")
 	}
@@ -191,7 +189,7 @@ func TestFetchNonceOnce_NoNonceNoRetryAfter(t *testing.T) {
 	defer srv.Close()
 
 	url := srv.URL
-	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), &url)
+	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), url)
 	if nonce != "" {
 		t.Errorf("nonce = %q, want empty", nonce)
 	}
@@ -209,7 +207,7 @@ func TestFetchNonceOnce_RetryAfterSeconds(t *testing.T) {
 	defer srv.Close()
 
 	url := srv.URL
-	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), &url)
+	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), url)
 	if nonce != "" {
 		t.Errorf("nonce = %q, want empty", nonce)
 	}
@@ -230,7 +228,7 @@ func TestFetchNonceOnce_RetryAfterHTTPDate(t *testing.T) {
 	defer srv.Close()
 
 	url := srv.URL
-	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), &url)
+	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), url)
 	if nonce != "" {
 		t.Errorf("nonce = %q, want empty", nonce)
 	}
@@ -251,7 +249,7 @@ func TestFetchNonceOnce_InvalidRetryAfter(t *testing.T) {
 	defer srv.Close()
 
 	url := srv.URL
-	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), &url)
+	nonce, next := fetchNonceOnce(context.Background(), srv.Client(), url)
 	if nonce != "" {
 		t.Errorf("nonce = %q, want empty", nonce)
 	}
@@ -277,7 +275,7 @@ func TestFetchNonceOnce_ReadsAndClosesBody(t *testing.T) {
 		}),
 	}
 
-	nonce, _ := fetchNonceOnce(context.Background(), cli, strPtr("https://example.invalid/nonce"))
+	nonce, _ := fetchNonceOnce(context.Background(), cli, "https://example.invalid/nonce")
 	if nonce != "xyz" {
 		t.Errorf("nonce = %q, want %q", nonce, "xyz")
 	}

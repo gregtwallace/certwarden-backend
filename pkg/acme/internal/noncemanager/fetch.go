@@ -16,7 +16,7 @@ var (
 
 // fetchNonce gets a nonce from themanager's newNonceUrl; if fetching fails or the header
 // does not contain a nonce, an error is returned
-func (manager *Manager) fetchNonce(ctx context.Context) (string, error) {
+func (mgr *Manager) fetchNonce(ctx context.Context) (string, error) {
 	// if this fails for some reason, give a sane amount of retries
 	// dont bother getting fancy with exponential backoff, just fail if not resolved relatively quickly
 
@@ -27,7 +27,7 @@ func (manager *Manager) fetchNonce(ctx context.Context) (string, error) {
 
 	// retry loop
 	for range nonceFetchMaxRetries {
-		nonce, wait := fetchNonceOnce(ctx, manager.httpClient, manager.newNonceUrl)
+		nonce, wait := fetchNonceOnce(ctx, mgr.httpClient, mgr.newNonceUrlProvider.NewNonceURL(ctx))
 		// success?
 		if nonce != "" {
 			return nonce, nil

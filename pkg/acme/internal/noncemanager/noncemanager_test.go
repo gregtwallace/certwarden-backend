@@ -15,14 +15,14 @@ func TestNew(t *testing.T) {
 	httpClient := http.DefaultClient
 	nonceURL := "https://example.com/acme/new-nonce"
 
-	mgr := New(httpClient, &nonceURL)
+	mgr := New(httpClient, &dummyNonceUrlProvider{newNonce: nonceURL})
 
 	if mgr.httpClient != httpClient {
 		t.Errorf("httpClient not set correctly, expected %v, got %v", httpClient, mgr.httpClient)
 	}
 
-	if mgr.newNonceUrl != &nonceURL {
-		t.Errorf("newNonceUrl not set correctly, expected %v, got %v", nonceURL, mgr.newNonceUrl)
+	if mgr.newNonceUrlProvider.NewNonceURL(context.Background()) != nonceURL {
+		t.Errorf("newNonceUrl not set correctly, expected %v, got %v", nonceURL, mgr.newNonceUrlProvider.NewNonceURL(context.Background()))
 	}
 
 	if mgr.nonceValues == nil {
@@ -47,7 +47,7 @@ func TestPush(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("#%d", i), func(t *testing.T) {
-			mgr := New(httpClient, &nonceURL)
+			mgr := New(httpClient, &dummyNonceUrlProvider{newNonce: nonceURL})
 
 			// push new data
 			err := mgr.PushNonce(tc.pushVal)

@@ -12,22 +12,26 @@ var errPushEmptyNonce = errors.New("nonce manager: cannot save empty nonce")
 // Manager buffer size
 const nonceBufferSize = 32
 
+type newNonceUrlProvider interface {
+	NewNonceURL(ctx context.Context) string
+}
+
 // Manager is the NonceManager
 type Manager struct {
-	httpClient  *http.Client
-	newNonceUrl *string
-	nonceValues *ringbuffer.Buffer
+	httpClient          *http.Client
+	newNonceUrlProvider newNonceUrlProvider
+	nonceValues         *ringbuffer.Buffer
 }
 
 // New creates a new nonce manager which stores nonces and fetches new nonces if its
 // buffer is empty.
-func New(client *http.Client, nonceUrlPtr *string) *Manager {
+func New(client *http.Client, provider newNonceUrlProvider) *Manager {
 	// Note: nonceUrl must be a pointer so directory updates are reflected in Manager
 
 	return &Manager{
-		httpClient:  client,
-		newNonceUrl: nonceUrlPtr,
-		nonceValues: ringbuffer.New(nonceBufferSize),
+		httpClient:          client,
+		newNonceUrlProvider: provider,
+		nonceValues:         ringbuffer.New(nonceBufferSize),
 	}
 }
 

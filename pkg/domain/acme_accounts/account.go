@@ -5,6 +5,7 @@ import (
 	"certwarden-backend/pkg/domain/acme_servers"
 	"certwarden-backend/pkg/domain/private_keys"
 	"certwarden-backend/pkg/domain/private_keys/key_crypto"
+	"context"
 	"time"
 )
 
@@ -97,7 +98,7 @@ type accountKeyDetailedResponse struct {
 	Algorithm key_crypto.Algorithm `json:"algorithm"`
 }
 
-func (acct *Account) detailedResponse(service *Service) (accountDetailedResponse, error) {
+func (acct *Account) detailedResponse(ctx context.Context, service *Service) (accountDetailedResponse, error) {
 	as, err := service.acmeServerService.AcmeService(acct.AcmeServer.ID)
 	if err != nil {
 		return accountDetailedResponse{}, err
@@ -112,8 +113,8 @@ func (acct *Account) detailedResponse(service *Service) (accountDetailedResponse
 				DirectoryURL: acct.AcmeServer.DirectoryURL,
 				IsStaging:    acct.AcmeServer.IsStaging,
 			},
-			ExternalAccountRequired: as.RequiresEAB(),
-			TermsOfService:          as.TosUrl(),
+			ExternalAccountRequired: as.RequiresEAB(ctx),
+			TermsOfService:          as.TermsOfServiceURL(ctx),
 		},
 		AccountKey: accountKeyDetailedResponse{
 			accountKeySummaryResponse: accountKeySummaryResponse{

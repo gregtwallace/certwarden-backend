@@ -12,6 +12,14 @@ import (
 	"time"
 )
 
+type dummyNonceUrlProvider struct {
+	newNonce string
+}
+
+func (d *dummyNonceUrlProvider) NewNonceURL(ctx context.Context) string {
+	return d.newNonce
+}
+
 // To keep retries fast, "failing" responses carry "Retry-After: 0", which makes
 // fetchNonceOnce return a ~0 wait instead of defaultTilNext(). This assumes
 // validation.ParseRetryAfter accepts "0"; if it doesn't, use a past HTTP date.
@@ -32,8 +40,8 @@ func testResponse(r *http.Request, headers map[string]string) *http.Response {
 
 func newTestManager(rt http.RoundTripper) *Manager {
 	return &Manager{
-		httpClient:  &http.Client{Transport: rt},
-		newNonceUrl: strPtr("https://example.invalid/new-nonce"),
+		httpClient:          &http.Client{Transport: rt},
+		newNonceUrlProvider: &dummyNonceUrlProvider{newNonce: "https://example.invalid/new-nonce"},
 	}
 }
 
@@ -45,8 +53,7 @@ func TestManagerFetchNonce_SuccessFirstTry(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	url := srv.URL
-	manager := &Manager{httpClient: srv.Client(), newNonceUrl: &url}
+	manager := &Manager{httpClient: srv.Client(), newNonceUrlProvider: &dummyNonceUrlProvider{newNonce: srv.URL}}
 
 	nonce, err := manager.fetchNonce(context.Background())
 	if err != nil {

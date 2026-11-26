@@ -35,7 +35,7 @@ func validateConfig(cfg *Config) error {
 	// ACME DNS Host
 
 	// require acme dns host to be specified as https://
-	if !validation.HttpsUrlValid(cfg.HostAddress) {
+	if !validation.IsValidHTTPSURL(cfg.HostAddress) {
 		errStrings = append(errStrings, fmt.Sprintf("acme dns host address (%s) must be a properly formatted url and start with 'https://'", cfg.HostAddress))
 	}
 

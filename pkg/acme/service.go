@@ -1,6 +1,7 @@
 package acme
 
 import (
+	"certwarden-backend/pkg/acme/internal/directory"
 	"certwarden-backend/pkg/acme/internal/noncemanager"
 	"context"
 	"errors"
@@ -20,13 +21,12 @@ type App interface {
 
 // Acme service struct
 type Service struct {
-	// temporarily park this here
+	// TODO: remove this
 	shutdownContext context.Context
 
 	logger       *zap.SugaredLogger
 	httpClient   *http.Client
-	dirUri       string
-	dir          *directory
+	dir          *directory.DirectoryMgr
 	nonceManager *noncemanager.Manager
 }
 
@@ -44,14 +44,10 @@ func NewService(app App, dirUri string) (*Service, error) {
 	service.httpClient = app.GetHttpClient()
 
 	// acme directory
-	service.dirUri = dirUri
-	service.dir = new(directory)
-
-	// start directory manager
-	service.backgroundDirManager(app.GetShutdownContext(), app.GetShutdownWaitGroup())
+	service.dir = directory.New(app.GetLogger(), app.GetHttpClient(), dirUri)
 
 	// nonce manager
-	service.nonceManager = noncemanager.New(service.httpClient, &service.dir.NewNonce)
+	service.nonceManager = noncemanager.New(service.httpClient, service.dir)
 
 	service.shutdownContext = app.GetShutdownContext()
 

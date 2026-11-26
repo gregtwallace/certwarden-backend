@@ -163,7 +163,7 @@ func (service *Service) GetNewCertOptions(w http.ResponseWriter, r *http.Request
 		acct.AcmeServer.Name = accounts[i].AcmeServer.Name
 		acct.AcmeServer.DirectoryURL = accounts[i].AcmeServer.DirectoryURL
 		acct.AcmeServer.IsStaging = accounts[i].AcmeServer.IsStaging
-		acct.AcmeServer.Profiles = acmeService.Profiles()
+		acct.AcmeServer.Profiles = acmeService.PublishedProfiles(r.Context())
 
 		outputAccounts = append(outputAccounts, acct)
 	}

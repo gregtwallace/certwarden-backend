@@ -66,7 +66,7 @@ func (service *Service) NewAccount(payload NewAccountPayload, privateKey crypto.
 	}
 
 	// url to post to
-	url := service.dir.NewAccount
+	url := service.dir.NewAccountURL(service.shutdownContext)
 
 	// real ACME payload
 	acmePayload := &acmeNewAccountPayload{
@@ -166,7 +166,7 @@ func (service *Service) DeactivateAccount(accountKey AccountKey) (acct Account, 
 // retires the old key from the account and substitutes the new key in its place.
 func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountKey AccountKey) (err error) {
 	// if directory doesn't contain a keyChange URL, return error
-	if service.dir.KeyChange == "" {
+	if service.dir.KeyChangeURL(service.shutdownContext) == "" {
 		return errors.New("acme: account key rollover failed (acme directory does not contain a keyChange url)")
 	}
 
@@ -191,14 +191,14 @@ func (service *Service) RolloverAccountKey(newKey crypto.PrivateKey, oldAccountK
 	}
 
 	// build payload message with new key
-	msg, err := makeAcmeSignedMessage(innerPayload, "", service.dir.KeyChange, newKeyAccountKey)
+	msg, err := makeAcmeSignedMessage(innerPayload, "", service.dir.KeyChangeURL(service.shutdownContext), newKeyAccountKey)
 	if err != nil {
 		return err
 	}
 
 	// post key change
 	// no response/headers expected on key roll (see rfc 8555 s 7.3.5)
-	_, _, err = service.postToUrlSigned(msg, service.dir.KeyChange, oldAccountKey)
+	_, _, err = service.postToUrlSigned(msg, service.dir.KeyChangeURL(service.shutdownContext), oldAccountKey)
 	if err != nil {
 		return err
 	}
