@@ -2,8 +2,6 @@ module certwarden-backend
 
 go 1.27.3
 
-require github.com/julienschmidt/httprouter v1.3.0
-
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloudflare/cloudflare-go/v6 v6.10.0
@@ -12,6 +10,7 @@ require (
 	github.com/go-acme/lego/v5 v5.5.2
 	github.com/google/uuid v1.6.0
 	github.com/google/webpackager v0.0.0-20221027220206-53a1486f4205
+	github.com/julienschmidt/httprouter v1.3.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pressly/goose/v3 v3.27.3
 	github.com/rs/cors v1.11.1
@@ -206,9 +205,9 @@ require (
 	go.mongodb.org/mongo-driver v1.17.9 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.69.0 // indirect
-	go.opentelemetry.io/otel v1.44.0 // indirect
-	go.opentelemetry.io/otel/metric v1.44.0 // indirect
-	go.opentelemetry.io/otel/trace v1.44.0 // indirect
+	go.opentelemetry.io/otel v1.47.0 // indirect
+	go.opentelemetry.io/otel/metric v1.47.0 // indirect
+	go.opentelemetry.io/otel/trace v1.47.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/ratelimit v0.3.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
