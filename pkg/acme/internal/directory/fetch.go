@@ -14,11 +14,6 @@ import (
 const dirUpdateInterval = 15 * time.Minute
 
 func (d *DirectoryMgr) updateDirectory(ctx context.Context) {
-	// no-op if update is not due
-	if !time.Now().After(d.nextFetchAt) {
-		return
-	}
-
 	// acquire semaphore lock w/ context
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
