@@ -3,7 +3,6 @@ package orders
 import (
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/randomness"
-	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -140,7 +139,7 @@ fulfillLoop:
 
 			// get ari, if supported
 			var acmeARI *acme.ACMERenewalInfo
-			if acmeService.SupportsARIExtension(context.TODO()) {
+			if acmeService.SupportsARIExtensionCached() {
 				var err error
 				acmeARI, err = acmeService.GetACMERenewalInfo(cert.PEM())
 				if err != nil {

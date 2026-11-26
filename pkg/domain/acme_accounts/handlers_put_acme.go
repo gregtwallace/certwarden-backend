@@ -88,7 +88,7 @@ func (service *Service) ChangeEmail(w http.ResponseWriter, r *http.Request) *out
 		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
-	detailedResp, err := account.detailedResponse(r.Context(), service)
+	detailedResp, err := account.detailedResponse(service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)
@@ -194,7 +194,7 @@ func (service *Service) RolloverKey(w http.ResponseWriter, r *http.Request) *out
 		return output.ErrorJsonErrStorageGeneric(err)
 	}
 
-	detailedResp, err := updatedAcct.detailedResponse(r.Context(), service)
+	detailedResp, err := updatedAcct.detailedResponse(service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate account summary response (%w)", err)
 		service.logger.Error(err)

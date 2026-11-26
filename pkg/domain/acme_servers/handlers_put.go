@@ -86,7 +86,7 @@ func (service *Service) PutServerUpdate(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// make detailed response
-	detailedResp, err := updatedServer.detailedResponse(r.Context(), service)
+	detailedResp, err := updatedServer.detailedResponse(service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate server summary response (%w)", err)
 		service.logger.Error(err)

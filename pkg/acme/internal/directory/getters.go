@@ -3,9 +3,14 @@ package directory
 import (
 	"context"
 	"encoding/json"
+	"time"
 )
 
-// NOTE: All getters should call updateDirectory() immediately
+// NOTE: Getters should call updateDirectory() immediately, unless they end in `Cached`; Cached callers
+// should cap their wait to 1 second to ensure fast responsiveness to frontend requests
+
+// max wait for a cache call if an update is due
+const noCacheWait = 1 * time.Second
 
 // Base Directory
 
@@ -13,8 +18,8 @@ import (
 func (dm *DirectoryMgr) NewNonceURL(ctx context.Context) string {
 	dm.updateDirectory(ctx)
 
-	dm.mu.RLock()
-	defer dm.mu.RUnlock()
+	dm.muData.RLock()
+	defer dm.muData.RUnlock()
 
 	return dm.directoryObj.NewNonce
 }
@@ -23,8 +28,8 @@ func (dm *DirectoryMgr) NewNonceURL(ctx context.Context) string {
 func (dm *DirectoryMgr) NewAccountURL(ctx context.Context) string {
 	dm.updateDirectory(ctx)
 
-	dm.mu.RLock()
-	defer dm.mu.RUnlock()
+	dm.muData.RLock()
+	defer dm.muData.RUnlock()
 
 	return dm.directoryObj.NewAccount
 }
@@ -33,8 +38,8 @@ func (dm *DirectoryMgr) NewAccountURL(ctx context.Context) string {
 func (dm *DirectoryMgr) NewOrderURL(ctx context.Context) string {
 	dm.updateDirectory(ctx)
 
-	dm.mu.RLock()
-	defer dm.mu.RUnlock()
+	dm.muData.RLock()
+	defer dm.muData.RUnlock()
 
 	return dm.directoryObj.NewOrder
 }
@@ -45,8 +50,8 @@ func (dm *DirectoryMgr) NewOrderURL(ctx context.Context) string {
 func (dm *DirectoryMgr) RevokeCertURL(ctx context.Context) string {
 	dm.updateDirectory(ctx)
 
-	dm.mu.RLock()
-	defer dm.mu.RUnlock()
+	dm.muData.RLock()
+	defer dm.muData.RUnlock()
 
 	return dm.directoryObj.RevokeCert
 }
@@ -55,67 +60,77 @@ func (dm *DirectoryMgr) RevokeCertURL(ctx context.Context) string {
 func (dm *DirectoryMgr) KeyChangeURL(ctx context.Context) string {
 	dm.updateDirectory(ctx)
 
-	dm.mu.RLock()
-	defer dm.mu.RUnlock()
+	dm.muData.RLock()
+	defer dm.muData.RUnlock()
 
 	return dm.directoryObj.KeyChange
 }
 
 // Meta
 
-// TermsOfServiceURL returns the URL for where the ToS are located
-func (dm *DirectoryMgr) TermsOfServiceURL(ctx context.Context) string {
+// TermsOfServiceURLCached returns the URL for where the ToS are located
+func (dm *DirectoryMgr) TermsOfServiceURLCached() string {
+	ctx, cancel := context.WithTimeout(context.Background(), noCacheWait)
+	defer cancel()
 	dm.updateDirectory(ctx)
 
-	dm.mu.RLock()
-	defer dm.mu.RUnlock()
+	dm.muData.RLock()
+	defer dm.muData.RUnlock()
 
 	return dm.directoryObj.Meta.TermsOfService
 }
 
-// RequiresEAB returns if the acme server requires External Account Binding
-func (dm *DirectoryMgr) RequiresEAB(ctx context.Context) bool {
+// RequiresEABCached returns if the acme server requires External Account Binding
+func (dm *DirectoryMgr) RequiresEABCached() bool {
+	ctx, cancel := context.WithTimeout(context.Background(), noCacheWait)
+	defer cancel()
 	dm.updateDirectory(ctx)
 
-	dm.mu.RLock()
-	defer dm.mu.RUnlock()
+	dm.muData.RLock()
+	defer dm.muData.RUnlock()
 
 	return dm.directoryObj.Meta.ExternalAccountRequired
 }
 
 // Raw
 
-// DirectoryRawResponse returns the ACME Service's raw directory response
-func (dm *DirectoryMgr) RawResponse(ctx context.Context) json.RawMessage {
+// RawResponseCached returns the ACME Service's raw directory response
+func (dm *DirectoryMgr) RawResponseCached() json.RawMessage {
+	ctx, cancel := context.WithTimeout(context.Background(), noCacheWait)
+	defer cancel()
 	dm.updateDirectory(ctx)
 
-	dm.mu.RLock()
-	defer dm.mu.RUnlock()
+	dm.muData.RLock()
+	defer dm.muData.RUnlock()
 
 	return dm.directoryObj.raw
 }
 
 // Extensions
 
-// Profiles returns the map of available profiles for the ACME service, or nil if
+// ProfilesCached returns the map of available profiles for the ACME service, or nil if
 // the profiles extension is not implementedm (per the directory's meta response)
-func (dm *DirectoryMgr) Profiles(ctx context.Context) map[string]string {
+func (dm *DirectoryMgr) ProfilesCached() map[string]string {
+	ctx, cancel := context.WithTimeout(context.Background(), noCacheWait)
+	defer cancel()
 	dm.updateDirectory(ctx)
 
-	dm.mu.RLock()
-	defer dm.mu.RUnlock()
+	dm.muData.RLock()
+	defer dm.muData.RUnlock()
 
 	return dm.directoryObj.Meta.Profiles
 }
 
-// ProfileIsPublishedm returns true if the specifiedm profileName exists in the ACME
+// ProfileIsPublishedCached returns true if the specifiedm profileName exists in the ACME
 // service's meta profile map. If the profile does not exist (including if there
 // is no profile map at all), false is returnedm.directoryObj.
-func (dm *DirectoryMgr) ProfileIsPublished(ctx context.Context, profileName string) bool {
+func (dm *DirectoryMgr) ProfileIsPublishedCached(profileName string) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), noCacheWait)
+	defer cancel()
 	dm.updateDirectory(ctx)
 
-	dm.mu.RLock()
-	defer dm.mu.RUnlock()
+	dm.muData.RLock()
+	defer dm.muData.RUnlock()
 
 	for k := range dm.directoryObj.Meta.Profiles {
 		if k == profileName {
@@ -130,12 +145,24 @@ func (dm *DirectoryMgr) ProfileIsPublished(ctx context.Context, profileName stri
 func (dm *DirectoryMgr) RenewalInfoURL(ctx context.Context) string {
 	dm.updateDirectory(ctx)
 
-	dm.mu.RLock()
-	defer dm.mu.RUnlock()
+	dm.muData.RLock()
+	defer dm.muData.RUnlock()
 
 	if dm.directoryObj.RenewalInfo == nil {
 		return ""
 	}
 
 	return *dm.directoryObj.RenewalInfo
+}
+
+// SupportsRenewalInfoCached if the directory indicates the ARI extension is supported
+func (dm *DirectoryMgr) SupportsRenewalInfoCached() bool {
+	ctx, cancel := context.WithTimeout(context.Background(), noCacheWait)
+	defer cancel()
+	dm.updateDirectory(ctx)
+
+	dm.muData.RLock()
+	defer dm.muData.RUnlock()
+
+	return dm.directoryObj.RenewalInfo != nil && *dm.directoryObj.RenewalInfo != ""
 }

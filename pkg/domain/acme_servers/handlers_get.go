@@ -34,7 +34,7 @@ func (service *Service) GetAllServers(w http.ResponseWriter, r *http.Request) *o
 	// populate summaries for output
 	scmeServers := []ServerSummaryResponse{}
 	for i := range servers {
-		summary, err := servers[i].summaryResponse(r.Context(), service)
+		summary, err := servers[i].summaryResponse(service)
 		if err != nil {
 			err = fmt.Errorf("failed to generate server summary response (%w)", err)
 			service.logger.Error(err)
@@ -83,7 +83,7 @@ func (service *Service) GetOneServer(w http.ResponseWriter, r *http.Request) *ou
 	}
 
 	// make detailed response
-	detailedResp, err := server.detailedResponse(r.Context(), service)
+	detailedResp, err := server.detailedResponse(service)
 	if err != nil {
 		err = fmt.Errorf("failed to generate server summary response (%w)", err)
 		service.logger.Error(err)

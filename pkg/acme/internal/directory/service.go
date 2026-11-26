@@ -1,6 +1,7 @@
 package directory
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"golang.org/x/sync/semaphore"
 )
 
 // directory is the actual json directory object
@@ -43,17 +45,28 @@ type DirectoryMgr struct {
 	httpClient  *http.Client
 	dirURI      string
 	nextFetchAt time.Time
+	semHttp     *semaphore.Weighted // to prevent http fetch spam
 
 	// the actual directory
 	directoryObj directory
-	mu           sync.RWMutex
+	muData       sync.RWMutex // to guard the directory data
 }
 
 // New returns a new ACME Directory
 func New(logger *zap.SugaredLogger, httpClient *http.Client, dirURI string) *DirectoryMgr {
-	return &DirectoryMgr{
+	dm := &DirectoryMgr{
 		logger:     logger.Named(fmt.Sprintf("acme dir mgr %q", dirURI)),
 		httpClient: httpClient,
 		dirURI:     dirURI,
+		semHttp:    semaphore.NewWeighted(1),
 	}
+
+	// prime the initial cache (hopefully)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	go func() {
+		defer cancel()
+		dm.updateDirectory(ctx)
+	}()
+
+	return dm
 }

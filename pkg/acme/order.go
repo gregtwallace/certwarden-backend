@@ -58,7 +58,7 @@ func unmarshalOrder(jsonResp []byte, headers http.Header) (order Order, err erro
 // NewOrder posts a secure message to the NewOrder URL of the directory
 func (service *Service) NewOrder(payload NewOrderPayload, accountKey AccountKey) (order Order, err error) {
 	// Strip `replaces` if server doesn't indicate support, per recommendation in ARI s 5
-	if payload.Replaces != nil && !service.SupportsARIExtension(service.shutdownContext) {
+	if payload.Replaces != nil && !service.SupportsARIExtensionCached() {
 		payload.Replaces = nil
 	}
 

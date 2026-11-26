@@ -14,13 +14,27 @@ import (
 const dirUpdateInterval = 15 * time.Minute
 
 func (d *DirectoryMgr) updateDirectory(ctx context.Context) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
+	// no-op if update is not due
+	if !time.Now().After(d.nextFetchAt) {
+		return
+	}
+
+	// acquire semaphore lock w/ context
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	if err := d.semHttp.Acquire(ctx, 1); err != nil {
+		// parent ctx aborted or child timer ran out
+		return
+	}
+	defer d.semHttp.Release(1)
 
 	// no-op if update is not due
 	if !time.Now().After(d.nextFetchAt) {
 		return
 	}
+
+	// prevent immediate back-to-back fetches (which would happen on quick failures)
+	d.nextFetchAt = time.Now().Add(2 * time.Second).Add(time.Duration(rand.IntN(300)) * time.Millisecond)
 
 	d.logger.Debug("attempting to run update")
 
@@ -33,13 +47,13 @@ func (d *DirectoryMgr) updateDirectory(ctx context.Context) {
 	// fetch directory
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, d.dirURI, http.NoBody)
 	if err != nil {
-		d.logger.Errorf("failed to create http request (%w)", err)
+		d.logger.Errorf("failed to create http request (%s)", err)
 		return
 	}
 
 	resp, err := d.httpClient.Do(req)
 	if err != nil {
-		d.logger.Errorf("failed to do http request (%w)", err)
+		d.logger.Errorf("failed to do http request (%s)", err)
 		return
 	}
 	defer resp.Body.Close()
@@ -47,7 +61,7 @@ func (d *DirectoryMgr) updateDirectory(ctx context.Context) {
 	// read and parse body
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		d.logger.Errorf("failed to read http response (%w)", err)
+		d.logger.Errorf("failed to read http response (%s)", err)
 		return
 	}
 
@@ -55,7 +69,7 @@ func (d *DirectoryMgr) updateDirectory(ctx context.Context) {
 	err = json.Unmarshal(bodyBytes, &fetchedDir)
 	// check for Unmarshal error
 	if err != nil {
-		d.logger.Errorf("failed to unmarshal json from http response (%w)", err)
+		d.logger.Errorf("failed to unmarshal json from http response (%s)", err)
 		return
 	}
 
@@ -88,7 +102,10 @@ func (d *DirectoryMgr) updateDirectory(ctx context.Context) {
 
 	// Only update if the fetched directory content is different than current
 	if !reflect.DeepEqual(fetchedDir, d.directoryObj) {
+		d.muData.Lock()
 		d.directoryObj = fetchedDir
+		d.muData.Unlock()
+
 		d.logger.Info("directory update detected changes and updated accordingly")
 	}
 

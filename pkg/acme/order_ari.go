@@ -111,7 +111,7 @@ func ACMERenewalInfoIdentifier(cert *x509.Certificate) (string, error) {
 // for the specified certificate PEM.
 func (service *Service) GetACMERenewalInfo(certPem string) (*ACMERenewalInfo, error) {
 	// only some servers support this
-	if !service.SupportsARIExtension(service.shutdownContext) {
+	if !service.SupportsARIExtensionCached() {
 		return nil, ErrARIUnsupported
 	}
 

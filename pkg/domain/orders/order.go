@@ -5,7 +5,6 @@ import (
 	"certwarden-backend/pkg/acme"
 	"certwarden-backend/pkg/domain/certificates"
 	"certwarden-backend/pkg/domain/private_keys"
-	"context"
 	"crypto/x509"
 	"database/sql"
 	"encoding/pem"
@@ -262,7 +261,7 @@ func (service *Service) NewOrderPayload(cert *certificates.Certificate) acme.New
 		}
 
 		// ARI extension not supported
-		if !acmeServ.SupportsARIExtension(context.TODO()) {
+		if !acmeServ.SupportsARIExtensionCached() {
 			return nil
 		}
 
